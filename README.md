@@ -1,8 +1,8 @@
 # m4l-typescript-base
 
-Provides a starting point for a Typescript-based development environment for Max for Live projects that use Javascript objects like `js` and `jsui`. Uses Docker and VSCode devcontainer for the heavy lifting, thus eliminating the need to manage a build toolchain on your dev machine.
+Provides a starting point for a Typescript-based development environment for Max projects that use Javascript objects like `js` and `jsui`. Uses Docker and VSCode devcontainer for the heavy lifting, thus eliminating the need to manage a build toolchain on your dev machine.
 
-Since it uses `types/maxforlive`, you can have good completion and parameter documentation for Max for Live Javascript objects.
+Since it uses `types/maxforlive`, you can have good completion and parameter documentation for Max for Live objects too.
 
 ![Code Reference](images/code_ref.png)
 
