@@ -8,7 +8,7 @@ const OUTLET_FOO = 0
 setinletassist(INLET_FOO, 'Description of Inlet')
 setoutletassist(OUTLET_FOO, 'Description of Outlet')
 
-let debugLog = true
+const debugLog = true
 
 function debug(_: any) {
   if (debugLog) {
