@@ -209,7 +209,7 @@ function paramNameCallback(slot: number, iargs: IArguments) {
 function deviceNameCallback(slot: number, iargs: IArguments) {
   //debug(args)
   //debug('DEVICE NAME CALLBACK')
-  const args = arrayfromargs(iargs)
+  const args: any[] = arrayfromargs(iargs)
   if (args[0] === 'name') {
     param[slot].deviceName = args[1]
     sendDeviceName(slot)

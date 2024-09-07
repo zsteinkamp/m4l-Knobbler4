@@ -7,13 +7,9 @@
     "noImplicitAny": true,
     "allowUnreachableCode": true,
     "sourceMap": false,
-    "lib": ["es5"],
+    "moduleDetection": "force",
+    "lib": ["es6"],
     "outDir": "Project"
   },
-  "include": [
-    "src/*.ts",
-    "types/*.d.ts",
-    "src/bluhand.js",
-    "src/fullParamName.js"
-  ]
+  "include": ["src/*.ts", "types/*.d.ts"]
 }
