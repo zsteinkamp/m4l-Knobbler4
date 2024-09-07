@@ -10,7 +10,7 @@
 	"autolocalize" : 0,
 	"contents" : 	{
 		"patchers" : 		{
-			"Device.amxd" : 			{
+			"zs-Knobbler4.amxd" : 			{
 				"kind" : "maxforlive",
 				"toplevel" : 1
 			}

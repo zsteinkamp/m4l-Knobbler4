@@ -10,5 +10,10 @@
     "lib": ["es5"],
     "outDir": "Project"
   },
-  "include": ["src/*.ts", "types/*.d.ts"]
+  "include": [
+    "src/*.ts",
+    "types/*.d.ts",
+    "src/bluhand.js",
+    "src/fullParamName.js"
+  ]
 }
