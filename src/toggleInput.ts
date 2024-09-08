@@ -5,19 +5,18 @@ const origInputs: Record<string, any> = {}
 
 let lo = null
 let currTrack: LiveAPI = null
+
 const tiDebugLog = false
 
-function debug(_: any) {
+function tiDebug(_: any) {
   if (tiDebugLog) {
     post(
-      debug.caller ? debug.caller.name : 'ROOT',
+      tiDebug.caller ? tiDebug.caller.name : 'ROOT',
       Array.prototype.slice.call(arguments).join(' '),
       '\n'
     )
   }
 }
-
-debug('reloaded')
 
 function getTrackStatus() {
   var airt = null
@@ -25,12 +24,12 @@ function getTrackStatus() {
   let noInput = null
   let allInputs = null
   let inputEnabled = false
-  //debug(currTrack.type);
+  //tiDebug(currTrack.type);
   if (
     currTrack.get('is_foldable') == '0' &&
     currTrack.get('can_be_frozen') == '1'
   ) {
-    //debug("IN HERE");
+    //tiDebug("IN HERE");
     var airt = JSON.parse(
       currTrack.get('available_input_routing_types')
     ).available_input_routing_types
@@ -48,13 +47,13 @@ function getTrackStatus() {
     inputEnabled: inputEnabled,
     allInputs: allInputs,
   }
-  //debug(JSON.stringify(ret));
+  //tiDebug(JSON.stringify(ret));
   return ret
 }
 
 function updateTrackDisplay() {
   const trackStatus = getTrackStatus()
-  //debug('inputEnabled?', trackStatus.inputEnabled);
+  //tiDebug('inputEnabled?', trackStatus.inputEnabled);
   if (trackStatus.inputEnabled) {
     outlet(0, ['/toggleInput', 1])
   } else {
@@ -65,12 +64,12 @@ function updateTrackDisplay() {
 function currentTrackCallback(a: IArguments) {
   const args = arrayfromargs(a)
   if (args.shift() !== 'selected_track') {
-    //debug("RETURNING1");
+    //tiDebug("RETURNING1");
     return
   }
   const trackId = args.join(' ')
   if (trackId === 'id 0') {
-    //debug("RETURNING2");
+    //tiDebug("RETURNING2");
     return
   }
   currTrack = new LiveAPI(() => {}, trackId)
@@ -85,7 +84,7 @@ function tiInit() {
 }
 
 function toggle() {
-  //debug("IN TOGGLE");
+  //tiDebug("IN TOGGLE");
   const trackStatus = getTrackStatus()
   let ret = null
   if (trackStatus.inputEnabled) {
@@ -102,3 +101,5 @@ function toggle() {
   }
   updateTrackDisplay()
 }
+
+tiDebug('reloaded toggleInput\n')

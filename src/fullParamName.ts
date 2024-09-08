@@ -9,24 +9,16 @@ const INLET_INPUT = 0
 setinletassist(INLET_INPUT, 'Input (object ID)')
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)')
 
-post('RELOADED fullParamName.js\n')
+const fpDebugLog = false
 
-const log = function () {
-  for (let i = 0, len = arguments.length; i < len; i++) {
-    const message = arguments[i]
-    if (message && message.toString) {
-      let s = message.toString()
-      if (s.indexOf('[object ') >= 0) {
-        s = JSON.stringify(message)
-      }
-      post(s)
-    } else if (message === null) {
-      post('<null>')
-    } else {
-      post(message)
-    }
+function fpDebug(_: any) {
+  if (fpDebugLog) {
+    post(
+      tiDebug.caller ? tiDebug.caller.name : 'ROOT',
+      Array.prototype.slice.call(arguments).join(' '),
+      '\n'
+    )
   }
-  post('\n')
 }
 
 function updateParamName(objId: string) {
@@ -53,3 +45,5 @@ function updateParamName(objId: string) {
   }
   outlet(OUTLET_PARAM_NAME, nameArr.join(' > '))
 }
+
+fpDebug('reloaded fullParamName\n')

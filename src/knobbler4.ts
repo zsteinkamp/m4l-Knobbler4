@@ -15,19 +15,17 @@ setinletassist(
   'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1'
 )
 
-const debugLog = true
+const debugLog = false
 
-function kDebug(_: any) {
+function debug(_: any) {
   if (debugLog) {
     post(
-      //'[' + kDebug.caller ? kDebug.caller.name : 'ROOT' + ']',
+      //'[' + debug.caller ? debug.caller.name : 'ROOT' + ']',
       Array.prototype.slice.call(arguments).join(' '),
       '\n'
     )
   }
 }
-
-kDebug('reloaded')
 
 type ParamType = {
   val: number
@@ -64,25 +62,25 @@ let allowParamValueUpdates = true
 let allowUpdateFromOsc = true
 let allowParamValueUpdatesTask: Task = null
 
-kDebug('reloaded')
+debug('reloaded')
 
 function isValidPath(path: string) {
   return typeof path === 'string' && path.match(/^live_set /)
 }
 
 function dequote(str: string) {
-  //kDebug(str, typeof str)
+  //debug(str, typeof str)
   return str.toString().replace(/^"|"$/g, '')
 }
 
 function unmap(slot: number) {
-  //kDebug(`UNMAP ${slot}`)
+  //debug(`UNMAP ${slot}`)
   init(slot)
   refreshSlotUI(slot)
 }
 
 function sendMsg(slot: number, msg: MessageType) {
-  //kDebug(`${slot} - ${msg.join(' ')}`)
+  //debug(`${slot} - ${msg.join(' ')}`)
   outlet(OUTLET_MSGS, [slot, ...msg])
 }
 
@@ -93,7 +91,7 @@ function setPathParam(slot: number, path: string) {
 }
 
 function clearPath(slot: number) {
-  //kDebug()
+  //debug()
   init(slot)
   refreshSlotUI(slot)
 }
@@ -111,7 +109,7 @@ function initSlotIfNecessary(slot: number) {
 }
 
 function init(slot: number) {
-  //kDebug('INIT')
+  //debug('INIT')
   if (paramObj[slot]) {
     // clean up callbacks when unmapping
     paramObj[slot].id = 0
@@ -145,26 +143,26 @@ function init(slot: number) {
 
 function setMin(slot: number, val: number) {
   initSlotIfNecessary(slot)
-  //kDebug(val)
+  //debug(val)
   outMin[slot] = val / 100.0
   sendVal(slot)
 }
 
 function setMax(slot: number, val: number) {
   initSlotIfNecessary(slot)
-  //kDebug(val)
+  //debug(val)
   outMax[slot] = val / 100.0
   sendVal(slot)
 }
 
 function clearCustomName(slot: number) {
-  //kDebug()
+  //debug()
   param[slot].customName = null
   sendParamName(slot)
 }
 
 function setCustomName(slot: number, args: string) {
-  //kDebug(args)
+  //debug(args)
   if (!param[slot]) {
     return
   }
@@ -183,7 +181,7 @@ function paramValueCallback(slot: number, iargs: IArguments) {
   // We accomplish this by keeping a timestamp of the last time OSC data was
   // received, and only taking action here if more than 500ms has passed.
 
-  //kDebug(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
+  //debug(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
   if (allowParamValueUpdates) {
     const args = arrayfromargs(iargs)
     if (args[0] === 'value') {
@@ -191,14 +189,14 @@ function paramValueCallback(slot: number, iargs: IArguments) {
       param[slot].val = args[1]
       sendVal(slot)
     } else {
-      //kDebug('SUMPIN ELSE', args[0], args[1])
+      //debug('SUMPIN ELSE', args[0], args[1])
     }
   }
 }
 
 function paramNameCallback(slot: number, iargs: IArguments) {
-  //kDebug(iargs)
-  //kDebug('PARAM NAME CALLBACK')
+  //debug(iargs)
+  //debug('PARAM NAME CALLBACK')
   const args = arrayfromargs(iargs)
   if (args[0] === 'name') {
     param[slot].name = args[1]
@@ -207,8 +205,8 @@ function paramNameCallback(slot: number, iargs: IArguments) {
 }
 
 function deviceNameCallback(slot: number, iargs: IArguments) {
-  //kDebug(args)
-  //kDebug('DEVICE NAME CALLBACK')
+  //debug(args)
+  //debug('DEVICE NAME CALLBACK')
   const args: any[] = arrayfromargs(iargs)
   if (args[0] === 'name') {
     param[slot].deviceName = args[1]
@@ -217,8 +215,8 @@ function deviceNameCallback(slot: number, iargs: IArguments) {
 }
 
 function trackNameCallback(slot: number, iargs: IArguments) {
-  //kDebug('TRACK NAME CALLBACK')
-  //kDebug(args)
+  //debug('TRACK NAME CALLBACK')
+  //debug(args)
   const args = arrayfromargs(iargs)
   if (args[0] === 'name') {
     param[slot].trackName = args[1]
@@ -236,9 +234,9 @@ function colorToString(colorVal: string) {
 }
 
 function trackColorCallback(slot: number, iargs: IArguments) {
-  //kDebug('TRACK COLOR CALLBACK')
+  //debug('TRACK COLOR CALLBACK')
   const args = arrayfromargs(iargs)
-  //kDebug('TRACKCOLOR', args)
+  //debug('TRACKCOLOR', args)
   if (args[0] === 'color') {
     param[slot].trackColor = colorToString(args[1])
     sendColor(slot)
@@ -246,16 +244,16 @@ function trackColorCallback(slot: number, iargs: IArguments) {
 }
 
 function checkDevicePresent(slot: number) {
-  //kDebug('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
+  //debug('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
   if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
-    //kDebug('DEVICE DELETED')
+    //debug('DEVICE DELETED')
     init(slot)
     return
   }
 
   // check if path has changed (e.g. inserting a track above this one)
   if (paramObj[slot] && paramObj[slot].unquotedpath !== param[slot].path) {
-    //kDebug(
+    //debug(
     //  'path is different  NEW=',
     //  paramObj.unquotedpath,
     //  '  OLD=',
@@ -268,10 +266,10 @@ function checkDevicePresent(slot: number) {
 
 function setPath(slot: number, paramPath: string) {
   initSlotIfNecessary(slot)
-  //kDebug(`SETPATH ${slot}: ${paramPath}`)
-  //kDebug(paramPath)
+  //debug(`SETPATH ${slot}: ${paramPath}`)
+  //debug(paramPath)
   if (!isValidPath(paramPath)) {
-    //kDebug('skipping', paramPath)
+    //debug('skipping', paramPath)
     return
   }
   paramObj[slot] = new LiveAPI(
@@ -292,7 +290,7 @@ function setPath(slot: number, paramPath: string) {
   param[slot].max = parseFloat(paramObj[slot].get('max')) || 1
   param[slot].name = paramObj[slot].get('name')[0]
 
-  //kDebug('SET PARAM ' + JSON.stringify(param[slot]))
+  //debug('SET PARAM ' + JSON.stringify(param[slot]))
 
   deviceObj[slot] = new LiveAPI(
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
@@ -301,7 +299,7 @@ function setPath(slot: number, paramPath: string) {
 
   const devicePath = deviceObj[slot].unquotedpath
 
-  //kDebug(
+  //debug(
   //  'PARAMPATH=',
   //  paramObj.unquotedpath,
   //  'DEVICEPATH=',
@@ -331,7 +329,7 @@ function setPath(slot: number, paramPath: string) {
     devicePath.match(/^live_set master_track/)
 
   if (matches) {
-    //kDebug(matches[0])
+    //debug(matches[0])
     trackObj[slot] = new LiveAPI(
       (iargs: IArguments) => trackNameCallback(slot, iargs),
       matches[0]
@@ -376,7 +374,7 @@ function refreshSlotUI(slot: number) {
 }
 
 function sendNames(slot: number) {
-  //kDebug(param.name, param.deviceName, param.trackName)
+  //debug(param.name, param.deviceName, param.trackName)
   sendParamName(slot)
   sendDeviceName(slot)
   sendTrackName(slot)
@@ -459,14 +457,14 @@ function sendVal(slot: number) {
   const valProp =
     (param[slot].val - param[slot].min) / (param[slot].max - param[slot].min)
 
-  //kDebug('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
+  //debug('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
 
   // scale the param proportion value to the output min/max proportion
   let scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot])
   scaledValProp = Math.min(scaledValProp, 1)
   scaledValProp = Math.max(scaledValProp, 0)
 
-  //kDebug('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
+  //debug('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
   outlet(OUTLET_OSC, ['/val' + slot, scaledValProp])
   outlet(OUTLET_OSC, [
     '/valStr' + slot,
@@ -477,14 +475,14 @@ function sendVal(slot: number) {
 }
 
 function val(slot: number, val: number) {
-  //kDebug(slot + ' - VAL: ' + val)
+  //debug(slot + ' - VAL: ' + val)
   if (paramObj[slot]) {
     if (allowUpdateFromOsc) {
       const scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot]
       param[slot].val =
         (param[slot].max - param[slot].min) * scaledVal + param[slot].min
 
-      //kDebug('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
+      //debug('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
 
       // prevent updates from params directly being sent to OSC for 500ms
       if (allowParamValueUpdates) {
@@ -506,7 +504,7 @@ function val(slot: number, val: number) {
       ])
     }
   } else {
-    //kDebug('GONNA_MAP', 'ALLOWED=', allowMapping)
+    //debug('GONNA_MAP', 'ALLOWED=', allowMapping)
     // If we get a OSC value but are unassigned, trigger a mapping.
     // This removes a step from typical mapping.
     if (allowMapping) {
@@ -529,7 +527,7 @@ function val(slot: number, val: number) {
       if (!selObj.unquotedpath) {
         post('No Live param is selected.\n')
       } else {
-        //kDebug('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
+        //debug('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
         // Only map things that have a 'value' property
         if (selObj.info.match(/property value/)) {
           setPath(slot, selObj.unquotedpath)
@@ -538,3 +536,5 @@ function val(slot: number, val: number) {
     }
   }
 }
+
+debug('reloaded knobbler4\n')
