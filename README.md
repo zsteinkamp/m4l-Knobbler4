@@ -18,7 +18,7 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Download the .zip file from the latest [release](https://github.com/zsteinkamp/m4l-Knobbler4/releases).
 1. Unzip the file.
 1. Drag the `Knobbler4.amxd` file to Live's User Library and add it to a MIDI/Instrument track in your Live Set.
-1. Copy the `knobbler4.tosc` to your iPad (e.g. AirDrop)
+1. Copy the `knobbler4.tosc` to your iPad (e.g. with AirDrop)
 1. Configure TouchOSC on the iPad to talk OSC to your computer.
    - Click the Chain icon in the toolbar
    - Select "OSC" in the left-side menu
