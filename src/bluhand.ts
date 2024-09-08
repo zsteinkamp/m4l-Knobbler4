@@ -5,16 +5,16 @@
 autowatch = 1
 outlets = 1
 
-const OUTLET_OSC = 0
+const BH_OUTLET_OSC = 0
 const PAGE_SIZE = 16 // "Device On" is always the first
 
-setoutletassist(OUTLET_OSC, 'OSC Messages')
+setoutletassist(BH_OUTLET_OSC, 'OSC Messages')
 
 ////////////////////////////////////////////////
 // VARIABLES
 ////////////////////////////////////////////////
 
-const debugLog = false
+const bhDebugLog = true
 
 type DataType = {
   currBank: number
@@ -48,9 +48,9 @@ const data: DataType = {
   objIdToParamIdx: {},
 }
 const lomParamsArr = []
-const nullString = '- - -'
+const bhNullString = '- - -'
 
-debug('reloaded')
+bhDebug('reloaded')
 
 ////////////////////////////////////////////////
 // EXTERNAL METHODS
@@ -73,11 +73,11 @@ function debounce(id: string, future: () => void) {
 }
 
 function setupListener() {
-  //debug('SETUP LISTENERS')
+  //bhDebug('SETUP LISTENERS')
 
   // TRACK NAME
   data.observers.trackName = new LiveAPI(
-    trackNameCallback,
+    bh_trackNameCallback,
     'live_set view selected_track'
   )
   data.observers.trackName.mode = 1
@@ -85,7 +85,7 @@ function setupListener() {
 
   // DEVICE NAME
   data.observers.deviceName = new LiveAPI(
-    deviceNameCallback,
+    bh_deviceNameCallback,
     'live_set appointed_device'
   )
   data.observers.deviceName.mode = 1
@@ -100,7 +100,7 @@ function setupListener() {
   data.observers.params.property = 'parameters'
 }
 
-function colorToString(colorVal: string) {
+function bhColorToString(colorVal: string) {
   let retString = parseInt(colorVal).toString(16).toUpperCase()
   const strlen = retString.length
   for (let i = 0; i < 6 - strlen; i++) {
@@ -109,25 +109,28 @@ function colorToString(colorVal: string) {
   return retString + 'FF'
 }
 
-function trackNameCallback() {
-  //debug('TRACK ID', parseInt(this.id))
-  //debug(args)
-  if (parseInt(this.id) === 0) {
-    data.trackName = 'none'
-  } else {
-    data.trackName = this.get('name')
+function bh_trackNameCallback(iargs: IArguments) {
+  //bhDebug('TRACK ID', parseInt(this.id))
+  //bhDebug(args)
+  const args = arrayfromargs(iargs)
+  if (args.shift() !== 'name') {
+    return
   }
-  data.trackColor = colorToString(this.get('color').toString())
-  //debug('TRACKCOLOR', data.trackColor)
+  data.trackName = args[0]
+  data.trackColor = bhColorToString(this.get('color').toString())
+  //bhDebug('TRACKCOLOR', data.trackColor)
   updateDeviceName()
 }
 
-function deviceNameCallback() {
-  //debug('DEVICE ID', parseInt(this.id))
+function bh_deviceNameCallback(iargs: IArguments) {
+  const args = arrayfromargs(iargs)
+  if (args.shift() !== 'name') {
+    return
+  }
   if (parseInt(this.id) === 0) {
     data.deviceName = 'none'
   } else {
-    data.deviceName = this.get('name')
+    data.deviceName = args.shift()
   }
   updateDeviceName()
 }
@@ -144,23 +147,23 @@ function updateDeviceName() {
 
 function paramKey(paramObj: LiveAPI) {
   const key = paramObj.id.toString()
-  //debug(key)
+  //bhDebug(key)
   return key
 }
 
-function parametersCallback() {
-  //debug(JSON.stringify(args))
-  if (parseInt(this.id) === 0) {
+function parametersCallback(iargs: IArguments) {
+  const args = arrayfromargs(iargs)
+  if (args.shift() !== 'parameters') {
     return
   }
-  data.paramIdArr = this.get('parameters').filter(function (p: string) {
+  data.paramIdArr = args.filter(function (p: string) {
     return p !== 'id'
   })
   data.currBank = 0
 
-  //debugLog = true
-  //debug(data.paramIdArr.join(','))
-  //debugLog = false
+  //bhDebugLog = true
+  //bhDebug(data.paramIdArr.join(','))
+  //bhDebugLog = false
 
   debounce('params', refreshParams)
 }
@@ -198,7 +201,7 @@ function refreshParams() {
     data.objIdToParamIdx[paramKey(currParam.paramObj)] = paramIdx
     currParam.name = currParam.paramObj.get('name').toString()
     currParam.val = parseFloat(currParam.paramObj.get('value'))
-    //debug('CURRPARAMVAL=[' + currParam.val + '] name=' + currParam.name)
+    //bhDebug('CURRPARAMVAL=[' + currParam.val + '] name=' + currParam.name)
     currParam.min = parseFloat(currParam.paramObj.get('min')) || 0
     currParam.max = parseFloat(currParam.paramObj.get('max')) || 1
 
@@ -208,14 +211,14 @@ function refreshParams() {
     data.params.push(currParam)
     data.params[paramIdx].paramObj.property = 'value'
 
-    sendVal(paramIdx)
+    bhSendVal(paramIdx)
   }
 
   // zero-out the rest of the param sliders
   for (paramIdx = data.params.length; paramIdx < PAGE_SIZE + 1; paramIdx++) {
-    sendOsc(['/bparam' + paramIdx, nullString])
+    sendOsc(['/bparam' + paramIdx, bhNullString])
     sendOsc(['/bval' + paramIdx, 0])
-    sendOsc(['/bvalStr' + paramIdx, '- - -'])
+    sendOsc(['/bvalStr' + paramIdx, bhNullString])
     sendOsc(['/bval' + paramIdx + 'color', 'FF000099'])
   }
 
@@ -224,7 +227,7 @@ function refreshParams() {
   sendOsc(message)
 }
 
-function sendVal(paramIdx: number) {
+function bhSendVal(paramIdx: number) {
   if (
     typeof paramIdx !== 'number' ||
     paramIdx < 0 ||
@@ -247,17 +250,17 @@ function sendVal(paramIdx: number) {
   ])
 }
 
-function valueCallback(args: IArguments) {
-  //debug('VALUE CALLBACK')
-  const argsArr = arrayfromargs(args)
-  if (argsArr[0] !== 'value') {
+function valueCallback(iargs: IArguments) {
+  //bhDebug('VALUE CALLBACK')
+  const args = arrayfromargs(iargs)
+  if (args.shift() !== 'value') {
     return
   }
 
-  //debug('TOPARGS', argsArr)
+  //bhDebug('TOPARGS', args)
   const paramIdx = data.objIdToParamIdx[paramKey(this)]
   if (paramIdx === undefined) {
-    //debug(
+    //bhDebug(
     //  'no data.objIdToParamIdx for',
     //  paramIdx,
     //  JSON.stringify(data.objIdToParamIdx)
@@ -265,17 +268,18 @@ function valueCallback(args: IArguments) {
     return
   }
   if (!data.params[paramIdx]) {
-    //debug('no data.params for', paramIdx, JSON.stringify(data.params))
+    //bhDebug('no data.params for', paramIdx, JSON.stringify(data.params))
     return
   }
+  const argsVal = args.shift()
 
   // ensure the value is indeed changed (vs a feedback loop)
-  if (argsArr[1] === data.params[paramIdx].val) {
-    //debug(paramIdx, paramIdx.val, 'NO CHANGE')
+  if (argsVal === data.params[paramIdx].val) {
+    //bhDebug(paramIdx, paramIdx.val, 'NO CHANGE')
     return
   }
-  data.params[paramIdx].val = argsArr[1]
-  sendVal(paramIdx)
+  data.params[paramIdx].val = argsVal
+  bhSendVal(paramIdx)
 }
 
 function receiveVal(matches: RegExpMatchArray) {
@@ -292,38 +296,38 @@ function receiveVal(matches: RegExpMatchArray) {
 }
 
 function receiveBank(matches: RegExpMatchArray) {
-  //debugLog = true
-  //debug(matches)
+  //bhDebugLog = true
+  //bhDebug(matches)
   if (data.paramIdArr.length === 0) {
     return
   }
   const maxBank = Math.floor(data.paramIdArr.length / PAGE_SIZE)
-  //debug(data.paramIdArr.length, PAGE_SIZE, maxBank)
+  //bhDebug(data.paramIdArr.length, PAGE_SIZE, maxBank)
   if (matches[1] === 'Next') {
-    //debug('NextBank')
+    //bhDebug('NextBank')
     if (data.currBank < maxBank) {
       data.currBank += 1
       refreshParams()
     }
   } else {
-    //debug('PrevBank')
+    //bhDebug('PrevBank')
     if (data.currBank > 0) {
       data.currBank -= 1
       refreshParams()
     }
   }
-  //debugLog = false
+  //bhDebugLog = false
 }
 
 function oscReceive(args: string) {
-  debug(args)
+  bhDebug(args)
   const matchers = [
     { regex: /^\/bval(\d+) ([0-9.-]+)$/, fn: receiveVal },
     { regex: /^\/bbank(Prev|Next)$/, fn: receiveBank },
   ]
   for (let i = 0; i < matchers.length; i++) {
     const matches = args.match(matchers[i].regex)
-    //debug(JSON.stringify(matches))
+    //bhDebug(JSON.stringify(matches))
     if (matches) {
       return matchers[i].fn(matches)
     }
@@ -334,10 +338,10 @@ function oscReceive(args: string) {
 // UTILITIES
 ////////////////////////////////////////////////
 
-function debug(_: any) {
-  if (debugLog) {
+function bhDebug(_: any) {
+  if (bhDebugLog) {
     post(
-      debug.caller ? debug.caller.name : 'ROOT',
+      bhDebug.caller ? bhDebug.caller.name : 'ROOT',
       Array.prototype.slice.call(arguments).join(' '),
       '\n'
     )
@@ -345,10 +349,6 @@ function debug(_: any) {
 }
 
 function sendOsc(message: string | (string | number)[]) {
-  //debug(message)
-  outlet(OUTLET_OSC, message)
-}
-
-function dequote(str: string) {
-  return str.replace(/^"|"$/g, '')
+  //bhDebug(message)
+  outlet(BH_OUTLET_OSC, message)
 }

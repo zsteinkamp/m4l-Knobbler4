@@ -5,10 +5,10 @@ const origInputs: Record<string, any> = {}
 
 let lo = null
 let currTrack: LiveAPI = null
-const debugLog = false
+const tiDebugLog = false
 
 function debug(_: any) {
-  if (debugLog) {
+  if (tiDebugLog) {
     post(
       debug.caller ? debug.caller.name : 'ROOT',
       Array.prototype.slice.call(arguments).join(' '),
@@ -77,7 +77,7 @@ function currentTrackCallback(a: IArguments) {
   updateTrackDisplay()
 }
 
-function init() {
+function tiInit() {
   //post("INIT\n");
   lo = new LiveAPI(currentTrackCallback, 'live_set view')
   lo.mode = 1

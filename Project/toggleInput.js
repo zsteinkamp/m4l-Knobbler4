@@ -3,9 +3,9 @@ outlets = 1;
 var origInputs = {};
 var lo = null;
 var currTrack = null;
-var debugLog = false;
+var tiDebugLog = false;
 function debug(_) {
-    if (debugLog) {
+    if (tiDebugLog) {
         post(debug.caller ? debug.caller.name : 'ROOT', Array.prototype.slice.call(arguments).join(' '), '\n');
     }
 }
@@ -59,7 +59,7 @@ function currentTrackCallback(a) {
     currTrack = new LiveAPI(function () { }, trackId);
     updateTrackDisplay();
 }
-function init() {
+function tiInit() {
     //post("INIT\n");
     lo = new LiveAPI(currentTrackCallback, 'live_set view');
     lo.mode = 1;
