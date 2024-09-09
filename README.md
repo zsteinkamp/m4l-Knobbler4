@@ -21,11 +21,12 @@ Also provides a high-resolution slider that operates on the currently selected p
 
 ### Steps
 
-1. Download the .zip file from the latest [release](https://github.com/zsteinkamp/m4l-Knobbler4/releases).
-1. Unzip the file.
-1. Drag the `Knobbler4.amxd` file to Live's User Library and add it to a MIDI/Instrument track in your Live Set.
+1. Download the .zip file from the latest [release](https://github.com/zsteinkamp/m4l-Knobbler4/releases)
+1. Unzip the file
+1. Drag the `Knobbler4.amxd` file to Live's User Library
+1. Add Knobbler4 to a MIDI/Instrument track in your Live Set
 1. Copy the `Knobbler4.tosc` file to your iPad (e.g. with AirDrop)
-1. Configure TouchOSC on the iPad to talk OSC to your computer.
+1. Configure TouchOSC on the iPad to talk OSC to your computer
    - Click the Chain icon in the toolbar
    - Select "OSC" in the left-side menu
    - Click "Browse" under Connection 1
@@ -34,8 +35,9 @@ Also provides a high-resolution slider that operates on the currently selected p
      ![Connection Selection](images/touchosc-connect-1.png)
    - Set the "Receive Port" to 2347. This is the port that TouchOSC on the iPad listens on.
      ![Connection Selection](images/touchosc-connect-2.png)
+   - Press `Done` in the upper-right
 1. In the TouchOSC toolbar, press the "Play" (triangle) icon to toggle out of Editor mode.
-1. Back in Knobbler, click "Rescan Network".
+1. Back in Knobbler, click "Rescan Net".
 1. Your iPad should show up in the drop-down below. Select it, and you should be in business!
    ![Select iPad](images/ipad-connect.png)
 
