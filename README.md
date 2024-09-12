@@ -41,12 +41,14 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Your iPad should show up in the drop-down below. Select it, and you should be in business!
    ![Select iPad](images/ipad-connect.png)
 
-
 ## Usage
 
 ### Mapping Parameters
 
-1. Select any parameter in Ableton Live by clicking on it. A border or corners of a border will appear around the object.
+1. Select any parameter in Ableton Live by clicking on it. A border or corners of a border will appear around the object, e.g. "Frequency" below...
+
+   <img alt="Selected Parameter" src="images/selected-param.png" style="width: 384"/>
+
 2. Touch any unmapped slider on the iPad screen.
 3. Voila!
 
