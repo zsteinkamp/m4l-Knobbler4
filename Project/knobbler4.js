@@ -17,7 +17,7 @@ var MAX_SLOTS = 32;
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(OUTLET_OSC, 'Output OSC messages');
 setinletassist(OUTLET_MSGS, 'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1');
-var debugLog = false;
+var debugLog = true;
 function debug(_) {
     if (debugLog) {
         post(
@@ -69,7 +69,7 @@ function clearPath(slot) {
     refreshSlotUI(slot);
 }
 function initAll() {
-    for (var i = 0; i < MAX_SLOTS; i++) {
+    for (var i = 1; i <= MAX_SLOTS; i++) {
         initSlotIfNecessary(i);
     }
 }
@@ -134,6 +134,21 @@ function setCustomName(slot, args) {
     }
     param[slot].customName = args;
     sendParamName(slot);
+}
+function setDefault(slot) {
+    debug('DEFAULT TOP ' + slot);
+    if (!paramObj[slot]) {
+        return;
+    }
+    if (!allowUpdateFromOsc) {
+        return;
+    }
+    var defaultValue = paramObj[slot].get('default_value');
+    if (typeof defaultValue !== 'object') {
+        return;
+    }
+    defaultValue = defaultValue[0];
+    paramObj[slot].set('value', defaultValue);
 }
 function paramValueCallback(slot, iargs) {
     // This function is called whenever the parameter value changes,

@@ -15,7 +15,7 @@ setinletassist(
   'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1'
 )
 
-const debugLog = false
+const debugLog = true
 
 function debug(_: any) {
   if (debugLog) {
@@ -97,7 +97,7 @@ function clearPath(slot: number) {
 }
 
 function initAll() {
-  for (let i = 0; i < MAX_SLOTS; i++) {
+  for (let i = 1; i <= MAX_SLOTS; i++) {
     initSlotIfNecessary(i)
   }
 }
@@ -169,6 +169,23 @@ function setCustomName(slot: number, args: string) {
 
   param[slot].customName = args
   sendParamName(slot)
+}
+
+function setDefault(slot: number) {
+  debug('DEFAULT TOP ' + slot)
+  if (!paramObj[slot]) {
+    return
+  }
+  if (!allowUpdateFromOsc) {
+    return
+  }
+  let defaultValue = paramObj[slot].get('default_value')
+  if (typeof defaultValue !== 'object') {
+    return
+  }
+  defaultValue = defaultValue[0]
+
+  paramObj[slot].set('value', defaultValue)
 }
 
 function paramValueCallback(slot: number, iargs: IArguments) {
