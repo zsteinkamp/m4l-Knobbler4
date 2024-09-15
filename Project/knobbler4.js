@@ -1,3 +1,4 @@
+"use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
@@ -7,9 +8,12 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     }
     return to.concat(ar || Array.prototype.slice.call(from));
 };
+var utils_1 = require("./utils");
+var config_1 = require("./config");
 autowatch = 1;
 inlets = 1;
 outlets = 2;
+var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_MSGS = 0;
 var OUTLET_OSC = 0;
 var OUTLET_MSGS = 1;
@@ -17,14 +21,6 @@ var MAX_SLOTS = 32;
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(OUTLET_OSC, 'Output OSC messages');
 setinletassist(OUTLET_MSGS, 'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1');
-var debugLog = true;
-function debug(_) {
-    if (debugLog) {
-        post(
-        //'[' + debug.caller ? debug.caller.name : 'ROOT' + ']',
-        Array.prototype.slice.call(arguments).join(' '), '\n');
-    }
-}
 // slot arrays
 var paramObj = [];
 var paramNameObj = [];
@@ -41,21 +37,20 @@ var allowMapping = true;
 var allowParamValueUpdates = true;
 var allowUpdateFromOsc = true;
 var allowParamValueUpdatesTask = null;
-debug('reloaded');
 function isValidPath(path) {
     return typeof path === 'string' && path.match(/^live_set /);
 }
 function dequote(str) {
-    //debug(str, typeof str)
+    //log(str, typeof str)
     return str.toString().replace(/^"|"$/g, '');
 }
 function unmap(slot) {
-    //debug(`UNMAP ${slot}`)
+    //log(`UNMAP ${slot}`)
     init(slot);
     refreshSlotUI(slot);
 }
 function sendMsg(slot, msg) {
-    //debug(`${slot} - ${msg.join(' ')}`)
+    //log(`${slot} - ${msg.join(' ')}`)
     outlet(OUTLET_MSGS, __spreadArray([slot], msg, true));
 }
 function setPathParam(slot, path) {
@@ -64,7 +59,7 @@ function setPathParam(slot, path) {
     }
 }
 function clearPath(slot) {
-    //debug()
+    //log()
     init(slot);
     refreshSlotUI(slot);
 }
@@ -79,7 +74,7 @@ function initSlotIfNecessary(slot) {
     }
 }
 function init(slot) {
-    //debug('INIT')
+    //log('INIT')
     if (paramObj[slot]) {
         // clean up callbacks when unmapping
         paramObj[slot].id = 0;
@@ -112,23 +107,23 @@ function init(slot) {
 }
 function setMin(slot, val) {
     initSlotIfNecessary(slot);
-    //debug(val)
+    //log(val)
     outMin[slot] = val / 100.0;
     sendVal(slot);
 }
 function setMax(slot, val) {
     initSlotIfNecessary(slot);
-    //debug(val)
+    //log(val)
     outMax[slot] = val / 100.0;
     sendVal(slot);
 }
 function clearCustomName(slot) {
-    //debug()
+    //log()
     param[slot].customName = null;
     sendParamName(slot);
 }
 function setCustomName(slot, args) {
-    //debug(args)
+    //log(args)
     if (!param[slot]) {
         return;
     }
@@ -136,7 +131,7 @@ function setCustomName(slot, args) {
     sendParamName(slot);
 }
 function setDefault(slot) {
-    debug('DEFAULT TOP ' + slot);
+    log('DEFAULT TOP ' + slot);
     if (!paramObj[slot]) {
         return;
     }
@@ -159,7 +154,7 @@ function paramValueCallback(slot, iargs) {
     // value on the OSC controller to show automation or direct manipulation.
     // We accomplish this by keeping a timestamp of the last time OSC data was
     // received, and only taking action here if more than 500ms has passed.
-    //debug(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
+    //log(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
     if (allowParamValueUpdates) {
         var args = arrayfromargs(iargs);
         if (args[0] === 'value') {
@@ -168,13 +163,13 @@ function paramValueCallback(slot, iargs) {
             sendVal(slot);
         }
         else {
-            //debug('SUMPIN ELSE', args[0], args[1])
+            //log('SUMPIN ELSE', args[0], args[1])
         }
     }
 }
 function paramNameCallback(slot, iargs) {
-    //debug(iargs)
-    //debug('PARAM NAME CALLBACK')
+    //log(iargs)
+    //log('PARAM NAME CALLBACK')
     var args = arrayfromargs(iargs);
     if (args[0] === 'name') {
         param[slot].name = args[1];
@@ -182,8 +177,8 @@ function paramNameCallback(slot, iargs) {
     }
 }
 function deviceNameCallback(slot, iargs) {
-    //debug(args)
-    //debug('DEVICE NAME CALLBACK')
+    //log(args)
+    //log('DEVICE NAME CALLBACK')
     var args = arrayfromargs(iargs);
     if (args[0] === 'name') {
         param[slot].deviceName = args[1];
@@ -191,8 +186,8 @@ function deviceNameCallback(slot, iargs) {
     }
 }
 function trackNameCallback(slot, iargs) {
-    //debug('TRACK NAME CALLBACK')
-    //debug(args)
+    //log('TRACK NAME CALLBACK')
+    //log(args)
     var args = arrayfromargs(iargs);
     if (args[0] === 'name') {
         param[slot].trackName = args[1];
@@ -208,24 +203,24 @@ function colorToString(colorVal) {
     return retString + 'FF';
 }
 function trackColorCallback(slot, iargs) {
-    //debug('TRACK COLOR CALLBACK')
+    //log('TRACK COLOR CALLBACK')
     var args = arrayfromargs(iargs);
-    //debug('TRACKCOLOR', args)
+    //log('TRACKCOLOR', args)
     if (args[0] === 'color') {
         param[slot].trackColor = colorToString(args[1]);
         sendColor(slot);
     }
 }
 function checkDevicePresent(slot) {
-    //debug('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
+    //log('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
     if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
-        //debug('DEVICE DELETED')
+        //log('DEVICE DELETED')
         init(slot);
         return;
     }
     // check if path has changed (e.g. inserting a track above this one)
     if (paramObj[slot] && paramObj[slot].unquotedpath !== param[slot].path) {
-        //debug(
+        //log(
         //  'path is different  NEW=',
         //  paramObj.unquotedpath,
         //  '  OLD=',
@@ -237,10 +232,10 @@ function checkDevicePresent(slot) {
 }
 function setPath(slot, paramPath) {
     initSlotIfNecessary(slot);
-    //debug(`SETPATH ${slot}: ${paramPath}`)
-    //debug(paramPath)
+    //log(`SETPATH ${slot}: ${paramPath}`)
+    //log(paramPath)
     if (!isValidPath(paramPath)) {
-        //debug('skipping', paramPath)
+        //log('skipping', paramPath)
         return;
     }
     paramObj[slot] = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
@@ -253,10 +248,10 @@ function setPath(slot, paramPath) {
     param[slot].min = parseFloat(paramObj[slot].get('min')) || 0;
     param[slot].max = parseFloat(paramObj[slot].get('max')) || 1;
     param[slot].name = paramObj[slot].get('name')[0];
-    //debug('SET PARAM ' + JSON.stringify(param[slot]))
+    //log('SET PARAM ' + JSON.stringify(param[slot]))
     deviceObj[slot] = new LiveAPI(function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot].get('canonical_parent'));
     var devicePath = deviceObj[slot].unquotedpath;
-    //debug(
+    //log(
     //  'PARAMPATH=',
     //  paramObj.unquotedpath,
     //  'DEVICEPATH=',
@@ -282,7 +277,7 @@ function setPath(slot, paramPath) {
         devicePath.match(/^live_set return_tracks \d+/) ||
         devicePath.match(/^live_set master_track/);
     if (matches) {
-        //debug(matches[0])
+        //log(matches[0])
         trackObj[slot] = new LiveAPI(function (iargs) { return trackNameCallback(slot, iargs); }, matches[0]);
         if (trackObj[slot].info.match(/property name str/)) {
             trackObj[slot].property = 'name';
@@ -316,7 +311,7 @@ function refreshSlotUI(slot) {
     sendVal(slot);
 }
 function sendNames(slot) {
-    //debug(param.name, param.deviceName, param.trackName)
+    //log(param.name, param.deviceName, param.trackName)
     sendParamName(slot);
     sendDeviceName(slot);
     sendTrackName(slot);
@@ -381,12 +376,12 @@ function sendVal(slot) {
     }
     // the value, expressed as a proportion between the param min and max
     var valProp = (param[slot].val - param[slot].min) / (param[slot].max - param[slot].min);
-    //debug('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
+    //log('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
     // scale the param proportion value to the output min/max proportion
     var scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot]);
     scaledValProp = Math.min(scaledValProp, 1);
     scaledValProp = Math.max(scaledValProp, 0);
-    //debug('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
+    //log('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
     outlet(OUTLET_OSC, ['/val' + slot, scaledValProp]);
     outlet(OUTLET_OSC, [
         '/valStr' + slot,
@@ -396,13 +391,13 @@ function sendVal(slot) {
     ]);
 }
 function val(slot, val) {
-    //debug(slot + ' - VAL: ' + val)
+    //log(slot + ' - VAL: ' + val)
     if (paramObj[slot]) {
         if (allowUpdateFromOsc) {
             var scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
             param[slot].val =
                 (param[slot].max - param[slot].min) * scaledVal + param[slot].min;
-            //debug('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
+            //log('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
             // prevent updates from params directly being sent to OSC for 500ms
             if (allowParamValueUpdates) {
                 allowParamValueUpdates = false;
@@ -423,7 +418,7 @@ function val(slot, val) {
         }
     }
     else {
-        //debug('GONNA_MAP', 'ALLOWED=', allowMapping)
+        //log('GONNA_MAP', 'ALLOWED=', allowMapping)
         // If we get a OSC value but are unassigned, trigger a mapping.
         // This removes a step from typical mapping.
         if (allowMapping) {
@@ -445,7 +440,7 @@ function val(slot, val) {
                 post('No Live param is selected.\n');
             }
             else {
-                //debug('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
+                //log('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
                 // Only map things that have a 'value' property
                 if (selObj.info.match(/property value/)) {
                     setPath(slot, selObj.unquotedpath);
@@ -454,4 +449,8 @@ function val(slot, val) {
         }
     }
 }
-debug('reloaded knobbler4\n');
+log('reloaded knobbler4');
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+var module = {};
+module.exports = {};

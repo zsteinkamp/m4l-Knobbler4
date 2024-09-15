@@ -1,3 +1,6 @@
+import { logFactory } from './utils'
+import config from './config'
+
 inlets = 1
 outlets = 1
 
@@ -6,17 +9,7 @@ const origInputs: Record<string, any> = {}
 let lo = null
 let currTrack: LiveAPI = null
 
-const tiDebugLog = false
-
-function tiDebug(_: any) {
-  if (tiDebugLog) {
-    post(
-      tiDebug.caller ? tiDebug.caller.name : 'ROOT',
-      Array.prototype.slice.call(arguments).join(' '),
-      '\n'
-    )
-  }
-}
+const log = logFactory(config)
 
 function getTrackStatus() {
   var airt = null
@@ -24,12 +17,12 @@ function getTrackStatus() {
   let noInput = null
   let allInputs = null
   let inputEnabled = false
-  //tiDebug(currTrack.type);
+  //log(currTrack.type);
   if (
     currTrack.get('is_foldable') == '0' &&
     currTrack.get('can_be_frozen') == '1'
   ) {
-    //tiDebug("IN HERE");
+    //log("IN HERE");
     var airt = JSON.parse(
       currTrack.get('available_input_routing_types')
     ).available_input_routing_types
@@ -47,13 +40,13 @@ function getTrackStatus() {
     inputEnabled: inputEnabled,
     allInputs: allInputs,
   }
-  //tiDebug(JSON.stringify(ret));
+  //log(JSON.stringify(ret));
   return ret
 }
 
 function updateTrackDisplay() {
   const trackStatus = getTrackStatus()
-  //tiDebug('inputEnabled?', trackStatus.inputEnabled);
+  //log('inputEnabled?', trackStatus.inputEnabled);
   if (trackStatus.inputEnabled) {
     outlet(0, ['/toggleInput', 1])
   } else {
@@ -64,19 +57,19 @@ function updateTrackDisplay() {
 function currentTrackCallback(a: IArguments) {
   const args = arrayfromargs(a)
   if (args.shift() !== 'selected_track') {
-    //tiDebug("RETURNING1");
+    //log("RETURNING1");
     return
   }
   const trackId = args.join(' ')
   if (trackId === 'id 0') {
-    //tiDebug("RETURNING2");
+    //log("RETURNING2");
     return
   }
   currTrack = new LiveAPI(() => {}, trackId)
   updateTrackDisplay()
 }
 
-function tiInit() {
+function init() {
   //post("INIT\n");
   lo = new LiveAPI(currentTrackCallback, 'live_set view')
   lo.mode = 1
@@ -84,7 +77,7 @@ function tiInit() {
 }
 
 function toggle() {
-  //tiDebug("IN TOGGLE");
+  //log("IN TOGGLE");
   const trackStatus = getTrackStatus()
   let ret = null
   if (trackStatus.inputEnabled) {
@@ -102,4 +95,9 @@ function toggle() {
   updateTrackDisplay()
 }
 
-tiDebug('reloaded toggleInput\n')
+log('reloaded toggleInput')
+
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
+export = {}

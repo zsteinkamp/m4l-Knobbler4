@@ -1,25 +1,16 @@
-// FULL PARAM NAME
+import { logFactory } from './utils'
+import config from './config'
 
 inlets = 1
 outlets = 1
+
+const log = logFactory(config)
 
 const OUTLET_PARAM_NAME = 0
 const INLET_INPUT = 0
 
 setinletassist(INLET_INPUT, 'Input (object ID)')
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)')
-
-const fpDebugLog = false
-
-function fpDebug(_: any) {
-  if (fpDebugLog) {
-    post(
-      tiDebug.caller ? tiDebug.caller.name : 'ROOT',
-      Array.prototype.slice.call(arguments).join(' '),
-      '\n'
-    )
-  }
-}
 
 function updateParamName(objId: string) {
   //log(objId)
@@ -46,4 +37,9 @@ function updateParamName(objId: string) {
   outlet(OUTLET_PARAM_NAME, nameArr.join(' > '))
 }
 
-fpDebug('reloaded fullParamName\n')
+log('reloaded fullParamName')
+
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
+export = {}

@@ -1,6 +1,11 @@
+import { logFactory } from './utils'
+import config from './config'
+
 autowatch = 1
 inlets = 1
 outlets = 2
+
+const log = logFactory(config)
 
 const INLET_MSGS = 0
 const OUTLET_OSC = 0
@@ -14,35 +19,6 @@ setinletassist(
   OUTLET_MSGS,
   'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1'
 )
-
-const debugLog = true
-
-function debug(_: any) {
-  if (debugLog) {
-    post(
-      //'[' + debug.caller ? debug.caller.name : 'ROOT' + ']',
-      Array.prototype.slice.call(arguments).join(' '),
-      '\n'
-    )
-  }
-}
-
-type ParamType = {
-  val: number
-  min: number
-  max: number
-  id?: number
-  path?: string
-  customName?: string
-  name?: string
-  deviceName?: string
-  trackName?: string
-  trackColor?: string
-}
-
-type MessageType =
-  | [string, number | boolean | string]
-  | [string, number, number, number, number]
 
 // slot arrays
 const paramObj: LiveAPI[] = []
@@ -62,25 +38,23 @@ let allowParamValueUpdates = true
 let allowUpdateFromOsc = true
 let allowParamValueUpdatesTask: Task = null
 
-debug('reloaded')
-
 function isValidPath(path: string) {
   return typeof path === 'string' && path.match(/^live_set /)
 }
 
 function dequote(str: string) {
-  //debug(str, typeof str)
+  //log(str, typeof str)
   return str.toString().replace(/^"|"$/g, '')
 }
 
 function unmap(slot: number) {
-  //debug(`UNMAP ${slot}`)
+  //log(`UNMAP ${slot}`)
   init(slot)
   refreshSlotUI(slot)
 }
 
 function sendMsg(slot: number, msg: MessageType) {
-  //debug(`${slot} - ${msg.join(' ')}`)
+  //log(`${slot} - ${msg.join(' ')}`)
   outlet(OUTLET_MSGS, [slot, ...msg])
 }
 
@@ -91,7 +65,7 @@ function setPathParam(slot: number, path: string) {
 }
 
 function clearPath(slot: number) {
-  //debug()
+  //log()
   init(slot)
   refreshSlotUI(slot)
 }
@@ -109,7 +83,7 @@ function initSlotIfNecessary(slot: number) {
 }
 
 function init(slot: number) {
-  //debug('INIT')
+  //log('INIT')
   if (paramObj[slot]) {
     // clean up callbacks when unmapping
     paramObj[slot].id = 0
@@ -143,26 +117,26 @@ function init(slot: number) {
 
 function setMin(slot: number, val: number) {
   initSlotIfNecessary(slot)
-  //debug(val)
+  //log(val)
   outMin[slot] = val / 100.0
   sendVal(slot)
 }
 
 function setMax(slot: number, val: number) {
   initSlotIfNecessary(slot)
-  //debug(val)
+  //log(val)
   outMax[slot] = val / 100.0
   sendVal(slot)
 }
 
 function clearCustomName(slot: number) {
-  //debug()
+  //log()
   param[slot].customName = null
   sendParamName(slot)
 }
 
 function setCustomName(slot: number, args: string) {
-  //debug(args)
+  //log(args)
   if (!param[slot]) {
     return
   }
@@ -172,7 +146,7 @@ function setCustomName(slot: number, args: string) {
 }
 
 function setDefault(slot: number) {
-  debug('DEFAULT TOP ' + slot)
+  log('DEFAULT TOP ' + slot)
   if (!paramObj[slot]) {
     return
   }
@@ -198,7 +172,7 @@ function paramValueCallback(slot: number, iargs: IArguments) {
   // We accomplish this by keeping a timestamp of the last time OSC data was
   // received, and only taking action here if more than 500ms has passed.
 
-  //debug(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
+  //log(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
   if (allowParamValueUpdates) {
     const args = arrayfromargs(iargs)
     if (args[0] === 'value') {
@@ -206,14 +180,14 @@ function paramValueCallback(slot: number, iargs: IArguments) {
       param[slot].val = args[1]
       sendVal(slot)
     } else {
-      //debug('SUMPIN ELSE', args[0], args[1])
+      //log('SUMPIN ELSE', args[0], args[1])
     }
   }
 }
 
 function paramNameCallback(slot: number, iargs: IArguments) {
-  //debug(iargs)
-  //debug('PARAM NAME CALLBACK')
+  //log(iargs)
+  //log('PARAM NAME CALLBACK')
   const args = arrayfromargs(iargs)
   if (args[0] === 'name') {
     param[slot].name = args[1]
@@ -222,8 +196,8 @@ function paramNameCallback(slot: number, iargs: IArguments) {
 }
 
 function deviceNameCallback(slot: number, iargs: IArguments) {
-  //debug(args)
-  //debug('DEVICE NAME CALLBACK')
+  //log(args)
+  //log('DEVICE NAME CALLBACK')
   const args: any[] = arrayfromargs(iargs)
   if (args[0] === 'name') {
     param[slot].deviceName = args[1]
@@ -232,8 +206,8 @@ function deviceNameCallback(slot: number, iargs: IArguments) {
 }
 
 function trackNameCallback(slot: number, iargs: IArguments) {
-  //debug('TRACK NAME CALLBACK')
-  //debug(args)
+  //log('TRACK NAME CALLBACK')
+  //log(args)
   const args = arrayfromargs(iargs)
   if (args[0] === 'name') {
     param[slot].trackName = args[1]
@@ -251,9 +225,9 @@ function colorToString(colorVal: string) {
 }
 
 function trackColorCallback(slot: number, iargs: IArguments) {
-  //debug('TRACK COLOR CALLBACK')
+  //log('TRACK COLOR CALLBACK')
   const args = arrayfromargs(iargs)
-  //debug('TRACKCOLOR', args)
+  //log('TRACKCOLOR', args)
   if (args[0] === 'color') {
     param[slot].trackColor = colorToString(args[1])
     sendColor(slot)
@@ -261,16 +235,16 @@ function trackColorCallback(slot: number, iargs: IArguments) {
 }
 
 function checkDevicePresent(slot: number) {
-  //debug('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
+  //log('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
   if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
-    //debug('DEVICE DELETED')
+    //log('DEVICE DELETED')
     init(slot)
     return
   }
 
   // check if path has changed (e.g. inserting a track above this one)
   if (paramObj[slot] && paramObj[slot].unquotedpath !== param[slot].path) {
-    //debug(
+    //log(
     //  'path is different  NEW=',
     //  paramObj.unquotedpath,
     //  '  OLD=',
@@ -283,10 +257,10 @@ function checkDevicePresent(slot: number) {
 
 function setPath(slot: number, paramPath: string) {
   initSlotIfNecessary(slot)
-  //debug(`SETPATH ${slot}: ${paramPath}`)
-  //debug(paramPath)
+  //log(`SETPATH ${slot}: ${paramPath}`)
+  //log(paramPath)
   if (!isValidPath(paramPath)) {
-    //debug('skipping', paramPath)
+    //log('skipping', paramPath)
     return
   }
   paramObj[slot] = new LiveAPI(
@@ -307,7 +281,7 @@ function setPath(slot: number, paramPath: string) {
   param[slot].max = parseFloat(paramObj[slot].get('max')) || 1
   param[slot].name = paramObj[slot].get('name')[0]
 
-  //debug('SET PARAM ' + JSON.stringify(param[slot]))
+  //log('SET PARAM ' + JSON.stringify(param[slot]))
 
   deviceObj[slot] = new LiveAPI(
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
@@ -316,7 +290,7 @@ function setPath(slot: number, paramPath: string) {
 
   const devicePath = deviceObj[slot].unquotedpath
 
-  //debug(
+  //log(
   //  'PARAMPATH=',
   //  paramObj.unquotedpath,
   //  'DEVICEPATH=',
@@ -346,7 +320,7 @@ function setPath(slot: number, paramPath: string) {
     devicePath.match(/^live_set master_track/)
 
   if (matches) {
-    //debug(matches[0])
+    //log(matches[0])
     trackObj[slot] = new LiveAPI(
       (iargs: IArguments) => trackNameCallback(slot, iargs),
       matches[0]
@@ -391,7 +365,7 @@ function refreshSlotUI(slot: number) {
 }
 
 function sendNames(slot: number) {
-  //debug(param.name, param.deviceName, param.trackName)
+  //log(param.name, param.deviceName, param.trackName)
   sendParamName(slot)
   sendDeviceName(slot)
   sendTrackName(slot)
@@ -474,14 +448,14 @@ function sendVal(slot: number) {
   const valProp =
     (param[slot].val - param[slot].min) / (param[slot].max - param[slot].min)
 
-  //debug('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
+  //log('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
 
   // scale the param proportion value to the output min/max proportion
   let scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot])
   scaledValProp = Math.min(scaledValProp, 1)
   scaledValProp = Math.max(scaledValProp, 0)
 
-  //debug('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
+  //log('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
   outlet(OUTLET_OSC, ['/val' + slot, scaledValProp])
   outlet(OUTLET_OSC, [
     '/valStr' + slot,
@@ -492,14 +466,14 @@ function sendVal(slot: number) {
 }
 
 function val(slot: number, val: number) {
-  //debug(slot + ' - VAL: ' + val)
+  //log(slot + ' - VAL: ' + val)
   if (paramObj[slot]) {
     if (allowUpdateFromOsc) {
       const scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot]
       param[slot].val =
         (param[slot].max - param[slot].min) * scaledVal + param[slot].min
 
-      //debug('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
+      //log('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
 
       // prevent updates from params directly being sent to OSC for 500ms
       if (allowParamValueUpdates) {
@@ -521,7 +495,7 @@ function val(slot: number, val: number) {
       ])
     }
   } else {
-    //debug('GONNA_MAP', 'ALLOWED=', allowMapping)
+    //log('GONNA_MAP', 'ALLOWED=', allowMapping)
     // If we get a OSC value but are unassigned, trigger a mapping.
     // This removes a step from typical mapping.
     if (allowMapping) {
@@ -544,7 +518,7 @@ function val(slot: number, val: number) {
       if (!selObj.unquotedpath) {
         post('No Live param is selected.\n')
       } else {
-        //debug('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
+        //log('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
         // Only map things that have a 'value' property
         if (selObj.info.match(/property value/)) {
           setPath(slot, selObj.unquotedpath)
@@ -554,4 +528,9 @@ function val(slot: number, val: number) {
   }
 }
 
-debug('reloaded knobbler4\n')
+log('reloaded knobbler4')
+
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
+export = {}

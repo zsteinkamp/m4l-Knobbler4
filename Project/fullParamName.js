@@ -1,16 +1,13 @@
-// FULL PARAM NAME
+"use strict";
+var utils_1 = require("./utils");
+var config_1 = require("./config");
 inlets = 1;
 outlets = 1;
+var log = (0, utils_1.logFactory)(config_1.default);
 var OUTLET_PARAM_NAME = 0;
 var INLET_INPUT = 0;
 setinletassist(INLET_INPUT, 'Input (object ID)');
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)');
-var fpDebugLog = false;
-function fpDebug(_) {
-    if (fpDebugLog) {
-        post(tiDebug.caller ? tiDebug.caller.name : 'ROOT', Array.prototype.slice.call(arguments).join(' '), '\n');
-    }
-}
 function updateParamName(objId) {
     //log(objId)
     var nameArr = [];
@@ -34,4 +31,8 @@ function updateParamName(objId) {
     }
     outlet(OUTLET_PARAM_NAME, nameArr.join(' > '));
 }
-fpDebug('reloaded fullParamName\n');
+log('reloaded fullParamName');
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+var module = {};
+module.exports = {};
