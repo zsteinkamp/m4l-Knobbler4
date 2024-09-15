@@ -130,6 +130,13 @@ function setCustomName(slot, args) {
     param[slot].customName = args;
     sendParamName(slot);
 }
+function gotoTrackFor(slot) {
+    if (!trackObj[slot]) {
+        return;
+    }
+    var viewObj = new LiveAPI(function () { }, 'live_set view');
+    viewObj.set('selected_track', ['id', trackObj[slot].id]);
+}
 function setDefault(slot) {
     log('DEFAULT TOP ' + slot);
     if (!paramObj[slot]) {

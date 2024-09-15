@@ -1,4 +1,4 @@
 const config = {
-  outputLogs: false,
+  outputLogs: true,
 }
 export default config

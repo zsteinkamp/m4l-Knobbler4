@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var config = {
-    outputLogs: false,
+    outputLogs: true,
 };
 exports.default = config;

@@ -145,6 +145,14 @@ function setCustomName(slot: number, args: string) {
   sendParamName(slot)
 }
 
+function gotoTrackFor(slot: number) {
+  if (!trackObj[slot]) {
+    return
+  }
+  const viewObj = new LiveAPI(() => {}, 'live_set view')
+  viewObj.set('selected_track', ['id', trackObj[slot].id])
+}
+
 function setDefault(slot: number) {
   log('DEFAULT TOP ' + slot)
   if (!paramObj[slot]) {
