@@ -138,7 +138,7 @@ function gotoTrackFor(slot) {
     viewObj.set('selected_track', ['id', trackObj[slot].id]);
 }
 function setDefault(slot) {
-    log('DEFAULT TOP ' + slot);
+    //log('DEFAULT TOP ' + slot)
     if (!paramObj[slot]) {
         return;
     }
@@ -176,8 +176,8 @@ function paramValueCallback(slot, iargs) {
 }
 function paramNameCallback(slot, iargs) {
     //log(iargs)
-    //log('PARAM NAME CALLBACK')
     var args = arrayfromargs(iargs);
+    //log('PARAM NAME CALLBACK ' + args.join(','))
     if (args[0] === 'name') {
         param[slot].name = args[1];
         sendParamName(slot);
@@ -329,6 +329,7 @@ function sendParamName(slot) {
     var paramName = dequote(((param[slot] && (param[slot].customName || param[slot].name)) ||
         nullString).toString());
     sendMsg(slot, ['param', paramName]);
+    //log('SEND PARAM NAME ' + slot + '=' + paramName)
     outlet(OUTLET_OSC, ['/param' + slot, paramName]);
 }
 function sendDeviceName(slot) {

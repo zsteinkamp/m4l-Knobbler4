@@ -154,7 +154,7 @@ function gotoTrackFor(slot: number) {
 }
 
 function setDefault(slot: number) {
-  log('DEFAULT TOP ' + slot)
+  //log('DEFAULT TOP ' + slot)
   if (!paramObj[slot]) {
     return
   }
@@ -195,8 +195,8 @@ function paramValueCallback(slot: number, iargs: IArguments) {
 
 function paramNameCallback(slot: number, iargs: IArguments) {
   //log(iargs)
-  //log('PARAM NAME CALLBACK')
   const args = arrayfromargs(iargs)
+  //log('PARAM NAME CALLBACK ' + args.join(','))
   if (args[0] === 'name') {
     param[slot].name = args[1]
     sendParamName(slot)
@@ -389,6 +389,7 @@ function sendParamName(slot: number) {
     ).toString()
   )
   sendMsg(slot, ['param', paramName])
+  //log('SEND PARAM NAME ' + slot + '=' + paramName)
   outlet(OUTLET_OSC, ['/param' + slot, paramName])
 }
 
