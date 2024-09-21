@@ -376,7 +376,7 @@
 			}
 , 			{
 				"box" : 				{
-					"annotation" : "Insert Host Address",
+					"annotation" : "Path to parameter.",
 					"bgcolor" : [ 0.07843137254902, 0.07843137254902, 0.07843137254902, 1.0 ],
 					"border" : 1.0,
 					"bordercolor" : [ 0.282353, 0.286275, 0.298039, 0.0 ],
@@ -392,6 +392,7 @@
 					"patching_rect" : [ 866.0, 175.0, 334.0, 21.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
+							"parameter_info" : "Path to parameter.",
 							"parameter_initial" : [ "" ],
 							"parameter_invisible" : 1,
 							"parameter_linknames" : 1,
