@@ -4,13 +4,18 @@ Knobbler4 turns your iPad into an auto-labeling, auto-coloring, multitouch param
 
 ![Knobbler4 in Action](images/external-with-hand.jpg)
 
-Map parameters to unmapped sliders on the iPad with a single touch. No need to enter and exit a mapping mode.
+Map parameters to unmapped sliders on the iPad with a single touch. No need to enter and exit a mapping mode. Access every parameter in the currently selected device, directly on the iPad.
 
 Parameter mapping configuration is saved with your Live Set, so you can switch between songs with minimal friction. Track, device, and parameter names are kept synchronized with your Live Set as you change them, even track colors!
 
-Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live.
+Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live.  Double tap a slider on the iPad to reset the parameter to its default value.
 
 Also provides a high-resolution slider that operates on the currently selected parameter in your Live Set, and a Record-Enable toggle switch to improve the process of overdubbing automation.
+
+## Changelog
+
+* 2024-09-22 [v2](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v2/Knobbler4-v2.zip) - Re-adds Bluhand functionality, double-tap a slider to return to the default value. Make sure you update the `.tosc` files on your iPad when downloading this update!
+* 2024-09-08 [v1](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v1/Knobbler4-v1.zip) - Initial release.
 
 ## Installation
 
@@ -25,7 +30,7 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Unzip the file
 1. Drag the `Knobbler4.amxd` file to Live's User Library
 1. Add Knobbler4 to a MIDI/Instrument track in your Live Set
-1. Copy the `Knobbler4.tosc` file to your iPad (e.g. with AirDrop)
+1. Copy the `Knobbler4.tosc` (or `Knobbler4-with-bluhand.tosc`) file to your iPad (e.g. with AirDrop)
 1. Configure TouchOSC on the iPad to talk OSC to your computer
    - Click the Chain icon in the toolbar
    - Select "OSC" in the left-side menu
@@ -57,6 +62,24 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Touch the `X` icon in the upper-left corner of the iPad screen. The sliders will all turn into red rectangles.
 2. Touch a red rectangle to unmap the parameter.
 3. Touch the `X` icon again to leave unmapping mode.
+
+### Bluhand
+
+Ableton Live uses a blue hand icon to indicate which device is currently under control of a control surface.
+
+   <img alt="Selected device" src="images/bluhand-device.jpg" style="width: 384"/>
+
+If you use the `Knobbler4-with-Bluhand.tosc` TouchOSC layout on your iPad, then you can use the `Bluhand` tab to access all of the parameters the currently selected device offers.
+
+   <img alt="Device parameters on iPad" src="images/bluhand-ipad.jpg" style="width: 384"/>
+
+If the current device has more than 16 parameters, then you can use the `<<<` and `>>>` controls in the upper-right of the Bluhand tab to access different banks / pages of parameters.
+
+NOTE: If you do not see the Blue Hand icon on the current device, then go to the Ableton Live settings and configure any control surface to connect any input port. You may need to configure an IAC MIDI port in the Audio MIDI Setup app if on a Mac.
+
+### Double-tap Default
+
+Double-tap any slider to return the parameter to its default value.
 
 ### Current Param Slider
 
