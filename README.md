@@ -75,6 +75,13 @@ If you use the `Knobbler4-with-Bluhand.tosc` TouchOSC layout on your iPad, then 
 
 If the current device has more than 16 parameters, then you can use the `<<<` and `>>>` controls in the upper-right of the Bluhand tab to access different banks / pages of parameters.
 
+HOT TIP: You can assign a keystroke to a device. This lets you access all of a device's parameters on the iPad with a single keystroke. To do this:
+* Press Cmd-K
+* Select the device you want to assign
+* Press the key you want to use to focus that device
+* Press Cmd-K to exit mapping mode
+Now, with the iPad on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the iPad.
+
 NOTE: If you do not see the Blue Hand icon on the current device, then go to the Ableton Live settings and configure any control surface to connect any input port. You may need to configure an IAC MIDI port in the Audio MIDI Setup app if on a Mac.
 
 ### Double-tap Default
