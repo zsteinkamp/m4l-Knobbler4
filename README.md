@@ -79,8 +79,10 @@ HOT TIP: You can assign a keystroke to a device. This lets you access all of a d
 * Press Cmd-K
 * Select the device you want to assign
 * Press the key you want to use to focus that device
+  ![Key mapping](images/key-mapping.png)
 * Press Cmd-K to exit mapping mode
 Now, with the iPad on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the iPad.
+![Jump to device](images/key-device.jpg)
 
 NOTE: If you do not see the Blue Hand icon on the current device, then go to the Ableton Live settings and configure any control surface to connect any input port. You may need to configure an IAC MIDI port in the Audio MIDI Setup app if on a Mac.
 
