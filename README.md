@@ -90,6 +90,10 @@ NOTE: If you do not see the Blue Hand icon on the current device, then go to the
 
 Double-tap any slider to return the parameter to its default value.
 
+### Jump to Track
+
+Tap a track name on one of the Knobbler tabs to navigate to that track in Live.
+
 ### Current Param Slider
 
 Along the bottom of the iPad screen is a horizontal slider that is used to control the currently selected parameter in your Live Set. This parameter does not have to be mapped to a slider. You can use that slider to control the paramter with a high degree of accuracy.
