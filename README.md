@@ -8,14 +8,14 @@ Map parameters to unmapped sliders on the iPad with a single touch. No need to e
 
 Parameter mapping configuration is saved with your Live Set, so you can switch between songs with minimal friction. Track, device, and parameter names are kept synchronized with your Live Set as you change them, even track colors!
 
-Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live.  Double tap a slider on the iPad to reset the parameter to its default value.
+Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live. Double tap a slider on the iPad to reset the parameter to its default value.
 
 Also provides a high-resolution slider that operates on the currently selected parameter in your Live Set, and a Record-Enable toggle switch to improve the process of overdubbing automation.
 
 ## Changelog
 
-* 2024-09-22 [v2](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v2/Knobbler4-v2.zip) - Re-adds Bluhand functionality, double-tap a slider to return to the default value. Make sure you update the `.tosc` files on your iPad when downloading this update!
-* 2024-09-08 [v1](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v1/Knobbler4-v1.zip) - Initial release.
+- 2024-09-22 [v2](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v2/Knobbler4-v2.zip) - Re-adds Bluhand functionality, double-tap a slider to return to the default value. Make sure you update the `.tosc` files on your iPad when downloading this update!
+- 2024-09-08 [v1](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v1/Knobbler4-v1.zip) - Initial release.
 
 ## Installation
 
@@ -76,13 +76,14 @@ If you use the `Knobbler4-with-Bluhand.tosc` TouchOSC layout on your iPad, then 
 If the current device has more than 16 parameters, then you can use the `<<<` and `>>>` controls in the upper-right of the Bluhand tab to access different banks / pages of parameters.
 
 HOT TIP: You can assign a keystroke to a device. This lets you access all of a device's parameters on the iPad with a single keystroke. To do this:
-* Press Cmd-K
-* Select the device you want to assign
-* Press the key you want to use to focus that device
+
+- Press Cmd-K
+- Select the device you want to assign
+- Press the key you want to use to focus that device
   ![Key mapping](images/key-mapping.png)
-* Press Cmd-K to exit mapping mode
-Now, with the iPad on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the iPad.
-![Jump to device](images/key-device.jpg)
+- Press Cmd-K to exit mapping mode
+  Now, with the iPad on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the iPad.
+  ![Jump to device](images/key-device.jpg)
 
 NOTE: If you do not see the Blue Hand icon on the current device, then go to the Ableton Live settings and configure any control surface to connect any input port. You may need to configure an IAC MIDI port in the Audio MIDI Setup app if on a Mac.
 
@@ -103,6 +104,10 @@ Along the bottom of the iPad screen is a horizontal slider that is used to contr
 Recording automation is sometimes frustrating, especially in MIDI tracks since you cannot disable recording easily. I created this feature so that I could easily record and overdub automation without recording into or changing anything about MIDI clips.
 
 The Toggle Record Enable button gives you a way to easily disable and re-enable MIDI or audio recording in the currently selected track. The input settings are retained when recording is disabled.
+
+## OSC API
+
+Knobbler uses the standard OSC protocol to communicate between the Max for Live device and TouchOSC on your iPad or other tablet. If you would like to develop your own TouchOSC template, or create an alternative interface (e.g. hardware!) then have a look at the [OSC API specs here](./OSC-API.md).
 
 ## Development
 
