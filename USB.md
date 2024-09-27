@@ -21,10 +21,10 @@ Because OSC is a network-based protocol, we need to make the iPad think it is on
 11) Tap "Browse" next to the "Host" box. Your computer should show up there next to " - Knobbler4".
     ![connection settings](images/usb/ipad_osc_connection.jpg)
 12) Tap that name and choose the IPv4 address that shows up. In this case it's `192.168.2.1:2346`.
-13) Tap the (i) icon next to the Receive Port. This will show the IP address of the iPad. In this screenshot, it is `192.168.2.2`.
+13) Tap the (i) icon next to the Receive Port. This will show the IP address of the iPad. In this screenshot, it is `192.168.2.2`. It may be next to "en2" or "en3".
     ![ipad address](images/usb/ipad_ip.png)
 14) Back in Ableton Live, in the Knobbler4 device, enter the iPad's IP address into the host box.
     ![configure knobbler](images/usb/mac_knobbler.png)
 15) Click "Refresh iPad".
 
-
+At this point, Knobbler should be fully functional.
