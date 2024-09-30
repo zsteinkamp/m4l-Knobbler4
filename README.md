@@ -48,6 +48,18 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Your iPad should show up in the drop-down below. Select it, and you should be in business!
    ![Select iPad](images/ipad-connect.png)
 
+_NOTE: You **MUST** have a control surface configured in Ableton Live. If you do, then you will see the "Blue Hand" icon in the title bar of the selected device._
+
+![Blue Hand Icon](images/blue-hand.png)
+
+If you do not see the Blue Hand, then you will need to set up a "dummy" control surface in order for the Bluhand portion of Knobbler to work. To do this, you can open the settings in Live and switch to the Link, Tempo & MIDI tab. Chooose any control surface from the list and assign its input to the IAC driver.
+
+![Control surface setup](images/control-surface-setup.png)
+
+If you do not have the IAC driver set up, then open the Audio & Midi Setup app, open the MIDI window, double click the IAC driver and make sure it is Online.
+
+![IAC Driver configuration](images/iac-driver.png)
+
 ## Usage
 
 ### Mapping Parameters
