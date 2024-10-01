@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 34.0, 343.0, 1820.0, 1378.0 ],
+		"rect" : [ 1069.0, 347.0, 1820.0, 1378.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -39,6 +39,29 @@
 		"subpatcher_template" : "",
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-123",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 485.0, 169.0, 129.0, 22.0 ],
+					"text" : "print FINGEREFRESH"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-122",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 380.199999999999989, 178.0, 54.0, 22.0 ],
+					"text" : "deferlow"
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"id" : "obj-121",
 					"maxclass" : "newobj",
@@ -158,7 +181,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 275.0, 245.0, 78.0, 22.0 ],
+					"patching_rect" : [ 275.600000000000023, 280.0, 78.0, 22.0 ],
 					"text" : "s #0---VAL"
 				}
 
@@ -170,7 +193,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 342.0, 178.0, 110.0, 22.0 ],
+					"patching_rect" : [ 344.600000000000023, 213.0, 110.0, 22.0 ],
 					"text" : "s #0---DEFAULT"
 				}
 
@@ -182,7 +205,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 308.0, 211.0, 99.0, 22.0 ],
+					"patching_rect" : [ 310.600000000000023, 245.0, 99.0, 22.0 ],
 					"text" : "s #0---COLOR"
 				}
 
@@ -1635,11 +1658,11 @@
 				"box" : 				{
 					"id" : "obj-4",
 					"maxclass" : "newobj",
-					"numinlets" : 5,
-					"numoutlets" : 5,
-					"outlettype" : [ "", "", "", "", "" ],
-					"patching_rect" : [ 241.0, 141.0, 153.0, 22.0 ],
-					"text" : "route bank val color default"
+					"numinlets" : 6,
+					"numoutlets" : 6,
+					"outlettype" : [ "", "", "", "", "", "" ],
+					"patching_rect" : [ 241.0, 141.0, 193.0, 22.0 ],
+					"text" : "route bank val color default refresh"
 				}
 
 			}
@@ -1758,6 +1781,13 @@
 				"patchline" : 				{
 					"destination" : [ "obj-76", 0 ],
 					"source" : [ "obj-121", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-75", 0 ],
+					"source" : [ "obj-122", 0 ]
 				}
 
 			}
@@ -2077,6 +2107,22 @@
 				"patchline" : 				{
 					"destination" : [ "obj-115", 0 ],
 					"source" : [ "obj-4", 1 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-122", 0 ],
+					"order" : 1,
+					"source" : [ "obj-4", 4 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-123", 0 ],
+					"order" : 0,
+					"source" : [ "obj-4", 4 ]
 				}
 
 			}
