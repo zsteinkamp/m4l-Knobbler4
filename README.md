@@ -4,7 +4,7 @@ Knobbler4 turns your iPad into an auto-labeling, auto-coloring, multitouch param
 
 ![Knobbler4 in Action](images/external-with-hand.jpg)
 
-Map parameters to unmapped sliders on the iPad with a single touch. No need to enter and exit a mapping mode. Access every parameter in the currently selected device, directly on the iPad.
+Map parameters in your Ableton Live set to unmapped sliders on the iPad with a single touch. No need to enter and exit a mapping mode. Access every parameter in the currently selected device, directly on the iPad.
 
 Parameter mapping configuration is saved with your Live Set, so you can switch between songs with minimal friction. Track, device, and parameter names are kept synchronized with your Live Set as you change them, even track colors!
 
