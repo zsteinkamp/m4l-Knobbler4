@@ -34,7 +34,8 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Add Knobbler4 to a MIDI/Instrument track in your Live Set
 1. Copy the `Knobbler4.tosc` (or `Knobbler4-with-bluhand.tosc`) file to your iPad (e.g. with AirDrop)
 1. Configure TouchOSC on the iPad to talk OSC to your computer. (NOTE: If you want to connect over USB, see the [instructions here](USB.md).)
-   - Click the Chain icon in the toolbar
+  ![Ports](images/ports.png)
+   - In TouchOSC on the iPad, click the Chain icon in the toolbar
    - Select "OSC" in the left-side menu
    - Click "Browse" under Connection 1
    - You should see your computer's hostname followed by "Knobbler4"
