@@ -66,6 +66,15 @@ If not looking at the first bank, has the effect of switching the Interface to t
 
 If more banks of parameters are available, then switch the Interface to the next bank of parameters. Causes a full update of slot names and values.
 
+### `/shortcutNMap`
+
+For shortcut button N, will map the button if it is not yet mapped. If mapped already, it will focus the Live UI on the mapped device.
+
+### `/shortcutNUnmap`
+
+For shortcut button N, will unmap the button.
+
+
 ### Knobbler4 to Interface
 
 #### `/bcurrDeviceName {string}`
@@ -91,6 +100,14 @@ Updates the color of the slider for Slot N to the one given. Must be a hexidecim
 #### `/bvalStrN {string}`
 
 Updates the string representation of Slot N's mapped parameter value, e.g. (-6db or 2.5KHz).
+
+#### `/shortcutNColor {string}`
+
+Updates the shortcut button N to the given color value (RRGGBBAA).
+
+#### `/shortcutNameN {string}`
+
+Updates the device name displayed beneath the shortcut button N.
 
 ## Misc
 
