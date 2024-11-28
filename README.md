@@ -16,6 +16,7 @@ Also provides a high-resolution slider that operates on the currently selected p
 
 ## Changelog
 
+- 2024-11-28 [v6](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v6/Knobbler4-v6.zip) - Fixes Issue #10 reported by @rds2024-3004 which prevented multiple knobs mapped to the same parameter from being updated. This led to some more widespread fixes/improvements to how locks are implemented across the board.
 - 2024-10-29 [v5](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v5/Knobbler4-v5.zip) - Add non-blocking telemetry ping on load. Does not send any identifying information, only the plugin name, the local computer name, type of computer, and CPU type. I just want to see which plugins are used the most.
 - 2024-10-24 [v4](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v4/Knobbler4-v4.zip) - Add assignable device presets to Bluhand.
 - 2024-10-12 [v3](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v3/Knobbler4-v3.zip) - Fix bug related to slider 25 masquerading as slider 15; Typography refinement in the .tosc file; Consolidate back to a single `Knobbler4.tosc` file (Bluhand is back, baby!); Fix value display in Bluhand if the value was a bare number; Fix bug with changing devices in Bluhand if you were not on bank 1, the display would be incorrect. _NOTE: Use the Files app on the iPad to delete the `.tosc` files before updating with the new version from here._
@@ -37,7 +38,7 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Add Knobbler4 to a MIDI/Instrument track in your Live Set
 1. Copy the `Knobbler4.tosc` (or `Knobbler4-with-bluhand.tosc`) file to your iPad (e.g. with AirDrop)
 1. Configure TouchOSC on the iPad to talk OSC to your computer. (NOTE: If you want to connect over USB, see the [instructions here](USB.md).)
-  ![Ports](images/ports.png)
+   ![Ports](images/ports.png)
    - In TouchOSC on the iPad, click the Chain icon in the toolbar
    - Select "OSC" in the left-side menu
    - Click "Browse" under Connection 1
