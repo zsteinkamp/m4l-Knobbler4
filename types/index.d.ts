@@ -1,4 +1,5 @@
 type ParamType = {
+  parentName?: string
   val: number
   min: number
   max: number

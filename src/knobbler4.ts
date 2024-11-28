@@ -25,6 +25,7 @@ const paramObj: LiveAPI[] = []
 const paramNameObj: LiveAPI[] = []
 const deviceObj: LiveAPI[] = []
 const trackObj: LiveAPI[] = []
+const parentNameObj: LiveAPI[] = []
 const parentColorObj: LiveAPI[] = []
 const param: ParamType[] = []
 const outMin: number[] = []
@@ -232,6 +233,16 @@ function deviceNameCallback(slot: number, iargs: IArguments) {
   }
 }
 
+function parentNameCallback(slot: number, iargs: IArguments) {
+  //log('PARENT NAME CALLBACK')
+  //log(args)
+  const args = arrayfromargs(iargs)
+  if (args[0] === 'name') {
+    param[slot].parentName = args[1]
+    sendTrackName(slot)
+  }
+}
+
 function trackNameCallback(slot: number, iargs: IArguments) {
   //log('TRACK NAME CALLBACK')
   //log(args)
@@ -251,10 +262,10 @@ function colorToString(colorVal: string) {
   return retString + 'FF'
 }
 
-function trackColorCallback(slot: number, iargs: IArguments) {
-  //log('TRACK COLOR CALLBACK')
+function parentColorCallback(slot: number, iargs: IArguments) {
+  //log('PARENT COLOR CALLBACK')
   const args = arrayfromargs(iargs)
-  //log('TRACKCOLOR', args)
+  //log('PARENTCOLOR', args)
   if (args[0] === 'color') {
     param[slot].trackColor = colorToString(args[1])
     sendColor(slot)
@@ -342,6 +353,22 @@ function setPath(slot: number, paramPath: string) {
 
   const parentId = deviceObj[slot].get('canonical_parent')
 
+  // parent name
+  parentNameObj[slot] = new LiveAPI(
+    (iargs: IArguments) => parentNameCallback(slot, iargs),
+    parentId
+  )
+  parentNameObj[slot].property = 'name'
+  param[slot].parentName = parentNameObj[slot].get('name')
+
+  // parent color
+  parentColorObj[slot] = new LiveAPI(
+    (iargs: IArguments) => parentColorCallback(slot, iargs),
+    parentId
+  )
+  parentColorObj[slot].property = 'color'
+  param[slot].trackColor = colorToString(parentColorObj[slot].get('color'))
+
   // Try to get the track name
   const matches =
     devicePath.match(/^live_set tracks \d+/) ||
@@ -354,19 +381,6 @@ function setPath(slot: number, paramPath: string) {
       (iargs: IArguments) => trackNameCallback(slot, iargs),
       matches[0]
     )
-    if (trackObj[slot].info.match(/property name str/)) {
-      trackObj[slot].property = 'name'
-      param[slot].trackName = trackObj[slot].get('name')
-    } else if (param[slot].path.match(/mixer_device/)) {
-      param[slot].trackName = 'Mixer'
-    }
-
-    parentColorObj[slot] = new LiveAPI(
-      (iargs: IArguments) => trackColorCallback(slot, iargs),
-      parentId
-    )
-    parentColorObj[slot].property = 'color'
-    param[slot].trackColor = colorToString(parentColorObj[slot].get('color'))
   }
 
   //post("PARAM DATA", JSON.stringify(param), "\n");
@@ -426,8 +440,8 @@ function sendDeviceName(slot: number) {
 
 function sendTrackName(slot: number) {
   initSlotIfNecessary(slot)
-  const trackName = param[slot].trackName
-    ? dequote(param[slot].trackName.toString())
+  const trackName = param[slot].parentName
+    ? dequote(param[slot].parentName.toString())
     : nullString
   sendMsg(slot, ['track', trackName])
   outlet(OUTLET_OSC, ['/track' + slot, trackName])

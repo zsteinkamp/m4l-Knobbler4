@@ -26,6 +26,7 @@ var paramObj = [];
 var paramNameObj = [];
 var deviceObj = [];
 var trackObj = [];
+var parentNameObj = [];
 var parentColorObj = [];
 var param = [];
 var outMin = [];
@@ -205,6 +206,15 @@ function deviceNameCallback(slot, iargs) {
         sendDeviceName(slot);
     }
 }
+function parentNameCallback(slot, iargs) {
+    //log('PARENT NAME CALLBACK')
+    //log(args)
+    var args = arrayfromargs(iargs);
+    if (args[0] === 'name') {
+        param[slot].parentName = args[1];
+        sendTrackName(slot);
+    }
+}
 function trackNameCallback(slot, iargs) {
     //log('TRACK NAME CALLBACK')
     //log(args)
@@ -222,10 +232,10 @@ function colorToString(colorVal) {
     }
     return retString + 'FF';
 }
-function trackColorCallback(slot, iargs) {
-    //log('TRACK COLOR CALLBACK')
+function parentColorCallback(slot, iargs) {
+    //log('PARENT COLOR CALLBACK')
     var args = arrayfromargs(iargs);
-    //log('TRACKCOLOR', args)
+    //log('PARENTCOLOR', args)
     if (args[0] === 'color') {
         param[slot].trackColor = colorToString(args[1]);
         sendColor(slot);
@@ -293,6 +303,14 @@ function setPath(slot, paramPath) {
         param[slot].deviceName = 'Mixer';
     }
     var parentId = deviceObj[slot].get('canonical_parent');
+    // parent name
+    parentNameObj[slot] = new LiveAPI(function (iargs) { return parentNameCallback(slot, iargs); }, parentId);
+    parentNameObj[slot].property = 'name';
+    param[slot].parentName = parentNameObj[slot].get('name');
+    // parent color
+    parentColorObj[slot] = new LiveAPI(function (iargs) { return parentColorCallback(slot, iargs); }, parentId);
+    parentColorObj[slot].property = 'color';
+    param[slot].trackColor = colorToString(parentColorObj[slot].get('color'));
     // Try to get the track name
     var matches = devicePath.match(/^live_set tracks \d+/) ||
         devicePath.match(/^live_set return_tracks \d+/) ||
@@ -300,16 +318,6 @@ function setPath(slot, paramPath) {
     if (matches) {
         //log(matches[0])
         trackObj[slot] = new LiveAPI(function (iargs) { return trackNameCallback(slot, iargs); }, matches[0]);
-        if (trackObj[slot].info.match(/property name str/)) {
-            trackObj[slot].property = 'name';
-            param[slot].trackName = trackObj[slot].get('name');
-        }
-        else if (param[slot].path.match(/mixer_device/)) {
-            param[slot].trackName = 'Mixer';
-        }
-        parentColorObj[slot] = new LiveAPI(function (iargs) { return trackColorCallback(slot, iargs); }, parentId);
-        parentColorObj[slot].property = 'color';
-        param[slot].trackColor = colorToString(parentColorObj[slot].get('color'));
     }
     //post("PARAM DATA", JSON.stringify(param), "\n");
     sendMsg(slot, ['mapped', true]);
@@ -357,8 +365,8 @@ function sendDeviceName(slot) {
 }
 function sendTrackName(slot) {
     initSlotIfNecessary(slot);
-    var trackName = param[slot].trackName
-        ? dequote(param[slot].trackName.toString())
+    var trackName = param[slot].parentName
+        ? dequote(param[slot].parentName.toString())
         : nullString;
     sendMsg(slot, ['track', trackName]);
     outlet(OUTLET_OSC, ['/track' + slot, trackName]);
