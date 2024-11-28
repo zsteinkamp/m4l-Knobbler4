@@ -9,6 +9,7 @@ type ParamType = {
   deviceName?: string
   trackName?: string
   trackColor?: string
+  allowParamValueUpdates?: boolean
 }
 
 type MessageType =

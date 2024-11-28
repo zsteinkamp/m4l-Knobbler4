@@ -33,10 +33,8 @@ let deviceCheckerTask: Task[] = []
 
 // other vars
 const nullString = '- - -'
-let allowMapping = true
-let allowParamValueUpdates = true
-let allowUpdateFromOsc = true
-let allowParamValueUpdatesTask: Task = null
+const allowMapping: boolean[] = []
+const allowUpdateFromOsc: boolean[] = []
 
 function isValidPath(path: string) {
   return typeof path === 'string' && path.match(/^live_set /)
@@ -82,6 +80,24 @@ function initSlotIfNecessary(slot: number) {
   }
 }
 
+const tasks: Record<string, Task[]> = {}
+function debouncedTask(
+  key: 'sendVal' | 'allowUpdates' | 'allowMapping' | 'allowUpdateFromOsc',
+  slot: number,
+  task: Task,
+  delayMs: number
+) {
+  if (!tasks[key]) {
+    tasks[key] = []
+  }
+  if (tasks[key][slot]) {
+    tasks[key][slot].cancel()
+    tasks[key][slot] = null
+  }
+  tasks[key][slot] = task
+  tasks[key][slot].schedule(delayMs)
+}
+
 function init(slot: number) {
   //log('INIT')
   if (paramObj[slot]) {
@@ -90,10 +106,13 @@ function init(slot: number) {
     outlet(OUTLET_OSC, ['/valStr' + slot, nullString])
   }
   paramObj[slot] = null
+  allowMapping[slot] = true
+  allowUpdateFromOsc[slot] = true
   param[slot] = {
     val: 0,
     min: 0,
     max: 100,
+    allowParamValueUpdates: true,
   }
   if (deviceCheckerTask[slot]) {
     deviceCheckerTask[slot].cancel()
@@ -158,7 +177,7 @@ function setDefault(slot: number) {
   if (!paramObj[slot]) {
     return
   }
-  if (!allowUpdateFromOsc) {
+  if (!allowUpdateFromOsc[slot]) {
     return
   }
   let defaultValue = paramObj[slot].get('default_value')
@@ -180,8 +199,8 @@ function paramValueCallback(slot: number, iargs: IArguments) {
   // We accomplish this by keeping a timestamp of the last time OSC data was
   // received, and only taking action here if more than 500ms has passed.
 
-  //log(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
-  if (allowParamValueUpdates) {
+  //log(args, 'ALLOW_UPDATES=', param[slot].allowParamValueUpdates)
+  if (param[slot].allowParamValueUpdates) {
     const args = arrayfromargs(iargs)
     if (args[0] === 'value') {
       //post("PARAM_VAL", typeof(args[1]), args[1], "\n");
@@ -355,9 +374,10 @@ function setPath(slot: number, paramPath: string) {
   // Defer outputting the new param val because the controller
   // will not process it since it was just sending other vals
   // that triggered the mapping.
-  new Task(function () {
+  const sendValTask = new Task(function () {
     sendVal(slot)
-  }).schedule(333)
+  })
+  debouncedTask('sendVal', slot, sendValTask, 333)
   sendNames(slot)
 }
 
@@ -477,7 +497,7 @@ function sendVal(slot: number) {
 function val(slot: number, val: number) {
   //log(slot + ' - VAL: ' + val)
   if (paramObj[slot]) {
-    if (allowUpdateFromOsc) {
+    if (allowUpdateFromOsc[slot]) {
       const scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot]
       param[slot].val =
         (param[slot].max - param[slot].min) * scaledVal + param[slot].min
@@ -485,15 +505,12 @@ function val(slot: number, val: number) {
       //log('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
 
       // prevent updates from params directly being sent to OSC for 500ms
-      if (allowParamValueUpdates) {
-        allowParamValueUpdates = false
-        if (allowParamValueUpdatesTask !== null) {
-          allowParamValueUpdatesTask.cancel()
-        }
-        allowParamValueUpdatesTask = new Task(function () {
-          allowParamValueUpdates = true
+      if (param[slot].allowParamValueUpdates) {
+        param[slot].allowParamValueUpdates = false
+        const allowUpdatesTask = new Task(function () {
+          param[slot].allowParamValueUpdates = true
         })
-        allowParamValueUpdatesTask.schedule(500)
+        debouncedTask('allowUpdates', slot, allowUpdatesTask, 500)
       }
 
       //post('PARAMVAL', param.val, "\n");
@@ -507,19 +524,21 @@ function val(slot: number, val: number) {
     //log('GONNA_MAP', 'ALLOWED=', allowMapping)
     // If we get a OSC value but are unassigned, trigger a mapping.
     // This removes a step from typical mapping.
-    if (allowMapping) {
+    if (allowMapping[slot]) {
       // debounce mapping, since moving the CC will trigger many message
-      allowMapping = false
-      new Task(function () {
-        allowMapping = true
-      }).schedule(1000)
+      allowMapping[slot] = false
+      const allowMappingTask = new Task(function () {
+        allowMapping[slot] = true
+      })
+      debouncedTask('allowMapping', slot, allowMappingTask, 1000)
 
       // wait 500ms before paying attention to values again after mapping
-      if (allowUpdateFromOsc) {
-        allowUpdateFromOsc = false
-        new Task(function () {
-          allowUpdateFromOsc = true
-        }).schedule(500)
+      if (allowUpdateFromOsc[slot]) {
+        allowUpdateFromOsc[slot] = false
+        const allowUpdateFromOscTask = new Task(function () {
+          allowUpdateFromOsc[slot] = true
+        })
+        debouncedTask('allowUpdateFromOsc', slot, allowUpdateFromOscTask, 500)
       }
 
       //post("PRE-SELOBJ\n");

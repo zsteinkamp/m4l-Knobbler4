@@ -33,10 +33,8 @@ var outMax = [];
 var deviceCheckerTask = [];
 // other vars
 var nullString = '- - -';
-var allowMapping = true;
-var allowParamValueUpdates = true;
-var allowUpdateFromOsc = true;
-var allowParamValueUpdatesTask = null;
+var allowMapping = [];
+var allowUpdateFromOsc = [];
 function isValidPath(path) {
     return typeof path === 'string' && path.match(/^live_set /);
 }
@@ -73,6 +71,18 @@ function initSlotIfNecessary(slot) {
         init(slot);
     }
 }
+var tasks = {};
+function debouncedTask(key, slot, task, delayMs) {
+    if (!tasks[key]) {
+        tasks[key] = [];
+    }
+    if (tasks[key][slot]) {
+        tasks[key][slot].cancel();
+        tasks[key][slot] = null;
+    }
+    tasks[key][slot] = task;
+    tasks[key][slot].schedule(delayMs);
+}
 function init(slot) {
     //log('INIT')
     if (paramObj[slot]) {
@@ -81,10 +91,13 @@ function init(slot) {
         outlet(OUTLET_OSC, ['/valStr' + slot, nullString]);
     }
     paramObj[slot] = null;
+    allowMapping[slot] = true;
+    allowUpdateFromOsc[slot] = true;
     param[slot] = {
         val: 0,
         min: 0,
         max: 100,
+        allowParamValueUpdates: true,
     };
     if (deviceCheckerTask[slot]) {
         deviceCheckerTask[slot].cancel();
@@ -142,7 +155,7 @@ function setDefault(slot) {
     if (!paramObj[slot]) {
         return;
     }
-    if (!allowUpdateFromOsc) {
+    if (!allowUpdateFromOsc[slot]) {
         return;
     }
     var defaultValue = paramObj[slot].get('default_value');
@@ -161,8 +174,8 @@ function paramValueCallback(slot, iargs) {
     // value on the OSC controller to show automation or direct manipulation.
     // We accomplish this by keeping a timestamp of the last time OSC data was
     // received, and only taking action here if more than 500ms has passed.
-    //log(args, 'ALLOW_UPDATES=', allowParamValueUpdates)
-    if (allowParamValueUpdates) {
+    //log(args, 'ALLOW_UPDATES=', param[slot].allowParamValueUpdates)
+    if (param[slot].allowParamValueUpdates) {
         var args = arrayfromargs(iargs);
         if (args[0] === 'value') {
             //post("PARAM_VAL", typeof(args[1]), args[1], "\n");
@@ -303,9 +316,10 @@ function setPath(slot, paramPath) {
     // Defer outputting the new param val because the controller
     // will not process it since it was just sending other vals
     // that triggered the mapping.
-    new Task(function () {
+    var sendValTask = new Task(function () {
         sendVal(slot);
-    }).schedule(333);
+    });
+    debouncedTask('sendVal', slot, sendValTask, 333);
     sendNames(slot);
 }
 function refresh() {
@@ -401,21 +415,18 @@ function sendVal(slot) {
 function val(slot, val) {
     //log(slot + ' - VAL: ' + val)
     if (paramObj[slot]) {
-        if (allowUpdateFromOsc) {
+        if (allowUpdateFromOsc[slot]) {
             var scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
             param[slot].val =
                 (param[slot].max - param[slot].min) * scaledVal + param[slot].min;
             //log('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
             // prevent updates from params directly being sent to OSC for 500ms
-            if (allowParamValueUpdates) {
-                allowParamValueUpdates = false;
-                if (allowParamValueUpdatesTask !== null) {
-                    allowParamValueUpdatesTask.cancel();
-                }
-                allowParamValueUpdatesTask = new Task(function () {
-                    allowParamValueUpdates = true;
+            if (param[slot].allowParamValueUpdates) {
+                param[slot].allowParamValueUpdates = false;
+                var allowUpdatesTask = new Task(function () {
+                    param[slot].allowParamValueUpdates = true;
                 });
-                allowParamValueUpdatesTask.schedule(500);
+                debouncedTask('allowUpdates', slot, allowUpdatesTask, 500);
             }
             //post('PARAMVAL', param.val, "\n");
             paramObj[slot].set('value', param[slot].val);
@@ -429,18 +440,20 @@ function val(slot, val) {
         //log('GONNA_MAP', 'ALLOWED=', allowMapping)
         // If we get a OSC value but are unassigned, trigger a mapping.
         // This removes a step from typical mapping.
-        if (allowMapping) {
+        if (allowMapping[slot]) {
             // debounce mapping, since moving the CC will trigger many message
-            allowMapping = false;
-            new Task(function () {
-                allowMapping = true;
-            }).schedule(1000);
+            allowMapping[slot] = false;
+            var allowMappingTask = new Task(function () {
+                allowMapping[slot] = true;
+            });
+            debouncedTask('allowMapping', slot, allowMappingTask, 1000);
             // wait 500ms before paying attention to values again after mapping
-            if (allowUpdateFromOsc) {
-                allowUpdateFromOsc = false;
-                new Task(function () {
-                    allowUpdateFromOsc = true;
-                }).schedule(500);
+            if (allowUpdateFromOsc[slot]) {
+                allowUpdateFromOsc[slot] = false;
+                var allowUpdateFromOscTask = new Task(function () {
+                    allowUpdateFromOsc[slot] = true;
+                });
+                debouncedTask('allowUpdateFromOsc', slot, allowUpdateFromOscTask, 500);
             }
             //post("PRE-SELOBJ\n");
             var selObj = new LiveAPI(function () { }, 'live_set view selected_parameter');
