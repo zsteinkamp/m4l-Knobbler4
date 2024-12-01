@@ -100,7 +100,7 @@ function debouncedTask(
 }
 
 function init(slot: number) {
-  //log('INIT')
+  //log(`INIT ${slot}`)
   if (paramObj[slot]) {
     // clean up callbacks when unmapping
     paramObj[slot].id = 0
@@ -136,15 +136,15 @@ function init(slot: number) {
 }
 
 function setMin(slot: number, val: number) {
+  //log(`SETMIN ${slot}: ${val}`)
   initSlotIfNecessary(slot)
-  //log(val)
   outMin[slot] = val / 100.0
   sendVal(slot)
 }
 
 function setMax(slot: number, val: number) {
+  //log(`SETMAX ${slot}: ${val}`)
   initSlotIfNecessary(slot)
-  //log(val)
   outMax[slot] = val / 100.0
   sendVal(slot)
 }
@@ -294,11 +294,11 @@ function checkDevicePresent(slot: number) {
 }
 
 function setPath(slot: number, paramPath: string) {
-  initSlotIfNecessary(slot)
   //log(`SETPATH ${slot}: ${paramPath}`)
+  initSlotIfNecessary(slot)
   //log(paramPath)
   if (!isValidPath(paramPath)) {
-    //log('skipping', paramPath)
+    //log(`skipping ${slot}: ${paramPath}`)
     return
   }
   paramObj[slot] = new LiveAPI(
@@ -306,6 +306,12 @@ function setPath(slot: number, paramPath: string) {
     paramPath
   )
   paramObj[slot].property = 'value'
+  // catch bad paths
+  if (paramObj[slot].id.toString() === '0') {
+    log(`Invalid path for slot ${slot}: ${paramPath}`)
+    //return
+  }
+
   paramNameObj[slot] = new LiveAPI(
     (iargs: IArguments) => paramNameCallback(slot, iargs),
     paramPath
@@ -417,6 +423,7 @@ function sendNames(slot: number) {
 }
 
 function sendParamName(slot: number) {
+  //log(`SEND PARAM NAME ${slot}`)
   initSlotIfNecessary(slot)
   const paramName = dequote(
     (
@@ -430,6 +437,7 @@ function sendParamName(slot: number) {
 }
 
 function sendDeviceName(slot: number) {
+  //log(`SEND DEVICE NAME ${slot}`)
   initSlotIfNecessary(slot)
   const deviceName = param[slot].deviceName
     ? dequote(param[slot].deviceName.toString())
@@ -439,6 +447,7 @@ function sendDeviceName(slot: number) {
 }
 
 function sendTrackName(slot: number) {
+  //log(`SEND TRACK NAME ${slot}`)
   initSlotIfNecessary(slot)
   const trackName = param[slot].parentName
     ? dequote(param[slot].parentName.toString())
@@ -450,6 +459,7 @@ function sendTrackName(slot: number) {
 const DEFAULT_RED = 'FF0000FF'
 
 function sendColor(slot: number) {
+  //log(`SEND COLOR ${slot}`)
   initSlotIfNecessary(slot)
   let trackColor = param[slot].trackColor
     ? dequote(param[slot].trackColor.toString())
@@ -469,20 +479,16 @@ function sendColor(slot: number) {
 }
 
 function sendVal(slot: number) {
+  //log(`SEND VAL ${slot}`)
   initSlotIfNecessary(slot)
-  // protect against divide-by-zero errors
-  if (outMax[slot] === outMin[slot]) {
-    if (outMax[slot] === 1) {
-      outMin[slot] = 0.99
-    } else if (outMax[slot] === 0) {
-      outMax[slot] = 0.01
-    }
-  }
 
   if (
+    !paramObj[slot] ||
+    paramObj[slot].id.toString() === '0' ||
     param[slot].val === undefined ||
     param[slot].max === undefined ||
-    param[slot].min === undefined
+    param[slot].min === undefined ||
+    outMax[slot] === outMin[slot]
   ) {
     outlet(OUTLET_OSC, ['/val' + slot, 0])
     outlet(OUTLET_OSC, ['/valStr' + slot, nullString])

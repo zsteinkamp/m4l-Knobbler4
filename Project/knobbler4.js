@@ -85,7 +85,7 @@ function debouncedTask(key, slot, task, delayMs) {
     tasks[key][slot].schedule(delayMs);
 }
 function init(slot) {
-    //log('INIT')
+    //log(`INIT ${slot}`)
     if (paramObj[slot]) {
         // clean up callbacks when unmapping
         paramObj[slot].id = 0;
@@ -120,14 +120,14 @@ function init(slot) {
     sendMsg(slot, ['path', '']);
 }
 function setMin(slot, val) {
+    //log(`SETMIN ${slot}: ${val}`)
     initSlotIfNecessary(slot);
-    //log(val)
     outMin[slot] = val / 100.0;
     sendVal(slot);
 }
 function setMax(slot, val) {
+    //log(`SETMAX ${slot}: ${val}`)
     initSlotIfNecessary(slot);
-    //log(val)
     outMax[slot] = val / 100.0;
     sendVal(slot);
 }
@@ -261,15 +261,20 @@ function checkDevicePresent(slot) {
     }
 }
 function setPath(slot, paramPath) {
-    initSlotIfNecessary(slot);
     //log(`SETPATH ${slot}: ${paramPath}`)
+    initSlotIfNecessary(slot);
     //log(paramPath)
     if (!isValidPath(paramPath)) {
-        //log('skipping', paramPath)
+        //log(`skipping ${slot}: ${paramPath}`)
         return;
     }
     paramObj[slot] = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
     paramObj[slot].property = 'value';
+    // catch bad paths
+    if (paramObj[slot].id.toString() === '0') {
+        log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
+        //return
+    }
     paramNameObj[slot] = new LiveAPI(function (iargs) { return paramNameCallback(slot, iargs); }, paramPath);
     paramNameObj[slot].property = 'name';
     param[slot].id = paramObj[slot].id;
@@ -348,6 +353,7 @@ function sendNames(slot) {
     sendColor(slot);
 }
 function sendParamName(slot) {
+    //log(`SEND PARAM NAME ${slot}`)
     initSlotIfNecessary(slot);
     var paramName = dequote(((param[slot] && (param[slot].customName || param[slot].name)) ||
         nullString).toString());
@@ -356,6 +362,7 @@ function sendParamName(slot) {
     outlet(OUTLET_OSC, ['/param' + slot, paramName]);
 }
 function sendDeviceName(slot) {
+    //log(`SEND DEVICE NAME ${slot}`)
     initSlotIfNecessary(slot);
     var deviceName = param[slot].deviceName
         ? dequote(param[slot].deviceName.toString())
@@ -364,6 +371,7 @@ function sendDeviceName(slot) {
     outlet(OUTLET_OSC, ['/device' + slot, deviceName]);
 }
 function sendTrackName(slot) {
+    //log(`SEND TRACK NAME ${slot}`)
     initSlotIfNecessary(slot);
     var trackName = param[slot].parentName
         ? dequote(param[slot].parentName.toString())
@@ -373,6 +381,7 @@ function sendTrackName(slot) {
 }
 var DEFAULT_RED = 'FF0000FF';
 function sendColor(slot) {
+    //log(`SEND COLOR ${slot}`)
     initSlotIfNecessary(slot);
     var trackColor = param[slot].trackColor
         ? dequote(param[slot].trackColor.toString())
@@ -388,19 +397,14 @@ function sendColor(slot) {
     sendMsg(slot, ['color', red, grn, blu, alp]);
 }
 function sendVal(slot) {
+    //log(`SEND VAL ${slot}`)
     initSlotIfNecessary(slot);
-    // protect against divide-by-zero errors
-    if (outMax[slot] === outMin[slot]) {
-        if (outMax[slot] === 1) {
-            outMin[slot] = 0.99;
-        }
-        else if (outMax[slot] === 0) {
-            outMax[slot] = 0.01;
-        }
-    }
-    if (param[slot].val === undefined ||
+    if (!paramObj[slot] ||
+        paramObj[slot].id.toString() === '0' ||
+        param[slot].val === undefined ||
         param[slot].max === undefined ||
-        param[slot].min === undefined) {
+        param[slot].min === undefined ||
+        outMax[slot] === outMin[slot]) {
         outlet(OUTLET_OSC, ['/val' + slot, 0]);
         outlet(OUTLET_OSC, ['/valStr' + slot, nullString]);
         return;
