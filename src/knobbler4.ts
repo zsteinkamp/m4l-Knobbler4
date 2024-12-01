@@ -30,7 +30,7 @@ const parentColorObj: LiveAPI[] = []
 const param: ParamType[] = []
 const outMin: number[] = []
 const outMax: number[] = []
-let deviceCheckerTask: Task[] = []
+const deviceCheckerTask: Task[] = []
 
 // other vars
 const nullString = '- - -'
@@ -273,9 +273,8 @@ function parentColorCallback(slot: number, iargs: IArguments) {
 }
 
 function checkDevicePresent(slot: number) {
-  //log('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
   if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
-    //log('DEVICE DELETED')
+    //log(`slot=${slot} DEVICE DELETED`)
     init(slot)
     return
   }
@@ -283,13 +282,9 @@ function checkDevicePresent(slot: number) {
   // check if path has changed (e.g. inserting a track above this one)
   if (paramObj[slot] && paramObj[slot].unquotedpath !== param[slot].path) {
     //log(
-    //  'path is different  NEW=',
-    //  paramObj.unquotedpath,
-    //  '  OLD=',
-    //  param.path
+    //  `UPDATE PATH slot=${slot} new=${paramObj[slot].unquotedpath} old=${param[slot].path}`
     //)
-    param[slot].path = paramObj[slot].unquotedpath
-    sendMsg(slot, ['path', paramObj[slot].unquotedpath])
+    setPath(slot, paramObj[slot].unquotedpath)
   }
 }
 
@@ -301,17 +296,17 @@ function setPath(slot: number, paramPath: string) {
     //log(`skipping ${slot}: ${paramPath}`)
     return
   }
-  paramObj[slot] = new LiveAPI(
+  const testObj = new LiveAPI(
     (iargs: IArguments) => paramValueCallback(slot, iargs),
     paramPath
   )
-  paramObj[slot].property = 'value'
+  testObj.property = 'value'
   // catch bad paths
-  if (paramObj[slot].id.toString() === '0') {
+  if (testObj.id.toString() === '0') {
     log(`Invalid path for slot ${slot}: ${paramPath}`)
-    //return
+    return
   }
-
+  paramObj[slot] = testObj
   paramNameObj[slot] = new LiveAPI(
     (iargs: IArguments) => paramNameCallback(slot, iargs),
     paramPath
@@ -325,8 +320,6 @@ function setPath(slot: number, paramPath: string) {
   param[slot].max = parseFloat(paramObj[slot].get('max')) || 1
   param[slot].name = paramObj[slot].get('name')[0]
 
-  //log('SET PARAM ' + JSON.stringify(param[slot]))
-
   deviceObj[slot] = new LiveAPI(
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
     paramObj[slot].get('canonical_parent')
@@ -334,19 +327,12 @@ function setPath(slot: number, paramPath: string) {
 
   const devicePath = deviceObj[slot].unquotedpath
 
-  //log(
-  //  'PARAMPATH=',
-  //  paramObj.unquotedpath,
-  //  'DEVICEPATH=',
-  //  deviceObj.unquotedpath
-  //)
-
   // poll to see if the mapped device is still present
   if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
     deviceCheckerTask[slot].cancel()
-    deviceCheckerTask = null
+    deviceCheckerTask[slot] = null
   }
-  deviceCheckerTask[slot] = new Task(checkDevicePresent)
+  deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot))
   deviceCheckerTask[slot].repeat(-1)
 
   // Only get the device name if it has the name property

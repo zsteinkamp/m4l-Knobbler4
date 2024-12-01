@@ -242,22 +242,17 @@ function parentColorCallback(slot, iargs) {
     }
 }
 function checkDevicePresent(slot) {
-    //log('PO=', paramObj.unquotedpath, 'PP=', param.path, 'PL=', pathListener.getvalue());
     if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
-        //log('DEVICE DELETED')
+        //log(`slot=${slot} DEVICE DELETED`)
         init(slot);
         return;
     }
     // check if path has changed (e.g. inserting a track above this one)
     if (paramObj[slot] && paramObj[slot].unquotedpath !== param[slot].path) {
         //log(
-        //  'path is different  NEW=',
-        //  paramObj.unquotedpath,
-        //  '  OLD=',
-        //  param.path
+        //  `UPDATE PATH slot=${slot} new=${paramObj[slot].unquotedpath} old=${param[slot].path}`
         //)
-        param[slot].path = paramObj[slot].unquotedpath;
-        sendMsg(slot, ['path', paramObj[slot].unquotedpath]);
+        setPath(slot, paramObj[slot].unquotedpath);
     }
 }
 function setPath(slot, paramPath) {
@@ -268,13 +263,14 @@ function setPath(slot, paramPath) {
         //log(`skipping ${slot}: ${paramPath}`)
         return;
     }
-    paramObj[slot] = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
-    paramObj[slot].property = 'value';
+    var testObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
+    testObj.property = 'value';
     // catch bad paths
-    if (paramObj[slot].id.toString() === '0') {
+    if (testObj.id.toString() === '0') {
         log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
-        //return
+        return;
     }
+    paramObj[slot] = testObj;
     paramNameObj[slot] = new LiveAPI(function (iargs) { return paramNameCallback(slot, iargs); }, paramPath);
     paramNameObj[slot].property = 'name';
     param[slot].id = paramObj[slot].id;
@@ -283,21 +279,14 @@ function setPath(slot, paramPath) {
     param[slot].min = parseFloat(paramObj[slot].get('min')) || 0;
     param[slot].max = parseFloat(paramObj[slot].get('max')) || 1;
     param[slot].name = paramObj[slot].get('name')[0];
-    //log('SET PARAM ' + JSON.stringify(param[slot]))
     deviceObj[slot] = new LiveAPI(function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot].get('canonical_parent'));
     var devicePath = deviceObj[slot].unquotedpath;
-    //log(
-    //  'PARAMPATH=',
-    //  paramObj.unquotedpath,
-    //  'DEVICEPATH=',
-    //  deviceObj.unquotedpath
-    //)
     // poll to see if the mapped device is still present
     if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
         deviceCheckerTask[slot].cancel();
-        deviceCheckerTask = null;
+        deviceCheckerTask[slot] = null;
     }
-    deviceCheckerTask[slot] = new Task(checkDevicePresent);
+    deviceCheckerTask[slot] = new Task(function () { return checkDevicePresent(slot); });
     deviceCheckerTask[slot].repeat(-1);
     // Only get the device name if it has the name property
     if (deviceObj[slot].info.match(/property name str/)) {
