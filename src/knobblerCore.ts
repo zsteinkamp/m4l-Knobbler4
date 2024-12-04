@@ -161,7 +161,7 @@ function paramValueCallback(slot: number, iargs: IArguments) {
   if (param[slot].allowParamValueUpdates) {
     const args = arrayfromargs(iargs)
     if (args[0] === 'value') {
-      //post("PARAM_VAL", typeof(args[1]), args[1], "\n");
+      //log("PARAM_VAL", typeof(args[1]), args[1], "\n");
       param[slot].val = args[1]
       sendVal(slot)
     } else {
@@ -332,7 +332,7 @@ function setPath(slot: number, paramPath: string) {
     )
   }
 
-  //post("PARAM DATA", JSON.stringify(param), "\n");
+  //log("PARAM DATA", JSON.stringify(param), "\n");
   sendMsg(slot, ['mapped', true])
   setPathParam(slot, param[slot].path)
 
@@ -449,7 +449,7 @@ function sendVal(slot: number) {
   scaledValProp = Math.min(scaledValProp, 1)
   scaledValProp = Math.max(scaledValProp, 0)
 
-  //log('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
+  //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
   outlet(OUTLET_OSC, ['/val' + slot, scaledValProp])
   outlet(OUTLET_OSC, [
     '/valStr' + slot,
@@ -467,8 +467,6 @@ function val(slot: number, val: number) {
       param[slot].val =
         (param[slot].max - param[slot].min) * scaledVal + param[slot].min
 
-      //log('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
-
       // prevent updates from params directly being sent to OSC for 500ms
       if (param[slot].allowParamValueUpdates) {
         param[slot].allowParamValueUpdates = false
@@ -478,11 +476,15 @@ function val(slot: number, val: number) {
         debouncedTask('allowUpdates', slot, allowUpdatesTask, 500)
       }
 
-      //post('PARAMVAL', param.val, "\n");
       paramObj[slot].set('value', param[slot].val)
       outlet(OUTLET_OSC, [
         '/valStr' + slot,
-        paramObj[slot].call('str_for_value', param[slot].val),
+        // get() the value from the param instead of re-using the val we
+        // calculated above because buttons and whatnot will report the wrong
+        // string value due to what looks like a rounding bug inside of
+        // those params (e.g. str_for_value(0.9) yields "on" even though
+        // the device shows up as "off"
+        paramObj[slot].call('str_for_value', paramObj[slot].get('value')),
       ])
     }
   } else {
@@ -506,7 +508,7 @@ function val(slot: number, val: number) {
         debouncedTask('allowUpdateFromOsc', slot, allowUpdateFromOscTask, 500)
       }
 
-      //post("PRE-SELOBJ\n");
+      //log("PRE-SELOBJ\n");
       const selObj = new LiveAPI(() => {}, 'live_set view selected_parameter')
       if (!selObj.unquotedpath) {
         post('No Live param is selected.\n')

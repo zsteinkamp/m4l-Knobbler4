@@ -162,7 +162,7 @@ function paramValueCallback(slot, iargs) {
     if (param[slot].allowParamValueUpdates) {
         var args = arrayfromargs(iargs);
         if (args[0] === 'value') {
-            //post("PARAM_VAL", typeof(args[1]), args[1], "\n");
+            //log("PARAM_VAL", typeof(args[1]), args[1], "\n");
             param[slot].val = args[1];
             sendVal(slot);
         }
@@ -296,7 +296,7 @@ function setPath(slot, paramPath) {
         //log(matches[0])
         trackObj[slot] = new LiveAPI(function (iargs) { return trackNameCallback(slot, iargs); }, matches[0]);
     }
-    //post("PARAM DATA", JSON.stringify(param), "\n");
+    //log("PARAM DATA", JSON.stringify(param), "\n");
     sendMsg(slot, ['mapped', true]);
     setPathParam(slot, param[slot].path);
     // Defer outputting the new param val because the controller
@@ -390,7 +390,7 @@ function sendVal(slot) {
     var scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot]);
     scaledValProp = Math.min(scaledValProp, 1);
     scaledValProp = Math.max(scaledValProp, 0);
-    //log('SCALEDVALPROP', '/val' + instanceId, scaledValProp)
+    //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
     outlet(consts_1.OUTLET_OSC, ['/val' + slot, scaledValProp]);
     outlet(consts_1.OUTLET_OSC, [
         '/valStr' + slot,
@@ -406,7 +406,6 @@ function val(slot, val) {
             var scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
             param[slot].val =
                 (param[slot].max - param[slot].min) * scaledVal + param[slot].min;
-            //log('VALS', JSON.stringify({ param_max: param.max, param_min: param.min, scaledVal: scaledVal, val: val }));
             // prevent updates from params directly being sent to OSC for 500ms
             if (param[slot].allowParamValueUpdates) {
                 param[slot].allowParamValueUpdates = false;
@@ -415,11 +414,15 @@ function val(slot, val) {
                 });
                 (0, utils_1.debouncedTask)('allowUpdates', slot, allowUpdatesTask, 500);
             }
-            //post('PARAMVAL', param.val, "\n");
             paramObj[slot].set('value', param[slot].val);
             outlet(consts_1.OUTLET_OSC, [
                 '/valStr' + slot,
-                paramObj[slot].call('str_for_value', param[slot].val),
+                // get() the value from the param instead of re-using the val we
+                // calculated above because buttons and whatnot will report the wrong
+                // string value due to what looks like a rounding bug inside of
+                // those params (e.g. str_for_value(0.9) yields "on" even though
+                // the device shows up as "off"
+                paramObj[slot].call('str_for_value', paramObj[slot].get('value')),
             ]);
         }
     }
@@ -442,7 +445,7 @@ function val(slot, val) {
                 });
                 (0, utils_1.debouncedTask)('allowUpdateFromOsc', slot, allowUpdateFromOscTask, 500);
             }
-            //post("PRE-SELOBJ\n");
+            //log("PRE-SELOBJ\n");
             var selObj = new LiveAPI(function () { }, 'live_set view selected_parameter');
             if (!selObj.unquotedpath) {
                 post('No Live param is selected.\n');
