@@ -32,7 +32,9 @@ Also provides a high-resolution slider that operates on the currently selected p
 ### Requirements
 
 - Computer running Ableton Live 12
+  - Ensure "Local Network" permissions are granted to Ableton Live. See [Troubleshooting](TROUBLESHOOTING.md) for more details.
 - iPad or Android tablet running [TouchOSC](https://hexler.net/touchosc#get)
+  - Ensure "Local Network" permissions are granted to TouchOSC. See [Troubleshooting](TROUBLESHOOTING.md) for more details.
 
 ### Steps
 
@@ -47,6 +49,7 @@ Also provides a high-resolution slider that operates on the currently selected p
    - Select "OSC" in the left-side menu
    - Click "Browse" under Connection 1
    - You should see your computer's hostname followed by "Knobbler4"
+     - If your computer's hostname does not appear, see [Troubleshooting](TROUBLESHOOTING.md).
    - Select that item, then select the IPv4 address in the sub-menu (e.g. 10.1.1.1:2346)
      ![Connection Selection](images/touchosc-connect-1.png)
    - Set the "Receive Port" to 2347. This is the port that TouchOSC on the iPad listens on.
@@ -56,6 +59,7 @@ Also provides a high-resolution slider that operates on the currently selected p
 1. Back in Knobbler, click "Rescan Net".
 1. Your iPad should show up in the drop-down below. Select it, and you should be in business!
    ![Select iPad](images/ipad-connect.png)
+   - If the tablet does not show up, see [Troubleshooting](TROUBLESHOOTING.md).
 
 _NOTE: You **MUST** have a control surface configured in Ableton Live. If you do, then you will see the "Blue Hand" icon in the title bar of the selected device._
 
