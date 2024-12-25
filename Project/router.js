@@ -74,13 +74,13 @@ var ROUTER = [
   },
   {
     outlet: OUTLET_KNOBBLER,
-    prefix: '/defaultval',
+    prefix: '/default val',
     handler: stdSlot,
     msg: 'setDefault',
   },
   {
     outlet: OUTLET_KNOBBLER,
-    prefix: '/touchtrack',
+    prefix: '/track',
     handler: stdSlot,
     msg: 'gotoTrackFor',
   },
@@ -116,7 +116,7 @@ var ROUTER = [
   },
   {
     outlet: OUTLET_BLUHAND,
-    prefix: '/bdefaultbval',
+    prefix: '/bdefault bval',
     handler: stdSlot,
     msg: 'default',
   },
