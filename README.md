@@ -1,14 +1,14 @@
 # Knobbler4
 
-Knobbler4 turns your iPad into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live.
+Knobbler4 turns your iPad or Android tablet into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live.
 
 ![Knobbler4 in Action](images/external-with-hand.jpg)
 
-Map parameters in your Ableton Live set to unmapped sliders on the iPad with a single touch. No need to enter and exit a mapping mode. Access every parameter in the currently selected device, directly on the iPad.
+Map parameters in your Ableton Live set to unmapped sliders on the tablet with a single touch. No need to enter and exit a mapping mode. Access every parameter in the currently selected device, directly on the tablet.
 
 Parameter mapping configuration is saved with your Live Set, so you can switch between songs with minimal friction. Track, device, and parameter names are kept synchronized with your Live Set as you change them, even track colors!
 
-Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live. Double tap a slider on the iPad to reset the parameter to its default value.
+Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live. Double tap a slider on the tablet to reset the parameter to its default value.
 
 Also provides a high-resolution slider that operates on the currently selected parameter in your Live Set, and a Record-Enable toggle switch to improve the process of overdubbing automation.
 
@@ -38,26 +38,28 @@ Also provides a high-resolution slider that operates on the currently selected p
 
 ### Steps
 
+_(If, after following the steps below, you are having troubles, then see the [Troubleshooting](TROUBLESHOOTING.md) page.)_
+
 1. Download the .zip file from the latest [release](https://github.com/zsteinkamp/m4l-Knobbler4/releases)
 1. Unzip the file
 1. Drag the `Knobbler4.amxd` file to Live's User Library
 1. Add Knobbler4 to a MIDI/Instrument track in your Live Set
-1. Copy the `Knobbler4.tosc` (or `Knobbler4-with-bluhand.tosc`) file to your iPad (e.g. with AirDrop)
-1. Configure TouchOSC on the iPad to talk OSC to your computer. (NOTE: If you want to connect over USB, see the [instructions here](USB.md).)
+1. Copy the `Knobbler4.tosc` (or `Knobbler4-with-bluhand.tosc`) file to your tablet (e.g. with AirDrop)
+1. Configure TouchOSC on the tablet to talk OSC to your computer. (NOTE: If you want to connect over USB, see the [instructions here](USB.md).)
    ![Ports](images/ports.png)
-   - In TouchOSC on the iPad, click the Chain icon in the toolbar
+   - In TouchOSC on the tablet, click the Chain icon in the toolbar
    - Select "OSC" in the left-side menu
    - Click "Browse" under Connection 1
    - You should see your computer's hostname followed by "Knobbler4"
      - If your computer's hostname does not appear, see [Troubleshooting](TROUBLESHOOTING.md).
    - Select that item, then select the IPv4 address in the sub-menu (e.g. 10.1.1.1:2346)
      ![Connection Selection](images/touchosc-connect-1.png)
-   - Set the "Receive Port" to 2347. This is the port that TouchOSC on the iPad listens on.
+   - Set the "Receive Port" to 2347. This is the port that TouchOSC on the tablet listens on.
      ![Connection Selection](images/touchosc-connect-2.png)
    - Press `Done` in the upper-right
 1. In the TouchOSC toolbar, press the "Play" (triangle) icon to toggle out of Editor mode.
 1. Back in Knobbler, click "Rescan Net".
-1. Your iPad should show up in the drop-down below. Select it, and you should be in business!
+1. Your tablet should show up in the drop-down below. Select it, and you should be in business!
    ![Select iPad](images/ipad-connect.png)
    - If the tablet does not show up, see [Troubleshooting](TROUBLESHOOTING.md).
 
@@ -65,13 +67,7 @@ _NOTE: You **MUST** have a control surface configured in Ableton Live. If you do
 
 ![Blue Hand Icon](images/blue-hand.png)
 
-If you do not see the Blue Hand, then you will need to set up a "dummy" control surface in order for the Bluhand portion of Knobbler to work. To do this, you can open the settings in Live and switch to the Link, Tempo & MIDI tab. Chooose any control surface from the list and assign its input to the IAC driver.
-
-![Control surface setup](images/control-surface-setup.png)
-
-If you do not have the IAC driver set up, then open the Audio & Midi Setup app, open the MIDI window, double click the IAC driver and make sure it is Online.
-
-![IAC Driver configuration](images/iac-driver.png)
+If you don't see it, see instructions in the [Troubleshooting](TROUBLESHOOTING.md) document to fix that.
 
 ## Usage
 
@@ -81,12 +77,12 @@ If you do not have the IAC driver set up, then open the Audio & Midi Setup app, 
 
    <img alt="Selected Parameter" src="images/selected-param.png" style="width: 384"/>
 
-2. Touch any unmapped slider on the iPad screen.
+2. Touch any unmapped slider on the tablet screen.
 3. Voila!
 
 ### Unmapping Parameters
 
-1. Touch the `X` icon in the upper-left corner of the iPad screen. The sliders will all turn into red rectangles.
+1. Touch the `X` icon in the upper-left corner of the tablet screen. The sliders will all turn into red rectangles.
 2. Touch a red rectangle to unmap the parameter.
 3. Touch the `X` icon again to leave unmapping mode.
 
@@ -96,20 +92,20 @@ Ableton Live uses a blue hand icon to indicate which device is currently under c
 
    <img alt="Selected device" src="images/bluhand-device.jpg" style="width: 384"/>
 
-If you use the `Knobbler4-with-Bluhand.tosc` TouchOSC layout on your iPad, then you can use the `Bluhand` tab to access all of the parameters the currently selected device offers.
+If you use the `Knobbler4-with-Bluhand.tosc` TouchOSC layout on your tablet, then you can use the `Bluhand` tab to access all of the parameters the currently selected device offers.
 
    <img alt="Device parameters on iPad" src="images/bluhand-ipad.jpg" style="width: 384"/>
 
 If the current device has more than 16 parameters, then you can use the `<<<` and `>>>` controls in the upper-right of the Bluhand tab to access different banks / pages of parameters.
 
-HOT TIP: You can assign a keystroke to a device. This lets you access all of a device's parameters on the iPad with a single keystroke. To do this:
+HOT TIP: You can assign a keystroke to a device. This lets you access all of a device's parameters on the tablet with a single keystroke. To do this:
 
 - Press Cmd-K
 - Select the device you want to assign
 - Press the key you want to use to focus that device
   ![Key mapping](images/key-mapping.png)
 - Press Cmd-K to exit mapping mode
-  Now, with the iPad on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the iPad.
+  Now, with TouchOSC on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the tablet.
   ![Jump to device](images/key-device.jpg)
 
 NOTE: If you do not see the Blue Hand icon on the current device, then go to the Ableton Live settings and configure any control surface to connect any input port. You may need to configure an IAC MIDI port in the Audio MIDI Setup app if on a Mac.
@@ -124,7 +120,7 @@ Tap a track name on one of the Knobbler tabs to navigate to that track in Live.
 
 ### Current Param Slider
 
-Along the bottom of the iPad screen is a horizontal slider that is used to control the currently selected parameter in your Live Set. This parameter does not have to be mapped to a slider. You can use that slider to control the paramter with a high degree of accuracy.
+Along the bottom of the tablet screen is a horizontal slider that is used to control the currently selected parameter in your Live Set. This parameter does not have to be mapped to a slider. You can use that slider to control the paramter with a high degree of accuracy.
 
 ### Toggle Record Enable
 
