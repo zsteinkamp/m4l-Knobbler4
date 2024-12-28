@@ -74,6 +74,12 @@ var ROUTER = [
   },
   {
     outlet: OUTLET_KNOBBLER,
+    prefix: '/defaultval',
+    handler: stdSlot,
+    msg: 'setDefault',
+  },
+  {
+    outlet: OUTLET_KNOBBLER,
     prefix: '/default val',
     handler: stdSlot,
     msg: 'setDefault',
