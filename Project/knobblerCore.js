@@ -353,7 +353,7 @@ function sendTrackName(slot) {
     sendMsg(slot, ['track', trackName]);
     outlet(consts_1.OUTLET_OSC, ['/track' + slot, trackName]);
 }
-var DEFAULT_RED = 'FF0000FF';
+var DEFAULT_RED = '990000FF';
 function sendColor(slot) {
     //log(`SEND COLOR ${slot}`)
     initSlotIfNecessary(slot);

@@ -399,7 +399,7 @@ function sendTrackName(slot: number) {
   outlet(OUTLET_OSC, ['/track' + slot, trackName])
 }
 
-const DEFAULT_RED = 'FF0000FF'
+const DEFAULT_RED = '990000FF'
 
 function sendColor(slot: number) {
   //log(`SEND COLOR ${slot}`)
