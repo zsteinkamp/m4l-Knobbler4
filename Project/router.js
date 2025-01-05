@@ -122,7 +122,7 @@ var ROUTER = [
   },
   {
     outlet: OUTLET_BLUHAND,
-    prefix: '/bdefault bval',
+    prefix: '/bdefaultbval',
     handler: stdSlot,
     msg: 'default',
   },

@@ -135,6 +135,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/bdefaultbval',
+    handler: stdSlot,
+    msg: 'default',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/bdefault bval',
     handler: stdSlot,
     msg: 'default',
