@@ -24,7 +24,7 @@ function updateParamName(objId) {
             nameArr.unshift('Mixer');
         }
         else {
-            nameArr.unshift(obj.get('name'));
+            nameArr.unshift(obj.get('name').toString());
         }
         obj = new LiveAPI(function () { }, obj.get('canonical_parent'));
         counter++;
