@@ -3,7 +3,7 @@ var config_1 = require('./config')
 var utils_1 = require('./utils')
 autowatch = 1
 inlets = 1
-outlets = 8
+outlets = 9
 var log = (0, utils_1.logFactory)(config_1.default)
 var INLET_OSC = 0
 var OUTLET_KNOBBLER = 0
@@ -13,7 +13,8 @@ var OUTLET_BLUHAND = 3
 var OUTLET_PRESETS = 4
 var OUTLET_LOOP = 5
 var OUTLET_REFRESH = 6
-var OUTLET_UNKNOWN = 7
+var OUTLET_ACK = 7
+var OUTLET_UNKNOWN = 8
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
 setoutletassist(OUTLET_CURRPARAM, 'Messages for CurrentParamKnob')
@@ -22,6 +23,7 @@ setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand')
 setoutletassist(OUTLET_PRESETS, 'Messages for Bluhand Presets')
 setoutletassist(OUTLET_LOOP, 'Messages for Loop Checker')
 setoutletassist(OUTLET_REFRESH, 'Messages for Refresh')
+setoutletassist(OUTLET_ACK, 'Messages for ACK')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 function getSlotNum(router, msg) {
   var matches = msg.substring(router.prefix.length).match(/^\d+/)
@@ -54,6 +56,12 @@ function stdSlotVal(router, msg, val) {
   outlet(router.outlet, router.msg, slot, val)
 }
 var ROUTER = [
+  {
+    outlet: OUTLET_ACK,
+    prefix: '/syn',
+    handler: bareMsg,
+    msg: 'ack',
+  },
   {
     outlet: OUTLET_LOOP,
     prefix: '/loop',
@@ -123,6 +131,12 @@ var ROUTER = [
   {
     outlet: OUTLET_BLUHAND,
     prefix: '/bdefaultbval',
+    handler: stdSlot,
+    msg: 'default',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/bdefault bval',
     handler: stdSlot,
     msg: 'default',
   },
