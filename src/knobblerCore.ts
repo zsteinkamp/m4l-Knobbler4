@@ -475,7 +475,7 @@ function val(slot: number, val: number) {
         })
         debouncedTask('allowUpdates', slot, allowUpdatesTask, 500)
       }
-
+      //log('VAL ' + paramObj[slot] + ' ' + param[slot].val)
       paramObj[slot].set('value', param[slot].val)
       outlet(OUTLET_OSC, [
         '/valStr' + slot,

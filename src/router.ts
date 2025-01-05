@@ -3,7 +3,7 @@ import { logFactory } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 8
+outlets = 9
 
 const log = logFactory(config)
 
@@ -15,7 +15,8 @@ const OUTLET_BLUHAND = 3
 const OUTLET_PRESETS = 4
 const OUTLET_LOOP = 5
 const OUTLET_REFRESH = 6
-const OUTLET_UNKNOWN = 7
+const OUTLET_ACK = 7
+const OUTLET_UNKNOWN = 8
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -25,6 +26,7 @@ setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand')
 setoutletassist(OUTLET_PRESETS, 'Messages for Bluhand Presets')
 setoutletassist(OUTLET_LOOP, 'Messages for Loop Checker')
 setoutletassist(OUTLET_REFRESH, 'Messages for Refresh')
+setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 
 type RouterItem = {
@@ -67,6 +69,12 @@ function stdSlotVal(router: RouterItem, msg: string, val: number | string) {
 }
 
 const ROUTER: RouterItem[] = [
+  {
+    outlet: OUTLET_ACK,
+    prefix: '/syn',
+    handler: bareMsg,
+    msg: 'ack',
+  },
   {
     outlet: OUTLET_LOOP,
     prefix: '/loop',

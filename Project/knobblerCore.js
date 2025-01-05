@@ -414,6 +414,7 @@ function val(slot, val) {
                 });
                 (0, utils_1.debouncedTask)('allowUpdates', slot, allowUpdatesTask, 500);
             }
+            //log('VAL ' + paramObj[slot] + ' ' + param[slot].val)
             paramObj[slot].set('value', param[slot].val);
             outlet(consts_1.OUTLET_OSC, [
                 '/valStr' + slot,
