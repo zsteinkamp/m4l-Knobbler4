@@ -1,26 +1,26 @@
-This document exists to catalog the full set of OSC messages used for control and display between the Knobbler4 Max for Live device and a physical interface, such as TouchOSC running on an iPad. Because the standard OSC protocol is used, you are free to develop alternative interfaces to interact with Knobbler4.
+This document exists to catalog the full set of OSC messages used for control and display between the Knobbler4 Max for Live device and a physical interface, such as an app or TouchOSC running on an iPad. Because the standard OSC protocol is used, you are free to develop alternative interfaces to interact with Knobbler4.
 
 ## Knobbler
 
-### Interface to Knobbler4
+### Tablet to Knobbler4
 
 #### `/valN {float}`
 
-Sets the value of Slot N, as a float between 0 and 1, inclusive. If Slot N is already mapped, Knobbler will then quietly update the assigned parameter in the Live set with the value. If Slot N is not mapped and there is a selected parameter in the Live Set, then that parameter will be mapped to Slot N and resulting name, color, and value messages will be sent to update the interface.
+Sets the value of Slot N, as a float between 0 and 1, inclusive. If Slot N is already mapped, Knobbler will then quietly update the assigned parameter in the Live set with the value. If Slot N is not mapped and there is a selected parameter in the Live Set, then that parameter will be mapped to Slot N and resulting name, color, and value messages will be sent to update the tablet.
 
 #### `/unmapN`
 
-Removes the mapping for Slot N. Has side effects of messages sent from Knobbler to interface to update name, color, and value to unassigned values.
+Removes the mapping for Slot N. Has side effects of messages sent from Knobbler to tablet to update name, color, and value to unassigned values.
 
 #### `/default valN`
 
-Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the interface.
+Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet.
 
 #### `/trackNtouch 1`
 
 Switch the Live display to the track corresponding to Slot N.
 
-### Knobbler4 to Interface
+### Knobbler4 to Tablet
 
 #### `/deviceN {string}`
 
@@ -48,7 +48,7 @@ Updates the string representation of Slot N's mapped parameter value, e.g. (-6db
 
 ## Bluhand
 
-### Interface to Knobbler4
+### Tablet to Knobbler4
 
 #### `/bvalN {float}`
 
@@ -56,15 +56,15 @@ Sets the value of Slot N, as a float between 0 and 1, inclusive. Knobbler will t
 
 #### `/bdefault bvalN`
 
-Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the interface.
+Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet.
 
 #### `/bbankPrev`
 
-If not looking at the first bank, has the effect of switching the Interface to the previous bank of parameters. Causes a full update of slot names and values.
+If not looking at the first bank, has the effect of switching the Tablet to the previous bank of parameters. Causes a full update of slot names and values.
 
 #### `/bbankNext`
 
-If more banks of parameters are available, then switch the Interface to the next bank of parameters. Causes a full update of slot names and values.
+If more banks of parameters are available, then switch the Tablet to the next bank of parameters. Causes a full update of slot names and values.
 
 ### `/shortcutNMap`
 
@@ -75,7 +75,7 @@ For shortcut button N, will map the button if it is not yet mapped. If mapped al
 For shortcut button N, will unmap the button.
 
 
-### Knobbler4 to Interface
+### Knobbler4 to Tablet
 
 #### `/bcurrDeviceName {string}`
 
@@ -111,13 +111,17 @@ Updates the device name displayed beneath the shortcut button N.
 
 ## Misc
 
-### Knobbler4 to Interface
+### Knobbler4 to Tablet
+
+#### `/ack`
+
+Response to a `/syn` message to facilitate, e.g. for feedback in setting up the tablet-computer connection.
 
 #### `/toggleInput {0, 1}`
 
 Update the "active" state of the Toggle Input interface button.
 
-### Interface to Knobbler4
+### Tablet to Knobbler4
 
 #### `/currentParam {float}`
 
@@ -134,3 +138,7 @@ This is useful when recording automation over existing MIDI clips, since the rec
 #### `/loop`
 
 Sent out as part of the network startup sequence to detect network loops (e.g. the send and receive destination being the same). If `/loop` is received, then network communication is halted until the `host` or `port` values are changed.
+
+#### `/syn`
+
+A request for an `/ack` response to facilitate a UX feedback loop when configuring the connections.
