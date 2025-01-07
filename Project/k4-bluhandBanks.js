@@ -19,9 +19,13 @@ var state = {
 };
 function getBasicParamArr(paramIds) {
     var ret = [];
+    var numBanks = Math.ceil(paramIds.length / 16);
     var currBank = 0;
     var blankRow = function () {
-        return { name: 'Bank ' + ++currBank, paramIdxArr: [] };
+        return {
+            name: 'Page ' + ++currBank + ' of ' + numBanks,
+            paramIdxArr: [],
+        };
     };
     var currRow = null;
     paramIds.forEach(function (paramId, idx) {

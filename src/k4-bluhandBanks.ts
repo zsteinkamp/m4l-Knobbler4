@@ -28,9 +28,13 @@ const state = {
 
 function getBasicParamArr(paramIds: number[]) {
   const ret: BluhandBank[] = []
+  const numBanks = Math.ceil(paramIds.length / 16)
   let currBank = 0
   const blankRow = () => {
-    return { name: 'Bank ' + ++currBank, paramIdxArr: [] as number[] }
+    return {
+      name: 'Page ' + ++currBank + ' of ' + numBanks,
+      paramIdxArr: [] as number[],
+    }
   }
   let currRow: BluhandBank = null
 
