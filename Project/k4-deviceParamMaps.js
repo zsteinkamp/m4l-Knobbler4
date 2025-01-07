@@ -52,9 +52,6 @@ exports.DeviceParamMaps = {
         {
             name: 'Basic Params',
             paramNames: [
-                'Volume',
-                'Transpose',
-                'Detune',
                 'S Start',
                 'S Length',
                 'S Loop Length',
@@ -62,14 +59,17 @@ exports.DeviceParamMaps = {
                 'Ve Decay',
                 'Ve Sustain',
                 'Ve Release',
+                'Volume',
                 'Filter Freq',
                 'Filter Res',
                 'Filter Drive',
                 'Fe < Env',
                 'Fe Attack',
                 'Fe Decay',
-            ]
-        }
+                'Transpose',
+                'Detune',
+            ],
+        },
     ],
     Utility: [
         {
