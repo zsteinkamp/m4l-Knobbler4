@@ -16,3 +16,12 @@ type ParamType = {
 type MessageType =
   | [string, number | boolean | string]
   | [string, number, number, number, number]
+
+type NameBank = {
+  name: string
+  paramNames: string[]
+}
+type BluhandBank = {
+  name: string
+  paramIdxArr: number[]
+}
