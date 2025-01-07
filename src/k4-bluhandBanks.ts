@@ -46,8 +46,7 @@ function getBasicParamArr(paramIds: number[]) {
   })
   ret.push(currRow)
 
-  log('RET ' + JSON.stringify(ret))
-
+  //log('RET ' + JSON.stringify(ret))
   return ret
 }
 
@@ -69,7 +68,7 @@ function getBankParamArr(paramIds: number[], deviceType: string) {
     log(`NAME TO IDX [${param.get('name')}]=${idx}`)
   })
 
-  deviceParamMap.forEach((nameBank) => {
+  deviceParamMap.forEach((nameBank, idx) => {
     const row: BluhandBank = {
       name: nameBank.name,
       paramIdxArr: [],
@@ -91,9 +90,10 @@ function getBankParamArr(paramIds: number[], deviceType: string) {
     })
 
     //log('ROW ' + JSON.stringify(row))
-    paramArr.unshift(row)
+    paramArr.splice(idx, 0, row)
   })
 
+  //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
   return paramArr
 }
 
@@ -132,8 +132,8 @@ function id(deviceId: number) {
   //log('PARAMIDS ' + JSON.stringify(paramIds))
 
   state.currBank = 1
-  state.numBanks = Math.ceil(paramIds.length / 16)
   state.bankParamArr = getBankParamArr(paramIds, deviceType)
+  state.numBanks = state.bankParamArr.length
   //log('STATE CHECK ' + JSON.stringify(state))
   sendCurrBank()
 }

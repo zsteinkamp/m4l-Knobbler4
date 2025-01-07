@@ -35,7 +35,7 @@ function getBasicParamArr(paramIds) {
         currRow.paramIdxArr.push(idx + 1);
     });
     ret.push(currRow);
-    log('RET ' + JSON.stringify(ret));
+    //log('RET ' + JSON.stringify(ret))
     return ret;
 }
 function getBankParamArr(paramIds, deviceType) {
@@ -52,7 +52,7 @@ function getBankParamArr(paramIds, deviceType) {
         paramNameToIdx[param.get('name')] = idx;
         log("NAME TO IDX [".concat(param.get('name'), "]=").concat(idx));
     });
-    deviceParamMap.forEach(function (nameBank) {
+    deviceParamMap.forEach(function (nameBank, idx) {
         var row = {
             name: nameBank.name,
             paramIdxArr: [],
@@ -71,8 +71,9 @@ function getBankParamArr(paramIds, deviceType) {
             row.paramIdxArr.push(idx + 1);
         });
         //log('ROW ' + JSON.stringify(row))
-        paramArr.unshift(row);
+        paramArr.splice(idx, 0, row);
     });
+    //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
     return paramArr;
 }
 function sendCurrBank() {
@@ -108,8 +109,8 @@ function id(deviceId) {
     paramIds.shift(); // remove device on/off
     //log('PARAMIDS ' + JSON.stringify(paramIds))
     state.currBank = 1;
-    state.numBanks = Math.ceil(paramIds.length / 16);
     state.bankParamArr = getBankParamArr(paramIds, deviceType);
+    state.numBanks = state.bankParamArr.length;
     //log('STATE CHECK ' + JSON.stringify(state))
     sendCurrBank();
 }
