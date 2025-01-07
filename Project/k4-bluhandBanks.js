@@ -35,7 +35,7 @@ function getBasicParamArr(paramIds) {
         currRow.paramIdxArr.push(idx + 1);
     });
     ret.push(currRow);
-    //log('RET ' + JSON.stringify(ret))
+    log('RET ' + JSON.stringify(ret));
     return ret;
 }
 function getBankParamArr(paramIds, deviceType) {
@@ -50,7 +50,7 @@ function getBankParamArr(paramIds, deviceType) {
     paramIds.forEach(function (paramId, idx) {
         var param = new LiveAPI(function () { }, 'id ' + paramId);
         paramNameToIdx[param.get('name')] = idx;
-        //log(`NAME TO IDX ${param.get('name')}=${idx}`)
+        log("NAME TO IDX [".concat(param.get('name'), "]=").concat(idx));
     });
     deviceParamMap.forEach(function (nameBank) {
         var row = {
@@ -59,8 +59,13 @@ function getBankParamArr(paramIds, deviceType) {
         };
         nameBank.paramNames.forEach(function (paramName) {
             var idx = paramNameToIdx[paramName];
-            if (!idx) {
-                log('ERROR (' + deviceType + ') NO IDX FOR NAME ' + paramName);
+            if (idx === undefined) {
+                log('ERROR (' +
+                    deviceType +
+                    ') NO IDX FOR NAME ' +
+                    paramName +
+                    ' ' +
+                    JSON.stringify(Object.keys(paramNameToIdx)));
                 return;
             }
             row.paramIdxArr.push(idx + 1);
@@ -91,7 +96,7 @@ function sendCurrBank() {
 function id(deviceId) {
     var api = new LiveAPI(updateParams, 'id ' + deviceId.toString());
     var deviceType = api.get('class_display_name');
-    ////log(JSON.stringify({ deviceType, name: api.get('name') }))
+    log(JSON.stringify({ deviceType: deviceType, name: api.get('name') }));
     var rawParams = api.get('parameters');
     var paramIds = [];
     rawParams.forEach(function (paramId, idx) {
