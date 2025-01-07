@@ -48,6 +48,29 @@ exports.DeviceParamMaps = {
             ],
         },
     ],
+    Simpler: [
+        {
+            name: 'Basic Params',
+            paramNames: [
+                'Volume',
+                'Transpose',
+                'Detune',
+                'S Start',
+                'S Length',
+                'S Loop Length',
+                'Ve Attack',
+                'Ve Decay',
+                'Ve Sustain',
+                'Ve Release',
+                'Filter Freq',
+                'Filter Res',
+                'Filter Drive',
+                'Fe < Env',
+                'Fe Attack',
+                'Fe Decay',
+            ]
+        }
+    ],
     Utility: [
         {
             name: 'Basic Params',
