@@ -41,17 +41,17 @@ function getBasicParamArr(paramIds) {
 function getBankParamArr(paramIds, deviceType) {
     var deviceParamMap = k4_deviceParamMaps_1.DeviceParamMaps[deviceType];
     var paramArr = getBasicParamArr(paramIds);
-    if (!deviceParamMap) {
-        // nothing to customize, return the basic array
-        //log('BASIC RETURN ' + JSON.stringify(paramArr))
-        return paramArr;
-    }
     // more "bespoke" setups get this
     paramIds.forEach(function (paramId, idx) {
         var param = new LiveAPI(function () { }, 'id ' + paramId);
         paramNameToIdx[param.get('name')] = idx;
         log("NAME TO IDX [".concat(param.get('name'), "]=").concat(idx));
     });
+    if (!deviceParamMap) {
+        // nothing to customize, return the basic array
+        //log('BASIC RETURN ' + JSON.stringify(paramArr))
+        return paramArr;
+    }
     deviceParamMap.forEach(function (nameBank, idx) {
         var row = {
             name: nameBank.name,

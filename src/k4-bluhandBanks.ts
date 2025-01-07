@@ -54,19 +54,18 @@ function getBankParamArr(paramIds: number[], deviceType: string) {
   const deviceParamMap = DeviceParamMaps[deviceType]
 
   const paramArr = getBasicParamArr(paramIds)
-
-  if (!deviceParamMap) {
-    // nothing to customize, return the basic array
-    //log('BASIC RETURN ' + JSON.stringify(paramArr))
-    return paramArr
-  }
-
   // more "bespoke" setups get this
   paramIds.forEach((paramId: number, idx: number) => {
     const param = new LiveAPI(() => {}, 'id ' + paramId)
     paramNameToIdx[param.get('name')] = idx
     log(`NAME TO IDX [${param.get('name')}]=${idx}`)
   })
+
+  if (!deviceParamMap) {
+    // nothing to customize, return the basic array
+    //log('BASIC RETURN ' + JSON.stringify(paramArr))
+    return paramArr
+  }
 
   deviceParamMap.forEach((nameBank, idx) => {
     const row: BluhandBank = {

@@ -2,6 +2,52 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DeviceParamMaps = void 0;
 exports.DeviceParamMaps = {
+    Compressor: [
+        {
+            name: 'Basic Params',
+            paramNames: [
+                'Ratio',
+                'Threshold',
+                'Attack',
+                'Release',
+                'Knee',
+                'Model',
+                'Dry/Wet',
+                'Output Gain',
+                'LookAhead',
+                'Env Mode',
+                'Makeup',
+                'Auto Release On/Off',
+                'S/C On',
+                'S/C Gain',
+                'S/C EQ Freq',
+                'S/C EQ Q',
+            ],
+        },
+    ],
+    Electric: [
+        {
+            name: 'Basic Params',
+            paramNames: [
+                'M Stiffness',
+                'M Force',
+                'Noise Amount',
+                'F Tine Vol',
+                'F Tone Vol',
+                'F Release',
+                'P Symmetry',
+                'Volume',
+                'Detune',
+                'F Tine Color',
+                'Noise Decay',
+                'F Tine Decay',
+                'Damp Amount',
+                'Pickup Model',
+                'P Amp In',
+                'P Distance',
+            ],
+        },
+    ],
     Utility: [
         {
             name: 'Basic Params',
