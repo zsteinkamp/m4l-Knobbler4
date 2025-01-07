@@ -11,7 +11,7 @@ setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS funct
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setinletassist(consts_1.OUTLET_MSGS, 'Output messages to the [poly finger] instances to set their parameter index');
 var updateParams = function () { };
-var paramNameToIdx = {};
+var paramNameToIdx = null;
 var state = {
     currBank: 1,
     numBanks: 1,
@@ -45,6 +45,7 @@ function getBasicParamArr(paramIds) {
 function getBankParamArr(paramIds, deviceType) {
     var deviceParamMap = k4_deviceParamMaps_1.DeviceParamMaps[deviceType];
     var paramArr = getBasicParamArr(paramIds);
+    paramNameToIdx = {};
     // more "bespoke" setups get this
     paramIds.forEach(function (paramId, idx) {
         var param = new LiveAPI(function () { }, 'id ' + paramId);

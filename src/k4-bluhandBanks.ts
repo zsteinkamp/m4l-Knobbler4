@@ -18,7 +18,7 @@ setinletassist(
 )
 
 const updateParams = () => {}
-const paramNameToIdx: Record<string, number> = {}
+let paramNameToIdx: Record<string, number> = null
 
 const state = {
   currBank: 1,
@@ -58,6 +58,7 @@ function getBankParamArr(paramIds: number[], deviceType: string) {
   const deviceParamMap = DeviceParamMaps[deviceType]
 
   const paramArr = getBasicParamArr(paramIds)
+  paramNameToIdx = {}
   // more "bespoke" setups get this
   paramIds.forEach((paramId: number, idx: number) => {
     const param = new LiveAPI(() => {}, 'id ' + paramId)
