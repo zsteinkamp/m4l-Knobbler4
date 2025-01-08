@@ -63,17 +63,33 @@ function getBankParamArr(paramIds, deviceType) {
             paramIdxArr: [],
         };
         nameBank.paramNames.forEach(function (paramName) {
-            var idx = paramNameToIdx[paramName];
-            if (idx === undefined) {
+            var found = false;
+            var pIdx = null;
+            if (typeof paramName === 'number') {
+                // can specify a param index instead of a name in the data structure
+                row.paramIdxArr.push(paramName);
+                return;
+            }
+            for (var _i = 0, _a = paramName.toString().split('|'); _i < _a.length; _i++) {
+                var singleName = _a[_i];
+                // can have multiple options pipe-separated (e.g. for meld)
+                pIdx = paramNameToIdx[singleName];
+                //log('IS IT ' + pIdx)
+                if (pIdx !== undefined) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
                 log('ERROR (' +
                     deviceType +
-                    ') NO IDX FOR NAME ' +
+                    ') NO pIDX FOR NAME ' +
                     paramName +
                     ' ' +
                     JSON.stringify(Object.keys(paramNameToIdx)));
                 return;
             }
-            row.paramIdxArr.push(idx + 1);
+            row.paramIdxArr.push(pIdx + 1);
         });
         //log('ROW ' + JSON.stringify(row))
         paramArr.splice(idx, 0, row);

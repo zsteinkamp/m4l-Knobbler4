@@ -97,8 +97,8 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
       name: 'A Params',
       paramNames: [
         'A Osc Type',
-        'A Osc Shape',
-        'A Tone Filter',
+        8, // dial A1
+        9, // dial A2
         'A Amp Attack',
         'A Amp Decay',
         'A Amp Sustain',
@@ -119,8 +119,8 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
       name: 'B Params',
       paramNames: [
         'B Osc Type',
-        'B Osc Shape',
-        'B Tone Filter',
+        68, // dial B1
+        69, // dial B2
         'B Amp Attack',
         'B Amp Decay',
         'B Amp Sustain',
@@ -233,14 +233,14 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
         'Osc 1 Effect 1',
         'Osc 1 Transp',
         'Osc 1 Detune',
+        'Sub On',
+        'Sub Tone',
+        'Sub Gain',
+        'Volume',
         'Filter 1 Freq',
         'Filter 1 Res',
         'Filter 1 Type',
         'Filter 1 Drive',
-        'Volume',
-        'Sub On',
-        'Sub Tone',
-        'Sub Gain',
         'Amp Attack',
         'Amp Decay',
         'Amp Sustain',

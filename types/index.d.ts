@@ -19,7 +19,7 @@ type MessageType =
 
 type NameBank = {
   name: string
-  paramNames: string[]
+  paramNames: (string | number)[]
 }
 type BluhandBank = {
   name: string
