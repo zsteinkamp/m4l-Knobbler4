@@ -231,7 +231,7 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
       paramNames: [
         'Osc 1 Pos',
         'Osc 1 Effect 1',
-        'Osc 1 Transp',
+        'Osc 1 Effect 2',
         'Osc 1 Detune',
         'Sub On',
         'Sub Tone',
