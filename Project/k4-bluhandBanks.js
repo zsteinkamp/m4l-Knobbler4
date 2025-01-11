@@ -50,7 +50,7 @@ function getBankParamArr(paramIds, deviceType) {
     paramIds.forEach(function (paramId, idx) {
         var param = new LiveAPI(function () { }, 'id ' + paramId);
         paramNameToIdx[param.get('name')] = idx;
-        log("NAME TO IDX [".concat(param.get('name'), "]=").concat(idx));
+        //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
     });
     if (!deviceParamMap) {
         // nothing to customize, return the basic array
@@ -118,7 +118,7 @@ function sendCurrBank() {
 function id(deviceId) {
     var api = new LiveAPI(updateParams, 'id ' + deviceId.toString());
     var deviceType = api.get('class_display_name');
-    log(JSON.stringify({ deviceType: deviceType, name: api.get('name') }));
+    //log(JSON.stringify({ deviceType, name: api.get('name') }))
     var rawParams = api.get('parameters');
     var paramIds = [];
     rawParams.forEach(function (paramId, idx) {

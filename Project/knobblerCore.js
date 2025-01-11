@@ -225,6 +225,7 @@ function parentColorCallback(slot, iargs) {
     }
 }
 function checkDevicePresent(slot) {
+    //log('CHECK_DEVICE_PRESENT ' + slot)
     if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
         //log(`slot=${slot} DEVICE DELETED`)
         init(slot);
@@ -270,6 +271,7 @@ function setPath(slot, paramPath) {
         deviceCheckerTask[slot] = null;
     }
     deviceCheckerTask[slot] = new Task(function () { return checkDevicePresent(slot); });
+    deviceCheckerTask[slot].interval = 1000; // every second
     deviceCheckerTask[slot].repeat(-1);
     // Only get the device name if it has the name property
     if (deviceObj[slot].info.match(/property name str/)) {

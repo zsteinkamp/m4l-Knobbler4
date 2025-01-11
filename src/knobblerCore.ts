@@ -230,6 +230,7 @@ function parentColorCallback(slot: number, iargs: IArguments) {
 }
 
 function checkDevicePresent(slot: number) {
+  //log('CHECK_DEVICE_PRESENT ' + slot)
   if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
     //log(`slot=${slot} DEVICE DELETED`)
     init(slot)
@@ -290,6 +291,7 @@ function setPath(slot: number, paramPath: string) {
     deviceCheckerTask[slot] = null
   }
   deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot))
+  deviceCheckerTask[slot].interval = 1000 // every second
   deviceCheckerTask[slot].repeat(-1)
 
   // Only get the device name if it has the name property
