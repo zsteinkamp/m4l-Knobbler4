@@ -1,4 +1,13 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
@@ -17,6 +26,31 @@ var state = {
     numBanks: 1,
     bankParamArr: null,
 };
+function getMaxBanksParamArr(bankCount, deviceObj) {
+    var rawBanks = [];
+    log('BANK_COUNT ' + bankCount);
+    for (var i = 0; i < bankCount; i++) {
+        var bankName = deviceObj.call('get_bank_name', i);
+        var bankParams = deviceObj.call('get_bank_parameters', i);
+        log(' BANK ROW ' + JSON.stringify({ name: bankName, paramIdxArr: bankParams }));
+        rawBanks.push({ name: bankName, paramIdxArr: bankParams });
+    }
+    var ret = [];
+    for (var i = 0; rawBanks[i]; i++) {
+        var oddBank = rawBanks[i];
+        var evenBank = rawBanks[++i];
+        if (oddBank && evenBank) {
+            ret.push({
+                name: oddBank.name + ' / ' + evenBank.name,
+                paramIdxArr: __spreadArray(__spreadArray([], oddBank.paramIdxArr, true), evenBank.paramIdxArr, true),
+            });
+        }
+        else {
+            ret.push(oddBank);
+        }
+    }
+    return ret;
+}
 function getBasicParamArr(paramIds) {
     var ret = [];
     var numBanks = Math.ceil(paramIds.length / 16);
@@ -42,13 +76,22 @@ function getBasicParamArr(paramIds) {
     //log('RET ' + JSON.stringify(ret))
     return ret;
 }
-function getBankParamArr(paramIds, deviceType) {
+function getBankParamArr(paramIds, deviceType, deviceObj) {
+    if (deviceType.substring(0, 4) === 'Max ') {
+        // Max device, look for live.banks
+        var bankCount = deviceObj.call('get_bank_count', null) || 0;
+        if (bankCount > 0) {
+            return getMaxBanksParamArr(bankCount, deviceObj);
+        }
+    }
+    // deviceParamMap is custom or crafted parameter organization
     var deviceParamMap = k4_deviceParamMaps_1.DeviceParamMaps[deviceType];
     var paramArr = getBasicParamArr(paramIds);
     paramNameToIdx = {};
     // more "bespoke" setups get this
+    var param = new LiveAPI(function () { }, '');
     paramIds.forEach(function (paramId, idx) {
-        var param = new LiveAPI(function () { }, 'id ' + paramId);
+        param.id = paramId;
         paramNameToIdx[param.get('name')] = idx;
         //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
     });
@@ -117,8 +160,8 @@ function sendCurrBank() {
 }
 function id(deviceId) {
     var api = new LiveAPI(updateParams, 'id ' + deviceId.toString());
-    var deviceType = api.get('class_display_name');
-    //log(JSON.stringify({ deviceType, name: api.get('name') }))
+    var deviceType = api.get('class_display_name').toString();
+    log(JSON.stringify({ deviceType: deviceType, name: api.get('name') }));
     var rawParams = api.get('parameters');
     var paramIds = [];
     rawParams.forEach(function (paramId, idx) {
@@ -130,7 +173,7 @@ function id(deviceId) {
     paramIds.shift(); // remove device on/off
     //log('PARAMIDS ' + JSON.stringify(paramIds))
     state.currBank = 1;
-    state.bankParamArr = getBankParamArr(paramIds, deviceType);
+    state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
     state.numBanks = state.bankParamArr.length;
     //log('STATE CHECK ' + JSON.stringify(state))
     sendCurrBank();
