@@ -4,13 +4,13 @@
 		"appversion" : 		{
 			"major" : 8,
 			"minor" : 6,
-			"revision" : 4,
+			"revision" : 5,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 113.0, 283.0, 1621.0, 1186.0 ],
+		"rect" : [ 1542.0, 530.0, 1147.0, 1186.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -38,7 +38,59 @@
 		"style" : "",
 		"subpatcher_template" : "",
 		"assistshowspatchername" : 0,
+		"integercoordinates" : 1,
 		"boxes" : [ 			{
+				"box" : 				{
+					"annotation" : "Unmaps the currently mapped parameter.",
+					"annotation_name" : "Unmap",
+					"appearance" : 2,
+					"fontsize" : 6.0,
+					"hidden" : 1,
+					"id" : "obj-28",
+					"maxclass" : "live.text",
+					"mode" : 0,
+					"numinlets" : 1,
+					"numoutlets" : 2,
+					"outlettype" : [ "", "" ],
+					"parameter_enable" : 1,
+					"patching_rect" : [ 189.0, 411.0, 25.0, 25.0 ],
+					"pictures" : [ "multimap-unmap.svg", "multimap-unmap.svg" ],
+					"presentation" : 1,
+					"presentation_rect" : [ 61.0, 9.0, 15.0, 15.0 ],
+					"saved_attribute_attributes" : 					{
+						"valueof" : 						{
+							"parameter_annotation_name" : "Unmap",
+							"parameter_enum" : [ "val1", "val2" ],
+							"parameter_invisible" : 2,
+							"parameter_linknames" : 1,
+							"parameter_longname" : "unmap#1",
+							"parameter_mmax" : 1,
+							"parameter_modmode" : 0,
+							"parameter_shortname" : "Unmap",
+							"parameter_type" : 2
+						}
+
+					}
+,
+					"text" : "X",
+					"texton" : "x",
+					"varname" : "unmap#1"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-18",
+					"maxclass" : "panel",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 69.0, 215.0, 82.0, 82.0 ],
+					"presentation" : 1,
+					"presentation_rect" : [ 0.0, 87.0, 82.0, 82.0 ]
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"id" : "obj-32",
 					"maxclass" : "newobj",
@@ -209,9 +261,9 @@
 				"box" : 				{
 					"annotation" : "Insert Host Address",
 					"autoscroll" : 0,
-					"bgcolor" : [ 0.07843137254902, 0.07843137254902, 0.07843137254902, 1.0 ],
+					"bgcolor" : [ 0.141176470588235, 0.141176470588235, 0.141176470588235, 1.0 ],
 					"border" : 1.0,
-					"bordercolor" : [ 0.282353, 0.286275, 0.298039, 0.0 ],
+					"bordercolor" : [ 0.525490196078431, 0.525490196078431, 0.525490196078431, 0.0 ],
 					"fontname" : "Ableton Sans Medium",
 					"fontsize" : 9.5,
 					"id" : "obj-1",
@@ -224,8 +276,16 @@
 					"parameter_enable" : 1,
 					"patching_rect" : [ 630.0, 509.0, 147.0, 21.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 6.0, 20.5, 60.0, 15.0 ],
+					"presentation_rect" : [ 6.0, 46.0, 70.0, 15.0 ],
 					"saved_attribute_attributes" : 					{
+						"bgcolor" : 						{
+							"expression" : "themecolor.live_control_text_bg"
+						}
+,
+						"textcolor" : 						{
+							"expression" : "themecolor.live_lcd_control_fg"
+						}
+,
 						"valueof" : 						{
 							"parameter_initial" : [ "" ],
 							"parameter_invisible" : 1,
@@ -239,7 +299,7 @@
 					}
 ,
 					"text" : "- - -",
-					"textcolor" : [ 0.917647, 0.67451, 0.290196, 1.0 ],
+					"textcolor" : [ 1.0, 0.67843137254902, 0.337254901960784, 1.0 ],
 					"varname" : "eparam#1",
 					"wordwrap" : 0
 				}
@@ -267,7 +327,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 1130.0, 448.0, 28.0, 131.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 0.0, 0.0, 5.0, 38.0 ],
+					"presentation_rect" : [ 0.0, 5.0, 5.0, 74.0 ],
 					"saved_attribute_attributes" : 					{
 						"linecolor" : 						{
 							"expression" : "themecolor.live_meter_bg"
@@ -579,7 +639,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 961.0, 510.0, 150.0, 18.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 5.0, 1.0, 57.0, 18.0 ],
+					"presentation_rect" : [ 6.0, 8.0, 58.0, 18.0 ],
 					"saved_attribute_attributes" : 					{
 						"textcolor" : 						{
 							"expression" : "themecolor.live_lcd_control_fg"
@@ -614,7 +674,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 798.0, 510.0, 150.0, 18.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 64.0, 1.0, 57.0, 18.0 ],
+					"presentation_rect" : [ 6.0, 27.0, 70.0, 18.0 ],
 					"saved_attribute_attributes" : 					{
 						"textcolor" : 						{
 							"expression" : "themecolor.live_lcd_control_fg"
@@ -684,7 +744,7 @@
 					"parameter_mappable" : 0,
 					"patching_rect" : [ 376.0, 416.0, 46.0, 15.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 104.0, 20.5, 34.0, 15.0 ],
+					"presentation_rect" : [ 42.0, 61.0, 34.0, 15.0 ],
 					"prototypename" : "amount",
 					"saved_attribute_attributes" : 					{
 						"activebgcolor" : 						{
@@ -750,7 +810,7 @@
 					"parameter_mappable" : 0,
 					"patching_rect" : [ 284.0, 416.0, 46.0, 15.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 68.0, 20.5, 34.0, 15.0 ],
+					"presentation_rect" : [ 6.0, 61.0, 34.0, 15.0 ],
 					"prototypename" : "amount",
 					"saved_attribute_attributes" : 					{
 						"activebgcolor" : 						{
@@ -794,45 +854,6 @@
 					"textcolor" : [ 1.0, 0.709804, 0.196078, 1.0 ],
 					"textjustification" : 0,
 					"varname" : "targetMin#1"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"annotation" : "Unmaps the currently mapped parameter.",
-					"annotation_name" : "Unmap",
-					"appearance" : 2,
-					"fontsize" : 6.0,
-					"hidden" : 1,
-					"id" : "obj-28",
-					"maxclass" : "live.text",
-					"mode" : 0,
-					"numinlets" : 1,
-					"numoutlets" : 2,
-					"outlettype" : [ "", "" ],
-					"parameter_enable" : 1,
-					"patching_rect" : [ 189.0, 411.0, 25.0, 25.0 ],
-					"pictures" : [ "multimap-unmap.svg", "multimap-unmap.svg" ],
-					"presentation" : 1,
-					"presentation_rect" : [ 123.0, 2.5, 15.0, 15.0 ],
-					"saved_attribute_attributes" : 					{
-						"valueof" : 						{
-							"parameter_annotation_name" : "Unmap",
-							"parameter_enum" : [ "val1", "val2" ],
-							"parameter_invisible" : 2,
-							"parameter_linknames" : 1,
-							"parameter_longname" : "unmap#1",
-							"parameter_mmax" : 1,
-							"parameter_modmode" : 0,
-							"parameter_shortname" : "Unmap",
-							"parameter_type" : 2
-						}
-
-					}
-,
-					"text" : "X",
-					"texton" : "x",
-					"varname" : "unmap#1"
 				}
 
 			}
@@ -1724,6 +1745,7 @@
 			}
  ],
 		"textcolor" : [ 0.427450980392157, 0.843137254901961, 1.0, 1.0 ],
+		"bgcolor" : [ 0.211764705882353, 0.211764705882353, 0.211764705882353, 1.0 ],
 		"editing_bgcolor" : [ 0.309803921568627, 0.309803921568627, 0.309803921568627, 1.0 ],
 		"saved_attribute_attributes" : 		{
 			"locked_bgcolor" : 			{
