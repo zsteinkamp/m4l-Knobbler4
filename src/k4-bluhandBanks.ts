@@ -29,7 +29,7 @@ const state = {
 function getMaxBanksParamArr(bankCount: number, deviceObj: LiveAPI) {
   const rawBanks: BluhandBank[] = []
 
-  log('BANK_COUNT ' + bankCount)
+  //log('BANK_COUNT ' + bankCount)
 
   for (let i = 0; i < bankCount; i++) {
     const bankName = deviceObj.call('get_bank_name', i) as unknown as string
@@ -37,9 +37,9 @@ function getMaxBanksParamArr(bankCount: number, deviceObj: LiveAPI) {
       'get_bank_parameters',
       i
     ) as unknown as number[]
-    log(
-      ' BANK ROW ' + JSON.stringify({ name: bankName, paramIdxArr: bankParams })
-    )
+    //log(
+    //  ' BANK ROW ' + JSON.stringify({ name: bankName, paramIdxArr: bankParams })
+    //)
     rawBanks.push({ name: bankName, paramIdxArr: bankParams })
   }
 
@@ -189,7 +189,7 @@ function sendCurrBank() {
 function id(deviceId: number) {
   const api = new LiveAPI(updateParams, 'id ' + deviceId.toString())
   const deviceType = api.get('class_display_name').toString()
-  log(JSON.stringify({ deviceType, name: api.get('name') }))
+  //log(JSON.stringify({ deviceType, name: api.get('name') }))
   const rawParams = api.get('parameters')
   const paramIds: number[] = []
   rawParams.forEach((paramId: string | number, idx: number) => {

@@ -28,11 +28,13 @@ var state = {
 };
 function getMaxBanksParamArr(bankCount, deviceObj) {
     var rawBanks = [];
-    log('BANK_COUNT ' + bankCount);
+    //log('BANK_COUNT ' + bankCount)
     for (var i = 0; i < bankCount; i++) {
         var bankName = deviceObj.call('get_bank_name', i);
         var bankParams = deviceObj.call('get_bank_parameters', i);
-        log(' BANK ROW ' + JSON.stringify({ name: bankName, paramIdxArr: bankParams }));
+        //log(
+        //  ' BANK ROW ' + JSON.stringify({ name: bankName, paramIdxArr: bankParams })
+        //)
         rawBanks.push({ name: bankName, paramIdxArr: bankParams });
     }
     var ret = [];
@@ -161,7 +163,7 @@ function sendCurrBank() {
 function id(deviceId) {
     var api = new LiveAPI(updateParams, 'id ' + deviceId.toString());
     var deviceType = api.get('class_display_name').toString();
-    log(JSON.stringify({ deviceType: deviceType, name: api.get('name') }));
+    //log(JSON.stringify({ deviceType, name: api.get('name') }))
     var rawParams = api.get('parameters');
     var paramIds = [];
     rawParams.forEach(function (paramId, idx) {
