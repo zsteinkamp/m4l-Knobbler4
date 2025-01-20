@@ -37,7 +37,7 @@ function updateParamName(objId: string) {
     if (obj.type === 'MixerDevice') {
       nameArr.unshift('Mixer')
     } else {
-      nameArr.unshift(truncate(obj.get('name').toString(), 32))
+      nameArr.unshift(truncate(obj.get('name').toString(), 40))
     }
     obj = new LiveAPI(() => {}, obj.get('canonical_parent'))
     counter++
