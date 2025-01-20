@@ -143,6 +143,30 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/bPrevTrack',
+    handler: bareMsg,
+    msg: 'trackPrev',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/bNextTrack',
+    handler: bareMsg,
+    msg: 'trackNext',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/bPrevDev',
+    handler: bareMsg,
+    msg: 'devPrev',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/bNextDev',
+    handler: bareMsg,
+    msg: 'devNext',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/bBank',
     handler: stdSlot,
     msg: 'gotoBank',

@@ -225,11 +225,10 @@ function id(deviceId: number) {
 }
 
 function gotoBank(idx: number) {
-  if (idx < 0 || idx > state.numBanks) {
-    return
+  //log('HERE ' + idx)
+  if (idx > 0 && idx <= state.numBanks) {
+    state.currBank = idx
   }
-  //log('GOTO BANK ' + idx)
-  state.currBank = idx
   sendCurrBank()
 }
 function bankNext() {
@@ -245,14 +244,127 @@ function bankPrev() {
   sendCurrBank()
 }
 
+function trackDelta(delta: -1 | 1) {
+  //log('TRACK DELTA ' + delta)
+  const setObj = new LiveAPI(() => {}, 'live_set')
+  const viewObj = new LiveAPI(() => {}, 'live_set view')
+
+  const track = viewObj.get('selected_track')
+  const trackObj = new LiveAPI(() => {}, track)
+
+  const path = trackObj.unquotedpath
+  const isReturn = !!path.match(/ return_tracks /)
+  const isMaster = !!path.match(/ master_track/)
+  const tracks = setObj.get('tracks')
+  const returnTracks = setObj.get('return_tracks')
+  const masterTrack = setObj.get('master_track')
+  const numTracks = tracks.length / 2
+  const numReturnTracks = returnTracks.length / 2
+
+  //log('UQPATH=' + path)
+
+  if (isMaster) {
+    //log('ISMASTER')
+    if (delta > 0) {
+      //log('NONEXT')
+      // no "next" from master, only "prev"
+      return
+    }
+    if (numReturnTracks) {
+      //log('RETURN  live_set return_tracks ' + (numReturnTracks - 1))
+      trackObj.goto('live_set return_tracks ' + (numReturnTracks - 1))
+    } else {
+      //log('RETURN live_set tracks ' + (numTracks - 1))
+      trackObj.goto('live_set tracks ' + (numTracks - 1))
+    }
+  } else {
+    // not master (return or track)
+    const trackIdx = parseInt(path.match(/\d+$/)[0] || '0')
+    if (isReturn) {
+      if (delta < 0) {
+        // prev track
+        if (trackIdx < 1) {
+          // shift to last track
+          trackObj.goto('live_set tracks ' + (numTracks - 1))
+        } else {
+          trackObj.goto('live_set return_tracks ' + (trackIdx + delta))
+        }
+      } else {
+        // next track
+        if (trackIdx >= numReturnTracks - 1) {
+          // last return track, so go to master
+          trackObj.goto('live_set master_track')
+        } else {
+          trackObj.goto('live_set return_tracks ' + (trackIdx + delta))
+        }
+      }
+    } else {
+      // regular track
+      if (delta < 0) {
+        // prev track
+        if (trackIdx < 1) {
+          // no "prev" from first track
+          return
+        }
+        trackObj.goto('live_set tracks ' + (trackIdx + delta))
+      } else {
+        // next track
+        if (trackIdx < numTracks - 1) {
+          trackObj.goto('live_set tracks ' + (trackIdx + delta))
+        } else {
+          if (numReturnTracks) {
+            trackObj.goto('live_set return_tracks 0')
+          } else {
+            trackObj.goto('live_set master_track')
+          }
+        }
+      }
+    }
+  }
+
+  if (trackObj.id == 0) {
+    log('HMM ZERO ' + trackObj.unquotedpath)
+    return
+  }
+
+  viewObj.set('selected_track', ['id', trackObj.id])
+  //log('TRACK ' + trackObj.id)
+}
+
+function deviceDelta(delta: -1 | 1) {
+  const devObj = new LiveAPI(() => {}, 'live_set appointed_device')
+  if (devObj.id == 0) {
+    return
+  }
+  const path = devObj.unquotedpath
+  const devIdx = parseInt(path.match(/\d+$/)[0] || '0')
+  try {
+    const newPath = path.replace(/\d+$/, (devIdx + delta).toString())
+    const newObj = new LiveAPI(() => {}, newPath)
+    const viewApi = new LiveAPI(() => {}, 'live_set view')
+    if (newObj.id > 0) {
+      viewApi.call('select_device', ['id', newObj.id])
+    }
+  } catch (e) {}
+  //log('APPORT ' + devObj.id)
+}
+
+function trackPrev() {
+  trackDelta(-1)
+}
+function trackNext() {
+  trackDelta(1)
+}
+function devPrev() {
+  deviceDelta(-1)
+}
+function devNext() {
+  deviceDelta(1)
+}
+
 log('reloaded k4-bluhandBanks')
 
 // NOTE: This section must appear in any .ts file that is directuly used by a
 // [js] or [jsui] object so that tsc generates valid JS for Max.
 const module = {}
 export = {}
-
-// if we know about this device type, then we want to set up mapping by name
-//   foreach parameter
-//      build map of parameter name => parameter index (indexOf?)
-//
