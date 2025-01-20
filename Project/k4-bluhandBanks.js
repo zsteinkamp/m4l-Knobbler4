@@ -54,6 +54,7 @@ function getMaxBanksParamArr(bankCount, deviceObj) {
     return ret;
 }
 function getBasicParamArr(paramIds) {
+    //log('GET BASIC ' + paramIds.join(','))
     var ret = [];
     var numBanks = Math.ceil(paramIds.length / 16);
     var currBank = 0;
@@ -74,7 +75,9 @@ function getBasicParamArr(paramIds) {
         }
         currRow.paramIdxArr.push(idx + 1);
     });
-    ret.push(currRow);
+    if (currRow) {
+        ret.push(currRow);
+    }
     //log('RET ' + JSON.stringify(ret))
     return ret;
 }
@@ -154,6 +157,8 @@ function sendCurrBank() {
     //log('SEND CURR BANK ' + JSON.stringify(state))
     var currBankIdx = state.currBank - 1;
     if (!state.bankParamArr || !state.bankParamArr[currBankIdx]) {
+        //log('EARLY')
+        sendBankNames();
         return;
     }
     var bluBank = state.bankParamArr[currBankIdx];

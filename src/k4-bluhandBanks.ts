@@ -62,6 +62,7 @@ function getMaxBanksParamArr(bankCount: number, deviceObj: LiveAPI) {
 }
 
 function getBasicParamArr(paramIds: number[]) {
+  //log('GET BASIC ' + paramIds.join(','))
   const ret: BluhandBank[] = []
   const numBanks = Math.ceil(paramIds.length / 16)
   let currBank = 0
@@ -83,7 +84,9 @@ function getBasicParamArr(paramIds: number[]) {
     }
     currRow.paramIdxArr.push(idx + 1)
   })
-  ret.push(currRow)
+  if (currRow) {
+    ret.push(currRow)
+  }
 
   //log('RET ' + JSON.stringify(ret))
   return ret
@@ -181,6 +184,8 @@ function sendCurrBank() {
   //log('SEND CURR BANK ' + JSON.stringify(state))
   const currBankIdx = state.currBank - 1
   if (!state.bankParamArr || !state.bankParamArr[currBankIdx]) {
+    //log('EARLY')
+    sendBankNames()
     return
   }
   const bluBank = state.bankParamArr[currBankIdx]
