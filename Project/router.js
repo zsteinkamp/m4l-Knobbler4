@@ -130,6 +130,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_BLUHAND,
+        prefix: '/bBank',
+        handler: stdSlot,
+        msg: 'gotoBank',
+    },
+    {
+        outlet: OUTLET_BLUHAND,
         prefix: '/bdefaultbval',
         handler: stdSlot,
         msg: 'default',

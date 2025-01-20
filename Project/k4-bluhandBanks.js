@@ -59,7 +59,7 @@ function getBasicParamArr(paramIds) {
     var currBank = 0;
     var blankRow = function () {
         return {
-            name: 'Page ' + ++currBank + ' of ' + numBanks,
+            name: 'Page ' + ++currBank,
             paramIdxArr: [],
         };
     };
@@ -142,6 +142,14 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
     return paramArr;
 }
+function sendBankNames() {
+    var currBankIdx = state.currBank - 1;
+    var banks = state.bankParamArr.map(function (bank, idx) {
+        return { name: bank.name, sel: idx === currBankIdx };
+    });
+    //log('BANKS: ' + JSON.stringify(banks))
+    outlet(consts_1.OUTLET_OSC, ['/bBanks', JSON.stringify(banks)]);
+}
 function sendCurrBank() {
     //log('SEND CURR BANK ' + JSON.stringify(state))
     var currBankIdx = state.currBank - 1;
@@ -157,8 +165,9 @@ function sendCurrBank() {
     bluBank.paramIdxArr.forEach(function (paramIdx, idx) {
         outlet(consts_1.OUTLET_MSGS, ['target', idx + 1]);
         outlet(consts_1.OUTLET_MSGS, ['paramIdx', paramIdx]);
-        ////log(JSON.stringify({ str: 'MSG', target: idx + 1, paramIdx }))
+        //log(JSON.stringify({ str: 'MSG', target: idx + 1, paramIdx }))
     });
+    sendBankNames();
 }
 function id(deviceId) {
     var api = new LiveAPI(updateParams, 'id ' + deviceId.toString());
@@ -178,6 +187,14 @@ function id(deviceId) {
     state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
     state.numBanks = state.bankParamArr.length;
     //log('STATE CHECK ' + JSON.stringify(state))
+    sendCurrBank();
+}
+function gotoBank(idx) {
+    if (idx < 0 || idx > state.numBanks) {
+        return;
+    }
+    //log('GOTO BANK ' + idx)
+    state.currBank = idx;
     sendCurrBank();
 }
 function bankNext() {

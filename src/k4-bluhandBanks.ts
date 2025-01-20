@@ -67,7 +67,7 @@ function getBasicParamArr(paramIds: number[]) {
   let currBank = 0
   const blankRow = () => {
     return {
-      name: 'Page ' + ++currBank + ' of ' + numBanks,
+      name: 'Page ' + ++currBank,
       paramIdxArr: [] as number[],
     }
   }
@@ -167,6 +167,16 @@ function getBankParamArr(
   return paramArr
 }
 
+function sendBankNames() {
+  const currBankIdx = state.currBank - 1
+
+  const banks = state.bankParamArr.map((bank, idx) => {
+    return { name: bank.name, sel: idx === currBankIdx }
+  })
+  //log('BANKS: ' + JSON.stringify(banks))
+  outlet(OUTLET_OSC, ['/bBanks', JSON.stringify(banks)])
+}
+
 function sendCurrBank() {
   //log('SEND CURR BANK ' + JSON.stringify(state))
   const currBankIdx = state.currBank - 1
@@ -182,8 +192,9 @@ function sendCurrBank() {
   bluBank.paramIdxArr.forEach((paramIdx, idx) => {
     outlet(OUTLET_MSGS, ['target', idx + 1])
     outlet(OUTLET_MSGS, ['paramIdx', paramIdx])
-    ////log(JSON.stringify({ str: 'MSG', target: idx + 1, paramIdx }))
+    //log(JSON.stringify({ str: 'MSG', target: idx + 1, paramIdx }))
   })
+  sendBankNames()
 }
 
 function id(deviceId: number) {
@@ -205,6 +216,15 @@ function id(deviceId: number) {
   state.bankParamArr = getBankParamArr(paramIds, deviceType, api)
   state.numBanks = state.bankParamArr.length
   //log('STATE CHECK ' + JSON.stringify(state))
+  sendCurrBank()
+}
+
+function gotoBank(idx: number) {
+  if (idx < 0 || idx > state.numBanks) {
+    return
+  }
+  //log('GOTO BANK ' + idx)
+  state.currBank = idx
   sendCurrBank()
 }
 function bankNext() {

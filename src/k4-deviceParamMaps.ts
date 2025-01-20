@@ -176,7 +176,7 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
         'Drive',
         'Tone Amt',
         'Tone Freq',
-        'Routing',
+        'Color On',
         'Blend',
         'Mid High X-Over',
         'Fb Amt',

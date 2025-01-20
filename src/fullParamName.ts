@@ -12,6 +12,14 @@ const INLET_INPUT = 0
 setinletassist(INLET_INPUT, 'Input (object ID)')
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)')
 
+function truncate(str: string, len: number) {
+  //post('IN TRUNCATE ' + JSON.stringify({ str, len }) + '\n')
+  if (str.length < len) {
+    return str
+  }
+  return str.substring(0, len - 2) + '…'
+}
+
 function updateParamName(objId: string) {
   //log(objId)
   const nameArr = []
@@ -29,12 +37,20 @@ function updateParamName(objId: string) {
     if (obj.type === 'MixerDevice') {
       nameArr.unshift('Mixer')
     } else {
-      nameArr.unshift(obj.get('name').toString())
+      nameArr.unshift(truncate(obj.get('name').toString(), 32))
     }
     obj = new LiveAPI(() => {}, obj.get('canonical_parent'))
     counter++
   }
-  outlet(OUTLET_PARAM_NAME, nameArr.join(' > '))
+
+  let name = nameArr[0]
+  if (nameArr.length == 2) {
+    name = [nameArr[0], nameArr[1]].join(' > ')
+  } else if (nameArr.length > 2) {
+    name = [nameArr[0], nameArr[1], nameArr[nameArr.length - 1]].join(' > ')
+  }
+
+  outlet(OUTLET_PARAM_NAME, name)
 }
 
 log('reloaded fullParamName')
