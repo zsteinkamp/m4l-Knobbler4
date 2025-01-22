@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 90.0, 251.0, 1066.0, 575.0 ],
+		"rect" : [ 1166.0, 761.0, 1066.0, 575.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -70,7 +70,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 240.0, 316.0, 50.0, 22.0 ]
+					"patching_rect" : [ 240.0, 316.0, 50.0, 22.0 ],
+					"text" : "\"- - -\""
 				}
 
 			}
@@ -233,7 +234,7 @@
 					"patching_rect" : [ 39.0, 236.0, 25.0, 25.0 ],
 					"pictures" : [ "multimap-unmap.svg", "multimap-unmap.svg" ],
 					"presentation" : 1,
-					"presentation_rect" : [ 65.0, 4.0, 15.0, 15.0 ],
+					"presentation_rect" : [ 110.0, 4.0, 15.0, 15.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_annotation_name" : "Unmap",
@@ -262,6 +263,7 @@
 					"fontsize" : 9.5,
 					"id" : "obj-102",
 					"ignoreclick" : 1,
+					"lines" : 1,
 					"maxclass" : "textedit",
 					"nosymquotes" : 1,
 					"numinlets" : 1,
@@ -271,7 +273,7 @@
 					"parameter_mappable" : 0,
 					"patching_rect" : [ 240.0, 418.0, 82.0, 50.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 2.0, 22.0, 78.0, 23.0 ],
+					"presentation_rect" : [ 2.0, 22.0, 128.0, 23.0 ],
 					"saved_attribute_attributes" : 					{
 						"bgcolor" : 						{
 							"expression" : "themecolor.live_lcd_bg"
@@ -285,7 +287,8 @@
 ,
 					"text" : "Compressor",
 					"textcolor" : [ 1.0, 0.67843137254902, 0.337254901960784, 1.0 ],
-					"varname" : "shortcutTxt1"
+					"varname" : "shortcutTxt1",
+					"wordwrap" : 0
 				}
 
 			}

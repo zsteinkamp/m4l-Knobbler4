@@ -22,9 +22,10 @@ setinletassist(consts_1.OUTLET_MSGS, 'Output messages to the [poly finger] insta
 var updateParams = function () { };
 var paramNameToIdx = null;
 var state = {
+    devicePath: null,
     currBank: 1,
     numBanks: 1,
-    bankParamArr: null,
+    bankParamArr: [],
 };
 function getMaxBanksParamArr(bankCount, deviceObj) {
     var rawBanks = [];
@@ -188,6 +189,7 @@ function id(deviceId) {
     });
     paramIds.shift(); // remove device on/off
     //log('PARAMIDS ' + JSON.stringify(paramIds))
+    state.devicePath = api.unquotedpath;
     state.currBank = 1;
     state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
     state.numBanks = state.bankParamArr.length;
@@ -219,12 +221,11 @@ function trackDelta(delta) {
     var viewObj = new LiveAPI(function () { }, 'live_set view');
     var track = viewObj.get('selected_track');
     var trackObj = new LiveAPI(function () { }, track);
-    var path = trackObj.unquotedpath;
+    var path = trackObj.unquotedpath.split(' ').slice(0, 3).join(' ');
     var isReturn = !!path.match(/ return_tracks /);
     var isMaster = !!path.match(/ master_track/);
     var tracks = setObj.get('tracks');
     var returnTracks = setObj.get('return_tracks');
-    var masterTrack = setObj.get('master_track');
     var numTracks = tracks.length / 2;
     var numReturnTracks = returnTracks.length / 2;
     //log('UQPATH=' + path)
@@ -316,6 +317,26 @@ function deviceDelta(delta) {
         if (newObj.id > 0) {
             viewApi.call('select_device', ['id', newObj.id]);
         }
+        else {
+            var parentPath = path.split(' ').slice(0, -2).join(' ');
+            if (parentPath.indexOf(' devices ') > -1) {
+                var parentObj = new LiveAPI(function () { }, parentPath);
+                log('PARENT_PATH ' + parentPath + ' ' + parentObj.type);
+                if (parentObj.id > 0 && parentObj.type !== 'Chain') {
+                    viewApi.call('select_device', ['id', parentObj.id]);
+                }
+                else {
+                    var gparentPath = path.split(' ').slice(0, -4).join(' ');
+                    if (gparentPath.indexOf(' devices ') > -1) {
+                        log('GPARENT_PATH ' + parentPath);
+                        var gparentObj = new LiveAPI(function () { }, gparentPath);
+                        if (gparentObj.id > 0) {
+                            viewApi.call('select_device', ['id', gparentObj.id]);
+                        }
+                    }
+                }
+            }
+        }
     }
     catch (e) { }
     //log('APPORT ' + devObj.id)
@@ -331,6 +352,19 @@ function devPrev() {
 }
 function devNext() {
     deviceDelta(1);
+}
+function ctlRec() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var currMode = ctlApi.get('record_mode');
+    ctlApi.set('record_mode', currMode == 1 ? 0 : 1);
+}
+function ctlPlay() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    ctlApi.call('start_playing', null);
+}
+function ctlStop() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    ctlApi.call('stop_playing', null);
 }
 log('reloaded k4-bluhandBanks');
 // NOTE: This section must appear in any .ts file that is directuly used by a
