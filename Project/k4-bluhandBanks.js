@@ -321,14 +321,14 @@ function deviceDelta(delta) {
             var parentPath = path.split(' ').slice(0, -2).join(' ');
             if (parentPath.indexOf(' devices ') > -1) {
                 var parentObj = new LiveAPI(function () { }, parentPath);
-                log('PARENT_PATH ' + parentPath + ' ' + parentObj.type);
+                //log('PARENT_PATH ' + parentPath + ' ' + parentObj.type)
                 if (parentObj.id > 0 && parentObj.type !== 'Chain') {
                     viewApi.call('select_device', ['id', parentObj.id]);
                 }
                 else {
                     var gparentPath = path.split(' ').slice(0, -4).join(' ');
                     if (gparentPath.indexOf(' devices ') > -1) {
-                        log('GPARENT_PATH ' + parentPath);
+                        //log('GPARENT_PATH ' + parentPath)
                         var gparentObj = new LiveAPI(function () { }, gparentPath);
                         if (gparentObj.id > 0) {
                             viewApi.call('select_device', ['id', gparentObj.id]);
