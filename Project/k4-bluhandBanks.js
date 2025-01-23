@@ -341,6 +341,32 @@ function deviceDelta(delta) {
     catch (e) { }
     //log('APPORT ' + devObj.id)
 }
+function btnSkipPrev() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    ctlApi.call('jump_to_prev_cue', null);
+}
+function btnSkipNext() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    ctlApi.call('jump_to_next_cue', null);
+}
+function btnReEnableAutomation() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    ctlApi.call('re_enable_automation', null);
+}
+function btnLoop() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var isLoop = parseInt(ctlApi.get('loop'));
+    ctlApi.set('loop', isLoop ? 0 : 1);
+}
+function btnCaptureMidi() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    ctlApi.call('capture_midi', null);
+}
+function btnArrangementOverdub() {
+    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var isOverdub = parseInt(ctlApi.get('arrangement_overdub'));
+    ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1);
+}
 function trackPrev() {
     trackDelta(-1);
 }

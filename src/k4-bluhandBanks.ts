@@ -368,6 +368,33 @@ function deviceDelta(delta: -1 | 1) {
   //log('APPORT ' + devObj.id)
 }
 
+function btnSkipPrev() {
+  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  ctlApi.call('jump_to_prev_cue', null)
+}
+function btnSkipNext() {
+  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  ctlApi.call('jump_to_next_cue', null)
+}
+function btnReEnableAutomation() {
+  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  ctlApi.call('re_enable_automation', null)
+}
+function btnLoop() {
+  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const isLoop = parseInt(ctlApi.get('loop'))
+  ctlApi.set('loop', isLoop ? 0 : 1)
+}
+function btnCaptureMidi() {
+  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  ctlApi.call('capture_midi', null)
+}
+function btnArrangementOverdub() {
+  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const isOverdub = parseInt(ctlApi.get('arrangement_overdub'))
+  ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1)
+}
+
 function trackPrev() {
   trackDelta(-1)
 }

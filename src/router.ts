@@ -131,6 +131,42 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/btnSkipPrev',
+    handler: bareMsg,
+    msg: 'btnSkipPrev',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/btnSkipNext',
+    handler: bareMsg,
+    msg: 'btnSkipNext',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/btnArrangementOverdub',
+    handler: bareMsg,
+    msg: 'btnArrangementOverdub',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/btnLoop',
+    handler: bareMsg,
+    msg: 'btnLoop',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/btnReEnableAutomation',
+    handler: bareMsg,
+    msg: 'btnReEnableAutomation',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/btnCaptureMidi',
+    handler: bareMsg,
+    msg: 'btnCaptureMidi',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/bbankPrev',
     handler: bareMsg,
     msg: 'bankPrev',
