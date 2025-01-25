@@ -207,13 +207,13 @@
 					"presentation_rect" : [ 2.0, 2.0, 62.0, 18.0 ],
 					"saved_attribute_attributes" : 					{
 						"textcolor" : 						{
-							"expression" : "themecolor.live_lcd_title"
+							"expression" : "themecolor.live_display_scale_text"
 						}
 
 					}
 ,
 					"text" : "Shortcut #1",
-					"textcolor" : [ 0.709803921568627, 0.709803921568627, 0.709803921568627, 1.0 ],
+					"textcolor" : [ 0.525490196078431, 0.525490196078431, 0.525490196078431, 1.0 ],
 					"textjustification" : 0
 				}
 
