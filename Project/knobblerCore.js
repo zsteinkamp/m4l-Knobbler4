@@ -312,7 +312,7 @@ function setPath(slot, paramPath) {
 }
 exports.setPath = setPath;
 function refresh() {
-    for (var i = 0; i < consts_1.MAX_SLOTS; i++) {
+    for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         refreshSlotUI(i);
     }
 }

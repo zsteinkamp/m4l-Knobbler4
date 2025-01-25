@@ -349,7 +349,7 @@ function setPath(slot: number, paramPath: string) {
 }
 
 function refresh() {
-  for (let i = 0; i < MAX_SLOTS; i++) {
+  for (let i = 1; i <= MAX_SLOTS; i++) {
     refreshSlotUI(i)
   }
 }

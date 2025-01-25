@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 1542.0, 530.0, 1147.0, 1186.0 ],
+		"rect" : [ 1588.0, 511.0, 1147.0, 1186.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -75,18 +75,6 @@
 					"text" : "X",
 					"texton" : "x",
 					"varname" : "unmap#1"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-18",
-					"maxclass" : "panel",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 69.0, 215.0, 82.0, 82.0 ],
-					"presentation" : 1,
-					"presentation_rect" : [ 0.0, 87.0, 82.0, 82.0 ]
 				}
 
 			}
@@ -1745,7 +1733,6 @@
 			}
  ],
 		"textcolor" : [ 0.427450980392157, 0.843137254901961, 1.0, 1.0 ],
-		"bgcolor" : [ 0.211764705882353, 0.211764705882353, 0.211764705882353, 1.0 ],
 		"editing_bgcolor" : [ 0.309803921568627, 0.309803921568627, 0.309803921568627, 1.0 ],
 		"saved_attribute_attributes" : 		{
 			"locked_bgcolor" : 			{
