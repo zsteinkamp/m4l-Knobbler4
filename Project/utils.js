@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debouncedTask = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.debouncedTask = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
     function log(_) {
@@ -21,6 +21,15 @@ function isValidPath(path) {
     return typeof path === 'string' && path.match(/^live_set /);
 }
 exports.isValidPath = isValidPath;
+function colorToString(colorVal) {
+    var retString = parseInt(colorVal).toString(16).toUpperCase();
+    var strlen = retString.length;
+    for (var i = 0; i < 6 - strlen; i++) {
+        retString = '0' + retString;
+    }
+    return retString;
+}
+exports.colorToString = colorToString;
 var tasks = {};
 function debouncedTask(key, slot, task, delayMs) {
     if (!tasks[key]) {

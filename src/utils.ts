@@ -18,6 +18,15 @@ export function isValidPath(path: string) {
   return typeof path === 'string' && path.match(/^live_set /)
 }
 
+export function colorToString(colorVal: string) {
+  let retString = parseInt(colorVal).toString(16).toUpperCase()
+  const strlen = retString.length
+  for (let i = 0; i < 6 - strlen; i++) {
+    retString = '0' + retString
+  }
+  return retString
+}
+
 const tasks: Record<string, Task[]> = {}
 export function debouncedTask(
   key: 'sendVal' | 'allowUpdates' | 'allowMapping' | 'allowUpdateFromOsc',

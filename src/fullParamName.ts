@@ -24,7 +24,7 @@ function updateParamName(objId: string) {
   //log(objId)
   const nameArr = []
   let counter = 0
-  let obj = new LiveAPI(() => {}, 'id ' + objId)
+  const obj = new LiveAPI(() => {}, 'id ' + objId)
 
   if (obj.id == 0) {
     return
@@ -39,7 +39,7 @@ function updateParamName(objId: string) {
     } else {
       nameArr.unshift(truncate(obj.get('name').toString(), 40))
     }
-    obj = new LiveAPI(() => {}, obj.get('canonical_parent'))
+    obj.id = obj.get('canonical_parent')
     counter++
   }
 

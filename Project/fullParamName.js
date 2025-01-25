@@ -33,7 +33,7 @@ function updateParamName(objId) {
         else {
             nameArr.unshift(truncate(obj.get('name').toString(), 40));
         }
-        obj = new LiveAPI(function () { }, obj.get('canonical_parent'));
+        obj.id = obj.get('canonical_parent');
         counter++;
     }
     var name = nameArr[0];

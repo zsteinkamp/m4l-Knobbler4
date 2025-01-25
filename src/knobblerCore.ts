@@ -1,4 +1,10 @@
-import { debouncedTask, dequote, isValidPath, logFactory } from './utils'
+import {
+  colorToString,
+  debouncedTask,
+  dequote,
+  isValidPath,
+  logFactory,
+} from './utils'
 import { MAX_SLOTS, OUTLET_MSGS, OUTLET_OSC } from './consts'
 
 import config from './config'
@@ -210,21 +216,12 @@ function trackNameCallback(slot: number, iargs: IArguments) {
   }
 }
 
-function colorToString(colorVal: string) {
-  let retString = parseInt(colorVal).toString(16).toUpperCase()
-  const strlen = retString.length
-  for (let i = 0; i < 6 - strlen; i++) {
-    retString = '0' + retString
-  }
-  return retString + 'FF'
-}
-
 function parentColorCallback(slot: number, iargs: IArguments) {
   //log('PARENT COLOR CALLBACK')
   const args = arrayfromargs(iargs)
   //log('PARENTCOLOR', args)
   if (args[0] === 'color') {
-    param[slot].trackColor = colorToString(args[1])
+    param[slot].trackColor = colorToString(args[1]) + 'FF'
     sendColor(slot)
   }
 }
@@ -318,7 +315,8 @@ function setPath(slot: number, paramPath: string) {
     parentId
   )
   parentColorObj[slot].property = 'color'
-  param[slot].trackColor = colorToString(parentColorObj[slot].get('color'))
+  param[slot].trackColor =
+    colorToString(parentColorObj[slot].get('color')) + 'FF'
 
   // Try to get the track name
   const matches =

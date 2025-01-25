@@ -1,6 +1,6 @@
 import { logFactory } from './utils'
 import config from './config'
-import { INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
+import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
 
 import { DeviceParamMaps } from './k4-deviceParamMaps'
 
@@ -201,6 +201,17 @@ function sendCurrBank() {
     //log(JSON.stringify({ str: 'MSG', target: idx + 1, paramIdx }))
   })
   sendBankNames()
+}
+
+function gotoDevice(deviceId: number) {
+  const api = new LiveAPI(noFn, 'live_set view')
+  //log('GOTO DEVICE ' + deviceId)
+  api.call('select_device', ['id', deviceId])
+}
+function gotoTrack(trackId: number) {
+  const api = new LiveAPI(noFn, 'live_set view')
+  //log('GOTO TRACK ' + trackId)
+  api.set('selected_track', ['id', trackId])
 }
 
 function id(deviceId: number) {

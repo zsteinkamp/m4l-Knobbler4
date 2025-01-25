@@ -203,6 +203,18 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/gotoTrack',
+    handler: stdVal,
+    msg: 'gotoTrack',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/gotoDevice',
+    handler: stdVal,
+    msg: 'gotoDevice',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/bNextTrack',
     handler: bareMsg,
     msg: 'trackNext',

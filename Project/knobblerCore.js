@@ -207,20 +207,12 @@ function trackNameCallback(slot, iargs) {
         sendTrackName(slot);
     }
 }
-function colorToString(colorVal) {
-    var retString = parseInt(colorVal).toString(16).toUpperCase();
-    var strlen = retString.length;
-    for (var i = 0; i < 6 - strlen; i++) {
-        retString = '0' + retString;
-    }
-    return retString + 'FF';
-}
 function parentColorCallback(slot, iargs) {
     //log('PARENT COLOR CALLBACK')
     var args = arrayfromargs(iargs);
     //log('PARENTCOLOR', args)
     if (args[0] === 'color') {
-        param[slot].trackColor = colorToString(args[1]);
+        param[slot].trackColor = (0, utils_1.colorToString)(args[1]) + 'FF';
         sendColor(slot);
     }
 }
@@ -289,7 +281,8 @@ function setPath(slot, paramPath) {
     // parent color
     parentColorObj[slot] = new LiveAPI(function (iargs) { return parentColorCallback(slot, iargs); }, parentId);
     parentColorObj[slot].property = 'color';
-    param[slot].trackColor = colorToString(parentColorObj[slot].get('color'));
+    param[slot].trackColor =
+        (0, utils_1.colorToString)(parentColorObj[slot].get('color')) + 'FF';
     // Try to get the track name
     var matches = devicePath.match(/^live_set tracks \d+/) ||
         devicePath.match(/^live_set return_tracks \d+/) ||

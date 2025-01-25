@@ -175,6 +175,16 @@ function sendCurrBank() {
     });
     sendBankNames();
 }
+function gotoDevice(deviceId) {
+    var api = new LiveAPI(consts_1.noFn, 'live_set view');
+    //log('GOTO DEVICE ' + deviceId)
+    api.call('select_device', ['id', deviceId]);
+}
+function gotoTrack(trackId) {
+    var api = new LiveAPI(consts_1.noFn, 'live_set view');
+    //log('GOTO TRACK ' + trackId)
+    api.set('selected_track', ['id', trackId]);
+}
 function id(deviceId) {
     var api = new LiveAPI(updateParams, 'id ' + deviceId.toString());
     var deviceType = api.get('class_display_name').toString();
