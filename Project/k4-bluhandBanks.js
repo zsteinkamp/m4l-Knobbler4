@@ -225,6 +225,19 @@ function bankPrev() {
     }
     sendCurrBank();
 }
+function toggleMetronome() {
+    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    var metroVal = parseInt(api.get('metronome'));
+    api.set('metronome', metroVal ? 0 : 1);
+}
+function tapTempo() {
+    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    api.call('tap_tempo', null);
+}
+function setTempo(val) {
+    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    api.set('tempo', val);
+}
 function trackDelta(delta) {
     //log('TRACK DELTA ' + delta)
     var setObj = new LiveAPI(function () { }, 'live_set');

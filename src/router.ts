@@ -233,6 +233,24 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/metronome',
+    handler: bareMsg,
+    msg: 'toggleMetronome',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/tapTempo',
+    handler: bareMsg,
+    msg: 'tapTempo',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/tempo',
+    handler: stdVal,
+    msg: 'setTempo',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/bBank',
     handler: stdSlot,
     msg: 'gotoBank',

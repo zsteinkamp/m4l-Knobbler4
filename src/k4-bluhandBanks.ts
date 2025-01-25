@@ -256,6 +256,19 @@ function bankPrev() {
   }
   sendCurrBank()
 }
+function toggleMetronome() {
+  const api = new LiveAPI(noFn, 'live_set')
+  const metroVal = parseInt(api.get('metronome'))
+  api.set('metronome', metroVal ? 0 : 1)
+}
+function tapTempo() {
+  const api = new LiveAPI(noFn, 'live_set')
+  api.call('tap_tempo', null)
+}
+function setTempo(val: number) {
+  const api = new LiveAPI(noFn, 'live_set')
+  api.set('tempo', val)
+}
 
 function trackDelta(delta: -1 | 1) {
   //log('TRACK DELTA ' + delta)
