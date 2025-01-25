@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debouncedTask = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.debouncedTask = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
     function log(_) {
@@ -30,6 +30,14 @@ function colorToString(colorVal) {
     return retString;
 }
 exports.colorToString = colorToString;
+function truncate(str, len) {
+    //post('IN TRUNCATE ' + JSON.stringify({ str, len }) + '\n')
+    if (str.length < len) {
+        return str;
+    }
+    return str.substring(0, len - 2) + '…';
+}
+exports.truncate = truncate;
 var tasks = {};
 function debouncedTask(key, slot, task, delayMs) {
     if (!tasks[key]) {

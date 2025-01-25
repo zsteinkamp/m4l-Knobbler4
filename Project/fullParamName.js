@@ -8,13 +8,6 @@ var OUTLET_PARAM_NAME = 0;
 var INLET_INPUT = 0;
 setinletassist(INLET_INPUT, 'Input (object ID)');
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)');
-function truncate(str, len) {
-    //post('IN TRUNCATE ' + JSON.stringify({ str, len }) + '\n')
-    if (str.length < len) {
-        return str;
-    }
-    return str.substring(0, len - 2) + '…';
-}
 function updateParamName(objId) {
     //log(objId)
     var nameArr = [];
@@ -31,7 +24,7 @@ function updateParamName(objId) {
             nameArr.unshift('Mixer');
         }
         else {
-            nameArr.unshift(truncate(obj.get('name').toString(), 40));
+            nameArr.unshift((0, utils_1.truncate)(obj.get('name').toString(), 40));
         }
         obj.id = obj.get('canonical_parent');
         counter++;

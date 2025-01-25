@@ -2,9 +2,11 @@ autowatch = 1
 inlets = 1
 outlets = 1
 
-import { colorToString, logFactory } from './utils'
+import { colorToString, logFactory, truncate } from './utils'
 import config from './config'
 import { noFn, INLET_MSGS, OUTLET_OSC } from './consts'
+
+const MAX_LEN = 32
 
 const log = logFactory(config)
 
@@ -66,7 +68,7 @@ function getTracksFor(trackIds: IdArr) {
     state.api.id = trackId
     const trackObj = [
       trackId,
-      state.api.get('name').toString(),
+      truncate(state.api.get('name').toString(), MAX_LEN),
       colorToString(state.api.get('color').toString()),
     ] as Track
     ret.push(trackObj)
@@ -80,7 +82,7 @@ function getDevicesFor(deviceIds: IdArr) {
     state.api.id = deviceId
     const deviceObj = [
       deviceId,
-      state.api.get('name').toString(),
+      truncate(state.api.get('name').toString(), MAX_LEN),
       state.api.get('class_display_name').toString(),
     ] as Device
     ret.push(deviceObj)

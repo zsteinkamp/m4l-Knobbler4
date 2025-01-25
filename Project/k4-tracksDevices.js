@@ -5,6 +5,7 @@ outlets = 1;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
+var MAX_LEN = 32;
 var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
@@ -43,7 +44,7 @@ function getTracksFor(trackIds) {
         state.api.id = trackId;
         var trackObj = [
             trackId,
-            state.api.get('name').toString(),
+            (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
             (0, utils_1.colorToString)(state.api.get('color').toString()),
         ];
         ret.push(trackObj);
@@ -57,7 +58,7 @@ function getDevicesFor(deviceIds) {
         state.api.id = deviceId;
         var deviceObj = [
             deviceId,
-            state.api.get('name').toString(),
+            (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
             state.api.get('class_display_name').toString(),
         ];
         ret.push(deviceObj);

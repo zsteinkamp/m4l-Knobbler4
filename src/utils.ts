@@ -27,6 +27,14 @@ export function colorToString(colorVal: string) {
   return retString
 }
 
+export function truncate(str: string, len: number) {
+  //post('IN TRUNCATE ' + JSON.stringify({ str, len }) + '\n')
+  if (str.length < len) {
+    return str
+  }
+  return str.substring(0, len - 2) + '…'
+}
+
 const tasks: Record<string, Task[]> = {}
 export function debouncedTask(
   key: 'sendVal' | 'allowUpdates' | 'allowMapping' | 'allowUpdateFromOsc',

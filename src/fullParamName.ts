@@ -1,4 +1,4 @@
-import { logFactory } from './utils'
+import { truncate, logFactory } from './utils'
 import config from './config'
 
 inlets = 1
@@ -11,14 +11,6 @@ const INLET_INPUT = 0
 
 setinletassist(INLET_INPUT, 'Input (object ID)')
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)')
-
-function truncate(str: string, len: number) {
-  //post('IN TRUNCATE ' + JSON.stringify({ str, len }) + '\n')
-  if (str.length < len) {
-    return str
-  }
-  return str.substring(0, len - 2) + '…'
-}
 
 function updateParamName(objId: string) {
   //log(objId)
