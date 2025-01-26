@@ -198,6 +198,16 @@ function id(deviceId) {
         paramIds.push(paramId);
     });
     paramIds.shift(); // remove device on/off
+    var canHaveChains = api.get('can_have_chains');
+    //log('CAN_HAVE_CHAINS: ' + canHaveChains)
+    if (canHaveChains) {
+        // see if we should slice off some macros
+        var numMacros = api.get('visible_macro_count');
+        if (numMacros) {
+            //log('GonNNA SlIcE ' + numMacros)
+            paramIds = paramIds.slice(0, numMacros);
+        }
+    }
     //log('PARAMIDS ' + JSON.stringify(paramIds))
     state.devicePath = api.unquotedpath;
     state.currBank = 1;

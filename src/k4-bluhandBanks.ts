@@ -219,7 +219,7 @@ function id(deviceId: number) {
   const deviceType = api.get('class_display_name').toString()
   //log(JSON.stringify({ deviceType, name: api.get('name') }))
   const rawParams = api.get('parameters')
-  const paramIds: number[] = []
+  let paramIds: number[] = []
   rawParams.forEach((paramId: string | number, idx: number) => {
     if (paramId === 'id') {
       return
@@ -227,6 +227,17 @@ function id(deviceId: number) {
     paramIds.push(paramId as number)
   })
   paramIds.shift() // remove device on/off
+
+  const canHaveChains = api.get('can_have_chains')
+  //log('CAN_HAVE_CHAINS: ' + canHaveChains)
+  if (canHaveChains) {
+    // see if we should slice off some macros
+    const numMacros = api.get('visible_macro_count')
+    if (numMacros) {
+      //log('GonNNA SlIcE ' + numMacros)
+      paramIds = paramIds.slice(0, numMacros)
+    }
+  }
   //log('PARAMIDS ' + JSON.stringify(paramIds))
 
   state.devicePath = api.unquotedpath

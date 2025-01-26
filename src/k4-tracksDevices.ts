@@ -92,8 +92,11 @@ function getDevicesFor(deviceIds: IdArr) {
 
 function updateTypePeriodic(type: ListClass) {
   const stateObj = state[type]
+  if (!stateObj) {
+    return
+  }
   const objFn = type === 'device' ? getDevicesFor : getTracksFor
-  stateObj.objs = objFn(stateObj.ids.slice(0, 200)) // limit 200 returns
+  stateObj.objs = objFn(stateObj.ids.slice(0, 128)) // limit
   const strVal = JSON.stringify(stateObj.objs)
 
   // no change, return
@@ -101,14 +104,48 @@ function updateTypePeriodic(type: ListClass) {
     return
   }
 
-  //log(type.toUpperCase() + ': ' + strVal)
+  //log(
+  //  type.toUpperCase() +
+  //    ': ' +
+  //    stateObj.objs.length +
+  //    ' : ' +
+  //    strVal.length +
+  //    ' => ' +
+  //    strVal
+  //)
   outlet(OUTLET_OSC, '/' + type + 'List', strVal)
   stateObj.last = strVal
 }
 
+function checkAndDescend(stateObj: ClassObj, objId: number) {
+  stateObj.ids.push(objId)
+  state.api.id = objId
+  if (state.api.get('can_have_chains').toString() === '1') {
+    //log('DESCENDING FROM ' + objId)
+    const chains = cleanArr(state.api.get('chains')) as number[]
+    //log('>> GOT CHAINS ' + JSON.stringify(chains))
+    for (const chainId of chains) {
+      state.api.id = chainId
+      const devices = cleanArr(state.api.get('devices')) as number[]
+      for (const deviceId of devices) {
+        checkAndDescend(stateObj, deviceId)
+      }
+    }
+  }
+}
+
 function updateGeneric(type: ListClass, val: IdObserverArg) {
   const stateObj = state[type]
-  stateObj.ids = cleanArr(val) as IdArr
+  stateObj.ids = []
+  const idArr = cleanArr(val) as IdArr
+  if (type === 'device') {
+    for (const objId of idArr) {
+      //log('>>> OBJID ' + objId)
+      checkAndDescend(stateObj, objId)
+    }
+  } else {
+    stateObj.ids = [...idArr]
+  }
   updateTypePeriodic(type)
 }
 

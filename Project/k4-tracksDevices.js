@@ -1,4 +1,13 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 autowatch = 1;
 inlets = 1;
 outlets = 1;
@@ -67,20 +76,60 @@ function getDevicesFor(deviceIds) {
 }
 function updateTypePeriodic(type) {
     var stateObj = state[type];
+    if (!stateObj) {
+        return;
+    }
     var objFn = type === 'device' ? getDevicesFor : getTracksFor;
-    stateObj.objs = objFn(stateObj.ids.slice(0, 200)); // limit 200 returns
+    stateObj.objs = objFn(stateObj.ids.slice(0, 128)); // limit
     var strVal = JSON.stringify(stateObj.objs);
     // no change, return
     if (strVal == stateObj.last) {
         return;
     }
-    //log(type.toUpperCase() + ': ' + strVal)
+    //log(
+    //  type.toUpperCase() +
+    //    ': ' +
+    //    stateObj.objs.length +
+    //    ' : ' +
+    //    strVal.length +
+    //    ' => ' +
+    //    strVal
+    //)
     outlet(consts_1.OUTLET_OSC, '/' + type + 'List', strVal);
     stateObj.last = strVal;
 }
+function checkAndDescend(stateObj, objId) {
+    stateObj.ids.push(objId);
+    state.api.id = objId;
+    if (state.api.get('can_have_chains').toString() === '1') {
+        //log('DESCENDING FROM ' + objId)
+        var chains = cleanArr(state.api.get('chains'));
+        //log('>> GOT CHAINS ' + JSON.stringify(chains))
+        for (var _i = 0, chains_1 = chains; _i < chains_1.length; _i++) {
+            var chainId = chains_1[_i];
+            state.api.id = chainId;
+            var devices = cleanArr(state.api.get('devices'));
+            for (var _a = 0, devices_1 = devices; _a < devices_1.length; _a++) {
+                var deviceId = devices_1[_a];
+                checkAndDescend(stateObj, deviceId);
+            }
+        }
+    }
+}
 function updateGeneric(type, val) {
     var stateObj = state[type];
-    stateObj.ids = cleanArr(val);
+    stateObj.ids = [];
+    var idArr = cleanArr(val);
+    if (type === 'device') {
+        for (var _i = 0, idArr_1 = idArr; _i < idArr_1.length; _i++) {
+            var objId = idArr_1[_i];
+            //log('>>> OBJID ' + objId)
+            checkAndDescend(stateObj, objId);
+        }
+    }
+    else {
+        stateObj.ids = __spreadArray([], idArr, true);
+    }
     updateTypePeriodic(type);
 }
 function updateTracks(val) {
