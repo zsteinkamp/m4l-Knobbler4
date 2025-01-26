@@ -21,6 +21,7 @@ setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 var state = {
     api: null,
     periodicTask: null,
+    deviceDepth: {},
     track: {
         watch: null,
         ids: [],
@@ -41,6 +42,9 @@ var state = {
     },
 };
 function cleanArr(arr) {
+    if (!arr || arr.length === 0) {
+        return [];
+    }
     return arr.filter(function (e) {
         return parseInt(e).toString() === e.toString();
     });
@@ -69,6 +73,7 @@ function getDevicesFor(deviceIds) {
             deviceId,
             (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
             state.api.get('class_display_name').toString(),
+            state.deviceDepth[deviceId] || 0,
         ];
         ret.push(deviceObj);
     }
@@ -98,10 +103,23 @@ function updateTypePeriodic(type) {
     outlet(consts_1.OUTLET_OSC, '/' + type + 'List', strVal);
     stateObj.last = strVal;
 }
-function checkAndDescend(stateObj, objId) {
+function checkAndDescend(stateObj, objId, depth) {
     stateObj.ids.push(objId);
+    state.deviceDepth[objId] = depth;
     state.api.id = objId;
-    if (state.api.get('can_have_chains').toString() === '1') {
+    var className = state.api.get('class_display_name').toString();
+    //log('CLASS_NAME: ' + className)
+    var rawReturnChains = [];
+    if (className === 'Drum Rack') {
+        rawReturnChains = state.api.get('return_chains');
+        //log(
+        //  '>> RAW RETURN_CHAINS ' +
+        //    className +
+        //    ' ' +
+        //    JSON.stringify(rawReturnChains)
+        //)
+    }
+    if (parseInt(state.api.get('can_have_chains'))) {
         //log('DESCENDING FROM ' + objId)
         var chains = cleanArr(state.api.get('chains'));
         //log('>> GOT CHAINS ' + JSON.stringify(chains))
@@ -111,7 +129,18 @@ function checkAndDescend(stateObj, objId) {
             var devices = cleanArr(state.api.get('devices'));
             for (var _a = 0, devices_1 = devices; _a < devices_1.length; _a++) {
                 var deviceId = devices_1[_a];
-                checkAndDescend(stateObj, deviceId);
+                checkAndDescend(stateObj, deviceId, depth + 1);
+            }
+        }
+        var returnChains = cleanArr(rawReturnChains || []);
+        //log('>> GOT RETURN_CHAINS ' + JSON.stringify(returnChains))
+        for (var _b = 0, returnChains_1 = returnChains; _b < returnChains_1.length; _b++) {
+            var returnChainId = returnChains_1[_b];
+            state.api.id = returnChainId;
+            var devices = cleanArr(state.api.get('devices'));
+            for (var _c = 0, devices_2 = devices; _c < devices_2.length; _c++) {
+                var deviceId = devices_2[_c];
+                checkAndDescend(stateObj, deviceId, depth + 1);
             }
         }
     }
@@ -124,7 +153,7 @@ function updateGeneric(type, val) {
         for (var _i = 0, idArr_1 = idArr; _i < idArr_1.length; _i++) {
             var objId = idArr_1[_i];
             //log('>>> OBJID ' + objId)
-            checkAndDescend(stateObj, objId);
+            checkAndDescend(stateObj, objId, 0);
         }
     }
     else {
@@ -158,6 +187,7 @@ function updateDevices(val) {
 }
 function init() {
     //log('INIT')
+    state.deviceDepth = {};
     state.track = { watch: null, ids: [], objs: [], last: null };
     state.return = { watch: null, ids: [], objs: [], last: null };
     state.device = { watch: null, ids: [], objs: [], last: null };

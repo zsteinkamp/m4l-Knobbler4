@@ -16,8 +16,8 @@ setinletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 //            id,     name    color
 type Track = [number, string, string]
 
-//            id,     name     type
-type Device = [number, string, string]
+//            id,     name     type    level
+type Device = [number, string, string, number]
 
 type IdObserverArg = (number | string)[]
 type IdArr = number[]
@@ -34,6 +34,7 @@ const state = {
   api: null as LiveAPI,
 
   periodicTask: null as Task,
+  deviceDepth: {} as Record<string, number>,
 
   track: {
     watch: null as LiveAPI,
@@ -56,6 +57,9 @@ const state = {
 }
 
 function cleanArr(arr: IdObserverArg) {
+  if (!arr || arr.length === 0) {
+    return []
+  }
   return arr.filter((e: any) => {
     return parseInt(e).toString() === e.toString()
   })
@@ -84,6 +88,7 @@ function getDevicesFor(deviceIds: IdArr) {
       deviceId,
       truncate(state.api.get('name').toString(), MAX_LEN),
       state.api.get('class_display_name').toString(),
+      state.deviceDepth[deviceId] || 0,
     ] as Device
     ret.push(deviceObj)
   }
@@ -117,10 +122,24 @@ function updateTypePeriodic(type: ListClass) {
   stateObj.last = strVal
 }
 
-function checkAndDescend(stateObj: ClassObj, objId: number) {
+function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
   stateObj.ids.push(objId)
+  state.deviceDepth[objId] = depth
   state.api.id = objId
-  if (state.api.get('can_have_chains').toString() === '1') {
+  const className = state.api.get('class_display_name').toString()
+  //log('CLASS_NAME: ' + className)
+  let rawReturnChains = []
+  if (className === 'Drum Rack') {
+    rawReturnChains = state.api.get('return_chains')
+    //log(
+    //  '>> RAW RETURN_CHAINS ' +
+    //    className +
+    //    ' ' +
+    //    JSON.stringify(rawReturnChains)
+    //)
+  }
+
+  if (parseInt(state.api.get('can_have_chains'))) {
     //log('DESCENDING FROM ' + objId)
     const chains = cleanArr(state.api.get('chains')) as number[]
     //log('>> GOT CHAINS ' + JSON.stringify(chains))
@@ -128,7 +147,17 @@ function checkAndDescend(stateObj: ClassObj, objId: number) {
       state.api.id = chainId
       const devices = cleanArr(state.api.get('devices')) as number[]
       for (const deviceId of devices) {
-        checkAndDescend(stateObj, deviceId)
+        checkAndDescend(stateObj, deviceId, depth + 1)
+      }
+    }
+
+    const returnChains = cleanArr(rawReturnChains || []) as number[]
+    //log('>> GOT RETURN_CHAINS ' + JSON.stringify(returnChains))
+    for (const returnChainId of returnChains) {
+      state.api.id = returnChainId
+      const devices = cleanArr(state.api.get('devices')) as number[]
+      for (const deviceId of devices) {
+        checkAndDescend(stateObj, deviceId, depth + 1)
       }
     }
   }
@@ -141,7 +170,7 @@ function updateGeneric(type: ListClass, val: IdObserverArg) {
   if (type === 'device') {
     for (const objId of idArr) {
       //log('>>> OBJID ' + objId)
-      checkAndDescend(stateObj, objId)
+      checkAndDescend(stateObj, objId, 0)
     }
   } else {
     stateObj.ids = [...idArr]
@@ -179,6 +208,7 @@ function updateDevices(val: IdObserverArg) {
 function init() {
   //log('INIT')
 
+  state.deviceDepth = {}
   state.track = { watch: null, ids: [], objs: [], last: null }
   state.return = { watch: null, ids: [], objs: [], last: null }
   state.device = { watch: null, ids: [], objs: [], last: null }

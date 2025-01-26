@@ -228,11 +228,11 @@ function id(deviceId: number) {
   })
   paramIds.shift() // remove device on/off
 
-  const canHaveChains = api.get('can_have_chains')
+  const canHaveChains = parseInt(api.get('can_have_chains'))
   //log('CAN_HAVE_CHAINS: ' + canHaveChains)
   if (canHaveChains) {
     // see if we should slice off some macros
-    const numMacros = api.get('visible_macro_count')
+    const numMacros = parseInt(api.get('visible_macro_count'))
     if (numMacros) {
       //log('GonNNA SlIcE ' + numMacros)
       paramIds = paramIds.slice(0, numMacros)
