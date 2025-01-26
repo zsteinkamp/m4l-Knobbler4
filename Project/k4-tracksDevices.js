@@ -55,10 +55,18 @@ function getTracksFor(trackIds) {
     for (var _i = 0, trackIds_1 = trackIds; _i < trackIds_1.length; _i++) {
         var trackId = trackIds_1[_i];
         state.api.id = trackId;
+        var trackType = 1; // instrument
+        if (parseInt(state.api.get('has_audio_input'))) {
+            trackType = 0; // audio
+        }
+        else if (parseInt(state.api.get('has_midi_output'))) {
+            trackType = 2; // pure midi
+        }
         var trackObj = [
             trackId,
             (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
             (0, utils_1.colorToString)(state.api.get('color').toString()),
+            trackType,
         ];
         ret.push(trackObj);
     }
@@ -72,8 +80,8 @@ function getDevicesFor(deviceIds) {
         var deviceObj = [
             deviceId,
             (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
-            state.api.get('class_display_name').toString(),
             state.deviceDepth[deviceId] || 0,
+            parseInt(state.api.get('type')), // 0=undef,1=inst,2=audioFx,3=midiFx
         ];
         ret.push(deviceObj);
     }

@@ -13,11 +13,11 @@ const log = logFactory(config)
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setinletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
-//            id,     name    color
-type Track = [number, string, string]
+//            id,     name    color,  type
+type Track = [number, string, string, number]
 
-//            id,     name     type    level
-type Device = [number, string, string, number]
+//            id,     name     level   type
+type Device = [number, string, number, number]
 
 type IdObserverArg = (number | string)[]
 type IdArr = number[]
@@ -70,10 +70,18 @@ function getTracksFor(trackIds: IdArr) {
   const ret = [] as Track[]
   for (const trackId of trackIds) {
     state.api.id = trackId
+    let trackType = 1 // instrument
+    if (parseInt(state.api.get('has_audio_input'))) {
+      trackType = 0 // audio
+    } else if (parseInt(state.api.get('has_midi_output'))) {
+      trackType = 2 // pure midi
+    }
+
     const trackObj = [
       trackId,
       truncate(state.api.get('name').toString(), MAX_LEN),
       colorToString(state.api.get('color').toString()),
+      trackType,
     ] as Track
     ret.push(trackObj)
   }
@@ -87,8 +95,8 @@ function getDevicesFor(deviceIds: IdArr) {
     const deviceObj = [
       deviceId,
       truncate(state.api.get('name').toString(), MAX_LEN),
-      state.api.get('class_display_name').toString(),
       state.deviceDepth[deviceId] || 0,
+      parseInt(state.api.get('type')), // 0=undef,1=inst,2=audioFx,3=midiFx
     ] as Device
     ret.push(deviceObj)
   }
