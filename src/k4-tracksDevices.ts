@@ -21,7 +21,7 @@ type Device = [number, string, number]
 
 type IdObserverArg = (number | string)[]
 type IdArr = number[]
-type ListClass = 'track' | 'return' | 'device'
+type ListClass = 'track' | 'return' | 'main' | 'device'
 
 type ClassObj = {
   watch: LiveAPI
@@ -48,6 +48,12 @@ const state = {
     objs: [] as Track[],
     last: null as string,
   } as ClassObj,
+  main: {
+    watch: null as LiveAPI,
+    ids: [] as IdArr,
+    objs: [] as Track[],
+    last: null as string,
+  } as ClassObj,
   device: {
     watch: null as LiveAPI,
     ids: [] as IdArr,
@@ -66,7 +72,6 @@ function cleanArr(arr: IdObserverArg) {
 }
 
 function getTracksFor(trackIds: IdArr) {
-  //log('HERE: ' + JSON.stringify(val))
   const ret = [] as Track[]
   for (const trackId of trackIds) {
     state.api.id = trackId
@@ -98,6 +103,7 @@ function getDevicesFor(deviceIds: IdArr) {
 function updateTypePeriodic(type: ListClass) {
   const stateObj = state[type]
   if (!stateObj) {
+    //log('EARLY UPDATE PERIODIC ' + type)
     return
   }
   const objFn = type === 'device' ? getDevicesFor : getTracksFor
@@ -106,6 +112,7 @@ function updateTypePeriodic(type: ListClass) {
 
   // no change, return
   if (strVal == stateObj.last) {
+    //log('NOCHG UPDATE PERIODIC ' + type)
     return
   }
 
@@ -196,6 +203,15 @@ function updateReturns(val: IdObserverArg) {
   updateGeneric('return', val)
 }
 
+function updateMain(val: IdObserverArg) {
+  //log('HERE MAIN ' + val.toString())
+  if (val[0] !== 'id') {
+    //log('MAIN EARLY')
+    return
+  }
+  updateGeneric('main', val)
+}
+
 function updateDevices(val: IdObserverArg) {
   //log('HERE DEVICES')
   if (val[0] !== 'devices') {
@@ -211,6 +227,7 @@ function init() {
   state.deviceDepth = {}
   state.track = { watch: null, ids: [], objs: [], last: null }
   state.return = { watch: null, ids: [], objs: [], last: null }
+  state.main = { watch: null, ids: [], objs: [], last: null }
   state.device = { watch: null, ids: [], objs: [], last: null }
 
   // general purpose API obj to do lookups, etc
@@ -222,6 +239,9 @@ function init() {
 
   state.return.watch = new LiveAPI(updateReturns, 'live_set')
   state.return.watch.property = 'return_tracks'
+
+  state.main.watch = new LiveAPI(updateMain, 'live_set master_track')
+  state.main.watch.property = 'id'
 
   state.device.watch = new LiveAPI(
     updateDevices,
@@ -238,7 +258,7 @@ function init() {
   // hundreds of property listeners
   state.periodicTask = new Task(() => {
     //log('TOP TASK')
-    for (const type of ['track', 'return', 'device'] as ListClass[]) {
+    for (const type of ['track', 'return', 'main', 'device'] as ListClass[]) {
       updateTypePeriodic(type)
     }
   })

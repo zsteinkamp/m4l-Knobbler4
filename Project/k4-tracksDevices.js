@@ -34,6 +34,12 @@ var state = {
         objs: [],
         last: null,
     },
+    main: {
+        watch: null,
+        ids: [],
+        objs: [],
+        last: null,
+    },
     device: {
         watch: null,
         ids: [],
@@ -50,7 +56,6 @@ function cleanArr(arr) {
     });
 }
 function getTracksFor(trackIds) {
-    //log('HERE: ' + JSON.stringify(val))
     var ret = [];
     for (var _i = 0, trackIds_1 = trackIds; _i < trackIds_1.length; _i++) {
         var trackId = trackIds_1[_i];
@@ -81,6 +86,7 @@ function getDevicesFor(deviceIds) {
 function updateTypePeriodic(type) {
     var stateObj = state[type];
     if (!stateObj) {
+        //log('EARLY UPDATE PERIODIC ' + type)
         return;
     }
     var objFn = type === 'device' ? getDevicesFor : getTracksFor;
@@ -88,6 +94,7 @@ function updateTypePeriodic(type) {
     var strVal = JSON.stringify(stateObj.objs);
     // no change, return
     if (strVal == stateObj.last) {
+        //log('NOCHG UPDATE PERIODIC ' + type)
         return;
     }
     //log(
@@ -176,6 +183,14 @@ function updateReturns(val) {
     }
     updateGeneric('return', val);
 }
+function updateMain(val) {
+    //log('HERE MAIN ' + val.toString())
+    if (val[0] !== 'id') {
+        //log('MAIN EARLY')
+        return;
+    }
+    updateGeneric('main', val);
+}
 function updateDevices(val) {
     //log('HERE DEVICES')
     if (val[0] !== 'devices') {
@@ -189,6 +204,7 @@ function init() {
     state.deviceDepth = {};
     state.track = { watch: null, ids: [], objs: [], last: null };
     state.return = { watch: null, ids: [], objs: [], last: null };
+    state.main = { watch: null, ids: [], objs: [], last: null };
     state.device = { watch: null, ids: [], objs: [], last: null };
     // general purpose API obj to do lookups, etc
     state.api = new LiveAPI(consts_1.noFn, 'live_set');
@@ -197,6 +213,8 @@ function init() {
     state.track.watch.property = 'visible_tracks';
     state.return.watch = new LiveAPI(updateReturns, 'live_set');
     state.return.watch.property = 'return_tracks';
+    state.main.watch = new LiveAPI(updateMain, 'live_set master_track');
+    state.main.watch.property = 'id';
     state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
     state.device.watch.mode = 1; // follow path, not object
     state.device.watch.property = 'devices';
@@ -207,7 +225,7 @@ function init() {
     // hundreds of property listeners
     state.periodicTask = new Task(function () {
         //log('TOP TASK')
-        for (var _i = 0, _a = ['track', 'return', 'device']; _i < _a.length; _i++) {
+        for (var _i = 0, _a = ['track', 'return', 'main', 'device']; _i < _a.length; _i++) {
             var type = _a[_i];
             updateTypePeriodic(type);
         }
