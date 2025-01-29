@@ -149,6 +149,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/btnSessionRecord',
+    handler: bareMsg,
+    msg: 'btnSessionRecord',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/btnLoop',
     handler: bareMsg,
     msg: 'btnLoop',

@@ -267,23 +267,32 @@ function bankPrev() {
   }
   sendCurrBank()
 }
+
+let liveSetApi: LiveAPI = null
+function getApi() {
+  if (!liveSetApi) {
+    liveSetApi = new LiveAPI(noFn, 'live_set')
+  }
+  return liveSetApi
+}
+
 function toggleMetronome() {
-  const api = new LiveAPI(noFn, 'live_set')
+  const api = getApi()
   const metroVal = parseInt(api.get('metronome'))
   api.set('metronome', metroVal ? 0 : 1)
 }
 function tapTempo() {
-  const api = new LiveAPI(noFn, 'live_set')
+  const api = getApi()
   api.call('tap_tempo', null)
 }
 function setTempo(val: number) {
-  const api = new LiveAPI(noFn, 'live_set')
+  const api = getApi()
   api.set('tempo', val)
 }
 
 function trackDelta(delta: -1 | 1) {
   //log('TRACK DELTA ' + delta)
-  const setObj = new LiveAPI(() => {}, 'live_set')
+  const setObj = getApi()
   const viewObj = new LiveAPI(() => {}, 'live_set view')
 
   const track = viewObj.get('selected_track')
@@ -404,30 +413,35 @@ function deviceDelta(delta: -1 | 1) {
 }
 
 function btnSkipPrev() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   ctlApi.call('jump_to_prev_cue', null)
 }
 function btnSkipNext() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   ctlApi.call('jump_to_next_cue', null)
 }
 function btnReEnableAutomation() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   ctlApi.call('re_enable_automation', null)
 }
 function btnLoop() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   const isLoop = parseInt(ctlApi.get('loop'))
   ctlApi.set('loop', isLoop ? 0 : 1)
 }
 function btnCaptureMidi() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   ctlApi.call('capture_midi', null)
 }
 function btnArrangementOverdub() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   const isOverdub = parseInt(ctlApi.get('arrangement_overdub'))
   ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1)
+}
+function btnSessionRecord() {
+  const ctlApi = getApi()
+  const isRecord = parseInt(ctlApi.get('session_record'))
+  ctlApi.set('session_record', isRecord ? 0 : 1)
 }
 
 function trackPrev() {
@@ -444,16 +458,16 @@ function devNext() {
 }
 
 function ctlRec() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   const currMode = ctlApi.get('record_mode')
   ctlApi.set('record_mode', currMode == 1 ? 0 : 1)
 }
 function ctlPlay() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   ctlApi.call('start_playing', null)
 }
 function ctlStop() {
-  const ctlApi = new LiveAPI(() => {}, 'live_set')
+  const ctlApi = getApi()
   ctlApi.call('stop_playing', null)
 }
 

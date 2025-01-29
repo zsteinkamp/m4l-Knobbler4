@@ -235,22 +235,29 @@ function bankPrev() {
     }
     sendCurrBank();
 }
+var liveSetApi = null;
+function getApi() {
+    if (!liveSetApi) {
+        liveSetApi = new LiveAPI(consts_1.noFn, 'live_set');
+    }
+    return liveSetApi;
+}
 function toggleMetronome() {
-    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    var api = getApi();
     var metroVal = parseInt(api.get('metronome'));
     api.set('metronome', metroVal ? 0 : 1);
 }
 function tapTempo() {
-    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    var api = getApi();
     api.call('tap_tempo', null);
 }
 function setTempo(val) {
-    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    var api = getApi();
     api.set('tempo', val);
 }
 function trackDelta(delta) {
     //log('TRACK DELTA ' + delta)
-    var setObj = new LiveAPI(function () { }, 'live_set');
+    var setObj = getApi();
     var viewObj = new LiveAPI(function () { }, 'live_set view');
     var track = viewObj.get('selected_track');
     var trackObj = new LiveAPI(function () { }, track);
@@ -375,30 +382,35 @@ function deviceDelta(delta) {
     //log('APPORT ' + devObj.id)
 }
 function btnSkipPrev() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     ctlApi.call('jump_to_prev_cue', null);
 }
 function btnSkipNext() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     ctlApi.call('jump_to_next_cue', null);
 }
 function btnReEnableAutomation() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     ctlApi.call('re_enable_automation', null);
 }
 function btnLoop() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     var isLoop = parseInt(ctlApi.get('loop'));
     ctlApi.set('loop', isLoop ? 0 : 1);
 }
 function btnCaptureMidi() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     ctlApi.call('capture_midi', null);
 }
 function btnArrangementOverdub() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     var isOverdub = parseInt(ctlApi.get('arrangement_overdub'));
     ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1);
+}
+function btnSessionRecord() {
+    var ctlApi = getApi();
+    var isRecord = parseInt(ctlApi.get('session_record'));
+    ctlApi.set('session_record', isRecord ? 0 : 1);
 }
 function trackPrev() {
     trackDelta(-1);
@@ -413,16 +425,16 @@ function devNext() {
     deviceDelta(1);
 }
 function ctlRec() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     var currMode = ctlApi.get('record_mode');
     ctlApi.set('record_mode', currMode == 1 ? 0 : 1);
 }
 function ctlPlay() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     ctlApi.call('start_playing', null);
 }
 function ctlStop() {
-    var ctlApi = new LiveAPI(function () { }, 'live_set');
+    var ctlApi = getApi();
     ctlApi.call('stop_playing', null);
 }
 log('reloaded k4-bluhandBanks');
