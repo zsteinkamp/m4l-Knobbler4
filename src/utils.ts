@@ -52,3 +52,12 @@ export function debouncedTask(
   tasks[key][slot] = task
   tasks[key][slot].schedule(delayMs)
 }
+
+export function cleanArr(arr: IdObserverArg) {
+  if (!arr || arr.length === 0) {
+    return []
+  }
+  return arr.filter((e: any) => {
+    return parseInt(e).toString() === e.toString()
+  }) as IdArr
+}

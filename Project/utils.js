@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.debouncedTask = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.cleanArr = exports.debouncedTask = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
     function log(_) {
@@ -51,3 +51,12 @@ function debouncedTask(key, slot, task, delayMs) {
     tasks[key][slot].schedule(delayMs);
 }
 exports.debouncedTask = debouncedTask;
+function cleanArr(arr) {
+    if (!arr || arr.length === 0) {
+        return [];
+    }
+    return arr.filter(function (e) {
+        return parseInt(e).toString() === e.toString();
+    });
+}
+exports.cleanArr = cleanArr;

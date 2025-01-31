@@ -202,6 +202,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_BLUHAND,
+        prefix: '/gotoChain',
+        handler: stdVal,
+        msg: 'gotoChain',
+    },
+    {
+        outlet: OUTLET_BLUHAND,
         prefix: '/gotoDevice',
         handler: stdVal,
         msg: 'gotoDevice',

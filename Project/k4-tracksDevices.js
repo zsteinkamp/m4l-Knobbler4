@@ -22,6 +22,7 @@ var state = {
     api: null,
     periodicTask: null,
     deviceDepth: {},
+    deviceType: {},
     track: {
         watch: null,
         ids: [],
@@ -47,23 +48,19 @@ var state = {
         last: null,
     },
 };
-function cleanArr(arr) {
-    if (!arr || arr.length === 0) {
-        return [];
-    }
-    return arr.filter(function (e) {
-        return parseInt(e).toString() === e.toString();
-    });
-}
 function getTracksFor(trackIds) {
     var ret = [];
     for (var _i = 0, trackIds_1 = trackIds; _i < trackIds_1.length; _i++) {
         var trackId = trackIds_1[_i];
         state.api.id = trackId;
+        var isGrouped = parseInt(state.api.get('is_grouped'));
+        var indent = 1 + isGrouped; // TODO DO FOR REAL
         var trackObj = [
+            0,
             trackId,
             (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
             (0, utils_1.colorToString)(state.api.get('color').toString()),
+            indent,
         ];
         ret.push(trackObj);
     }
@@ -74,9 +71,19 @@ function getDevicesFor(deviceIds) {
     for (var _i = 0, deviceIds_1 = deviceIds; _i < deviceIds_1.length; _i++) {
         var deviceId = deviceIds_1[_i];
         state.api.id = deviceId;
+        var color = null;
+        if (state.deviceType[deviceId] === consts_1.TYPE_CHAIN) {
+            color = (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
+        }
+        else {
+            var parent = new LiveAPI(consts_1.noFn, state.api.get('canonical_parent'));
+            color = (0, utils_1.colorToString)(parent.get('color').toString()) || consts_1.DEFAULT_COLOR;
+        }
         var deviceObj = [
+            state.deviceType[deviceId] || 0,
             deviceId,
             (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
+            color,
             state.deviceDepth[deviceId] || 0,
         ];
         ret.push(deviceObj);
@@ -127,26 +134,32 @@ function checkAndDescend(stateObj, objId, depth) {
     }
     if (parseInt(state.api.get('can_have_chains'))) {
         //log('DESCENDING FROM ' + objId)
-        var chains = cleanArr(state.api.get('chains'));
+        var chains = (0, utils_1.cleanArr)(state.api.get('chains'));
         //log('>> GOT CHAINS ' + JSON.stringify(chains))
         for (var _i = 0, chains_1 = chains; _i < chains_1.length; _i++) {
             var chainId = chains_1[_i];
+            stateObj.ids.push(chainId);
+            state.deviceType[chainId] = consts_1.TYPE_CHAIN;
+            state.deviceDepth[chainId] = depth + 1;
             state.api.id = chainId;
-            var devices = cleanArr(state.api.get('devices'));
+            var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
             for (var _a = 0, devices_1 = devices; _a < devices_1.length; _a++) {
                 var deviceId = devices_1[_a];
-                checkAndDescend(stateObj, deviceId, depth + 1);
+                checkAndDescend(stateObj, deviceId, depth + 2);
             }
         }
-        var returnChains = cleanArr(rawReturnChains || []);
+        var returnChains = (0, utils_1.cleanArr)(rawReturnChains || []);
         //log('>> GOT RETURN_CHAINS ' + JSON.stringify(returnChains))
         for (var _b = 0, returnChains_1 = returnChains; _b < returnChains_1.length; _b++) {
             var returnChainId = returnChains_1[_b];
+            stateObj.ids.push(returnChainId);
+            state.deviceType[returnChainId] = consts_1.TYPE_CHAIN;
+            state.deviceDepth[returnChainId] = depth + 1;
             state.api.id = returnChainId;
-            var devices = cleanArr(state.api.get('devices'));
+            var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
             for (var _c = 0, devices_2 = devices; _c < devices_2.length; _c++) {
                 var deviceId = devices_2[_c];
-                checkAndDescend(stateObj, deviceId, depth + 1);
+                checkAndDescend(stateObj, deviceId, depth + 2);
             }
         }
     }
@@ -154,7 +167,7 @@ function checkAndDescend(stateObj, objId, depth) {
 function updateGeneric(type, val) {
     var stateObj = state[type];
     stateObj.ids = [];
-    var idArr = cleanArr(val);
+    var idArr = (0, utils_1.cleanArr)(val);
     if (type === 'device') {
         for (var _i = 0, idArr_1 = idArr; _i < idArr_1.length; _i++) {
             var objId = idArr_1[_i];

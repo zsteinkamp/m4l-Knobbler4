@@ -2,9 +2,15 @@ autowatch = 1
 inlets = 1
 outlets = 1
 
-import { colorToString, logFactory, truncate } from './utils'
+import { cleanArr, colorToString, logFactory, truncate } from './utils'
 import config from './config'
-import { noFn, INLET_MSGS, OUTLET_OSC } from './consts'
+import {
+  noFn,
+  INLET_MSGS,
+  OUTLET_OSC,
+  TYPE_CHAIN,
+  DEFAULT_COLOR,
+} from './consts'
 
 const MAX_LEN = 32
 
@@ -13,88 +19,78 @@ const log = logFactory(config)
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setinletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
-//            id,     name    color
-type Track = [number, string, string]
-
-//            id,     name     level
-type Device = [number, string, number]
-
-type IdObserverArg = (number | string)[]
-type IdArr = number[]
-type ListClass = 'track' | 'return' | 'main' | 'device'
-
-type ClassObj = {
-  watch: LiveAPI
-  ids: IdArr
-  objs: (Track | Device)[]
-  last: string
-}
-
 const state = {
   api: null as LiveAPI,
 
   periodicTask: null as Task,
-  deviceDepth: {} as Record<string, number>,
+  deviceDepth: {} as Record<number, number>,
+  deviceType: {} as Record<number, number>,
 
   track: {
     watch: null as LiveAPI,
     ids: [] as IdArr,
-    objs: [] as Track[],
+    objs: [] as MaxObjRecord[],
     last: null as string,
   } as ClassObj,
   return: {
     watch: null as LiveAPI,
     ids: [] as IdArr,
-    objs: [] as Track[],
+    objs: [] as MaxObjRecord[],
     last: null as string,
   } as ClassObj,
   main: {
     watch: null as LiveAPI,
     ids: [] as IdArr,
-    objs: [] as Track[],
+    objs: [] as MaxObjRecord[],
     last: null as string,
   } as ClassObj,
   device: {
     watch: null as LiveAPI,
     ids: [] as IdArr,
-    objs: [] as Device[],
+    objs: [] as MaxObjRecord[],
     last: null as string,
   } as ClassObj,
 }
 
-function cleanArr(arr: IdObserverArg) {
-  if (!arr || arr.length === 0) {
-    return []
-  }
-  return arr.filter((e: any) => {
-    return parseInt(e).toString() === e.toString()
-  })
-}
-
 function getTracksFor(trackIds: IdArr) {
-  const ret = [] as Track[]
+  const ret = [] as MaxObjRecord[]
   for (const trackId of trackIds) {
     state.api.id = trackId
 
+    const isGrouped = parseInt(state.api.get('is_grouped'))
+
+    const indent = 1 + isGrouped // TODO DO FOR REAL
+
     const trackObj = [
+      0,
       trackId,
       truncate(state.api.get('name').toString(), MAX_LEN),
       colorToString(state.api.get('color').toString()),
-    ] as Track
+      indent,
+    ] as MaxObjRecord
     ret.push(trackObj)
   }
   return ret
 }
 
 function getDevicesFor(deviceIds: IdArr) {
-  const ret = [] as Device[]
+  const ret = [] as MaxObjRecord[]
   for (const deviceId of deviceIds) {
     state.api.id = deviceId
+    let color = null
+    if (state.deviceType[deviceId] === TYPE_CHAIN) {
+      color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
+    } else {
+      const parent = new LiveAPI(noFn, state.api.get('canonical_parent'))
+      color = colorToString(parent.get('color').toString()) || DEFAULT_COLOR
+    }
     const deviceObj = [
+      state.deviceType[deviceId] || 0,
       deviceId,
       truncate(state.api.get('name').toString(), MAX_LEN),
+      color,
       state.deviceDepth[deviceId] || 0,
-    ] as Device
+    ] as MaxObjRecord
     ret.push(deviceObj)
   }
   return ret
@@ -148,23 +144,31 @@ function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
 
   if (parseInt(state.api.get('can_have_chains'))) {
     //log('DESCENDING FROM ' + objId)
-    const chains = cleanArr(state.api.get('chains')) as number[]
+    const chains = cleanArr(state.api.get('chains'))
     //log('>> GOT CHAINS ' + JSON.stringify(chains))
     for (const chainId of chains) {
+      stateObj.ids.push(chainId)
+      state.deviceType[chainId] = TYPE_CHAIN
+      state.deviceDepth[chainId] = depth + 1
+
       state.api.id = chainId
-      const devices = cleanArr(state.api.get('devices')) as number[]
+      const devices = cleanArr(state.api.get('devices'))
       for (const deviceId of devices) {
-        checkAndDescend(stateObj, deviceId, depth + 1)
+        checkAndDescend(stateObj, deviceId, depth + 2)
       }
     }
 
-    const returnChains = cleanArr(rawReturnChains || []) as number[]
+    const returnChains = cleanArr(rawReturnChains || ([] as IdArr))
     //log('>> GOT RETURN_CHAINS ' + JSON.stringify(returnChains))
     for (const returnChainId of returnChains) {
+      stateObj.ids.push(returnChainId)
+      state.deviceType[returnChainId] = TYPE_CHAIN
+      state.deviceDepth[returnChainId] = depth + 1
+
       state.api.id = returnChainId
-      const devices = cleanArr(state.api.get('devices')) as number[]
+      const devices = cleanArr(state.api.get('devices'))
       for (const deviceId of devices) {
-        checkAndDescend(stateObj, deviceId, depth + 1)
+        checkAndDescend(stateObj, deviceId, depth + 2)
       }
     }
   }
