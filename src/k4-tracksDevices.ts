@@ -74,6 +74,7 @@ function getTracksFor(trackIds: IdArr) {
 }
 
 function getDevicesFor(deviceIds: IdArr) {
+  log('GET DEVICES FOR ' + deviceIds.join(','))
   const ret = [] as MaxObjRecord[]
   for (const deviceId of deviceIds) {
     state.api.id = deviceId
@@ -81,8 +82,9 @@ function getDevicesFor(deviceIds: IdArr) {
     if (state.deviceType[deviceId] === TYPE_CHAIN) {
       color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
     } else {
-      const parent = new LiveAPI(noFn, state.api.get('canonical_parent'))
-      color = colorToString(parent.get('color').toString()) || DEFAULT_COLOR
+      state.api.id = cleanArr(state.api.get('canonical_parent'))[0]
+      color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
+      state.api.id = deviceId
     }
     const deviceObj = [
       state.deviceType[deviceId] || 0,
@@ -93,6 +95,7 @@ function getDevicesFor(deviceIds: IdArr) {
     ] as MaxObjRecord
     ret.push(deviceObj)
   }
+  log('END DEVICES FOR ' + deviceIds.join(','))
   return ret
 }
 

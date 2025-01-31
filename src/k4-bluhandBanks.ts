@@ -118,7 +118,7 @@ function getBankParamArr(
   const paramArr = getBasicParamArr(paramIds)
   paramNameToIdx = {}
   // more "bespoke" setups get this
-  const param = new LiveAPI(() => {}, '')
+  const param = getUtilApi()
   paramIds.forEach((paramId: number, idx: number) => {
     param.id = paramId
     paramNameToIdx[param.get('name')] = idx
@@ -208,27 +208,29 @@ function sendCurrBank() {
 }
 
 function gotoDevice(deviceId: number) {
-  const api = new LiveAPI(noFn, 'live_set view')
+  const api = getLiveSetViewApi()
   //log('GOTO DEVICE ' + deviceId)
   api.call('select_device', ['id', deviceId])
 }
 function gotoChain(chainId: number) {
-  const api = new LiveAPI(noFn, 'id ' + chainId.toString())
+  const viewApi = getLiveSetViewApi()
+  const api = getUtilApi()
+  api.id = chainId
   const devices = cleanArr(api.get('devices'))
   if (devices && devices[0]) {
-    api.goto('live_set view')
-    api.call('select_device', ['id', devices[0]])
+    viewApi.call('select_device', ['id', devices[0]])
     return
   }
 }
 function gotoTrack(trackId: number) {
-  const api = new LiveAPI(noFn, 'live_set view')
+  const api = getLiveSetViewApi()
   //log('GOTO TRACK ' + trackId)
   api.set('selected_track', ['id', trackId])
 }
 
 function id(deviceId: number) {
-  const api = new LiveAPI(updateParams, 'id ' + deviceId.toString())
+  const api = getUtilApi()
+  api.id = deviceId
   const deviceType = api.get('class_display_name').toString()
   //log(JSON.stringify({ deviceType, name: api.get('name') }))
   const rawParams = api.get('parameters')
@@ -281,8 +283,22 @@ function bankPrev() {
   sendCurrBank()
 }
 
+let utilApi: LiveAPI = null
+function getUtilApi() {
+  if (!utilApi) {
+    utilApi = new LiveAPI(noFn, 'live_set')
+  }
+  return utilApi
+}
+let liveSetViewApi: LiveAPI = null
+function getLiveSetViewApi() {
+  if (!liveSetViewApi) {
+    liveSetViewApi = new LiveAPI(noFn, 'live_set view')
+  }
+  return liveSetViewApi
+}
 let liveSetApi: LiveAPI = null
-function getApi() {
+function getLiveSetApi() {
   if (!liveSetApi) {
     liveSetApi = new LiveAPI(noFn, 'live_set')
   }
@@ -290,47 +306,47 @@ function getApi() {
 }
 
 function toggleMetronome() {
-  const api = getApi()
+  const api = getLiveSetApi()
   const metroVal = parseInt(api.get('metronome'))
   api.set('metronome', metroVal ? 0 : 1)
 }
 function tapTempo() {
-  const api = getApi()
+  const api = getLiveSetApi()
   api.call('tap_tempo', null)
 }
 function setTempo(val: number) {
-  const api = getApi()
+  const api = getLiveSetApi()
   api.set('tempo', val)
 }
 
 function btnSkipPrev() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   ctlApi.call('jump_to_prev_cue', null)
 }
 function btnSkipNext() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   ctlApi.call('jump_to_next_cue', null)
 }
 function btnReEnableAutomation() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   ctlApi.call('re_enable_automation', null)
 }
 function btnLoop() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   const isLoop = parseInt(ctlApi.get('loop'))
   ctlApi.set('loop', isLoop ? 0 : 1)
 }
 function btnCaptureMidi() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   ctlApi.call('capture_midi', null)
 }
 function btnArrangementOverdub() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   const isOverdub = parseInt(ctlApi.get('arrangement_overdub'))
   ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1)
 }
 function btnSessionRecord() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   const isRecord = parseInt(ctlApi.get('session_record'))
   ctlApi.set('session_record', isRecord ? 0 : 1)
 }
@@ -355,16 +371,16 @@ function devNext() {
 }
 
 function ctlRec() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   const currMode = ctlApi.get('record_mode')
   ctlApi.set('record_mode', currMode == 1 ? 0 : 1)
 }
 function ctlPlay() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   ctlApi.call('start_playing', null)
 }
 function ctlStop() {
-  const ctlApi = getApi()
+  const ctlApi = getLiveSetApi()
   ctlApi.call('stop_playing', null)
 }
 

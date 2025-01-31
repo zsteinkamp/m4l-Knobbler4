@@ -96,7 +96,7 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     var paramArr = getBasicParamArr(paramIds);
     paramNameToIdx = {};
     // more "bespoke" setups get this
-    var param = new LiveAPI(function () { }, '');
+    var param = getUtilApi();
     paramIds.forEach(function (paramId, idx) {
         param.id = paramId;
         paramNameToIdx[param.get('name')] = idx;
@@ -177,26 +177,28 @@ function sendCurrBank() {
     sendBankNames();
 }
 function gotoDevice(deviceId) {
-    var api = new LiveAPI(consts_1.noFn, 'live_set view');
+    var api = getLiveSetViewApi();
     //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
 function gotoChain(chainId) {
-    var api = new LiveAPI(consts_1.noFn, 'id ' + chainId.toString());
+    var viewApi = getLiveSetViewApi();
+    var api = getUtilApi();
+    api.id = chainId;
     var devices = (0, utils_1.cleanArr)(api.get('devices'));
     if (devices && devices[0]) {
-        api.goto('live_set view');
-        api.call('select_device', ['id', devices[0]]);
+        viewApi.call('select_device', ['id', devices[0]]);
         return;
     }
 }
 function gotoTrack(trackId) {
-    var api = new LiveAPI(consts_1.noFn, 'live_set view');
+    var api = getLiveSetViewApi();
     //log('GOTO TRACK ' + trackId)
     api.set('selected_track', ['id', trackId]);
 }
 function id(deviceId) {
-    var api = new LiveAPI(updateParams, 'id ' + deviceId.toString());
+    var api = getUtilApi();
+    api.id = deviceId;
     var deviceType = api.get('class_display_name').toString();
     //log(JSON.stringify({ deviceType, name: api.get('name') }))
     var rawParams = api.get('parameters');
@@ -245,54 +247,68 @@ function bankPrev() {
     }
     sendCurrBank();
 }
+var utilApi = null;
+function getUtilApi() {
+    if (!utilApi) {
+        utilApi = new LiveAPI(consts_1.noFn, 'live_set');
+    }
+    return utilApi;
+}
+var liveSetViewApi = null;
+function getLiveSetViewApi() {
+    if (!liveSetViewApi) {
+        liveSetViewApi = new LiveAPI(consts_1.noFn, 'live_set view');
+    }
+    return liveSetViewApi;
+}
 var liveSetApi = null;
-function getApi() {
+function getLiveSetApi() {
     if (!liveSetApi) {
         liveSetApi = new LiveAPI(consts_1.noFn, 'live_set');
     }
     return liveSetApi;
 }
 function toggleMetronome() {
-    var api = getApi();
+    var api = getLiveSetApi();
     var metroVal = parseInt(api.get('metronome'));
     api.set('metronome', metroVal ? 0 : 1);
 }
 function tapTempo() {
-    var api = getApi();
+    var api = getLiveSetApi();
     api.call('tap_tempo', null);
 }
 function setTempo(val) {
-    var api = getApi();
+    var api = getLiveSetApi();
     api.set('tempo', val);
 }
 function btnSkipPrev() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     ctlApi.call('jump_to_prev_cue', null);
 }
 function btnSkipNext() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     ctlApi.call('jump_to_next_cue', null);
 }
 function btnReEnableAutomation() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     ctlApi.call('re_enable_automation', null);
 }
 function btnLoop() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     var isLoop = parseInt(ctlApi.get('loop'));
     ctlApi.set('loop', isLoop ? 0 : 1);
 }
 function btnCaptureMidi() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     ctlApi.call('capture_midi', null);
 }
 function btnArrangementOverdub() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     var isOverdub = parseInt(ctlApi.get('arrangement_overdub'));
     ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1);
 }
 function btnSessionRecord() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     var isRecord = parseInt(ctlApi.get('session_record'));
     ctlApi.set('session_record', isRecord ? 0 : 1);
 }
@@ -315,16 +331,16 @@ function devNext() {
     deviceDelta(1);
 }
 function ctlRec() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     var currMode = ctlApi.get('record_mode');
     ctlApi.set('record_mode', currMode == 1 ? 0 : 1);
 }
 function ctlPlay() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     ctlApi.call('start_playing', null);
 }
 function ctlStop() {
-    var ctlApi = getApi();
+    var ctlApi = getLiveSetApi();
     ctlApi.call('stop_playing', null);
 }
 log('reloaded k4-bluhandBanks');

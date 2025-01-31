@@ -67,6 +67,7 @@ function getTracksFor(trackIds) {
     return ret;
 }
 function getDevicesFor(deviceIds) {
+    log('GET DEVICES FOR ' + deviceIds.join(','));
     var ret = [];
     for (var _i = 0, deviceIds_1 = deviceIds; _i < deviceIds_1.length; _i++) {
         var deviceId = deviceIds_1[_i];
@@ -76,8 +77,9 @@ function getDevicesFor(deviceIds) {
             color = (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
         }
         else {
-            var parent = new LiveAPI(consts_1.noFn, state.api.get('canonical_parent'));
-            color = (0, utils_1.colorToString)(parent.get('color').toString()) || consts_1.DEFAULT_COLOR;
+            state.api.id = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
+            color = (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
+            state.api.id = deviceId;
         }
         var deviceObj = [
             state.deviceType[deviceId] || 0,
@@ -88,6 +90,7 @@ function getDevicesFor(deviceIds) {
         ];
         ret.push(deviceObj);
     }
+    log('END DEVICES FOR ' + deviceIds.join(','));
     return ret;
 }
 function updateTypePeriodic(type) {
