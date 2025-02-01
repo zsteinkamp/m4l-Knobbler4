@@ -67,7 +67,7 @@ function getTracksFor(trackIds) {
     return ret;
 }
 function getDevicesFor(deviceIds) {
-    log('GET DEVICES FOR ' + deviceIds.join(','));
+    //log('GET DEVICES FOR ' + deviceIds.join(','))
     var ret = [];
     for (var _i = 0, deviceIds_1 = deviceIds; _i < deviceIds_1.length; _i++) {
         var deviceId = deviceIds_1[_i];
@@ -90,7 +90,7 @@ function getDevicesFor(deviceIds) {
         ];
         ret.push(deviceObj);
     }
-    log('END DEVICES FOR ' + deviceIds.join(','));
+    //log('END DEVICES FOR ' + deviceIds.join(','))
     return ret;
 }
 function updateTypePeriodic(type) {

@@ -13,6 +13,7 @@ const log = logFactory(config)
 // slot arrays
 const paramObj: LiveAPI[] = []
 const paramNameObj: LiveAPI[] = []
+const automationStateObj: LiveAPI[] = []
 const deviceObj: LiveAPI[] = []
 const trackObj: LiveAPI[] = []
 const parentNameObj: LiveAPI[] = []
@@ -186,6 +187,15 @@ function paramNameCallback(slot: number, iargs: IArguments) {
   }
 }
 
+function automationStateCallback(slot: number, iargs: IArguments) {
+  //log(iargs)
+  const args = arrayfromargs(iargs)
+  //log('PARAM NAME CALLBACK ' + args.join(','))
+  if (args[0] === 'automation_state') {
+    sendAutomationState(slot)
+  }
+}
+
 function deviceNameCallback(slot: number, iargs: IArguments) {
   //log(args)
   //log('DEVICE NAME CALLBACK')
@@ -267,6 +277,11 @@ function setPath(slot: number, paramPath: string) {
     paramPath
   )
   paramNameObj[slot].property = 'name'
+  automationStateObj[slot] = new LiveAPI(
+    (iargs: IArguments) => automationStateCallback(slot, iargs),
+    paramPath
+  )
+  automationStateObj[slot].property = 'automation_state'
 
   param[slot].id = paramObj[slot].id
   param[slot].path = paramObj[slot].unquotedpath
@@ -277,7 +292,7 @@ function setPath(slot: number, paramPath: string) {
 
   deviceObj[slot] = new LiveAPI(
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
-    paramObj[slot].get('canonical_parent')
+    paramObj[slot] && paramObj[slot].get('canonical_parent')
   )
 
   const devicePath = deviceObj[slot].unquotedpath
@@ -347,6 +362,7 @@ function setPath(slot: number, paramPath: string) {
 }
 
 function refresh() {
+  log('IN REFRESH')
   for (let i = 1; i <= MAX_SLOTS; i++) {
     refreshSlotUI(i)
   }
@@ -360,6 +376,7 @@ function refreshSlotUI(slot: number) {
 function sendNames(slot: number) {
   //log(param.name, param.deviceName, param.trackName)
   sendParamName(slot)
+  sendAutomationState(slot)
   sendDeviceName(slot)
   sendTrackName(slot)
   sendColor(slot)
@@ -377,6 +394,15 @@ function sendParamName(slot: number) {
   sendMsg(slot, ['param', paramName])
   //log('SEND PARAM NAME ' + slot + '=' + paramName)
   outlet(OUTLET_OSC, ['/param' + slot, paramName])
+}
+function sendAutomationState(slot: number) {
+  initSlotIfNecessary(slot)
+  const automationState = parseInt(
+    (paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0
+  )
+  const payload = ['/param' + slot + 'auto', automationState]
+  //log('PAYLOAD ' + JSON.stringify(payload))
+  outlet(OUTLET_OSC, payload)
 }
 
 function sendDeviceName(slot: number) {

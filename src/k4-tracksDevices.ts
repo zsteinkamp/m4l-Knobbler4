@@ -74,7 +74,7 @@ function getTracksFor(trackIds: IdArr) {
 }
 
 function getDevicesFor(deviceIds: IdArr) {
-  log('GET DEVICES FOR ' + deviceIds.join(','))
+  //log('GET DEVICES FOR ' + deviceIds.join(','))
   const ret = [] as MaxObjRecord[]
   for (const deviceId of deviceIds) {
     state.api.id = deviceId
@@ -95,7 +95,7 @@ function getDevicesFor(deviceIds: IdArr) {
     ] as MaxObjRecord
     ret.push(deviceObj)
   }
-  log('END DEVICES FOR ' + deviceIds.join(','))
+  //log('END DEVICES FOR ' + deviceIds.join(','))
   return ret
 }
 
