@@ -1,12 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.noFn = exports.DEFAULT_COLOR = exports.TYPE_CHAIN = exports.TYPE_NORMAL = exports.MAX_SLOTS = exports.OUTLET_MSGS = exports.OUTLET_OSC = exports.INLET_MSGS = void 0;
+exports.noFn = exports.DEFAULT_COLOR = exports.TYPE_GROUP = exports.TYPE_MAIN = exports.TYPE_RETURN = exports.TYPE_CHAIN = exports.TYPE_NORMAL = exports.MAX_SLOTS = exports.OUTLET_MSGS = exports.OUTLET_OSC = exports.INLET_MSGS = void 0;
 exports.INLET_MSGS = 0;
 exports.OUTLET_OSC = 0;
 exports.OUTLET_MSGS = 1;
 exports.MAX_SLOTS = 32;
 exports.TYPE_NORMAL = 0;
 exports.TYPE_CHAIN = 1;
+exports.TYPE_RETURN = 2;
+exports.TYPE_MAIN = 3;
+exports.TYPE_GROUP = 4;
 exports.DEFAULT_COLOR = '990000';
 var noFn = function () { };
 exports.noFn = noFn;

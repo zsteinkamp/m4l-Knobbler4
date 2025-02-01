@@ -23,6 +23,7 @@ var state = {
     periodicTask: null,
     deviceDepth: {},
     deviceType: {},
+    trackType: {},
     track: {
         watch: null,
         ids: [],
@@ -48,19 +49,55 @@ var state = {
         last: null,
     },
 };
-function getTracksFor(trackIds) {
-    var ret = [];
+// make a tree so we can get depth
+var getEmptyTreeNode = function () { return ({
+    children: [],
+    parent: null,
+}); };
+function makeTrackTree(trackIds) {
+    var tree = {
+        0: getEmptyTreeNode(),
+    };
     for (var _i = 0, trackIds_1 = trackIds; _i < trackIds_1.length; _i++) {
         var trackId = trackIds_1[_i];
         state.api.id = trackId;
-        var isGrouped = parseInt(state.api.get('is_grouped'));
-        var indent = 1 + isGrouped; // TODO DO FOR REAL
+        var parentId = (0, utils_1.cleanArr)(state.api.get('group_track'))[0];
+        //log(trackId + ' PARENT_ID ' + parentId)
+        if (!tree[trackId]) {
+            tree[trackId] = getEmptyTreeNode();
+        }
+        tree[trackId].parent = parentId;
+        if (!tree[parentId]) {
+            tree[parentId] = getEmptyTreeNode();
+        }
+        tree[parentId].children.push(trackId);
+    }
+    return tree;
+}
+function getDepthForId(trackId, tree) {
+    var parentId = tree[trackId].parent;
+    var depth = 0;
+    while (parentId > 0) {
+        depth++;
+        parentId = tree[parentId].parent;
+    }
+    return depth;
+}
+function getTracksFor(trackIds) {
+    var ret = [];
+    var tree = makeTrackTree(trackIds);
+    //log(JSON.stringify(tree))
+    for (var _i = 0, trackIds_2 = trackIds; _i < trackIds_2.length; _i++) {
+        var trackId = trackIds_2[_i];
+        state.api.id = trackId;
+        var isFoldable = parseInt(state.api.get('is_foldable'));
         var trackObj = [
-            0,
-            trackId,
-            (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
-            (0, utils_1.colorToString)(state.api.get('color').toString()),
-            indent,
+            /* TYPE   */ state.trackType[trackId] ||
+                (isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_NORMAL),
+            /* ID     */ trackId,
+            /* NAME   */ (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
+            /* COLOR  */ (0, utils_1.colorToString)(state.api.get('color').toString()),
+            /* INDENT */ getDepthForId(trackId, tree),
         ];
         ret.push(trackObj);
     }
@@ -179,6 +216,15 @@ function updateGeneric(type, val) {
         }
     }
     else {
+        for (var _a = 0, idArr_2 = idArr; _a < idArr_2.length; _a++) {
+            var objId = idArr_2[_a];
+            if (type === 'return') {
+                state.trackType[objId] = consts_1.TYPE_RETURN;
+            }
+            else if (type === 'main') {
+                state.trackType[objId] = consts_1.TYPE_MAIN;
+            }
+        }
         stateObj.ids = __spreadArray([], idArr, true);
     }
     updateTypePeriodic(type);
@@ -222,6 +268,8 @@ function init() {
     state.return = { watch: null, ids: [], objs: [], last: null };
     state.main = { watch: null, ids: [], objs: [], last: null };
     state.device = { watch: null, ids: [], objs: [], last: null };
+    state.deviceType = {};
+    state.trackType = {};
     // general purpose API obj to do lookups, etc
     state.api = new LiveAPI(consts_1.noFn, 'live_set');
     // set up track watcher, calls function to assemble and send tracks when changes

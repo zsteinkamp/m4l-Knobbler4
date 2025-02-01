@@ -10,6 +10,10 @@ import {
   OUTLET_OSC,
   TYPE_CHAIN,
   DEFAULT_COLOR,
+  TYPE_RETURN,
+  TYPE_MAIN,
+  TYPE_NORMAL,
+  TYPE_GROUP,
 } from './consts'
 
 const MAX_LEN = 32
@@ -25,6 +29,7 @@ const state = {
   periodicTask: null as Task,
   deviceDepth: {} as Record<number, number>,
   deviceType: {} as Record<number, number>,
+  trackType: {} as Record<number, number>,
 
   track: {
     watch: null as LiveAPI,
@@ -52,21 +57,65 @@ const state = {
   } as ClassObj,
 }
 
+type TreeNode = {
+  children: IdArr
+  parent: number
+}
+type Tree = Record<number, TreeNode>
+
+// make a tree so we can get depth
+const getEmptyTreeNode: () => TreeNode = () => ({
+  children: [],
+  parent: null,
+})
+function makeTrackTree(trackIds: IdArr) {
+  const tree: Tree = {
+    0: getEmptyTreeNode(),
+  }
+  for (const trackId of trackIds) {
+    state.api.id = trackId
+    const parentId = cleanArr(state.api.get('group_track'))[0]
+    //log(trackId + ' PARENT_ID ' + parentId)
+    if (!tree[trackId]) {
+      tree[trackId] = getEmptyTreeNode()
+    }
+    tree[trackId].parent = parentId
+    if (!tree[parentId]) {
+      tree[parentId] = getEmptyTreeNode()
+    }
+    tree[parentId].children.push(trackId)
+  }
+  return tree
+}
+
+function getDepthForId(trackId: number, tree: Tree) {
+  let parentId = tree[trackId].parent
+  let depth = 0
+  while (parentId > 0) {
+    depth++
+    parentId = tree[parentId].parent
+  }
+  return depth
+}
+
 function getTracksFor(trackIds: IdArr) {
   const ret = [] as MaxObjRecord[]
+
+  const tree = makeTrackTree(trackIds)
+  //log(JSON.stringify(tree))
+
   for (const trackId of trackIds) {
     state.api.id = trackId
 
-    const isGrouped = parseInt(state.api.get('is_grouped'))
-
-    const indent = 1 + isGrouped // TODO DO FOR REAL
+    const isFoldable = parseInt(state.api.get('is_foldable'))
 
     const trackObj = [
-      0,
-      trackId,
-      truncate(state.api.get('name').toString(), MAX_LEN),
-      colorToString(state.api.get('color').toString()),
-      indent,
+      /* TYPE   */ state.trackType[trackId] ||
+        (isFoldable ? TYPE_GROUP : TYPE_NORMAL),
+      /* ID     */ trackId,
+      /* NAME   */ truncate(state.api.get('name').toString(), MAX_LEN),
+      /* COLOR  */ colorToString(state.api.get('color').toString()),
+      /* INDENT */ getDepthForId(trackId, tree),
     ] as MaxObjRecord
     ret.push(trackObj)
   }
@@ -180,6 +229,7 @@ function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
 function updateGeneric(type: ListClass, val: IdObserverArg) {
   const stateObj = state[type]
   stateObj.ids = []
+
   const idArr = cleanArr(val) as IdArr
   if (type === 'device') {
     for (const objId of idArr) {
@@ -187,6 +237,13 @@ function updateGeneric(type: ListClass, val: IdObserverArg) {
       checkAndDescend(stateObj, objId, 0)
     }
   } else {
+    for (const objId of idArr) {
+      if (type === 'return') {
+        state.trackType[objId] = TYPE_RETURN
+      } else if (type === 'main') {
+        state.trackType[objId] = TYPE_MAIN
+      }
+    }
     stateObj.ids = [...idArr]
   }
   updateTypePeriodic(type)
@@ -236,6 +293,8 @@ function init() {
   state.return = { watch: null, ids: [], objs: [], last: null }
   state.main = { watch: null, ids: [], objs: [], last: null }
   state.device = { watch: null, ids: [], objs: [], last: null }
+  state.deviceType = {}
+  state.trackType = {}
 
   // general purpose API obj to do lookups, etc
   state.api = new LiveAPI(noFn, 'live_set')
