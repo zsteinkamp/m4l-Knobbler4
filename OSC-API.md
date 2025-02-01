@@ -30,6 +30,10 @@ Updates the device name for Slot N.
 
 Updates the parameter name for Slot N.
 
+#### `/paramNauto {integer}`
+
+The automation state for the parameter in Slot N.
+
 #### `/track {string}`
 
 Updates the track name for Slot N.
@@ -88,6 +92,10 @@ Updates the text that indicates the current bank, e.g. "Bank 2 of 6".
 #### `/bparamN {string}`
 
 Updates the parameter name for Slot N.
+
+#### `/bparamNauto {integer}`
+
+The automation state for the parameter in Slot N.
 
 #### `/bvalN {float}`
 
