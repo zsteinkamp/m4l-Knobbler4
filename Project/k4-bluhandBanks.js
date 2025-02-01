@@ -58,7 +58,6 @@ function getMaxBanksParamArr(bankCount, deviceObj) {
 function getBasicParamArr(paramIds) {
     //log('GET BASIC ' + paramIds.join(','))
     var ret = [];
-    var numBanks = Math.ceil(paramIds.length / 16);
     var currBank = 0;
     var blankRow = function () {
         return {
@@ -67,7 +66,8 @@ function getBasicParamArr(paramIds) {
         };
     };
     var currRow = null;
-    paramIds.forEach(function (paramId, idx) {
+    var idx = 0;
+    paramIds.forEach(function (paramId) {
         // set up a new row for the first one
         if (idx % 16 === 0) {
             if (currRow) {
@@ -75,7 +75,14 @@ function getBasicParamArr(paramIds) {
             }
             currRow = blankRow();
         }
-        currRow.paramIdxArr.push(idx + 1);
+        if (paramId === 0) {
+            // special case filler
+            currRow.paramIdxArr.push(-1);
+        }
+        else {
+            currRow.paramIdxArr.push(idx + 1);
+            idx++; // only increment here
+        }
     });
     if (currRow) {
         ret.push(currRow);
@@ -98,6 +105,9 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     // more "bespoke" setups get this
     var param = getUtilApi();
     paramIds.forEach(function (paramId, idx) {
+        if (paramId <= 0) {
+            return;
+        }
         param.id = paramId;
         paramNameToIdx[param.get('name')] = idx;
         //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
@@ -218,6 +228,14 @@ function id(deviceId) {
         if (numMacros) {
             //log('GonNNA SlIcE ' + numMacros)
             paramIds = paramIds.slice(0, numMacros);
+            if (numMacros > 1) {
+                var halfMacros = numMacros / 2;
+                var filler = Array(8 - halfMacros);
+                for (var i = 0; i < filler.length; i++) {
+                    filler[i] = 0;
+                }
+                paramIds = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], paramIds.slice(0, halfMacros), true), filler, true), paramIds.slice(halfMacros, numMacros), true), filler, true);
+            }
         }
     }
     //log('PARAMIDS ' + JSON.stringify(paramIds))

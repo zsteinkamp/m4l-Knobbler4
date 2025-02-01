@@ -69,7 +69,6 @@ function getMaxBanksParamArr(bankCount: number, deviceObj: LiveAPI) {
 function getBasicParamArr(paramIds: number[]) {
   //log('GET BASIC ' + paramIds.join(','))
   const ret: BluhandBank[] = []
-  const numBanks = Math.ceil(paramIds.length / 16)
   let currBank = 0
   const blankRow = () => {
     return {
@@ -79,7 +78,8 @@ function getBasicParamArr(paramIds: number[]) {
   }
   let currRow: BluhandBank = null
 
-  paramIds.forEach((paramId, idx) => {
+  let idx = 0
+  paramIds.forEach((paramId) => {
     // set up a new row for the first one
     if (idx % 16 === 0) {
       if (currRow) {
@@ -87,7 +87,13 @@ function getBasicParamArr(paramIds: number[]) {
       }
       currRow = blankRow()
     }
-    currRow.paramIdxArr.push(idx + 1)
+    if (paramId === 0) {
+      // special case filler
+      currRow.paramIdxArr.push(-1)
+    } else {
+      currRow.paramIdxArr.push(idx + 1)
+      idx++ // only increment here
+    }
   })
   if (currRow) {
     ret.push(currRow)
@@ -120,6 +126,9 @@ function getBankParamArr(
   // more "bespoke" setups get this
   const param = getUtilApi()
   paramIds.forEach((paramId: number, idx: number) => {
+    if (paramId <= 0) {
+      return
+    }
     param.id = paramId
     paramNameToIdx[param.get('name')] = idx
     //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
@@ -251,6 +260,19 @@ function id(deviceId: number) {
     if (numMacros) {
       //log('GonNNA SlIcE ' + numMacros)
       paramIds = paramIds.slice(0, numMacros)
+      if (numMacros > 1) {
+        const halfMacros = numMacros / 2
+        const filler = Array(8 - halfMacros)
+        for (let i = 0; i < filler.length; i++) {
+          filler[i] = 0
+        }
+        paramIds = [
+          ...paramIds.slice(0, halfMacros),
+          ...filler,
+          ...paramIds.slice(halfMacros, numMacros),
+          ...filler,
+        ]
+      }
     }
   }
   //log('PARAMIDS ' + JSON.stringify(paramIds))
