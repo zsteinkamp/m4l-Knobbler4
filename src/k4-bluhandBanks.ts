@@ -122,6 +122,13 @@ function getBankParamArr(
   const deviceParamMap = DeviceParamMaps[deviceType]
 
   const paramArr = getBasicParamArr(paramIds)
+
+  if (!deviceParamMap) {
+    // nothing to customize, return the basic array
+    //log('BASIC RETURN ' + JSON.stringify(paramArr))
+    return paramArr
+  }
+
   paramNameToIdx = {}
   // more "bespoke" setups get this
   const param = getUtilApi()
@@ -133,12 +140,6 @@ function getBankParamArr(
     paramNameToIdx[param.get('name')] = idx
     //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
   })
-
-  if (!deviceParamMap) {
-    // nothing to customize, return the basic array
-    //log('BASIC RETURN ' + JSON.stringify(paramArr))
-    return paramArr
-  }
 
   deviceParamMap.forEach((nameBank, idx) => {
     const row: BluhandBank = {
@@ -242,14 +243,8 @@ function id(deviceId: number) {
   api.id = deviceId
   const deviceType = api.get('class_display_name').toString()
   //log(JSON.stringify({ deviceType, name: api.get('name') }))
-  const rawParams = api.get('parameters')
-  let paramIds: number[] = []
-  rawParams.forEach((paramId: string | number, idx: number) => {
-    if (paramId === 'id') {
-      return
-    }
-    paramIds.push(paramId as number)
-  })
+
+  let paramIds = cleanArr(api.get('parameters'))
   paramIds.shift() // remove device on/off
 
   const canHaveChains = parseInt(api.get('can_have_chains'))
@@ -261,6 +256,8 @@ function id(deviceId: number) {
       //log('GonNNA SlIcE ' + numMacros)
       paramIds = paramIds.slice(0, numMacros)
       if (numMacros > 1) {
+        // put filler in the macros to look more like the
+        // even 2-row split that Live shows
         const halfMacros = numMacros / 2
         const filler = Array(8 - halfMacros)
         for (let i = 0; i < filler.length; i++) {

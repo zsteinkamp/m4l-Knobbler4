@@ -101,6 +101,11 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     // deviceParamMap is custom or crafted parameter organization
     var deviceParamMap = k4_deviceParamMaps_1.DeviceParamMaps[deviceType];
     var paramArr = getBasicParamArr(paramIds);
+    if (!deviceParamMap) {
+        // nothing to customize, return the basic array
+        //log('BASIC RETURN ' + JSON.stringify(paramArr))
+        return paramArr;
+    }
     paramNameToIdx = {};
     // more "bespoke" setups get this
     var param = getUtilApi();
@@ -112,11 +117,6 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         paramNameToIdx[param.get('name')] = idx;
         //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
     });
-    if (!deviceParamMap) {
-        // nothing to customize, return the basic array
-        //log('BASIC RETURN ' + JSON.stringify(paramArr))
-        return paramArr;
-    }
     deviceParamMap.forEach(function (nameBank, idx) {
         var row = {
             name: nameBank.name,
@@ -211,14 +211,7 @@ function id(deviceId) {
     api.id = deviceId;
     var deviceType = api.get('class_display_name').toString();
     //log(JSON.stringify({ deviceType, name: api.get('name') }))
-    var rawParams = api.get('parameters');
-    var paramIds = [];
-    rawParams.forEach(function (paramId, idx) {
-        if (paramId === 'id') {
-            return;
-        }
-        paramIds.push(paramId);
-    });
+    var paramIds = (0, utils_1.cleanArr)(api.get('parameters'));
     paramIds.shift(); // remove device on/off
     var canHaveChains = parseInt(api.get('can_have_chains'));
     //log('CAN_HAVE_CHAINS: ' + canHaveChains)
@@ -229,6 +222,8 @@ function id(deviceId) {
             //log('GonNNA SlIcE ' + numMacros)
             paramIds = paramIds.slice(0, numMacros);
             if (numMacros > 1) {
+                // put filler in the macros to look more like the
+                // even 2-row split that Live shows
                 var halfMacros = numMacros / 2;
                 var filler = Array(8 - halfMacros);
                 for (var i = 0; i < filler.length; i++) {
