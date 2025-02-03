@@ -28,6 +28,7 @@ var state = {
     currBank: 1,
     numBanks: 1,
     bankParamArr: [],
+    nameLookupCache: {},
 };
 function getMaxBanksParamArr(bankCount, deviceObj) {
     var rawBanks = [];
@@ -107,17 +108,27 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         //log('BASIC RETURN ' + JSON.stringify(paramArr))
         return paramArr;
     }
-    paramNameToIdx = {};
-    // more "bespoke" setups get this
-    var param = getUtilApi();
-    paramIds.forEach(function (paramId, idx) {
-        if (paramId <= 0) {
-            return;
-        }
-        param.id = paramId;
-        paramNameToIdx[param.get('name')] = idx;
-        //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
-    });
+    // cache id to name mapping because it is super slow with giant devices like
+    // Operator and honestly it should just be a compile-time step of the data
+    // files that need this information. frankly this is stupid and should be
+    // burned.
+    var lookupCacheKey = deviceObj.id;
+    paramNameToIdx = state.nameLookupCache[lookupCacheKey];
+    if (!paramNameToIdx) {
+        //log('CACHE MISS ' + lookupCacheKey)
+        paramNameToIdx = {};
+        // more "bespoke" setups get this
+        var param_1 = getUtilApi();
+        paramIds.forEach(function (paramId, idx) {
+            if (paramId <= 0) {
+                return;
+            }
+            param_1.id = paramId;
+            paramNameToIdx[param_1.get('name')] = idx;
+            //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
+        });
+        state.nameLookupCache[lookupCacheKey] = paramNameToIdx;
+    }
     deviceParamMap.forEach(function (nameBank, idx) {
         var row = {
             name: nameBank.name,

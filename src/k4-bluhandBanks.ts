@@ -22,7 +22,8 @@ setinletassist(
 )
 
 const updateParams = () => {}
-let paramNameToIdx: Record<string, number> = null
+type RecordNameToIdx = Record<string, number>
+let paramNameToIdx: RecordNameToIdx = null
 
 const state = {
   devicePath: null as string,
@@ -30,6 +31,7 @@ const state = {
   currBank: 1,
   numBanks: 1,
   bankParamArr: [] as BluhandBank[],
+  nameLookupCache: {} as Record<number, RecordNameToIdx>,
 }
 
 function getMaxBanksParamArr(bankCount: number, deviceObj: LiveAPI) {
@@ -130,17 +132,27 @@ function getBankParamArr(
     return paramArr
   }
 
-  paramNameToIdx = {}
-  // more "bespoke" setups get this
-  const param = getUtilApi()
-  paramIds.forEach((paramId: number, idx: number) => {
-    if (paramId <= 0) {
-      return
-    }
-    param.id = paramId
-    paramNameToIdx[param.get('name')] = idx
-    //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
-  })
+  // cache id to name mapping because it is super slow with giant devices like
+  // Operator and honestly it should just be a compile-time step of the data
+  // files that need this information. frankly this is stupid and should be
+  // burned.
+  const lookupCacheKey = deviceObj.id
+  paramNameToIdx = state.nameLookupCache[lookupCacheKey]
+  if (!paramNameToIdx) {
+    //log('CACHE MISS ' + lookupCacheKey)
+    paramNameToIdx = {} as RecordNameToIdx
+    // more "bespoke" setups get this
+    const param = getUtilApi()
+    paramIds.forEach((paramId: number, idx: number) => {
+      if (paramId <= 0) {
+        return
+      }
+      param.id = paramId
+      paramNameToIdx[param.get('name')] = idx
+      //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
+    })
+    state.nameLookupCache[lookupCacheKey] = paramNameToIdx
+  }
 
   deviceParamMap.forEach((nameBank, idx) => {
     const row: BluhandBank = {
