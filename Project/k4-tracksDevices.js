@@ -93,7 +93,7 @@ function getTracksFor(trackIds) {
         var isFoldable = parseInt(state.api.get('is_foldable'));
         var trackObj = [
             /* TYPE   */ state.trackType[trackId] ||
-                (isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_NORMAL),
+                (isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_TRACK),
             /* ID     */ trackId,
             /* NAME   */ (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
             /* COLOR  */ (0, utils_1.colorToString)(state.api.get('color').toString()),
@@ -106,6 +106,7 @@ function getTracksFor(trackIds) {
 function getDevicesFor(deviceIds) {
     //log('GET DEVICES FOR ' + deviceIds.join(','))
     var ret = [];
+    var parentColors = {};
     for (var _i = 0, deviceIds_1 = deviceIds; _i < deviceIds_1.length; _i++) {
         var deviceId = deviceIds_1[_i];
         state.api.id = deviceId;
@@ -114,12 +115,17 @@ function getDevicesFor(deviceIds) {
             color = (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
         }
         else {
-            state.api.id = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
-            color = (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
-            state.api.id = deviceId;
+            var parentId = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
+            if (!parentColors[parentId]) {
+                state.api.id = parentId;
+                parentColors[parentId] =
+                    (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
+                state.api.id = deviceId;
+            }
+            color = parentColors[parentId];
         }
         var deviceObj = [
-            state.deviceType[deviceId] || 0,
+            state.deviceType[deviceId] || consts_1.TYPE_DEVICE,
             deviceId,
             (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
             color,
@@ -173,6 +179,7 @@ function checkAndDescend(stateObj, objId, depth) {
         //)
     }
     if (parseInt(state.api.get('can_have_chains'))) {
+        state.deviceType[objId] = consts_1.TYPE_RACK;
         //log('DESCENDING FROM ' + objId)
         var chains = (0, utils_1.cleanArr)(state.api.get('chains'));
         //log('>> GOT CHAINS ' + JSON.stringify(chains))

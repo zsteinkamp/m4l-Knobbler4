@@ -12,8 +12,10 @@ import {
   DEFAULT_COLOR,
   TYPE_RETURN,
   TYPE_MAIN,
-  TYPE_NORMAL,
+  TYPE_DEVICE,
+  TYPE_TRACK,
   TYPE_GROUP,
+  TYPE_RACK,
 } from './consts'
 
 const MAX_LEN = 32
@@ -111,7 +113,7 @@ function getTracksFor(trackIds: IdArr) {
 
     const trackObj = [
       /* TYPE   */ state.trackType[trackId] ||
-        (isFoldable ? TYPE_GROUP : TYPE_NORMAL),
+        (isFoldable ? TYPE_GROUP : TYPE_TRACK),
       /* ID     */ trackId,
       /* NAME   */ truncate(state.api.get('name').toString(), MAX_LEN),
       /* COLOR  */ colorToString(state.api.get('color').toString()),
@@ -125,18 +127,24 @@ function getTracksFor(trackIds: IdArr) {
 function getDevicesFor(deviceIds: IdArr) {
   //log('GET DEVICES FOR ' + deviceIds.join(','))
   const ret = [] as MaxObjRecord[]
+  const parentColors: Record<number, string> = {}
   for (const deviceId of deviceIds) {
     state.api.id = deviceId
     let color = null
     if (state.deviceType[deviceId] === TYPE_CHAIN) {
       color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
     } else {
-      state.api.id = cleanArr(state.api.get('canonical_parent'))[0]
-      color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
-      state.api.id = deviceId
+      const parentId = cleanArr(state.api.get('canonical_parent'))[0]
+      if (!parentColors[parentId]) {
+        state.api.id = parentId
+        parentColors[parentId] =
+          colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
+        state.api.id = deviceId
+      }
+      color = parentColors[parentId]
     }
     const deviceObj = [
-      state.deviceType[deviceId] || 0,
+      state.deviceType[deviceId] || TYPE_DEVICE,
       deviceId,
       truncate(state.api.get('name').toString(), MAX_LEN),
       color,
@@ -195,6 +203,7 @@ function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
   }
 
   if (parseInt(state.api.get('can_have_chains'))) {
+    state.deviceType[objId] = TYPE_RACK
     //log('DESCENDING FROM ' + objId)
     const chains = cleanArr(state.api.get('chains'))
     //log('>> GOT CHAINS ' + JSON.stringify(chains))

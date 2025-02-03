@@ -31,15 +31,14 @@ function updateParamName(objId: string) {
     } else {
       nameArr.unshift(truncate(obj.get('name').toString(), 40))
     }
-    obj.id = obj.get('canonical_parent')
+    obj.id = obj.get('canonical_parent')[1]
     counter++
   }
 
   let name = nameArr[0]
-  if (nameArr.length == 2) {
-    name = [nameArr[0], nameArr[1]].join(' > ')
-  } else if (nameArr.length > 2) {
-    name = [nameArr[0], nameArr[1], nameArr[nameArr.length - 1]].join(' > ')
+  //log(nameArr)
+  if (nameArr.length > 1) {
+    name = [nameArr[0], nameArr[nameArr.length - 1]].join(' > ')
   }
 
   outlet(OUTLET_PARAM_NAME, name)

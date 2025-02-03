@@ -137,6 +137,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/toggleOnOff',
+    handler: bareMsg,
+    msg: 'toggleOnOff',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/btnSkipNext',
     handler: bareMsg,
     msg: 'btnSkipNext',

@@ -24,6 +24,7 @@ var updateParams = function () { };
 var paramNameToIdx = null;
 var state = {
     devicePath: null,
+    onOffWatcher: null,
     currBank: 1,
     numBanks: 1,
     bankParamArr: [],
@@ -206,13 +207,33 @@ function gotoTrack(trackId) {
     //log('GOTO TRACK ' + trackId)
     api.set('selected_track', ['id', trackId]);
 }
+function toggleOnOff() {
+    if (!state.onOffWatcher) {
+        return;
+    }
+    var currVal = parseInt(state.onOffWatcher.get('value'));
+    state.onOffWatcher.set('value', currVal ? 0 : 1);
+}
+function updateDeviceOnOff(iargs) {
+    var args = arrayfromargs(iargs);
+    if (args[0] === 'value') {
+        outlet(consts_1.OUTLET_OSC, ['/bOnOff', parseInt(args[1])]);
+    }
+}
 function id(deviceId) {
     var api = getUtilApi();
     api.id = deviceId;
     var deviceType = api.get('class_display_name').toString();
     //log(JSON.stringify({ deviceType, name: api.get('name') }))
     var paramIds = (0, utils_1.cleanArr)(api.get('parameters'));
-    paramIds.shift(); // remove device on/off
+    var onOffParamId = paramIds.shift(); // remove device on/off
+    if (!state.onOffWatcher) {
+        state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId);
+        state.onOffWatcher.property = 'value';
+    }
+    else {
+        state.onOffWatcher.id = onOffParamId;
+    }
     var canHaveChains = parseInt(api.get('can_have_chains'));
     //log('CAN_HAVE_CHAINS: ' + canHaveChains)
     if (canHaveChains) {

@@ -26,6 +26,7 @@ let paramNameToIdx: Record<string, number> = null
 
 const state = {
   devicePath: null as string,
+  onOffWatcher: null as LiveAPI,
   currBank: 1,
   numBanks: 1,
   bankParamArr: [] as BluhandBank[],
@@ -238,6 +239,21 @@ function gotoTrack(trackId: number) {
   api.set('selected_track', ['id', trackId])
 }
 
+function toggleOnOff() {
+  if (!state.onOffWatcher) {
+    return
+  }
+  const currVal = parseInt(state.onOffWatcher.get('value'))
+  state.onOffWatcher.set('value', currVal ? 0 : 1)
+}
+
+function updateDeviceOnOff(iargs: IArguments) {
+  const args = arrayfromargs(iargs)
+  if (args[0] === 'value') {
+    outlet(OUTLET_OSC, ['/bOnOff', parseInt(args[1])])
+  }
+}
+
 function id(deviceId: number) {
   const api = getUtilApi()
   api.id = deviceId
@@ -245,7 +261,13 @@ function id(deviceId: number) {
   //log(JSON.stringify({ deviceType, name: api.get('name') }))
 
   let paramIds = cleanArr(api.get('parameters'))
-  paramIds.shift() // remove device on/off
+  const onOffParamId = paramIds.shift() // remove device on/off
+  if (!state.onOffWatcher) {
+    state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId)
+    state.onOffWatcher.property = 'value'
+  } else {
+    state.onOffWatcher.id = onOffParamId
+  }
 
   const canHaveChains = parseInt(api.get('can_have_chains'))
   //log('CAN_HAVE_CHAINS: ' + canHaveChains)
