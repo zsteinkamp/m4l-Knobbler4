@@ -229,12 +229,41 @@ function sendCurrBank() {
   sendBankNames()
 }
 
+function unfoldParentTracks(objId: number) {
+  const util = getUtilApi()
+  util.id = objId
+  //log('GOTO TRACK ' + trackId + ' ' + util.id)
+
+  // first we need to surf up the hierarchy to make sure we are not in a
+  // collapsed group
+  let counter = 0
+  while (counter < 20) {
+    const isFoldable = parseInt(util.get('is_foldable'))
+    //log(util.id + ' isFoldable=' + util.get('is_foldable'))
+    if (isFoldable) {
+      const foldState = parseInt(util.get('fold_state'))
+      if (foldState === 1) {
+        // need to unfold
+        util.set('fold_state', 0)
+      }
+    }
+    util.id = util.get('canonical_parent')[1]
+    if (util.type === 'Song') {
+      break
+    }
+    counter++
+  }
+}
+
 function gotoDevice(deviceId: number) {
+  unfoldParentTracks(deviceId)
   const api = getLiveSetViewApi()
   //log('GOTO DEVICE ' + deviceId)
   api.call('select_device', ['id', deviceId])
 }
+
 function gotoChain(chainId: number) {
+  unfoldParentTracks(chainId)
   const viewApi = getLiveSetViewApi()
   const api = getUtilApi()
   api.id = chainId
@@ -244,9 +273,10 @@ function gotoChain(chainId: number) {
     return
   }
 }
+
 function gotoTrack(trackId: number) {
+  unfoldParentTracks(trackId)
   const api = getLiveSetViewApi()
-  //log('GOTO TRACK ' + trackId)
   api.set('selected_track', ['id', trackId])
 }
 

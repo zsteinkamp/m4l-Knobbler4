@@ -197,12 +197,38 @@ function sendCurrBank() {
     });
     sendBankNames();
 }
+function unfoldParentTracks(objId) {
+    var util = getUtilApi();
+    util.id = objId;
+    //log('GOTO TRACK ' + trackId + ' ' + util.id)
+    // first we need to surf up the hierarchy to make sure we are not in a
+    // collapsed group
+    var counter = 0;
+    while (counter < 20) {
+        var isFoldable = parseInt(util.get('is_foldable'));
+        //log(util.id + ' isFoldable=' + util.get('is_foldable'))
+        if (isFoldable) {
+            var foldState = parseInt(util.get('fold_state'));
+            if (foldState === 1) {
+                // need to unfold
+                util.set('fold_state', 0);
+            }
+        }
+        util.id = util.get('canonical_parent')[1];
+        if (util.type === 'Song') {
+            break;
+        }
+        counter++;
+    }
+}
 function gotoDevice(deviceId) {
+    unfoldParentTracks(deviceId);
     var api = getLiveSetViewApi();
     //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
 function gotoChain(chainId) {
+    unfoldParentTracks(chainId);
     var viewApi = getLiveSetViewApi();
     var api = getUtilApi();
     api.id = chainId;
@@ -213,8 +239,8 @@ function gotoChain(chainId) {
     }
 }
 function gotoTrack(trackId) {
+    unfoldParentTracks(trackId);
     var api = getLiveSetViewApi();
-    //log('GOTO TRACK ' + trackId)
     api.set('selected_track', ['id', trackId]);
 }
 function toggleOnOff() {
