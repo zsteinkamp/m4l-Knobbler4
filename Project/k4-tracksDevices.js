@@ -238,7 +238,7 @@ function updateGeneric(type, val) {
 }
 function updateTracks(val) {
     //log('HERE TRACKS ' + JSON.stringify(val))
-    if (val[0] !== 'visible_tracks') {
+    if (val[0] !== 'tracks') {
         //log('TRACKS EARLY')
         return;
     }
@@ -281,7 +281,7 @@ function init() {
     state.api = new LiveAPI(consts_1.noFn, 'live_set');
     // set up track watcher, calls function to assemble and send tracks when changes
     state.track.watch = new LiveAPI(updateTracks, 'live_set');
-    state.track.watch.property = 'visible_tracks';
+    state.track.watch.property = 'tracks';
     state.return.watch = new LiveAPI(updateReturns, 'live_set');
     state.return.watch.property = 'return_tracks';
     state.main.watch = new LiveAPI(updateMain, 'live_set master_track');
