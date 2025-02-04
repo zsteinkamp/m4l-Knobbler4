@@ -21,7 +21,6 @@ setinletassist(
   'Output messages to the [poly finger] instances to set their parameter index'
 )
 
-const updateParams = () => {}
 type RecordNameToIdx = Record<string, number>
 let paramNameToIdx: RecordNameToIdx = null
 

@@ -154,7 +154,7 @@ function paramValueCallback(slot, iargs) {
     // This function is called whenever the parameter value changes,
     // either via OSC control or by changing the device directly.
     // We need to distinguish between the two and not do anything if the
-    // value was changed due to OSC input. Otherwise, since we would create a feedback
+    // value was changed due to OSC input. Otherwise, we would create a feedback
     // loop since this the purpose of this function is to update the displayed
     // value on the OSC controller to show automation or direct manipulation.
     // We accomplish this by keeping a timestamp of the last time OSC data was
@@ -248,14 +248,14 @@ function setPath(slot, paramPath) {
         //log(`skipping ${slot}: ${paramPath}`)
         return;
     }
-    var testObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
-    testObj.property = 'value';
+    var testParamObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
     // catch bad paths
-    if (testObj.id.toString() === '0') {
+    if (testParamObj.id === 0) {
         log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
         return;
     }
-    paramObj[slot] = testObj;
+    testParamObj.property = 'value';
+    paramObj[slot] = testParamObj;
     paramNameObj[slot] = new LiveAPI(function (iargs) { return paramNameCallback(slot, iargs); }, paramPath);
     paramNameObj[slot].property = 'name';
     automationStateObj[slot] = new LiveAPI(function (iargs) { return automationStateCallback(slot, iargs); }, paramPath);
@@ -368,15 +368,15 @@ function sendTrackName(slot) {
     sendMsg(slot, ['track', trackName]);
     outlet(consts_1.OUTLET_OSC, ['/track' + slot, trackName]);
 }
-var DEFAULT_RED = '990000FF';
 function sendColor(slot) {
     //log(`SEND COLOR ${slot}`)
     initSlotIfNecessary(slot);
     var trackColor = param[slot].trackColor
         ? (0, utils_1.dequote)(param[slot].trackColor.toString())
-        : DEFAULT_RED;
+        : consts_1.DEFAULT_COLOR_FF;
     outlet(consts_1.OUTLET_OSC, ['/val' + slot + 'color', trackColor]);
-    if (trackColor === DEFAULT_RED) {
+    // for the color highlight in the Max for Live device
+    if (trackColor === consts_1.DEFAULT_COLOR_FF) {
         trackColor = '000000FF';
     }
     var red = parseInt(trackColor.substring(0, 2), 16) / 255.0 || 0;
@@ -389,7 +389,7 @@ function sendVal(slot) {
     //log(`SEND VAL ${slot}`)
     initSlotIfNecessary(slot);
     if (!paramObj[slot] ||
-        paramObj[slot].id.toString() === '0' ||
+        paramObj[slot].id === 0 ||
         param[slot].val === undefined ||
         param[slot].max === undefined ||
         param[slot].min === undefined ||
@@ -414,10 +414,12 @@ function sendVal(slot) {
             : nullString,
     ]);
 }
+// new value received over OSC
 function val(slot, val) {
     //log(slot + ' - VAL: ' + val)
     if (paramObj[slot]) {
         if (allowUpdateFromOsc[slot]) {
+            // scale the 0..1 value to the param's min/max range
             var scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
             param[slot].val =
                 (param[slot].max - param[slot].min) * scaledVal + param[slot].min;

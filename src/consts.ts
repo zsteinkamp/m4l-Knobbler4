@@ -12,5 +12,6 @@ export const TYPE_DEVICE = 5
 export const TYPE_RACK = 6
 
 export const DEFAULT_COLOR = '990000'
+export const DEFAULT_COLOR_FF = DEFAULT_COLOR + 'FF'
 
 export const noFn = () => {}

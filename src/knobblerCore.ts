@@ -5,7 +5,7 @@ import {
   isValidPath,
   logFactory,
 } from './utils'
-import { MAX_SLOTS, OUTLET_MSGS, OUTLET_OSC } from './consts'
+import { DEFAULT_COLOR_FF, MAX_SLOTS, OUTLET_MSGS, OUTLET_OSC } from './consts'
 
 import config from './config'
 const log = logFactory(config)
@@ -158,7 +158,7 @@ function paramValueCallback(slot: number, iargs: IArguments) {
   // This function is called whenever the parameter value changes,
   // either via OSC control or by changing the device directly.
   // We need to distinguish between the two and not do anything if the
-  // value was changed due to OSC input. Otherwise, since we would create a feedback
+  // value was changed due to OSC input. Otherwise, we would create a feedback
   // loop since this the purpose of this function is to update the displayed
   // value on the OSC controller to show automation or direct manipulation.
   // We accomplish this by keeping a timestamp of the last time OSC data was
@@ -261,22 +261,24 @@ function setPath(slot: number, paramPath: string) {
     //log(`skipping ${slot}: ${paramPath}`)
     return
   }
-  const testObj = new LiveAPI(
+  const testParamObj = new LiveAPI(
     (iargs: IArguments) => paramValueCallback(slot, iargs),
     paramPath
   )
-  testObj.property = 'value'
   // catch bad paths
-  if (testObj.id.toString() === '0') {
+  if (testParamObj.id === 0) {
     log(`Invalid path for slot ${slot}: ${paramPath}`)
     return
   }
-  paramObj[slot] = testObj
+  testParamObj.property = 'value'
+  paramObj[slot] = testParamObj
+
   paramNameObj[slot] = new LiveAPI(
     (iargs: IArguments) => paramNameCallback(slot, iargs),
     paramPath
   )
   paramNameObj[slot].property = 'name'
+
   automationStateObj[slot] = new LiveAPI(
     (iargs: IArguments) => automationStateCallback(slot, iargs),
     paramPath
@@ -294,7 +296,6 @@ function setPath(slot: number, paramPath: string) {
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
     paramObj[slot] && paramObj[slot].get('canonical_parent')
   )
-
   const devicePath = deviceObj[slot].unquotedpath
 
   // poll to see if the mapped device is still present
@@ -395,6 +396,7 @@ function sendParamName(slot: number) {
   //log('SEND PARAM NAME ' + slot + '=' + paramName)
   outlet(OUTLET_OSC, ['/param' + slot, paramName])
 }
+
 function sendAutomationState(slot: number) {
   initSlotIfNecessary(slot)
   const automationState = parseInt(
@@ -425,25 +427,22 @@ function sendTrackName(slot: number) {
   outlet(OUTLET_OSC, ['/track' + slot, trackName])
 }
 
-const DEFAULT_RED = '990000FF'
-
 function sendColor(slot: number) {
   //log(`SEND COLOR ${slot}`)
   initSlotIfNecessary(slot)
   let trackColor = param[slot].trackColor
     ? dequote(param[slot].trackColor.toString())
-    : DEFAULT_RED
+    : DEFAULT_COLOR_FF
   outlet(OUTLET_OSC, ['/val' + slot + 'color', trackColor])
 
-  if (trackColor === DEFAULT_RED) {
+  // for the color highlight in the Max for Live device
+  if (trackColor === DEFAULT_COLOR_FF) {
     trackColor = '000000FF'
   }
-
   const red = parseInt(trackColor.substring(0, 2), 16) / 255.0 || 0
   const grn = parseInt(trackColor.substring(2, 4), 16) / 255.0 || 0
   const blu = parseInt(trackColor.substring(4, 6), 16) / 255.0 || 0
   const alp = parseInt(trackColor.substring(6, 8), 16) / 255.0 || 0
-
   sendMsg(slot, ['color', red, grn, blu, alp])
 }
 
@@ -453,7 +452,7 @@ function sendVal(slot: number) {
 
   if (
     !paramObj[slot] ||
-    paramObj[slot].id.toString() === '0' ||
+    paramObj[slot].id === 0 ||
     param[slot].val === undefined ||
     param[slot].max === undefined ||
     param[slot].min === undefined ||
@@ -485,10 +484,12 @@ function sendVal(slot: number) {
   ])
 }
 
+// new value received over OSC
 function val(slot: number, val: number) {
   //log(slot + ' - VAL: ' + val)
   if (paramObj[slot]) {
     if (allowUpdateFromOsc[slot]) {
+      // scale the 0..1 value to the param's min/max range
       const scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot]
       param[slot].val =
         (param[slot].max - param[slot].min) * scaledVal + param[slot].min

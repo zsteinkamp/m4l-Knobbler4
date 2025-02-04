@@ -20,7 +20,6 @@ var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setinletassist(consts_1.OUTLET_MSGS, 'Output messages to the [poly finger] instances to set their parameter index');
-var updateParams = function () { };
 var paramNameToIdx = null;
 var state = {
     devicePath: null,
