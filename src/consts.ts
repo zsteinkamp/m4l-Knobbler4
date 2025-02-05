@@ -15,3 +15,5 @@ export const DEFAULT_COLOR = '990000'
 export const DEFAULT_COLOR_FF = DEFAULT_COLOR + 'FF'
 
 export const noFn = () => {}
+
+export const MAX_NAME_LEN = 32

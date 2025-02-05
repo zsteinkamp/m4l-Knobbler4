@@ -5,20 +5,19 @@ outlets = 1
 import { cleanArr, colorToString, logFactory, truncate } from './utils'
 import config from './config'
 import {
-  noFn,
+  DEFAULT_COLOR,
   INLET_MSGS,
+  MAX_NAME_LEN,
   OUTLET_OSC,
   TYPE_CHAIN,
-  DEFAULT_COLOR,
-  TYPE_RETURN,
-  TYPE_MAIN,
   TYPE_DEVICE,
-  TYPE_TRACK,
   TYPE_GROUP,
+  TYPE_MAIN,
   TYPE_RACK,
+  TYPE_RETURN,
+  TYPE_TRACK,
+  noFn,
 } from './consts'
-
-const MAX_LEN = 32
 
 const log = logFactory(config)
 
@@ -69,7 +68,8 @@ const getEmptyTreeNode: () => TreeNode = () => ({
   children: [],
   parent: null,
 })
-function makeTrackTree(trackIds: IdArr) {
+
+const makeTrackTree = (trackIds: IdArr) => {
   const tree: Tree = {
     0: getEmptyTreeNode(),
   }
@@ -118,7 +118,7 @@ function getTracksFor(trackIds: IdArr) {
       /* TYPE   */ state.trackType[trackId] ||
         (isFoldable ? TYPE_GROUP : TYPE_TRACK),
       /* ID     */ trackId,
-      /* NAME   */ truncate(state.api.get('name').toString(), MAX_LEN),
+      /* NAME   */ truncate(state.api.get('name').toString(), MAX_NAME_LEN),
       /* COLOR  */ colorToString(state.api.get('color').toString()),
       /* INDENT */ getDepthForId(trackId, tree),
     ] as MaxObjRecord
@@ -154,7 +154,7 @@ function getDevicesFor(deviceIds: IdArr) {
     const deviceObj = [
       state.deviceType[deviceId] || TYPE_DEVICE,
       deviceId,
-      truncate(state.api.get('name').toString(), MAX_LEN),
+      truncate(state.api.get('name').toString(), MAX_NAME_LEN),
       color,
       state.deviceDepth[deviceId] || 0,
     ] as MaxObjRecord
@@ -311,32 +311,42 @@ function updateDevices(val: IdObserverArg) {
 function init() {
   //log('INIT')
   state.deviceDepth = {}
-  state.track = { watch: null, ids: [], objs: [], last: null }
-  state.return = { watch: null, ids: [], objs: [], last: null }
-  state.main = { watch: null, ids: [], objs: [], last: null }
-  state.device = { watch: null, ids: [], objs: [], last: null }
+  state.track = { ...state.track, ids: [], objs: [], last: null }
+  state.return = { ...state.return, ids: [], objs: [], last: null }
+  state.main = { ...state.main, ids: [], objs: [], last: null }
+  state.device = { ...state.device, ids: [], objs: [], last: null }
   state.deviceType = {}
   state.trackType = {}
 
-  // general purpose API obj to do lookups, etc
-  state.api = new LiveAPI(noFn, 'live_set')
+  if (!state.api) {
+    // general purpose API obj to do lookups, etc
+    state.api = new LiveAPI(noFn, 'live_set')
+  }
+
   // set up track watcher, calls function to assemble and send tracks when changes
+  if (!state.track.watch) {
+    state.track.watch = new LiveAPI(updateTracks, 'live_set')
+    state.track.watch.property = 'tracks'
+  }
 
-  state.track.watch = new LiveAPI(updateTracks, 'live_set')
-  state.track.watch.property = 'tracks'
+  if (!state.return.watch) {
+    state.return.watch = new LiveAPI(updateReturns, 'live_set')
+    state.return.watch.property = 'return_tracks'
+  }
 
-  state.return.watch = new LiveAPI(updateReturns, 'live_set')
-  state.return.watch.property = 'return_tracks'
+  if (!state.main.watch) {
+    state.main.watch = new LiveAPI(updateMain, 'live_set master_track')
+    state.main.watch.property = 'id'
+  }
 
-  state.main.watch = new LiveAPI(updateMain, 'live_set master_track')
-  state.main.watch.property = 'id'
-
-  state.device.watch = new LiveAPI(
-    updateDevices,
-    'live_set view selected_track'
-  )
-  state.device.watch.mode = 1 // follow path, not object
-  state.device.watch.property = 'devices'
+  if (!state.device.watch) {
+    state.device.watch = new LiveAPI(
+      updateDevices,
+      'live_set view selected_track'
+    )
+    state.device.watch.mode = 1 // follow path, not object
+    state.device.watch.property = 'devices'
+  }
 }
 
 log('reloaded k4-tracksDevices')

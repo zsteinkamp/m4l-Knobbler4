@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
@@ -14,7 +25,6 @@ outlets = 1;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
-var MAX_LEN = 32;
 var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
@@ -53,7 +63,7 @@ var getEmptyTreeNode = function () { return ({
     children: [],
     parent: null,
 }); };
-function makeTrackTree(trackIds) {
+var makeTrackTree = function (trackIds) {
     var tree = {
         0: getEmptyTreeNode(),
     };
@@ -72,7 +82,7 @@ function makeTrackTree(trackIds) {
         tree[parentId].children.push(trackId);
     }
     return tree;
-}
+};
 function getDepthForId(trackId, tree) {
     var parentId = tree[trackId].parent;
     var depth = 0;
@@ -99,7 +109,7 @@ function getTracksFor(trackIds) {
             /* TYPE   */ state.trackType[trackId] ||
                 (isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_TRACK),
             /* ID     */ trackId,
-            /* NAME   */ (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
+            /* NAME   */ (0, utils_1.truncate)(state.api.get('name').toString(), consts_1.MAX_NAME_LEN),
             /* COLOR  */ (0, utils_1.colorToString)(state.api.get('color').toString()),
             /* INDENT */ getDepthForId(trackId, tree),
         ];
@@ -136,7 +146,7 @@ function getDevicesFor(deviceIds) {
         var deviceObj = [
             state.deviceType[deviceId] || consts_1.TYPE_DEVICE,
             deviceId,
-            (0, utils_1.truncate)(state.api.get('name').toString(), MAX_LEN),
+            (0, utils_1.truncate)(state.api.get('name').toString(), consts_1.MAX_NAME_LEN),
             color,
             state.deviceDepth[deviceId] || 0,
         ];
@@ -285,24 +295,34 @@ function updateDevices(val) {
 function init() {
     //log('INIT')
     state.deviceDepth = {};
-    state.track = { watch: null, ids: [], objs: [], last: null };
-    state.return = { watch: null, ids: [], objs: [], last: null };
-    state.main = { watch: null, ids: [], objs: [], last: null };
-    state.device = { watch: null, ids: [], objs: [], last: null };
+    state.track = __assign(__assign({}, state.track), { ids: [], objs: [], last: null });
+    state.return = __assign(__assign({}, state.return), { ids: [], objs: [], last: null });
+    state.main = __assign(__assign({}, state.main), { ids: [], objs: [], last: null });
+    state.device = __assign(__assign({}, state.device), { ids: [], objs: [], last: null });
     state.deviceType = {};
     state.trackType = {};
-    // general purpose API obj to do lookups, etc
-    state.api = new LiveAPI(consts_1.noFn, 'live_set');
+    if (!state.api) {
+        // general purpose API obj to do lookups, etc
+        state.api = new LiveAPI(consts_1.noFn, 'live_set');
+    }
     // set up track watcher, calls function to assemble and send tracks when changes
-    state.track.watch = new LiveAPI(updateTracks, 'live_set');
-    state.track.watch.property = 'tracks';
-    state.return.watch = new LiveAPI(updateReturns, 'live_set');
-    state.return.watch.property = 'return_tracks';
-    state.main.watch = new LiveAPI(updateMain, 'live_set master_track');
-    state.main.watch.property = 'id';
-    state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
-    state.device.watch.mode = 1; // follow path, not object
-    state.device.watch.property = 'devices';
+    if (!state.track.watch) {
+        state.track.watch = new LiveAPI(updateTracks, 'live_set');
+        state.track.watch.property = 'tracks';
+    }
+    if (!state.return.watch) {
+        state.return.watch = new LiveAPI(updateReturns, 'live_set');
+        state.return.watch.property = 'return_tracks';
+    }
+    if (!state.main.watch) {
+        state.main.watch = new LiveAPI(updateMain, 'live_set master_track');
+        state.main.watch.property = 'id';
+    }
+    if (!state.device.watch) {
+        state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
+        state.device.watch.mode = 1; // follow path, not object
+        state.device.watch.property = 'devices';
+    }
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a

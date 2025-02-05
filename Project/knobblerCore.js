@@ -277,7 +277,7 @@ function setPath(slot, paramPath) {
     deviceCheckerTask[slot].interval = 1000; // every second
     deviceCheckerTask[slot].repeat(-1);
     // Only get the device name if it has the name property
-    if (deviceObj[slot].info.toString().indexOf('property name str') > -1) {
+    if (deviceObj[slot].info.match(/property name str/)) {
         deviceObj[slot].property = 'name';
         param[slot].deviceName = deviceObj[slot].get('name');
     }
@@ -471,7 +471,7 @@ function val(slot, val) {
             else {
                 //log('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
                 // Only map things that have a 'value' property
-                if (selObj.info.toString().indexOf('property value') > -1) {
+                if (selObj.info.match(/property value/)) {
                     setPath(slot, selObj.unquotedpath);
                 }
             }
