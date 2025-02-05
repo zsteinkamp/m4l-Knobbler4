@@ -123,7 +123,7 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
                 return;
             }
             param_1.id = paramId;
-            paramNameToIdx[param_1.get('name')] = idx;
+            paramNameToIdx[param_1.get('name').toString()] = idx;
             //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
         });
         state.nameLookupCache[lookupCacheKey] = paramNameToIdx;
@@ -201,6 +201,10 @@ function unfoldParentTracks(objId) {
     var util = getUtilApi();
     util.id = objId;
     //log('GOTO TRACK ' + trackId + ' ' + util.id)
+    if (util.id === 0) {
+        // invalid objId (e.g. deleted object)
+        return;
+    }
     // first we need to surf up the hierarchy to make sure we are not in a
     // collapsed group
     var counter = 0;
@@ -258,10 +262,16 @@ function updateDeviceOnOff(iargs) {
     }
 }
 function id(deviceId) {
-    var api = getUtilApi();
+    var api = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
     api.id = deviceId;
     var deviceType = api.get('class_display_name').toString();
-    //log(JSON.stringify({ deviceType, name: api.get('name') }))
+    //log(
+    //  JSON.stringify({
+    //    deviceType,
+    //    name: api.get('name').toString(),
+    //    type: api.type,
+    //  })
+    //)
     var paramIds = (0, utils_1.cleanArr)(api.get('parameters'));
     var onOffParamId = paramIds.shift(); // remove device on/off
     if (!state.onOffWatcher) {
@@ -403,8 +413,8 @@ function devNext() {
 }
 function ctlRec() {
     var ctlApi = getLiveSetApi();
-    var currMode = ctlApi.get('record_mode');
-    ctlApi.set('record_mode', currMode == 1 ? 0 : 1);
+    var currMode = parseInt(ctlApi.get('record_mode'));
+    ctlApi.set('record_mode', currMode === 1 ? 0 : 1);
 }
 function ctlPlay() {
     var ctlApi = getLiveSetApi();

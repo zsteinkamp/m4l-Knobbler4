@@ -28,7 +28,6 @@ setinletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 const state = {
   api: null as LiveAPI,
 
-  periodicTask: null as Task,
   deviceDepth: {} as Record<number, number>,
   deviceType: {} as Record<number, number>,
   trackType: {} as Record<number, number>,
@@ -134,6 +133,11 @@ function getDevicesFor(deviceIds: IdArr) {
   const parentColors: Record<number, string> = {}
   for (const deviceId of deviceIds) {
     state.api.id = deviceId
+    //log('GET DEVICES FOR type=' + state.api.type)
+    if (state.api.type === 'Song') {
+      // stale/invalid id
+      continue
+    }
     let color = null
     if (state.deviceType[deviceId] === TYPE_CHAIN) {
       color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
@@ -160,38 +164,9 @@ function getDevicesFor(deviceIds: IdArr) {
   return ret
 }
 
-function updateTypePeriodic(type: ObjType) {
-  const stateObj = state[type]
-  if (!stateObj) {
-    //log('EARLY UPDATE PERIODIC ' + type)
-    return
-  }
-  const objFn = type === 'device' ? getDevicesFor : getTracksFor
-  stateObj.objs = objFn((stateObj.ids || []).slice(0, 128)) // limit
-  const strVal = JSON.stringify(stateObj.objs)
-
-  // no change, return
-  if (strVal == stateObj.last) {
-    //log('NOCHG UPDATE PERIODIC ' + type)
-    return
-  }
-
-  //log(
-  //  type.toUpperCase() +
-  //    ': ' +
-  //    stateObj.objs.length +
-  //    ' : ' +
-  //    strVal.length +
-  //    ' => ' +
-  //    strVal
-  //)
-  outlet(OUTLET_OSC, '/' + type + 'List', strVal)
-  stateObj.last = strVal
-}
-
 function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
   if (objId === 0) {
-    log('Zero ObjId')
+    //log('Zero ObjId')
     return
   }
   stateObj.ids.push(objId)
@@ -266,8 +241,35 @@ function getObjs(type: ObjType, val: IdObserverArg) {
 }
 
 function updateGeneric(type: ObjType, val: IdObserverArg) {
+  //log('UPDATE GENERIC ' + type + ' vals=' + JSON.stringify(val))
   getObjs(type, val)
-  updateTypePeriodic(type)
+
+  const stateObj = state[type]
+  if (!stateObj) {
+    //log('EARLY UPDATE GENERIC ' + type)
+    return
+  }
+  const objFn = type === 'device' ? getDevicesFor : getTracksFor
+  stateObj.objs = objFn((stateObj.ids || []).slice(0, 128)) // limit
+  const strVal = JSON.stringify(stateObj.objs)
+
+  // no change, return
+  if (strVal == stateObj.last) {
+    //log('NOCHG UPDATE GENERIC ' + type)
+    return
+  }
+
+  //log(
+  //  type.toUpperCase() +
+  //    ': ' +
+  //    stateObj.objs.length +
+  //    ' : ' +
+  //    strVal.length +
+  //    ' => ' +
+  //    strVal
+  //)
+  outlet(OUTLET_OSC, '/' + type + 'List', strVal)
+  stateObj.last = strVal
 }
 
 function updateTracks(val: IdObserverArg) {
@@ -298,7 +300,7 @@ function updateMain(val: IdObserverArg) {
 }
 
 function updateDevices(val: IdObserverArg) {
-  //log('HERE DEVICES')
+  //log('HERE DEVICES ' + JSON.stringify(val))
   if (val[0] !== 'devices') {
     //log('DEVICES EARLY')
     return
@@ -308,7 +310,6 @@ function updateDevices(val: IdObserverArg) {
 
 function init() {
   //log('INIT')
-
   state.deviceDepth = {}
   state.track = { watch: null, ids: [], objs: [], last: null }
   state.return = { watch: null, ids: [], objs: [], last: null }
@@ -336,21 +337,6 @@ function init() {
   )
   state.device.watch.mode = 1 // follow path, not object
   state.device.watch.property = 'devices'
-
-  //if (state.periodicTask) {
-  //  state.periodicTask.cancel()
-  //}
-
-  //// just poll for name/color changes rather than attaching potentially many
-  //// hundreds of property listeners
-  //state.periodicTask = new Task(() => {
-  //  //log('TOP TASK')
-  //  for (const type of ['track', 'return', 'main', 'device'] as ObjType[]) {
-  //    updateTypePeriodic(type)
-  //  }
-  //})
-  //state.periodicTask.interval = 2000
-  //state.periodicTask.repeat(-1)
 }
 
 log('reloaded k4-tracksDevices')

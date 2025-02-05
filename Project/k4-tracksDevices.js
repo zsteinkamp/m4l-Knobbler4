@@ -20,7 +20,6 @@ setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS funct
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 var state = {
     api: null,
-    periodicTask: null,
     deviceDepth: {},
     deviceType: {},
     trackType: {},
@@ -115,6 +114,11 @@ function getDevicesFor(deviceIds) {
     for (var _i = 0, deviceIds_1 = deviceIds; _i < deviceIds_1.length; _i++) {
         var deviceId = deviceIds_1[_i];
         state.api.id = deviceId;
+        //log('GET DEVICES FOR type=' + state.api.type)
+        if (state.api.type === 'Song') {
+            // stale/invalid id
+            continue;
+        }
         var color = null;
         if (state.deviceType[deviceId] === consts_1.TYPE_CHAIN) {
             color = (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
@@ -141,35 +145,9 @@ function getDevicesFor(deviceIds) {
     //log('END DEVICES FOR ' + deviceIds.join(','))
     return ret;
 }
-function updateTypePeriodic(type) {
-    var stateObj = state[type];
-    if (!stateObj) {
-        //log('EARLY UPDATE PERIODIC ' + type)
-        return;
-    }
-    var objFn = type === 'device' ? getDevicesFor : getTracksFor;
-    stateObj.objs = objFn((stateObj.ids || []).slice(0, 128)); // limit
-    var strVal = JSON.stringify(stateObj.objs);
-    // no change, return
-    if (strVal == stateObj.last) {
-        //log('NOCHG UPDATE PERIODIC ' + type)
-        return;
-    }
-    //log(
-    //  type.toUpperCase() +
-    //    ': ' +
-    //    stateObj.objs.length +
-    //    ' : ' +
-    //    strVal.length +
-    //    ' => ' +
-    //    strVal
-    //)
-    outlet(consts_1.OUTLET_OSC, '/' + type + 'List', strVal);
-    stateObj.last = strVal;
-}
 function checkAndDescend(stateObj, objId, depth) {
     if (objId === 0) {
-        log('Zero ObjId');
+        //log('Zero ObjId')
         return;
     }
     stateObj.ids.push(objId);
@@ -245,8 +223,32 @@ function getObjs(type, val) {
     }
 }
 function updateGeneric(type, val) {
+    //log('UPDATE GENERIC ' + type + ' vals=' + JSON.stringify(val))
     getObjs(type, val);
-    updateTypePeriodic(type);
+    var stateObj = state[type];
+    if (!stateObj) {
+        //log('EARLY UPDATE GENERIC ' + type)
+        return;
+    }
+    var objFn = type === 'device' ? getDevicesFor : getTracksFor;
+    stateObj.objs = objFn((stateObj.ids || []).slice(0, 128)); // limit
+    var strVal = JSON.stringify(stateObj.objs);
+    // no change, return
+    if (strVal == stateObj.last) {
+        //log('NOCHG UPDATE GENERIC ' + type)
+        return;
+    }
+    //log(
+    //  type.toUpperCase() +
+    //    ': ' +
+    //    stateObj.objs.length +
+    //    ' : ' +
+    //    strVal.length +
+    //    ' => ' +
+    //    strVal
+    //)
+    outlet(consts_1.OUTLET_OSC, '/' + type + 'List', strVal);
+    stateObj.last = strVal;
 }
 function updateTracks(val) {
     //log('HERE TRACKS ' + JSON.stringify(val))
@@ -273,7 +275,7 @@ function updateMain(val) {
     updateGeneric('main', val);
 }
 function updateDevices(val) {
-    //log('HERE DEVICES')
+    //log('HERE DEVICES ' + JSON.stringify(val))
     if (val[0] !== 'devices') {
         //log('DEVICES EARLY')
         return;
@@ -301,19 +303,6 @@ function init() {
     state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
     state.device.watch.mode = 1; // follow path, not object
     state.device.watch.property = 'devices';
-    //if (state.periodicTask) {
-    //  state.periodicTask.cancel()
-    //}
-    //// just poll for name/color changes rather than attaching potentially many
-    //// hundreds of property listeners
-    //state.periodicTask = new Task(() => {
-    //  //log('TOP TASK')
-    //  for (const type of ['track', 'return', 'main', 'device'] as ObjType[]) {
-    //    updateTypePeriodic(type)
-    //  }
-    //})
-    //state.periodicTask.interval = 2000
-    //state.periodicTask.repeat(-1)
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a

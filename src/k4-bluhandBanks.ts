@@ -147,7 +147,7 @@ function getBankParamArr(
         return
       }
       param.id = paramId
-      paramNameToIdx[param.get('name')] = idx
+      paramNameToIdx[param.get('name').toString()] = idx
       //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
     })
     state.nameLookupCache[lookupCacheKey] = paramNameToIdx
@@ -234,6 +234,11 @@ function unfoldParentTracks(objId: number) {
   util.id = objId
   //log('GOTO TRACK ' + trackId + ' ' + util.id)
 
+  if (util.id === 0) {
+    // invalid objId (e.g. deleted object)
+    return
+  }
+
   // first we need to surf up the hierarchy to make sure we are not in a
   // collapsed group
   let counter = 0
@@ -298,10 +303,16 @@ function updateDeviceOnOff(iargs: IArguments) {
 }
 
 function id(deviceId: number) {
-  const api = getUtilApi()
+  const api = new LiveAPI(noFn, 'id ' + deviceId)
   api.id = deviceId
   const deviceType = api.get('class_display_name').toString()
-  //log(JSON.stringify({ deviceType, name: api.get('name') }))
+  //log(
+  //  JSON.stringify({
+  //    deviceType,
+  //    name: api.get('name').toString(),
+  //    type: api.type,
+  //  })
+  //)
 
   let paramIds = cleanArr(api.get('parameters'))
   const onOffParamId = paramIds.shift() // remove device on/off
@@ -456,8 +467,8 @@ function devNext() {
 
 function ctlRec() {
   const ctlApi = getLiveSetApi()
-  const currMode = ctlApi.get('record_mode')
-  ctlApi.set('record_mode', currMode == 1 ? 0 : 1)
+  const currMode = parseInt(ctlApi.get('record_mode'))
+  ctlApi.set('record_mode', currMode === 1 ? 0 : 1)
 }
 function ctlPlay() {
   const ctlApi = getLiveSetApi()
