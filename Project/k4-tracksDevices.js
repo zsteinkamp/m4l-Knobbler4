@@ -301,20 +301,19 @@ function init() {
     state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
     state.device.watch.mode = 1; // follow path, not object
     state.device.watch.property = 'devices';
-    if (state.periodicTask) {
-        state.periodicTask.cancel();
-    }
-    // just poll for name/color changes rather than attaching potentially many
-    // hundreds of property listeners
-    state.periodicTask = new Task(function () {
-        //log('TOP TASK')
-        for (var _i = 0, _a = ['track', 'return', 'main', 'device']; _i < _a.length; _i++) {
-            var type = _a[_i];
-            updateTypePeriodic(type);
-        }
-    });
-    state.periodicTask.interval = 2000;
-    state.periodicTask.repeat(-1);
+    //if (state.periodicTask) {
+    //  state.periodicTask.cancel()
+    //}
+    //// just poll for name/color changes rather than attaching potentially many
+    //// hundreds of property listeners
+    //state.periodicTask = new Task(() => {
+    //  //log('TOP TASK')
+    //  for (const type of ['track', 'return', 'main', 'device'] as ObjType[]) {
+    //    updateTypePeriodic(type)
+    //  }
+    //})
+    //state.periodicTask.interval = 2000
+    //state.periodicTask.repeat(-1)
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a

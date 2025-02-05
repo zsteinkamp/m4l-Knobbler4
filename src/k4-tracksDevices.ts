@@ -337,20 +337,20 @@ function init() {
   state.device.watch.mode = 1 // follow path, not object
   state.device.watch.property = 'devices'
 
-  if (state.periodicTask) {
-    state.periodicTask.cancel()
-  }
+  //if (state.periodicTask) {
+  //  state.periodicTask.cancel()
+  //}
 
-  // just poll for name/color changes rather than attaching potentially many
-  // hundreds of property listeners
-  state.periodicTask = new Task(() => {
-    //log('TOP TASK')
-    for (const type of ['track', 'return', 'main', 'device'] as ObjType[]) {
-      updateTypePeriodic(type)
-    }
-  })
-  state.periodicTask.interval = 2000
-  state.periodicTask.repeat(-1)
+  //// just poll for name/color changes rather than attaching potentially many
+  //// hundreds of property listeners
+  //state.periodicTask = new Task(() => {
+  //  //log('TOP TASK')
+  //  for (const type of ['track', 'return', 'main', 'device'] as ObjType[]) {
+  //    updateTypePeriodic(type)
+  //  }
+  //})
+  //state.periodicTask.interval = 2000
+  //state.periodicTask.repeat(-1)
 }
 
 log('reloaded k4-tracksDevices')
