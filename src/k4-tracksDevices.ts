@@ -108,8 +108,12 @@ function getTracksFor(trackIds: IdArr) {
 
   for (const trackId of trackIds) {
     state.api.id = trackId
-
-    const isFoldable = parseInt(state.api.get('is_foldable'))
+    //const info = state.api.info
+    const isTrack = state.api.info.toString().indexOf('type Track') > -1
+    //if (isTrack) {
+    //  log('INFO FOR TRACK' + info)
+    //}
+    const isFoldable = isTrack && parseInt(state.api.get('is_foldable'))
 
     const trackObj = [
       /* TYPE   */ state.trackType[trackId] ||
@@ -156,14 +160,14 @@ function getDevicesFor(deviceIds: IdArr) {
   return ret
 }
 
-function updateTypePeriodic(type: ListClass) {
+function updateTypePeriodic(type: ObjType) {
   const stateObj = state[type]
   if (!stateObj) {
     //log('EARLY UPDATE PERIODIC ' + type)
     return
   }
   const objFn = type === 'device' ? getDevicesFor : getTracksFor
-  stateObj.objs = objFn(stateObj.ids.slice(0, 128)) // limit
+  stateObj.objs = objFn((stateObj.ids || []).slice(0, 128)) // limit
   const strVal = JSON.stringify(stateObj.objs)
 
   // no change, return
@@ -186,6 +190,10 @@ function updateTypePeriodic(type: ListClass) {
 }
 
 function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
+  if (objId === 0) {
+    log('Zero ObjId')
+    return
+  }
   stateObj.ids.push(objId)
   state.deviceDepth[objId] = depth
   state.api.id = objId
@@ -235,7 +243,7 @@ function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
   }
 }
 
-function updateGeneric(type: ListClass, val: IdObserverArg) {
+function getObjs(type: ObjType, val: IdObserverArg) {
   const stateObj = state[type]
   stateObj.ids = []
 
@@ -255,6 +263,10 @@ function updateGeneric(type: ListClass, val: IdObserverArg) {
     }
     stateObj.ids = [...idArr]
   }
+}
+
+function updateGeneric(type: ObjType, val: IdObserverArg) {
+  getObjs(type, val)
   updateTypePeriodic(type)
 }
 
@@ -333,11 +345,11 @@ function init() {
   // hundreds of property listeners
   state.periodicTask = new Task(() => {
     //log('TOP TASK')
-    for (const type of ['track', 'return', 'main', 'device'] as ListClass[]) {
+    for (const type of ['track', 'return', 'main', 'device'] as ObjType[]) {
       updateTypePeriodic(type)
     }
   })
-  state.periodicTask.interval = 1000
+  state.periodicTask.interval = 2000
   state.periodicTask.repeat(-1)
 }
 

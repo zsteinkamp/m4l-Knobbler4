@@ -90,7 +90,12 @@ function getTracksFor(trackIds) {
     for (var _i = 0, trackIds_2 = trackIds; _i < trackIds_2.length; _i++) {
         var trackId = trackIds_2[_i];
         state.api.id = trackId;
-        var isFoldable = parseInt(state.api.get('is_foldable'));
+        //const info = state.api.info
+        var isTrack = state.api.info.toString().indexOf('type Track') > -1;
+        //if (isTrack) {
+        //  log('INFO FOR TRACK' + info)
+        //}
+        var isFoldable = isTrack && parseInt(state.api.get('is_foldable'));
         var trackObj = [
             /* TYPE   */ state.trackType[trackId] ||
                 (isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_TRACK),
@@ -143,7 +148,7 @@ function updateTypePeriodic(type) {
         return;
     }
     var objFn = type === 'device' ? getDevicesFor : getTracksFor;
-    stateObj.objs = objFn(stateObj.ids.slice(0, 128)); // limit
+    stateObj.objs = objFn((stateObj.ids || []).slice(0, 128)); // limit
     var strVal = JSON.stringify(stateObj.objs);
     // no change, return
     if (strVal == stateObj.last) {
@@ -163,6 +168,10 @@ function updateTypePeriodic(type) {
     stateObj.last = strVal;
 }
 function checkAndDescend(stateObj, objId, depth) {
+    if (objId === 0) {
+        log('Zero ObjId');
+        return;
+    }
     stateObj.ids.push(objId);
     state.deviceDepth[objId] = depth;
     state.api.id = objId;
@@ -211,7 +220,7 @@ function checkAndDescend(stateObj, objId, depth) {
         }
     }
 }
-function updateGeneric(type, val) {
+function getObjs(type, val) {
     var stateObj = state[type];
     stateObj.ids = [];
     var idArr = (0, utils_1.cleanArr)(val);
@@ -234,6 +243,9 @@ function updateGeneric(type, val) {
         }
         stateObj.ids = __spreadArray([], idArr, true);
     }
+}
+function updateGeneric(type, val) {
+    getObjs(type, val);
     updateTypePeriodic(type);
 }
 function updateTracks(val) {
@@ -301,7 +313,7 @@ function init() {
             updateTypePeriodic(type);
         }
     });
-    state.periodicTask.interval = 1000;
+    state.periodicTask.interval = 2000;
     state.periodicTask.repeat(-1);
 }
 log('reloaded k4-tracksDevices');

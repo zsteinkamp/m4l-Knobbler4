@@ -205,7 +205,7 @@ function unfoldParentTracks(objId) {
     // collapsed group
     var counter = 0;
     while (counter < 20) {
-        var isFoldable = parseInt(util.get('is_foldable'));
+        var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
         //log(util.id + ' isFoldable=' + util.get('is_foldable'))
         if (isFoldable) {
             var foldState = parseInt(util.get('fold_state'));
@@ -215,6 +215,7 @@ function unfoldParentTracks(objId) {
             }
         }
         util.id = util.get('canonical_parent')[1];
+        //log('TYPE=' + util.type)
         if (util.type === 'Song') {
             break;
         }

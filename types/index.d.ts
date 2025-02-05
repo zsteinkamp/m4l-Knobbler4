@@ -29,9 +29,9 @@ type BluhandBank = {
 //                   type,   id,     name    color, indent
 type MaxObjRecord = [number, number, string, string, number]
 
-type IdObserverArg = (number | string)[]
+type IdObserverArg = ['id' | 'devices' | 'tracks' | 'return_tracks', number]
 type IdArr = number[]
-type ListClass = 'track' | 'return' | 'main' | 'device'
+type ObjType = 'track' | 'return' | 'main' | 'device'
 
 type ClassObj = {
   watch: LiveAPI

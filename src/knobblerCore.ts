@@ -308,7 +308,7 @@ function setPath(slot: number, paramPath: string) {
   deviceCheckerTask[slot].repeat(-1)
 
   // Only get the device name if it has the name property
-  if (deviceObj[slot].info.match(/property name str/)) {
+  if (deviceObj[slot].info.toString().indexOf('property name str') > -1) {
     deviceObj[slot].property = 'name'
     param[slot].deviceName = deviceObj[slot].get('name')
   } else if (param[slot].path.match(/mixer_device/)) {
@@ -542,7 +542,7 @@ function val(slot: number, val: number) {
       } else {
         //log('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
         // Only map things that have a 'value' property
-        if (selObj.info.match(/property value/)) {
+        if (selObj.info.toString().indexOf('property value') > -1) {
           setPath(slot, selObj.unquotedpath)
         }
       }
