@@ -1,0 +1,11 @@
+"Left Inv",
+"Right Inv",
+"Channel Mode",
+"Mid/Side Balance",
+"Mono",
+"Bass Mono",
+"Bass Freq",
+"Balance",
+"Gain",
+"Mute",
+"DC Filter"
