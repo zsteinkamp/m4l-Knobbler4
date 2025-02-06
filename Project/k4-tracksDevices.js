@@ -249,7 +249,10 @@ function updateGeneric(type, val) {
         return;
     }
     //log(
-    //  type.toUpperCase() +
+    //  '/' +
+    //    type +
+    //    'List :: ' +
+    //    type.toUpperCase() +
     //    ': ' +
     //    stateObj.objs.length +
     //    ' : ' +

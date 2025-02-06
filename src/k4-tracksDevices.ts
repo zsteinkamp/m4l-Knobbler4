@@ -260,7 +260,10 @@ function updateGeneric(type: ObjType, val: IdObserverArg) {
   }
 
   //log(
-  //  type.toUpperCase() +
+  //  '/' +
+  //    type +
+  //    'List :: ' +
+  //    type.toUpperCase() +
   //    ': ' +
   //    stateObj.objs.length +
   //    ' : ' +
