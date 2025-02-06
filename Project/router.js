@@ -3,21 +3,19 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 9;
+outlets = 8;
 var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
-var OUTLET_CURRPARAM = 1;
-var OUTLET_TOGGLEINPUT = 2;
-var OUTLET_BLUHAND = 3;
-var OUTLET_PRESETS = 4;
-var OUTLET_LOOP = 5;
-var OUTLET_REFRESH = 6;
-var OUTLET_ACK = 7;
-var OUTLET_UNKNOWN = 8;
+var OUTLET_TOGGLEINPUT = 1;
+var OUTLET_BLUHAND = 2;
+var OUTLET_PRESETS = 3;
+var OUTLET_LOOP = 4;
+var OUTLET_REFRESH = 5;
+var OUTLET_ACK = 6;
+var OUTLET_UNKNOWN = 7;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
-setoutletassist(OUTLET_CURRPARAM, 'Messages for CurrentParamKnob');
 setoutletassist(OUTLET_TOGGLEINPUT, 'Messages for ToggleInputEnable');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
 setoutletassist(OUTLET_PRESETS, 'Messages for Bluhand Presets');
@@ -97,12 +95,6 @@ var ROUTER = [
         prefix: '/track',
         handler: stdSlot,
         msg: 'gotoTrackFor',
-    },
-    {
-        outlet: OUTLET_CURRPARAM,
-        prefix: '/currentParam',
-        handler: bareVal,
-        msg: 'val',
     },
     {
         outlet: OUTLET_TOGGLEINPUT,

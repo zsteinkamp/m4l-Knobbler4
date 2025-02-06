@@ -27,7 +27,6 @@ var outMin = [];
 var outMax = [];
 var deviceCheckerTask = [];
 // other vars
-var nullString = '- - -';
 var allowMapping = [];
 var allowUpdateFromOsc = [];
 function unmap(slot) {
@@ -67,7 +66,7 @@ function init(slot) {
     if (paramObj[slot]) {
         // clean up callbacks when unmapping
         paramObj[slot].id = 0;
-        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, nullString]);
+        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, consts_1.nullString]);
     }
     paramObj[slot] = null;
     allowMapping[slot] = true;
@@ -338,7 +337,7 @@ function sendParamName(slot) {
     //log(`SEND PARAM NAME ${slot}`)
     initSlotIfNecessary(slot);
     var paramName = (0, utils_1.dequote)(((param[slot] && (param[slot].customName || param[slot].name)) ||
-        nullString).toString());
+        consts_1.nullString).toString());
     sendMsg(slot, ['param', paramName]);
     //log('SEND PARAM NAME ' + slot + '=' + paramName)
     outlet(consts_1.OUTLET_OSC, ['/param' + slot, paramName]);
@@ -355,7 +354,7 @@ function sendDeviceName(slot) {
     initSlotIfNecessary(slot);
     var deviceName = param[slot].deviceName
         ? (0, utils_1.dequote)(param[slot].deviceName.toString())
-        : nullString;
+        : consts_1.nullString;
     sendMsg(slot, ['device', deviceName]);
     outlet(consts_1.OUTLET_OSC, ['/device' + slot, deviceName]);
 }
@@ -364,7 +363,7 @@ function sendTrackName(slot) {
     initSlotIfNecessary(slot);
     var trackName = param[slot].parentName
         ? (0, utils_1.dequote)(param[slot].parentName.toString())
-        : nullString;
+        : consts_1.nullString;
     sendMsg(slot, ['track', trackName]);
     outlet(consts_1.OUTLET_OSC, ['/track' + slot, trackName]);
 }
@@ -395,7 +394,7 @@ function sendVal(slot) {
         param[slot].min === undefined ||
         outMax[slot] === outMin[slot]) {
         outlet(consts_1.OUTLET_OSC, ['/val' + slot, 0]);
-        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, nullString]);
+        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, consts_1.nullString]);
         return;
     }
     // the value, expressed as a proportion between the param min and max
@@ -411,7 +410,7 @@ function sendVal(slot) {
         '/valStr' + slot,
         paramObj[slot]
             ? paramObj[slot].call('str_for_value', param[slot].val)
-            : nullString,
+            : consts_1.nullString,
     ]);
 }
 // new value received over OSC

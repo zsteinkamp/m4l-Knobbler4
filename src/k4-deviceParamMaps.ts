@@ -235,7 +235,7 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
       paramNames: [
         'Gain',
         'Balance',
-        'Stereo Width',
+        4, // Width or Mid/Side Balance
         'Channel Mode',
         'Bass Mono',
         'Bass Freq',

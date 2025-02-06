@@ -1,5 +1,6 @@
 import { truncate, logFactory } from './utils'
 import config from './config'
+import { nullString } from './consts'
 
 inlets = 1
 outlets = 1
@@ -19,17 +20,17 @@ function updateParamName(objId: string) {
   const obj = new LiveAPI(() => {}, 'id ' + objId)
 
   if (obj.id == 0) {
-    return
+    return nullString
   }
 
-  while (counter < 10) {
-    if (obj.type === 'Song') {
-      break
-    }
+  while (counter < 20) {
     if (obj.type === 'MixerDevice') {
       nameArr.unshift('Mixer')
     } else {
       nameArr.unshift(truncate(obj.get('name').toString(), 40))
+    }
+    if (['Song', 'Track'].indexOf(obj.type) > -1) {
+      break
     }
     obj.id = obj.get('canonical_parent')[1]
     counter++
@@ -38,8 +39,10 @@ function updateParamName(objId: string) {
   let name = nameArr[0]
   //log(nameArr)
   if (nameArr.length > 1) {
-    name = [nameArr[0], nameArr[nameArr.length - 1]].join(' > ')
+    name += ' > ' + nameArr[nameArr.length - 1]
   }
+
+  //log('PARAM NAME ' + name)
 
   outlet(OUTLET_PARAM_NAME, name)
 }

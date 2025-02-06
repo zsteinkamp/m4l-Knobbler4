@@ -5,7 +5,13 @@ import {
   isValidPath,
   logFactory,
 } from './utils'
-import { DEFAULT_COLOR_FF, MAX_SLOTS, OUTLET_MSGS, OUTLET_OSC } from './consts'
+import {
+  DEFAULT_COLOR_FF,
+  MAX_SLOTS,
+  nullString,
+  OUTLET_MSGS,
+  OUTLET_OSC,
+} from './consts'
 
 import config from './config'
 const log = logFactory(config)
@@ -24,7 +30,6 @@ const outMax: number[] = []
 const deviceCheckerTask: Task[] = []
 
 // other vars
-const nullString = '- - -'
 const allowMapping: boolean[] = []
 const allowUpdateFromOsc: boolean[] = []
 

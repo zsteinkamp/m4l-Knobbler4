@@ -235,7 +235,7 @@ exports.DeviceParamMaps = {
             paramNames: [
                 'Gain',
                 'Balance',
-                'Stereo Width',
+                4,
                 'Channel Mode',
                 'Bass Mono',
                 'Bass Freq',
