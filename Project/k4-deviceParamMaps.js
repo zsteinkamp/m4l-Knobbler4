@@ -187,11 +187,32 @@ exports.DeviceParamMaps = {
     ],
     Simpler: [
         {
-            name: 'Basic Params',
+            name: 'Classic Mode',
             paramNames: [
                 'S Start',
                 'S Length',
                 'S Loop Length',
+                'Ve Attack',
+                'Ve Decay',
+                'Ve Sustain',
+                'Ve Release',
+                'Volume',
+                'Filter Freq',
+                'Filter Res',
+                'Filter Drive',
+                'Fe < Env',
+                'Fe Attack',
+                'Fe Decay',
+                'Transpose',
+                'Detune',
+            ],
+        },
+        {
+            name: 'One-Shot / Slice',
+            paramNames: [
+                'Fade In',
+                'Fade Out',
+                'Trigger Mode',
                 'Ve Attack',
                 'Ve Decay',
                 'Ve Sustain',
