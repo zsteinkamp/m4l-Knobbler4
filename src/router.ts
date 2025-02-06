@@ -33,7 +33,7 @@ type RouterItem = {
   outlet: number
   prefix: string
   handler: HandlerType
-  msg: string
+  msg: string | [string, ...any]
 }
 
 function getSlotNum(router: RouterItem, msg: string): number {
@@ -284,6 +284,12 @@ const ROUTER: RouterItem[] = [
     prefix: '/bdefault bval',
     handler: stdSlot,
     msg: 'default',
+  },
+  {
+    outlet: OUTLET_REFRESH,
+    prefix: '/initMenu',
+    handler: bareMsg,
+    msg: 'initMenuOnly',
   },
   {
     outlet: OUTLET_REFRESH,

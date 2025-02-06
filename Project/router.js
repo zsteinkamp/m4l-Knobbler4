@@ -274,6 +274,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_REFRESH,
+        prefix: '/initMenu',
+        handler: bareMsg,
+        msg: 'initMenuOnly',
+    },
+    {
+        outlet: OUTLET_REFRESH,
         prefix: '/btnRefresh',
         handler: bareMsg,
         msg: 'refresh',
