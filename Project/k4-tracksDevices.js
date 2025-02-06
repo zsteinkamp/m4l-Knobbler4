@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
@@ -296,36 +285,28 @@ function updateDevices(val) {
     updateGeneric('device', val);
 }
 function init() {
-    //log('INIT')
+    //log('TRACKS DEVICES INIT')
     state.deviceDepth = {};
-    state.track = __assign(__assign({}, state.track), { ids: [], objs: [], last: null });
-    state.return = __assign(__assign({}, state.return), { ids: [], objs: [], last: null });
-    state.main = __assign(__assign({}, state.main), { ids: [], objs: [], last: null });
-    state.device = __assign(__assign({}, state.device), { ids: [], objs: [], last: null });
+    state.track = { watch: null, ids: [], objs: [], last: null };
+    state.return = { watch: null, ids: [], objs: [], last: null };
+    state.main = { watch: null, ids: [], objs: [], last: null };
+    state.device = { watch: null, ids: [], objs: [], last: null };
     state.deviceType = {};
     state.trackType = {};
-    if (!state.api) {
-        // general purpose API obj to do lookups, etc
-        state.api = new LiveAPI(consts_1.noFn, 'live_set');
-    }
-    // set up track watcher, calls function to assemble and send tracks when changes
-    if (!state.track.watch) {
-        state.track.watch = new LiveAPI(updateTracks, 'live_set');
-        state.track.watch.property = 'tracks';
-    }
-    if (!state.return.watch) {
-        state.return.watch = new LiveAPI(updateReturns, 'live_set');
-        state.return.watch.property = 'return_tracks';
-    }
-    if (!state.main.watch) {
-        state.main.watch = new LiveAPI(updateMain, 'live_set master_track');
-        state.main.watch.property = 'id';
-    }
-    if (!state.device.watch) {
-        state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
-        state.device.watch.mode = 1; // follow path, not object
-        state.device.watch.property = 'devices';
-    }
+    state.api = null;
+    // general purpose API obj to do lookups, etc
+    state.api = new LiveAPI(consts_1.noFn, 'live_set');
+    // set up watchers for each type, calls function to assemble and send OSC
+    // messages with the type lists when changes
+    state.track.watch = new LiveAPI(updateTracks, 'live_set');
+    state.track.watch.property = 'tracks';
+    state.return.watch = new LiveAPI(updateReturns, 'live_set');
+    state.return.watch.property = 'return_tracks';
+    state.main.watch = new LiveAPI(updateMain, 'live_set master_track');
+    state.main.watch.property = 'id';
+    state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
+    state.device.watch.mode = 1; // follow path, not object
+    state.device.watch.property = 'devices';
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a

@@ -312,7 +312,7 @@ function updateDevices(val: IdObserverArg) {
 }
 
 function init() {
-  //log('INIT')
+  //log('TRACKS DEVICES INIT')
   state.deviceDepth = {}
   state.track = { watch: null, ids: [], objs: [], last: null }
   state.return = { watch: null, ids: [], objs: [], last: null }
@@ -320,36 +320,28 @@ function init() {
   state.device = { watch: null, ids: [], objs: [], last: null }
   state.deviceType = {}
   state.trackType = {}
+  state.api = null
 
-  if (!state.api) {
-    // general purpose API obj to do lookups, etc
-    state.api = new LiveAPI(noFn, 'live_set')
-  }
+  // general purpose API obj to do lookups, etc
+  state.api = new LiveAPI(noFn, 'live_set')
 
-  // set up track watcher, calls function to assemble and send tracks when changes
-  if (!state.track.watch) {
-    state.track.watch = new LiveAPI(updateTracks, 'live_set')
-    state.track.watch.property = 'tracks'
-  }
+  // set up watchers for each type, calls function to assemble and send OSC
+  // messages with the type lists when changes
+  state.track.watch = new LiveAPI(updateTracks, 'live_set')
+  state.track.watch.property = 'tracks'
 
-  if (!state.return.watch) {
-    state.return.watch = new LiveAPI(updateReturns, 'live_set')
-    state.return.watch.property = 'return_tracks'
-  }
+  state.return.watch = new LiveAPI(updateReturns, 'live_set')
+  state.return.watch.property = 'return_tracks'
 
-  if (!state.main.watch) {
-    state.main.watch = new LiveAPI(updateMain, 'live_set master_track')
-    state.main.watch.property = 'id'
-  }
+  state.main.watch = new LiveAPI(updateMain, 'live_set master_track')
+  state.main.watch.property = 'id'
 
-  if (!state.device.watch) {
-    state.device.watch = new LiveAPI(
-      updateDevices,
-      'live_set view selected_track'
-    )
-    state.device.watch.mode = 1 // follow path, not object
-    state.device.watch.property = 'devices'
-  }
+  state.device.watch = new LiveAPI(
+    updateDevices,
+    'live_set view selected_track'
+  )
+  state.device.watch.mode = 1 // follow path, not object
+  state.device.watch.property = 'devices'
 }
 
 log('reloaded k4-tracksDevices')
