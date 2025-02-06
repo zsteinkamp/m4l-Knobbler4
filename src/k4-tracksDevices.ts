@@ -314,10 +314,10 @@ function updateDevices(val: IdObserverArg) {
 function init() {
   //log('INIT')
   state.deviceDepth = {}
-  state.track = { ...state.track, ids: [], objs: [], last: null }
-  state.return = { ...state.return, ids: [], objs: [], last: null }
-  state.main = { ...state.main, ids: [], objs: [], last: null }
-  state.device = { ...state.device, ids: [], objs: [], last: null }
+  state.track = { watch: null, ids: [], objs: [], last: null }
+  state.return = { watch: null, ids: [], objs: [], last: null }
+  state.main = { watch: null, ids: [], objs: [], last: null }
+  state.device = { watch: null, ids: [], objs: [], last: null }
   state.deviceType = {}
   state.trackType = {}
 

@@ -92,6 +92,7 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
       ],
     },
   ],
+
   Meld: [
     {
       name: 'A Params',
@@ -107,9 +108,9 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
 
         'A Filter Type',
         'A Filter Freq',
-        'A Filter Q',
+        16, // Filter Adj 1 (e.g. Q)
+        17, // Filter Adj 2 (e.g. Drive)
         'A Filter Filter Scale Aware',
-        'A Filter L-B-H-N',
         'Voice Spread',
         'Drive',
         'A Volume',
@@ -129,9 +130,9 @@ export const DeviceParamMaps: Record<string, NameBank[]> = {
 
         'B Filter Type',
         'B Filter Freq',
-        'B Filter Q',
+        76, // Filter Adj 1 (e.g. Q)
+        77, // Filter Adj 2 (e.g. Drive)
         'B Filter Filter Scale Aware',
-        'B Filter L-B-H-N',
         'Voice Spread',
         'Drive',
         'B Volume',
