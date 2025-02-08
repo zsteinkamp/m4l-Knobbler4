@@ -19,6 +19,9 @@ setinletassist(
 function initAll() {
   KnobblerCore.initAll()
 }
+function bkMap(slot: number, id: number) {
+  KnobblerCore.bkMap(slot, id)
+}
 function clearCustomName(slot: number) {
   KnobblerCore.clearCustomName(slot)
 }

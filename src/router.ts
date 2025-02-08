@@ -125,6 +125,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/bkMap',
+    handler: stdSlotVal,
+    msg: 'bkMap',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/btnSkipPrev',
     handler: bareMsg,
     msg: 'btnSkipPrev',

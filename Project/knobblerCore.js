@@ -9,7 +9,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = void 0;
+exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
 var config_1 = require("./config");
@@ -50,6 +50,11 @@ function clearPath(slot) {
     refreshSlotUI(slot);
 }
 exports.clearPath = clearPath;
+function bkMap(slot, id) {
+    var api = new LiveAPI(consts_1.noFn, 'id ' + id);
+    setPath(slot, api.unquotedpath);
+}
+exports.bkMap = bkMap;
 function initAll() {
     for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         initSlotIfNecessary(i);

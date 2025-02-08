@@ -8,6 +8,7 @@ import {
 import {
   DEFAULT_COLOR_FF,
   MAX_SLOTS,
+  noFn,
   nullString,
   OUTLET_MSGS,
   OUTLET_OSC,
@@ -54,6 +55,11 @@ function clearPath(slot: number) {
   //log()
   init(slot)
   refreshSlotUI(slot)
+}
+
+function bkMap(slot: number, id: number) {
+  const api = new LiveAPI(noFn, 'id ' + id)
+  setPath(slot, api.unquotedpath)
 }
 
 function initAll() {
@@ -558,6 +564,7 @@ function val(slot: number, val: number) {
 const module = {}
 
 export {
+  bkMap,
   clearCustomName,
   clearPath,
   gotoTrackFor,
