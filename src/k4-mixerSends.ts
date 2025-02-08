@@ -50,6 +50,18 @@ function pauseUnpause(key: PauseTypes) {
   state.pause[key].task.schedule(300)
 }
 
+const setSendWatcherIds = (sendIds: number[]) => {
+  for (let i = 0; i < MAX_SENDS; i++) {
+    if (sendIds[i] !== undefined) {
+      state.watchers[i].id = sendIds[i]
+    } else {
+      state.watchers[i].id = 0
+      outlet(OUTLET_OSC, '/mixer/send' + (i + 1), [0])
+    }
+  }
+  outlet(OUTLET_OSC, '/mixer/numSends', sendIds.length)
+}
+
 function updateSendVal(idx: number, val: number) {
   //log('UPDATESENDVAL ' + idx + ' v=' + val)
   idx -= 1
@@ -231,6 +243,10 @@ const onTrackChange = (args: IdObserverArg) => {
   const hasOutput = parseInt(state.trackObj.get('has_audio_output'))
   outlet(OUTLET_OSC, '/mixer/hasOutput', [hasOutput])
 
+  const sends = cleanArr(state.mixerObj.get('sends'))
+
+  setSendWatcherIds(sends)
+
   //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
 }
 
@@ -306,17 +322,11 @@ function init() {
 }
 
 function handleSends(...sendArr: IdObserverArg) {
+  //log('HANDLE SENDS ' + sendArr)
   const sendIds = cleanArr(sendArr)
 
-  for (let i = 0; i < MAX_SENDS; i++) {
-    if (sendIds[i] !== undefined) {
-      state.watchers[i].id = sendIds[i]
-    } else {
-      state.watchers[i].id = 0
-    }
-  }
+  setSendWatcherIds(sendIds)
 
-  outlet(OUTLET_OSC, '/mixer/numSends', sendIds.length)
   init()
 }
 

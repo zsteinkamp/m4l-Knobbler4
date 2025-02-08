@@ -34,6 +34,18 @@ function pauseUnpause(key) {
     });
     state.pause[key].task.schedule(300);
 }
+var setSendWatcherIds = function (sendIds) {
+    for (var i = 0; i < MAX_SENDS; i++) {
+        if (sendIds[i] !== undefined) {
+            state.watchers[i].id = sendIds[i];
+        }
+        else {
+            state.watchers[i].id = 0;
+            outlet(consts_1.OUTLET_OSC, '/mixer/send' + (i + 1), [0]);
+        }
+    }
+    outlet(consts_1.OUTLET_OSC, '/mixer/numSends', sendIds.length);
+};
 function updateSendVal(idx, val) {
     //log('UPDATESENDVAL ' + idx + ' v=' + val)
     idx -= 1;
@@ -206,6 +218,8 @@ var onTrackChange = function (args) {
     // disable volume/pan for MIDI tracks
     var hasOutput = parseInt(state.trackObj.get('has_audio_output'));
     outlet(consts_1.OUTLET_OSC, '/mixer/hasOutput', [hasOutput]);
+    var sends = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
+    setSendWatcherIds(sends);
     //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
 };
 function refresh() {
@@ -265,16 +279,9 @@ function handleSends() {
     for (var _i = 0; _i < arguments.length; _i++) {
         sendArr[_i] = arguments[_i];
     }
+    //log('HANDLE SENDS ' + sendArr)
     var sendIds = (0, utils_1.cleanArr)(sendArr);
-    for (var i = 0; i < MAX_SENDS; i++) {
-        if (sendIds[i] !== undefined) {
-            state.watchers[i].id = sendIds[i];
-        }
-        else {
-            state.watchers[i].id = 0;
-        }
-    }
-    outlet(consts_1.OUTLET_OSC, '/mixer/numSends', sendIds.length);
+    setSendWatcherIds(sendIds);
     init();
 }
 log('reloaded k4-mixerSends');
