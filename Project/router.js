@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 8;
+outlets = 9;
 var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
@@ -13,7 +13,8 @@ var OUTLET_PRESETS = 3;
 var OUTLET_LOOP = 4;
 var OUTLET_REFRESH = 5;
 var OUTLET_ACK = 6;
-var OUTLET_UNKNOWN = 7;
+var OUTLET_MIXER = 7;
+var OUTLET_UNKNOWN = 8;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_TOGGLEINPUT, 'Messages for ToggleInputEnable');
@@ -22,6 +23,7 @@ setoutletassist(OUTLET_PRESETS, 'Messages for Bluhand Presets');
 setoutletassist(OUTLET_LOOP, 'Messages for Loop Checker');
 setoutletassist(OUTLET_REFRESH, 'Messages for Refresh');
 setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn');
+setoutletassist(OUTLET_MIXER, 'Messages for Mixer');
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
@@ -287,6 +289,84 @@ var ROUTER = [
         prefix: '/unmapshortcut',
         handler: stdSlot,
         msg: 'unmap',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/volDefault',
+        handler: bareMsg,
+        msg: 'handleVolDefault',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/panDefault',
+        handler: bareMsg,
+        msg: 'handlePanDefault',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/crossfaderDefault',
+        handler: bareMsg,
+        msg: 'handleCrossfaderDefault',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/sendDefault',
+        handler: stdSlot,
+        msg: 'handleSendDefault',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/send',
+        handler: stdSlotVal,
+        msg: 'updateSendVal',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/toggleXFadeA',
+        handler: bareMsg,
+        msg: 'toggleXFadeA',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/toggleXFadeB',
+        handler: bareMsg,
+        msg: 'toggleXFadeB',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/toggleRecordArm',
+        handler: bareMsg,
+        msg: 'toggleRecordArm',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/toggleSolo',
+        handler: bareMsg,
+        msg: 'toggleSolo',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/toggleMute',
+        handler: bareMsg,
+        msg: 'toggleMute',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/pan',
+        handler: stdVal,
+        msg: 'handlePan',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/vol',
+        handler: stdVal,
+        msg: 'handleVol',
+    },
+    {
+        outlet: OUTLET_MIXER,
+        prefix: '/mixer/crossfader',
+        handler: stdVal,
+        msg: 'handleCrossfader',
     },
 ];
 ROUTER.sort(function (a, b) {

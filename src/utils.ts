@@ -54,7 +54,7 @@ export function debouncedTask(
 }
 
 export function cleanArr(arr: IdObserverArg) {
-  if (!arr || arr.length === 0) {
+  if (!arr) {
     return []
   }
   return arr.filter((e: any) => {

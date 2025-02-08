@@ -52,7 +52,7 @@ function debouncedTask(key, slot, task, delayMs) {
 }
 exports.debouncedTask = debouncedTask;
 function cleanArr(arr) {
-    if (!arr || arr.length === 0) {
+    if (!arr) {
         return [];
     }
     return arr.filter(function (e) {

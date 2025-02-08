@@ -29,7 +29,10 @@ type BluhandBank = {
 //                   type,   id,     name    color, indent
 type MaxObjRecord = [number, number, string, string, number]
 
-type IdObserverArg = ['id' | 'devices' | 'tracks' | 'return_tracks', number]
+type IdObserverArg = [
+  'id' | 'devices' | 'tracks' | 'return_tracks' | 'value',
+  number,
+]
 type IdArr = number[]
 type ObjType = 'track' | 'return' | 'main' | 'device'
 
