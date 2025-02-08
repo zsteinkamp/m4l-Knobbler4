@@ -1,4 +1,4 @@
-import { cleanArr, logFactory } from './utils'
+import { cleanArr, colorToString, logFactory } from './utils'
 import config from './config'
 import {
   noFn,
@@ -9,6 +9,7 @@ import {
   TYPE_MAIN,
   TYPE_RETURN,
   TYPE_GROUP,
+  DEFAULT_COLOR,
 } from './consts'
 
 autowatch = 1
@@ -24,6 +25,9 @@ setoutletassist(OUTLET_MSGS, 'Output messages to other objects')
 type PauseTypes = 'send' | 'vol' | 'pan' | 'crossfader'
 
 const state = {
+  trackLookupObj: null as LiveAPI,
+  returnTrackColors: [] as string[],
+  returnsObj: null as LiveAPI,
   mixerObj: null as LiveAPI,
   trackObj: null as LiveAPI,
   lastTrackId: null as number,
@@ -218,40 +222,67 @@ const handleSendVal = (idx: number, val: IdObserverArg) => {
 const MAX_SENDS = 12
 
 const onTrackChange = (args: IdObserverArg) => {
-  if (!state.trackObj || state.trackObj.id === 0) {
+  if (!state.trackObj) {
     return
   }
   const id = parseInt((cleanArr(args) as IdObserverArg)[0])
+
   if (id === state.lastTrackId) {
     return
   }
   state.lastTrackId = id
+  state.trackLookupObj.id = id
+  //log('TRACK CHANGE ' + id)
 
   // track type
-  const path = state.trackObj.unquotedpath
+  const path = state.trackLookupObj.unquotedpath
   let trackType = TYPE_TRACK
   if (path.indexOf('live_set master_track') === 0) {
     trackType = TYPE_MAIN
   } else if (path.indexOf('live_set return_tracks') === 0) {
     trackType = TYPE_RETURN
-  } else if (parseInt(state.trackObj.get('is_foldable')) === 1) {
+  } else if (parseInt(state.trackLookupObj.get('is_foldable')) === 1) {
     trackType = TYPE_GROUP
   }
   outlet(OUTLET_OSC, '/mixer/type', [trackType])
 
   // disable volume/pan for MIDI tracks
-  const hasOutput = parseInt(state.trackObj.get('has_audio_output'))
+  const hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'))
   outlet(OUTLET_OSC, '/mixer/hasOutput', [hasOutput])
 
   const sends = cleanArr(state.mixerObj.get('sends'))
-
   setSendWatcherIds(sends)
-
   //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
+}
+
+const sendReturnTrackColors = () => {
+  outlet(OUTLET_OSC, '/mixer/returnTrackColors', [
+    JSON.stringify(state.returnTrackColors),
+  ])
+}
+
+const onReturnsChange = (args: IdObserverArg) => {
+  if (!state.returnsObj || args[0] !== 'return_tracks') {
+    return
+  }
+  //log('ON RETURNS CHANGE ' + args)
+  const api = new LiveAPI(noFn, 'live_set')
+  const returnIds = cleanArr(args)
+  for (let i = 0; i < MAX_SENDS; i++) {
+    let color = DEFAULT_COLOR
+    if (returnIds[i]) {
+      api.id = returnIds[i]
+      color = colorToString(api.get('color').toString())
+    }
+    state.returnTrackColors[i] = '#' + color
+  }
+  sendReturnTrackColors()
 }
 
 function refresh() {
   state.watchers = []
+  state.trackLookupObj = null
+  state.returnsObj = null
   state.mixerObj = null
   state.trackObj = null
   state.volObj = null
@@ -274,13 +305,25 @@ function init() {
     watcher.property = 'value'
   }
 
+  if (!state.trackLookupObj) {
+    state.trackLookupObj = new LiveAPI(noFn, 'live_set')
+  }
+
+  // returns obj
+  state.returnTrackColors = []
+  if (!state.returnsObj) {
+    state.returnsObj = new LiveAPI(onReturnsChange, 'live_set')
+    state.returnsObj.property = 'return_tracks'
+    state.returnsObj.mode = 1
+  }
+
   // mixer obj
   if (!state.mixerObj) {
-    (state.mixerObj = new LiveAPI(
+    state.mixerObj = new LiveAPI(
       noFn,
       'live_set view selected_track mixer_device'
-    )),
-      (state.mixerObj.mode = 1)
+    )
+    state.mixerObj.mode = 1
   }
 
   // track obj

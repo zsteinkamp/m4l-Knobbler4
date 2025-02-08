@@ -10,6 +10,9 @@ setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS funct
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setoutletassist(consts_1.OUTLET_MSGS, 'Output messages to other objects');
 var state = {
+    trackLookupObj: null,
+    returnTrackColors: [],
+    returnsObj: null,
     mixerObj: null,
     trackObj: null,
     lastTrackId: null,
@@ -194,7 +197,7 @@ var handleSendVal = function (idx, val) {
 };
 var MAX_SENDS = 12;
 var onTrackChange = function (args) {
-    if (!state.trackObj || state.trackObj.id === 0) {
+    if (!state.trackObj) {
         return;
     }
     var id = parseInt((0, utils_1.cleanArr)(args)[0]);
@@ -202,8 +205,10 @@ var onTrackChange = function (args) {
         return;
     }
     state.lastTrackId = id;
+    state.trackLookupObj.id = id;
+    //log('TRACK CHANGE ' + id)
     // track type
-    var path = state.trackObj.unquotedpath;
+    var path = state.trackLookupObj.unquotedpath;
     var trackType = consts_1.TYPE_TRACK;
     if (path.indexOf('live_set master_track') === 0) {
         trackType = consts_1.TYPE_MAIN;
@@ -211,19 +216,43 @@ var onTrackChange = function (args) {
     else if (path.indexOf('live_set return_tracks') === 0) {
         trackType = consts_1.TYPE_RETURN;
     }
-    else if (parseInt(state.trackObj.get('is_foldable')) === 1) {
+    else if (parseInt(state.trackLookupObj.get('is_foldable')) === 1) {
         trackType = consts_1.TYPE_GROUP;
     }
     outlet(consts_1.OUTLET_OSC, '/mixer/type', [trackType]);
     // disable volume/pan for MIDI tracks
-    var hasOutput = parseInt(state.trackObj.get('has_audio_output'));
+    var hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'));
     outlet(consts_1.OUTLET_OSC, '/mixer/hasOutput', [hasOutput]);
     var sends = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
     setSendWatcherIds(sends);
     //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
 };
+var sendReturnTrackColors = function () {
+    outlet(consts_1.OUTLET_OSC, '/mixer/returnTrackColors', [
+        JSON.stringify(state.returnTrackColors),
+    ]);
+};
+var onReturnsChange = function (args) {
+    if (!state.returnsObj || args[0] !== 'return_tracks') {
+        return;
+    }
+    //log('ON RETURNS CHANGE ' + args)
+    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    var returnIds = (0, utils_1.cleanArr)(args);
+    for (var i = 0; i < MAX_SENDS; i++) {
+        var color = consts_1.DEFAULT_COLOR;
+        if (returnIds[i]) {
+            api.id = returnIds[i];
+            color = (0, utils_1.colorToString)(api.get('color').toString());
+        }
+        state.returnTrackColors[i] = '#' + color;
+    }
+    sendReturnTrackColors();
+};
 function refresh() {
     state.watchers = [];
+    state.trackLookupObj = null;
+    state.returnsObj = null;
     state.mixerObj = null;
     state.trackObj = null;
     state.volObj = null;
@@ -244,10 +273,20 @@ function init() {
     for (var i = 0; i < MAX_SENDS; i++) {
         _loop_1(i);
     }
+    if (!state.trackLookupObj) {
+        state.trackLookupObj = new LiveAPI(consts_1.noFn, 'live_set');
+    }
+    // returns obj
+    state.returnTrackColors = [];
+    if (!state.returnsObj) {
+        state.returnsObj = new LiveAPI(onReturnsChange, 'live_set');
+        state.returnsObj.property = 'return_tracks';
+        state.returnsObj.mode = 1;
+    }
     // mixer obj
     if (!state.mixerObj) {
-        (state.mixerObj = new LiveAPI(consts_1.noFn, 'live_set view selected_track mixer_device')),
-            (state.mixerObj.mode = 1);
+        state.mixerObj = new LiveAPI(consts_1.noFn, 'live_set view selected_track mixer_device');
+        state.mixerObj.mode = 1;
     }
     // track obj
     if (!state.trackObj) {
