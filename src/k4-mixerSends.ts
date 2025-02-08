@@ -8,6 +8,7 @@ import {
   TYPE_TRACK,
   TYPE_MAIN,
   TYPE_RETURN,
+  TYPE_GROUP,
 } from './consts'
 
 autowatch = 1
@@ -221,6 +222,8 @@ const onTrackChange = (args: IdObserverArg) => {
     trackType = TYPE_MAIN
   } else if (path.indexOf('live_set return_tracks') === 0) {
     trackType = TYPE_RETURN
+  } else if (parseInt(state.trackObj.get('is_foldable')) === 1) {
+    trackType = TYPE_GROUP
   }
   outlet(OUTLET_OSC, '/mixer/type', [trackType])
 

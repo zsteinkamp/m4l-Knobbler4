@@ -199,6 +199,9 @@ var onTrackChange = function (args) {
     else if (path.indexOf('live_set return_tracks') === 0) {
         trackType = consts_1.TYPE_RETURN;
     }
+    else if (parseInt(state.trackObj.get('is_foldable')) === 1) {
+        trackType = consts_1.TYPE_GROUP;
+    }
     outlet(consts_1.OUTLET_OSC, '/mixer/type', [trackType]);
     // disable volume/pan for MIDI tracks
     var hasOutput = parseInt(state.trackObj.get('has_audio_output'));
