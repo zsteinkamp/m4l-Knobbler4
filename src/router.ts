@@ -3,24 +3,22 @@ import { logFactory } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 9
+outlets = 8
 
 const log = logFactory(config)
 
 const INLET_OSC = 0
 const OUTLET_KNOBBLER = 0
-const OUTLET_TOGGLEINPUT = 1
-const OUTLET_BLUHAND = 2
-const OUTLET_PRESETS = 3
-const OUTLET_LOOP = 4
-const OUTLET_REFRESH = 5
-const OUTLET_ACK = 6
-const OUTLET_MIXER = 7
-const OUTLET_UNKNOWN = 8
+const OUTLET_BLUHAND = 1
+const OUTLET_PRESETS = 2
+const OUTLET_LOOP = 3
+const OUTLET_REFRESH = 4
+const OUTLET_ACK = 5
+const OUTLET_MIXER = 6
+const OUTLET_UNKNOWN = 7
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
-setoutletassist(OUTLET_TOGGLEINPUT, 'Messages for ToggleInputEnable')
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand')
 setoutletassist(OUTLET_PRESETS, 'Messages for Bluhand Presets')
 setoutletassist(OUTLET_LOOP, 'Messages for Loop Checker')
@@ -110,12 +108,6 @@ const ROUTER: RouterItem[] = [
     prefix: '/track',
     handler: stdSlot,
     msg: 'gotoTrackFor',
-  },
-  {
-    outlet: OUTLET_TOGGLEINPUT,
-    prefix: '/toggleInput',
-    handler: stdVal,
-    msg: 'toggle',
   },
   {
     outlet: OUTLET_BLUHAND,
@@ -353,9 +345,15 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_MIXER,
-    prefix: '/mixer/toggleRecordArm',
+    prefix: '/mixer/enableRecord',
     handler: bareMsg,
-    msg: 'toggleRecordArm',
+    msg: 'enableRecord',
+  },
+  {
+    outlet: OUTLET_MIXER,
+    prefix: '/mixer/disableRecord',
+    handler: bareMsg,
+    msg: 'disableRecord',
   },
   {
     outlet: OUTLET_MIXER,

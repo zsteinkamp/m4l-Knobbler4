@@ -11,6 +11,7 @@ import {
   TYPE_GROUP,
   DEFAULT_COLOR,
 } from './consts'
+import { getTrackInputStatus, disableInput, enableInput } from './toggleInput'
 
 autowatch = 1
 inlets = 1
@@ -60,10 +61,10 @@ const setSendWatcherIds = (sendIds: number[]) => {
       state.watchers[i].id = sendIds[i]
     } else {
       state.watchers[i].id = 0
-      outlet(OUTLET_OSC, '/mixer/send' + (i + 1), [0])
+      outlet(OUTLET_OSC, ['/mixer/send' + (i + 1), 0])
     }
   }
-  outlet(OUTLET_OSC, '/mixer/numSends', sendIds.length)
+  outlet(OUTLET_OSC, ['/mixer/numSends', sendIds.length])
 }
 
 function updateSendVal(idx: number, val: number) {
@@ -113,13 +114,42 @@ function toggleXFadeB() {
   }
 }
 
-function toggleRecordArm() {
+function sendRecordStatus(lookupObj: LiveAPI) {
+  const armStatus =
+    parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'))
+  const inputStatus = getTrackInputStatus(lookupObj)
+  //log('INPUT STATUS ' + JSON.stringify(inputStatus))
+  outlet(OUTLET_OSC, [
+    '/mixer/recordArm',
+    armStatus && inputStatus && inputStatus.inputEnabled,
+  ])
+}
+
+enum Intent {
+  Enable,
+  Disable,
+  Toggle,
+}
+function enableRecord() {
+  handleRecordInternal(Intent.Enable)
+}
+function disableRecord() {
+  handleRecordInternal(Intent.Disable)
+}
+function handleRecordInternal(intent: Intent) {
   if (!state.trackObj || state.trackObj.id === 0) {
     return
   }
-  const currState = parseInt(state.trackObj.get('arm'))
-  state.trackObj.set('arm', currState ? 0 : 1)
+  if (intent === Intent.Enable) {
+    enableInput()
+    state.trackObj.set('arm', 1)
+  } else if (intent === Intent.Disable) {
+    state.trackObj.set('arm', 0)
+    disableInput()
+  }
+  sendRecordStatus(state.trackObj)
 }
+
 function toggleMute() {
   if (!state.trackObj || state.trackObj.id === 0) {
     return
@@ -188,7 +218,7 @@ const handleVolVal = (val: IdObserverArg) => {
   }
   //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
   if (!state.pause.vol.paused) {
-    outlet(OUTLET_OSC, '/mixer/vol', [val[1] || 0])
+    outlet(OUTLET_OSC, ['/mixer/vol', val[1] || 0])
   }
 }
 const handlePanVal = (val: IdObserverArg) => {
@@ -197,7 +227,7 @@ const handlePanVal = (val: IdObserverArg) => {
   }
   //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
   if (!state.pause.pan.paused) {
-    outlet(OUTLET_OSC, '/mixer/pan', [val[1] || 0])
+    outlet(OUTLET_OSC, ['/mixer/pan', val[1] || 0])
   }
 }
 const handleCrossfaderVal = (val: IdObserverArg) => {
@@ -206,7 +236,7 @@ const handleCrossfaderVal = (val: IdObserverArg) => {
   }
   //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
   if (!state.pause.crossfader.paused) {
-    outlet(OUTLET_OSC, '/mixer/crossfader', [val[1] || 0])
+    outlet(OUTLET_OSC, ['/mixer/crossfader', val[1] || 0])
   }
 }
 const handleSendVal = (idx: number, val: IdObserverArg) => {
@@ -215,7 +245,7 @@ const handleSendVal = (idx: number, val: IdObserverArg) => {
   }
   //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
   if (!state.pause.send.paused) {
-    outlet(OUTLET_OSC, '/mixer/send' + (idx + 1), [val[1] || 0])
+    outlet(OUTLET_OSC, ['/mixer/send' + (idx + 1), val[1] || 0])
   }
 }
 
@@ -244,19 +274,22 @@ const onTrackChange = (args: IdObserverArg) => {
   } else if (parseInt(state.trackLookupObj.get('is_foldable')) === 1) {
     trackType = TYPE_GROUP
   }
-  outlet(OUTLET_OSC, '/mixer/type', [trackType])
+  outlet(OUTLET_OSC, ['/mixer/type', trackType])
 
   // disable volume/pan for MIDI tracks
   const hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'))
-  outlet(OUTLET_OSC, '/mixer/hasOutput', [hasOutput])
+  outlet(OUTLET_OSC, ['/mixer/hasOutput', hasOutput])
 
   const sends = cleanArr(state.mixerObj.get('sends'))
   setSendWatcherIds(sends)
   //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
+
+  sendRecordStatus(state.trackLookupObj)
 }
 
 const sendReturnTrackColors = () => {
-  outlet(OUTLET_OSC, '/mixer/returnTrackColors', [
+  outlet(OUTLET_OSC, [
+    '/mixer/returnTrackColors',
     JSON.stringify(state.returnTrackColors),
   ])
 }

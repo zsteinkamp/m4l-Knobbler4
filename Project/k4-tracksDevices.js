@@ -249,7 +249,7 @@ function updateGeneric(type, val) {
     //    ' => ' +
     //    strVal
     //)
-    outlet(consts_1.OUTLET_OSC, '/' + type + 'List', strVal);
+    outlet(consts_1.OUTLET_OSC, ['/' + type + 'List', strVal]);
     stateObj.last = strVal;
 }
 function updateTracks(val) {

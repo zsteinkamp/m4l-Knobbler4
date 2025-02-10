@@ -2,6 +2,7 @@
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
+var toggleInput_1 = require("./toggleInput");
 autowatch = 1;
 inlets = 1;
 outlets = 2;
@@ -44,10 +45,10 @@ var setSendWatcherIds = function (sendIds) {
         }
         else {
             state.watchers[i].id = 0;
-            outlet(consts_1.OUTLET_OSC, '/mixer/send' + (i + 1), [0]);
+            outlet(consts_1.OUTLET_OSC, ['/mixer/send' + (i + 1), 0]);
         }
     }
-    outlet(consts_1.OUTLET_OSC, '/mixer/numSends', sendIds.length);
+    outlet(consts_1.OUTLET_OSC, ['/mixer/numSends', sendIds.length]);
 };
 function updateSendVal(idx, val) {
     //log('UPDATESENDVAL ' + idx + ' v=' + val)
@@ -95,12 +96,40 @@ function toggleXFadeB() {
         state.mixerObj.set('crossfade_assign', 2);
     }
 }
-function toggleRecordArm() {
+function sendRecordStatus(lookupObj) {
+    var armStatus = parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'));
+    var inputStatus = (0, toggleInput_1.getTrackInputStatus)(lookupObj);
+    //log('INPUT STATUS ' + JSON.stringify(inputStatus))
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/recordArm',
+        armStatus && inputStatus && inputStatus.inputEnabled,
+    ]);
+}
+var Intent;
+(function (Intent) {
+    Intent[Intent["Enable"] = 0] = "Enable";
+    Intent[Intent["Disable"] = 1] = "Disable";
+    Intent[Intent["Toggle"] = 2] = "Toggle";
+})(Intent || (Intent = {}));
+function enableRecord() {
+    handleRecordInternal(Intent.Enable);
+}
+function disableRecord() {
+    handleRecordInternal(Intent.Disable);
+}
+function handleRecordInternal(intent) {
     if (!state.trackObj || state.trackObj.id === 0) {
         return;
     }
-    var currState = parseInt(state.trackObj.get('arm'));
-    state.trackObj.set('arm', currState ? 0 : 1);
+    if (intent === Intent.Enable) {
+        (0, toggleInput_1.enableInput)();
+        state.trackObj.set('arm', 1);
+    }
+    else if (intent === Intent.Disable) {
+        state.trackObj.set('arm', 0);
+        (0, toggleInput_1.disableInput)();
+    }
+    sendRecordStatus(state.trackObj);
 }
 function toggleMute() {
     if (!state.trackObj || state.trackObj.id === 0) {
@@ -165,7 +194,7 @@ var handleVolVal = function (val) {
     }
     //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
     if (!state.pause.vol.paused) {
-        outlet(consts_1.OUTLET_OSC, '/mixer/vol', [val[1] || 0]);
+        outlet(consts_1.OUTLET_OSC, ['/mixer/vol', val[1] || 0]);
     }
 };
 var handlePanVal = function (val) {
@@ -174,7 +203,7 @@ var handlePanVal = function (val) {
     }
     //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
     if (!state.pause.pan.paused) {
-        outlet(consts_1.OUTLET_OSC, '/mixer/pan', [val[1] || 0]);
+        outlet(consts_1.OUTLET_OSC, ['/mixer/pan', val[1] || 0]);
     }
 };
 var handleCrossfaderVal = function (val) {
@@ -183,7 +212,7 @@ var handleCrossfaderVal = function (val) {
     }
     //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
     if (!state.pause.crossfader.paused) {
-        outlet(consts_1.OUTLET_OSC, '/mixer/crossfader', [val[1] || 0]);
+        outlet(consts_1.OUTLET_OSC, ['/mixer/crossfader', val[1] || 0]);
     }
 };
 var handleSendVal = function (idx, val) {
@@ -192,7 +221,7 @@ var handleSendVal = function (idx, val) {
     }
     //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
     if (!state.pause.send.paused) {
-        outlet(consts_1.OUTLET_OSC, '/mixer/send' + (idx + 1), [val[1] || 0]);
+        outlet(consts_1.OUTLET_OSC, ['/mixer/send' + (idx + 1), val[1] || 0]);
     }
 };
 var MAX_SENDS = 12;
@@ -219,16 +248,18 @@ var onTrackChange = function (args) {
     else if (parseInt(state.trackLookupObj.get('is_foldable')) === 1) {
         trackType = consts_1.TYPE_GROUP;
     }
-    outlet(consts_1.OUTLET_OSC, '/mixer/type', [trackType]);
+    outlet(consts_1.OUTLET_OSC, ['/mixer/type', trackType]);
     // disable volume/pan for MIDI tracks
     var hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'));
-    outlet(consts_1.OUTLET_OSC, '/mixer/hasOutput', [hasOutput]);
+    outlet(consts_1.OUTLET_OSC, ['/mixer/hasOutput', hasOutput]);
     var sends = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
     setSendWatcherIds(sends);
     //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
+    sendRecordStatus(state.trackLookupObj);
 };
 var sendReturnTrackColors = function () {
-    outlet(consts_1.OUTLET_OSC, '/mixer/returnTrackColors', [
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/returnTrackColors',
         JSON.stringify(state.returnTrackColors),
     ]);
 };

@@ -271,7 +271,7 @@ function updateGeneric(type: ObjType, val: IdObserverArg) {
   //    ' => ' +
   //    strVal
   //)
-  outlet(OUTLET_OSC, '/' + type + 'List', strVal)
+  outlet(OUTLET_OSC, ['/' + type + 'List', strVal])
   stateObj.last = strVal
 }
 
