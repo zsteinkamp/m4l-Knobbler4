@@ -67,9 +67,9 @@ const setSendWatcherIds = (sendIds: number[]) => {
   outlet(OUTLET_OSC, ['/mixer/numSends', sendIds.length])
 }
 
-function updateSendVal(idx: number, val: number) {
+function updateSendVal(slot: number, val: number) {
   //log('UPDATESENDVAL ' + idx + ' v=' + val)
-  idx -= 1
+  const idx = slot - 1
   if (!state.watchers[idx]) {
     //log('EARLY ' + idx + ' v=' + val)
     return
@@ -78,8 +78,8 @@ function updateSendVal(idx: number, val: number) {
   state.watchers[idx].set('value', val)
 }
 
-function handleSendDefault(idx: number) {
-  idx = idx - 1
+function handleSendDefault(slot: number) {
+  const idx = slot - 1
   if (!state.watchers[idx]) {
     //log('EARLY ' + idx + ' v=' + val)
     return
@@ -213,10 +213,10 @@ function handleVolDefault() {
 }
 
 const handleVolVal = (val: IdObserverArg) => {
+  //log('HANDLE_VOL_VAL val=' + val + ' paused=' + state.pause.vol.paused)
   if (val[0] !== 'value') {
     return
   }
-  //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
   if (!state.pause.vol.paused) {
     outlet(OUTLET_OSC, ['/mixer/vol', val[1] || 0])
   }
@@ -225,7 +225,7 @@ const handlePanVal = (val: IdObserverArg) => {
   if (val[0] !== 'value') {
     return
   }
-  //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
+  //log('HANDLE_PAN_VAL i=' + idx + ' val=' + val)
   if (!state.pause.pan.paused) {
     outlet(OUTLET_OSC, ['/mixer/pan', val[1] || 0])
   }
@@ -234,7 +234,7 @@ const handleCrossfaderVal = (val: IdObserverArg) => {
   if (val[0] !== 'value') {
     return
   }
-  //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
+  //log('HANDLE_XFAD_VAL i=' + idx + ' val=' + val)
   if (!state.pause.crossfader.paused) {
     outlet(OUTLET_OSC, ['/mixer/crossfader', val[1] || 0])
   }
@@ -372,8 +372,8 @@ function init() {
       handleVolVal,
       'live_set view selected_track mixer_device volume'
     )
-    state.volObj.property = 'value'
     state.volObj.mode = 1
+    state.volObj.property = 'value'
   }
 
   // pan obj
