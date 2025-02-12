@@ -152,12 +152,15 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
                 }
             }
             if (!found) {
-                log('ERROR (' +
-                    deviceType +
-                    ') NO pIDX FOR NAME ' +
-                    paramName +
-                    ' ' +
-                    JSON.stringify(Object.keys(paramNameToIdx)));
+                // the world of parameters is a complicated one
+                //log(
+                //  'ERROR (' +
+                //    deviceType +
+                //    ') NO pIDX FOR NAME ' +
+                //    paramName +
+                //    ' ' +
+                //    JSON.stringify(Object.keys(paramNameToIdx))
+                //)
                 return;
             }
             row.paramIdxArr.push(pIdx + 1);
@@ -226,13 +229,16 @@ function unfoldParentTracks(objId) {
         counter++;
     }
 }
-function gotoDevice(deviceId) {
+function gotoDevice(deviceIdStr) {
+    var deviceId = parseInt(deviceIdStr);
     unfoldParentTracks(deviceId);
     var api = getLiveSetViewApi();
     //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
-function gotoChain(chainId) {
+function gotoChain(chainIdStr) {
+    var chainId = parseInt(chainIdStr);
+    log('GOTO CHAIN ' + chainId + ' ' + typeof chainId);
     unfoldParentTracks(chainId);
     var viewApi = getLiveSetViewApi();
     var api = getUtilApi();
@@ -243,7 +249,8 @@ function gotoChain(chainId) {
         return;
     }
 }
-function gotoTrack(trackId) {
+function gotoTrack(trackIdStr) {
+    var trackId = parseInt(trackIdStr);
     unfoldParentTracks(trackId);
     var api = getLiveSetViewApi();
     api.set('selected_track', ['id', trackId]);

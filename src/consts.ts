@@ -10,6 +10,7 @@ export const TYPE_MAIN = 3
 export const TYPE_GROUP = 4
 export const TYPE_DEVICE = 5
 export const TYPE_RACK = 6
+export const TYPE_CHILD_CHAIN = 7
 
 export const DEFAULT_COLOR = '990000'
 export const DEFAULT_COLOR_FF = DEFAULT_COLOR + 'FF'

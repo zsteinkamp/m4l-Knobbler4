@@ -176,14 +176,15 @@ function getBankParamArr(
         }
       }
       if (!found) {
-        log(
-          'ERROR (' +
-            deviceType +
-            ') NO pIDX FOR NAME ' +
-            paramName +
-            ' ' +
-            JSON.stringify(Object.keys(paramNameToIdx))
-        )
+        // the world of parameters is a complicated one
+        //log(
+        //  'ERROR (' +
+        //    deviceType +
+        //    ') NO pIDX FOR NAME ' +
+        //    paramName +
+        //    ' ' +
+        //    JSON.stringify(Object.keys(paramNameToIdx))
+        //)
         return
       }
       row.paramIdxArr.push(pIdx + 1)
@@ -262,14 +263,17 @@ function unfoldParentTracks(objId: number) {
   }
 }
 
-function gotoDevice(deviceId: number) {
+function gotoDevice(deviceIdStr: string) {
+  const deviceId = parseInt(deviceIdStr)
   unfoldParentTracks(deviceId)
   const api = getLiveSetViewApi()
   //log('GOTO DEVICE ' + deviceId)
   api.call('select_device', ['id', deviceId])
 }
 
-function gotoChain(chainId: number) {
+function gotoChain(chainIdStr: string) {
+  const chainId = parseInt(chainIdStr)
+  log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
   unfoldParentTracks(chainId)
   const viewApi = getLiveSetViewApi()
   const api = getUtilApi()
@@ -281,7 +285,8 @@ function gotoChain(chainId: number) {
   }
 }
 
-function gotoTrack(trackId: number) {
+function gotoTrack(trackIdStr: string) {
+  const trackId = parseInt(trackIdStr)
   unfoldParentTracks(trackId)
   const api = getLiveSetViewApi()
   api.set('selected_track', ['id', trackId])

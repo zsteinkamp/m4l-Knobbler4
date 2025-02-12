@@ -1,3 +1,5 @@
+import { DEFAULT_COLOR } from './consts'
+
 export type logFn = (_: any) => void
 export function logFactory({ outputLogs = true }) {
   function log(_: any) {
@@ -19,6 +21,9 @@ export function isValidPath(path: string) {
 }
 
 export function colorToString(colorVal: string) {
+  if (!colorVal) {
+    return DEFAULT_COLOR
+  }
   let retString = parseInt(colorVal).toString(16).toUpperCase()
   const strlen = retString.length
   for (let i = 0; i < 6 - strlen; i++) {

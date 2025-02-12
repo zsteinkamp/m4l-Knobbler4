@@ -5,13 +5,12 @@ outlets = 1
 import { cleanArr, colorToString, logFactory, truncate } from './utils'
 import config from './config'
 import {
-  DEFAULT_COLOR,
-  FIELD_ID,
   FIELD_INDENT,
   INLET_MSGS,
   MAX_NAME_LEN,
   OUTLET_OSC,
   TYPE_CHAIN,
+  TYPE_CHILD_CHAIN,
   TYPE_DEVICE,
   TYPE_GROUP,
   TYPE_MAIN,
@@ -28,9 +27,6 @@ setinletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
 const state = {
   api: null as LiveAPI,
-
-  deviceDepth: {} as Record<number, number>,
-  deviceType: {} as Record<number, number>,
 
   track: {
     watch: null as LiveAPI,
@@ -115,113 +111,11 @@ const makeTrackTree = (type: ObjType, typeNum: number, trackIds: IdArr) => {
   }
 
   // start with indent==-1 so that the actual output starts at zero (root node
-  // is not actual output)
+  // is not included in output)
   fixupIndent(0, -1)
   //log('TREE ' + JSON.stringify(tree))
-
   return tree
 }
-
-//function getDepthForId(trackId: number, tree: Tree) {
-//  let parentId = tree[trackId].parent
-//  let depth = 0
-//  while (parentId > 0) {
-//    depth++
-//    parentId = tree[parentId].parent
-//  }
-//  return depth
-//}
-//
-//function getDevicesFor(deviceIds: IdArr) {
-//  //log('GET DEVICES FOR ' + deviceIds.join(','))
-//  const ret = [] as MaxObjRecord[]
-//  const parentColors: Record<number, string> = {}
-//  for (const deviceId of deviceIds) {
-//    state.api.id = deviceId
-//    //log('GET DEVICES FOR type=' + state.api.type)
-//    if (state.api.type === 'Song') {
-//      // stale/invalid id
-//      continue
-//    }
-//    let color = null
-//    if (state.deviceType[deviceId] === TYPE_CHAIN) {
-//      color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
-//    } else {
-//      const parentId = cleanArr(state.api.get('canonical_parent'))[0]
-//      if (!parentColors[parentId]) {
-//        state.api.id = parentId
-//        parentColors[parentId] =
-//          colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
-//        state.api.id = deviceId
-//      }
-//      color = parentColors[parentId]
-//    }
-//    const deviceObj = [
-//      state.deviceType[deviceId] || TYPE_DEVICE,
-//      deviceId,
-//      truncate(state.api.get('name').toString(), MAX_NAME_LEN),
-//      color,
-//      state.deviceDepth[deviceId] || 0,
-//    ] as MaxObjRecord
-//    ret.push(deviceObj)
-//  }
-//  //log('END DEVICES FOR ' + deviceIds.join(','))
-//  return ret
-//}
-//
-//function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
-//  if (objId === 0) {
-//    //log('Zero ObjId')
-//    return
-//  }
-//  stateObj.ids.push(objId)
-//  state.deviceDepth[objId] = depth
-//  state.api.id = objId
-//  const className = state.api.get('class_display_name').toString()
-//  //log('CLASS_NAME: ' + className)
-//  let rawReturnChains = []
-//  if (className === 'Drum Rack') {
-//    rawReturnChains = state.api.get('return_chains')
-//    //log(
-//    //  '>> RAW RETURN_CHAINS ' +
-//    //    className +
-//    //    ' ' +
-//    //    JSON.stringify(rawReturnChains)
-//    //)
-//  }
-//
-//  if (parseInt(state.api.get('can_have_chains'))) {
-//    state.deviceType[objId] = TYPE_RACK
-//    //log('DESCENDING FROM ' + objId)
-//    const chains = cleanArr(state.api.get('chains'))
-//    //log('>> GOT CHAINS ' + JSON.stringify(chains))
-//    for (const chainId of chains) {
-//      stateObj.ids.push(chainId)
-//      state.deviceType[chainId] = TYPE_CHAIN
-//      state.deviceDepth[chainId] = depth + 1
-//
-//      state.api.id = chainId
-//      const devices = cleanArr(state.api.get('devices'))
-//      for (const deviceId of devices) {
-//        checkAndDescend(stateObj, deviceId, depth + 2)
-//      }
-//    }
-//
-//    const returnChains = cleanArr(rawReturnChains || ([] as IdArr))
-//    //log('>> GOT RETURN_CHAINS ' + JSON.stringify(returnChains))
-//    for (const returnChainId of returnChains) {
-//      stateObj.ids.push(returnChainId)
-//      state.deviceType[returnChainId] = TYPE_CHAIN
-//      state.deviceDepth[returnChainId] = depth + 1
-//
-//      state.api.id = returnChainId
-//      const devices = cleanArr(state.api.get('devices'))
-//      for (const deviceId of devices) {
-//        checkAndDescend(stateObj, deviceId, depth + 2)
-//      }
-//    }
-//  }
-//}
 
 function updateGenericTrack(type: ObjType, val: IdObserverArg) {
   const stateObj = state[type]
@@ -233,7 +127,7 @@ function updateGenericTrack(type: ObjType, val: IdObserverArg) {
   let typeNum = TYPE_TRACK
   if (type === 'return') {
     typeNum = TYPE_RETURN
-  } else {
+  } else if (type === 'main') {
     typeNum = TYPE_MAIN
   }
   stateObj.tree = makeTrackTree(type, typeNum, idArr)
@@ -284,28 +178,135 @@ function onCurrDeviceChange(val: IdObserverArg) {
   if (state.currDeviceId === newId) {
     return
   }
+  if (newId === 0) {
+    return
+  }
   state.currDeviceId = newId
-  log('NEW CURR DEVICE ID =' + state.currDeviceId)
+
+  //log('NEW CURR DEVICE ID=' + state.currDeviceId)
+  outlet(OUTLET_OSC, ['/nav/currDeviceId', state.currDeviceId])
+
+  const ret: MaxObjRecord[] = []
+  const utilObj = new LiveAPI(noFn, 'live_set')
+  const currDeviceObj = new LiveAPI(noFn, 'id ' + state.currDeviceId)
+  const parentObj = new LiveAPI(noFn, currDeviceObj.get('canonical_parent'))
+  const parentChildIds = cleanArr(parentObj.get('devices'))
+
+  // first, self and siblings (with chain children under self)
+  for (const childDeviceId of parentChildIds) {
+    utilObj.id = childDeviceId
+    ret.push([
+      /* TYPE   */ parseInt(utilObj.get('can_have_chains'))
+        ? TYPE_RACK
+        : TYPE_DEVICE,
+      /* ID     */ childDeviceId,
+      /* NAME   */ truncate(utilObj.get('name').toString(), MAX_NAME_LEN),
+      /* COLOR  */ colorToString(parentObj.get('color').toString()),
+      /* INDENT */ 0, // temporary indent
+    ])
+    if (childDeviceId === state.currDeviceId) {
+      // add child chains below the current item
+      if (parseInt(currDeviceObj.get('can_have_chains'))) {
+        const chainIds = cleanArr(utilObj.get('chains'))
+        for (const chainId of chainIds) {
+          utilObj.id = chainId
+          ret.push([
+            /* TYPE   */ TYPE_CHILD_CHAIN,
+            /* ID     */ chainId,
+            /* NAME   */ truncate(utilObj.get('name').toString(), MAX_NAME_LEN),
+            /* COLOR  */ colorToString(utilObj.get('color').toString()),
+            /* INDENT */ 1, // temporary indent
+          ])
+        }
+
+        if (currDeviceObj.info.toString().match('return_chains')) {
+          // drum racks have return chains
+          const returnChainIds = cleanArr(currDeviceObj.get('return_chains'))
+          for (const chainId of returnChainIds) {
+            utilObj.id = chainId
+            ret.push([
+              /* TYPE   */ TYPE_CHILD_CHAIN,
+              /* ID     */ chainId,
+              /* NAME   */ truncate(
+                utilObj.get('name').toString(),
+                MAX_NAME_LEN
+              ),
+              /* COLOR  */ colorToString(utilObj.get('color').toString()),
+              /* INDENT */ 1, // temporary indent
+            ])
+          }
+        }
+      }
+    }
+  }
+  // now add hierarchy, up to when the parent is a track
+  let indent = 0
+  let watchdog = 0
+  const grandparentObj = new LiveAPI(noFn, 'live_set')
+
+  while (parentObj.type !== 'Track' && watchdog < 20) {
+    const isChain = parentObj.type === 'Chain' || parentObj.type === 'DrumChain'
+    let color = null
+    if (isChain) {
+      color = colorToString(parentObj.get('color').toString())
+    } else {
+      const grandparentId = cleanArr(parentObj.get('canonical_parent'))[0]
+      grandparentObj.id = grandparentId
+      color = colorToString(grandparentObj.get('color').toString())
+    }
+    ret.unshift([
+      /* TYPE   */ isChain ? TYPE_CHAIN : TYPE_RACK,
+      /* ID     */ parentObj.id,
+      /* NAME   */ truncate(parentObj.get('name').toString(), MAX_NAME_LEN),
+      /* COLOR  */ color,
+      /* INDENT */ --indent, // temporary indent
+    ])
+    const parentObjParentId = cleanArr(parentObj.get('canonical_parent'))[0]
+    //log('CP=' + parentObjParentId)
+    parentObj.id = parentObjParentId
+    //log('NEWTYPE=' + parentObj.type)
+    watchdog++
+  }
+
+  // now normalize device indentation ... the first item in the ret[] list needs
+  // to become zero, but may be negative
+  if (ret.length > 0) {
+    const baseIndent = ret[0][FIELD_INDENT]
+    for (const maxObj of ret) {
+      maxObj[FIELD_INDENT] -= baseIndent
+    }
+  }
+
+  //log('/nav/devices=' + JSON.stringify(ret))
+  outlet(OUTLET_OSC, ['/nav/devices', JSON.stringify(ret)])
 }
 
 function onCurrTrackChange(val: IdObserverArg) {
+  //log('TRACK CHANGE ' + val)
   if (val[0] !== 'id') {
-    //log('Track_ID EARLY')
+    //log('Track change EARLY')
     return
   }
   const newId = cleanArr(val)[0]
-  if (state.currTrackId === newId) {
+  //if (state.currTrackId === newId) {
+  //  //log('Track change SAME')
+  //  return
+  //}
+  if (newId === 0) {
+    log('Track change ZERO')
     return
   }
   state.currTrackId = newId
   const currTrackIdStr = state.currTrackId.toString()
-  log('NEW CURR TRACK ID =' + state.currTrackId)
+
+  //log('NEW CURR TRACK ID =' + state.currTrackId)
+  outlet(OUTLET_OSC, ['/nav/currTrackId', state.currTrackId])
 
   const trackTree = state.track.tree
   const returnTree = state.return.tree
   const mainTree = state.main.tree
 
-  const ret = []
+  const ret: MaxObjRecord[] = []
   // is the given currTrackId a (return|main) or track?
   if (returnTree[currTrackIdStr] || mainTree[currTrackIdStr]) {
     // return or main
@@ -320,7 +321,7 @@ function onCurrTrackChange(val: IdObserverArg) {
     // child tracks
     for (const childTrackId of trackTree[state.currTrackId.toString()]
       .children) {
-      log(' >>> PUSH CHILD ' + childTrackId)
+      //log(' >>> PUSH CHILD ' + childTrackId)
       ret.push(trackTree[childTrackId.toString()].obj)
     }
     // self and siblings
@@ -387,19 +388,21 @@ function onCurrTrackChange(val: IdObserverArg) {
   const mainId = mainTree['0'].children[0]
   ret.push(mainTree[mainId.toString()].obj)
 
-  log('/NAV/TRACKS=' + JSON.stringify(ret))
+  //log('/nav/tracks=' + JSON.stringify(ret))
   outlet(OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)])
 }
 
 function init() {
   //log('TRACKS DEVICES INIT')
-  state.deviceDepth = {}
   state.track = { watch: null, tree: {}, last: null }
   state.return = { watch: null, tree: {}, last: null }
   state.main = { watch: null, tree: {}, last: null }
   //state.device = { watch: null, last: null }
-  state.deviceType = {}
   state.api = null
+  state.currDeviceId = null
+  state.currDeviceWatcher = null
+  state.currTrackId = null
+  state.currTrackWatcher = null
 
   // general purpose API obj to do lookups, etc
   state.api = new LiveAPI(noFn, 'live_set')
