@@ -1,7 +1,6 @@
 import { cleanArr, logFactory } from './utils'
 import config from './config'
 import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
-
 import { deviceParamMapFor } from './k4-deviceParamMaps'
 import {
   deprecatedDeviceDelta,
@@ -121,13 +120,13 @@ function getBankParamArr(
   }
 
   // deviceParamMap is custom or crafted parameter organization
-  log('BBANKS ' + deviceType)
+  //log('BBANKS ' + deviceType)
   const deviceParamMap = deviceParamMapFor(deviceType)
 
   if (!deviceParamMap) {
     const paramArr = getBasicParamArr(paramIds)
     // nothing to customize, return the basic array
-    log('BASIC RETURN ' + JSON.stringify(paramArr))
+    //log('BASIC RETURN ' + JSON.stringify(paramArr))
     return paramArr
   }
 

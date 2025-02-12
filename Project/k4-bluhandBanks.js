@@ -100,12 +100,12 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         }
     }
     // deviceParamMap is custom or crafted parameter organization
-    log('BBANKS ' + deviceType);
+    //log('BBANKS ' + deviceType)
     var deviceParamMap = (0, k4_deviceParamMaps_1.deviceParamMapFor)(deviceType);
     if (!deviceParamMap) {
         var paramArr = getBasicParamArr(paramIds);
         // nothing to customize, return the basic array
-        log('BASIC RETURN ' + JSON.stringify(paramArr));
+        //log('BASIC RETURN ' + JSON.stringify(paramArr))
         return paramArr;
     }
     var ret = [];

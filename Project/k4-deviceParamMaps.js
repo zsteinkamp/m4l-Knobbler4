@@ -14,7 +14,7 @@ function deviceParamMapFor(deviceName) {
         return null;
     }
     var ret = [];
-    log('GOT HERE' + deviceName);
+    //log('GOT HERE' + deviceName)
     for (var i = 0; i < deviceParams_1.BANK_NAME_DICT[deviceName].length; i++) {
         if (i % 2 === 0) {
             ret.push({

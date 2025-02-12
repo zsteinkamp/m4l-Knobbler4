@@ -13,7 +13,7 @@ export function deviceParamMapFor(deviceName: string): NameBank[] {
     return null
   }
   const ret = [] as NameBank[]
-  log('GOT HERE' + deviceName)
+  //log('GOT HERE' + deviceName)
   for (let i = 0; i < BANK_NAME_DICT[deviceName].length; i++) {
     if (i % 2 === 0) {
       ret.push({
