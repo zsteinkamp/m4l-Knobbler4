@@ -1,13 +1,4 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 autowatch = 1;
 inlets = 1;
 outlets = 1;
@@ -21,244 +12,211 @@ var state = {
     api: null,
     deviceDepth: {},
     deviceType: {},
-    trackType: {},
     track: {
         watch: null,
-        ids: [],
-        objs: [],
         last: null,
+        tree: {},
     },
     return: {
         watch: null,
-        ids: [],
-        objs: [],
         last: null,
+        tree: {},
     },
     main: {
         watch: null,
-        ids: [],
-        objs: [],
         last: null,
+        tree: {},
     },
     device: {
         watch: null,
-        ids: [],
-        objs: [],
         last: null,
     },
+    currDeviceId: null,
+    currDeviceWatcher: null,
+    currTrackId: null,
+    currTrackWatcher: null,
 };
 // make a tree so we can get depth
-var getEmptyTreeNode = function () { return ({
-    children: [],
-    parent: null,
-}); };
-var makeTrackTree = function (trackIds) {
-    var tree = {
-        0: getEmptyTreeNode(),
+var getEmptyTreeNode = function () {
+    return {
+        children: [],
+        obj: null,
+        parent: null,
     };
+};
+var makeTrackTree = function (type, typeNum, trackIds) {
+    // bootstrap tretrae
+    var tree = {};
+    tree['0'] = getEmptyTreeNode();
+    // iterate over given IDs, already sorted in the right order
     for (var _i = 0, trackIds_1 = trackIds; _i < trackIds_1.length; _i++) {
         var trackId = trackIds_1[_i];
+        var trackIdStr = trackId.toString();
         state.api.id = trackId;
-        var parentId = (0, utils_1.cleanArr)(state.api.get('group_track'))[0];
         //log(trackId + ' PARENT_ID ' + parentId)
-        if (!tree[trackId]) {
-            tree[trackId] = getEmptyTreeNode();
+        if (!tree[trackIdStr]) {
+            tree[trackIdStr] = getEmptyTreeNode();
         }
-        tree[trackId].parent = parentId;
-        if (!tree[parentId]) {
-            tree[parentId] = getEmptyTreeNode();
-        }
-        tree[parentId].children.push(trackId);
-    }
-    return tree;
-};
-function getDepthForId(trackId, tree) {
-    var parentId = tree[trackId].parent;
-    var depth = 0;
-    while (parentId > 0) {
-        depth++;
-        parentId = tree[parentId].parent;
-    }
-    return depth;
-}
-function getTracksFor(trackIds) {
-    var ret = [];
-    var tree = makeTrackTree(trackIds);
-    //log(JSON.stringify(tree))
-    for (var _i = 0, trackIds_2 = trackIds; _i < trackIds_2.length; _i++) {
-        var trackId = trackIds_2[_i];
-        state.api.id = trackId;
-        //const info = state.api.info
-        var isTrack = state.api.info.toString().indexOf('type Track') > -1;
-        //if (isTrack) {
-        //  log('INFO FOR TRACK' + info)
-        //}
+        var trackInfo = state.api.info.toString();
+        var isTrack = trackInfo.indexOf('type Track') > -1;
         var isFoldable = isTrack && parseInt(state.api.get('is_foldable'));
-        var trackObj = [
-            /* TYPE   */ state.trackType[trackId] ||
-                (isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_TRACK),
+        tree[trackIdStr].obj = [
+            /* TYPE   */ isFoldable ? consts_1.TYPE_GROUP : typeNum,
             /* ID     */ trackId,
             /* NAME   */ (0, utils_1.truncate)(state.api.get('name').toString(), consts_1.MAX_NAME_LEN),
             /* COLOR  */ (0, utils_1.colorToString)(state.api.get('color').toString()),
-            /* INDENT */ getDepthForId(trackId, tree),
+            /* INDENT */ 0, // temporary indent
         ];
-        ret.push(trackObj);
-    }
-    return ret;
-}
-function getDevicesFor(deviceIds) {
-    //log('GET DEVICES FOR ' + deviceIds.join(','))
-    var ret = [];
-    var parentColors = {};
-    for (var _i = 0, deviceIds_1 = deviceIds; _i < deviceIds_1.length; _i++) {
-        var deviceId = deviceIds_1[_i];
-        state.api.id = deviceId;
-        //log('GET DEVICES FOR type=' + state.api.type)
-        if (state.api.type === 'Song') {
-            // stale/invalid id
-            continue;
+        var parentId = (0, utils_1.cleanArr)(state.api.get('group_track'))[0];
+        var parentIdStr = parentId.toString();
+        //log('PARENT ID ' + parentId)
+        tree[trackIdStr].parent = parentId;
+        //log('THREE ' + trackId + ' ' + JSON.stringify(tree[trackIdStr]))
+        if (!tree[parentIdStr]) {
+            tree[parentIdStr] = getEmptyTreeNode();
         }
-        var color = null;
-        if (state.deviceType[deviceId] === consts_1.TYPE_CHAIN) {
-            color = (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
-        }
-        else {
-            var parentId = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
-            if (!parentColors[parentId]) {
-                state.api.id = parentId;
-                parentColors[parentId] =
-                    (0, utils_1.colorToString)(state.api.get('color').toString()) || consts_1.DEFAULT_COLOR;
-                state.api.id = deviceId;
-            }
-            color = parentColors[parentId];
-        }
-        var deviceObj = [
-            state.deviceType[deviceId] || consts_1.TYPE_DEVICE,
-            deviceId,
-            (0, utils_1.truncate)(state.api.get('name').toString(), consts_1.MAX_NAME_LEN),
-            color,
-            state.deviceDepth[deviceId] || 0,
-        ];
-        ret.push(deviceObj);
+        tree[parentIdStr].children.push(trackId);
     }
-    //log('END DEVICES FOR ' + deviceIds.join(','))
-    return ret;
-}
-function checkAndDescend(stateObj, objId, depth) {
-    if (objId === 0) {
-        //log('Zero ObjId')
-        return;
-    }
-    stateObj.ids.push(objId);
-    state.deviceDepth[objId] = depth;
-    state.api.id = objId;
-    var className = state.api.get('class_display_name').toString();
-    //log('CLASS_NAME: ' + className)
-    var rawReturnChains = [];
-    if (className === 'Drum Rack') {
-        rawReturnChains = state.api.get('return_chains');
-        //log(
-        //  '>> RAW RETURN_CHAINS ' +
-        //    className +
-        //    ' ' +
-        //    JSON.stringify(rawReturnChains)
-        //)
-    }
-    if (parseInt(state.api.get('can_have_chains'))) {
-        state.deviceType[objId] = consts_1.TYPE_RACK;
-        //log('DESCENDING FROM ' + objId)
-        var chains = (0, utils_1.cleanArr)(state.api.get('chains'));
-        //log('>> GOT CHAINS ' + JSON.stringify(chains))
-        for (var _i = 0, chains_1 = chains; _i < chains_1.length; _i++) {
-            var chainId = chains_1[_i];
-            stateObj.ids.push(chainId);
-            state.deviceType[chainId] = consts_1.TYPE_CHAIN;
-            state.deviceDepth[chainId] = depth + 1;
-            state.api.id = chainId;
-            var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
-            for (var _a = 0, devices_1 = devices; _a < devices_1.length; _a++) {
-                var deviceId = devices_1[_a];
-                checkAndDescend(stateObj, deviceId, depth + 2);
-            }
+    // now fixup indents
+    var fixupIndent = function (currId, indent) {
+        var currIdStr = currId.toString();
+        var treeNode = tree[currIdStr];
+        //log('fixupIndent TREENODE ' + currIdStr + ' ' + JSON.stringify(treeNode))
+        treeNode.obj && (treeNode.obj[consts_1.FIELD_INDENT] = indent);
+        //log('fixupIndent after ' + currIdStr + ' ' + JSON.stringify(treeNode))
+        for (var _i = 0, _a = treeNode.children; _i < _a.length; _i++) {
+            var childId = _a[_i];
+            fixupIndent(childId, indent + 1);
         }
-        var returnChains = (0, utils_1.cleanArr)(rawReturnChains || []);
-        //log('>> GOT RETURN_CHAINS ' + JSON.stringify(returnChains))
-        for (var _b = 0, returnChains_1 = returnChains; _b < returnChains_1.length; _b++) {
-            var returnChainId = returnChains_1[_b];
-            stateObj.ids.push(returnChainId);
-            state.deviceType[returnChainId] = consts_1.TYPE_CHAIN;
-            state.deviceDepth[returnChainId] = depth + 1;
-            state.api.id = returnChainId;
-            var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
-            for (var _c = 0, devices_2 = devices; _c < devices_2.length; _c++) {
-                var deviceId = devices_2[_c];
-                checkAndDescend(stateObj, deviceId, depth + 2);
-            }
-        }
-    }
-}
-function getObjs(type, val) {
-    var stateObj = state[type];
-    stateObj.ids = [];
-    var idArr = (0, utils_1.cleanArr)(val);
-    if (type === 'device') {
-        for (var _i = 0, idArr_1 = idArr; _i < idArr_1.length; _i++) {
-            var objId = idArr_1[_i];
-            //log('>>> OBJID ' + objId)
-            checkAndDescend(stateObj, objId, 0);
-        }
-    }
-    else {
-        for (var _a = 0, idArr_2 = idArr; _a < idArr_2.length; _a++) {
-            var objId = idArr_2[_a];
-            if (type === 'return') {
-                state.trackType[objId] = consts_1.TYPE_RETURN;
-            }
-            else if (type === 'main') {
-                state.trackType[objId] = consts_1.TYPE_MAIN;
-            }
-        }
-        stateObj.ids = __spreadArray([], idArr, true);
-    }
-}
-function updateGeneric(type, val) {
-    //log('UPDATE GENERIC ' + type + ' vals=' + JSON.stringify(val))
-    getObjs(type, val);
+    };
+    // start with indent==-1 so that the actual output starts at zero (root node
+    // is not actual output)
+    fixupIndent(0, -1);
+    //log('TREE ' + JSON.stringify(tree))
+    return tree;
+};
+//function getDepthForId(trackId: number, tree: Tree) {
+//  let parentId = tree[trackId].parent
+//  let depth = 0
+//  while (parentId > 0) {
+//    depth++
+//    parentId = tree[parentId].parent
+//  }
+//  return depth
+//}
+//
+//function getDevicesFor(deviceIds: IdArr) {
+//  //log('GET DEVICES FOR ' + deviceIds.join(','))
+//  const ret = [] as MaxObjRecord[]
+//  const parentColors: Record<number, string> = {}
+//  for (const deviceId of deviceIds) {
+//    state.api.id = deviceId
+//    //log('GET DEVICES FOR type=' + state.api.type)
+//    if (state.api.type === 'Song') {
+//      // stale/invalid id
+//      continue
+//    }
+//    let color = null
+//    if (state.deviceType[deviceId] === TYPE_CHAIN) {
+//      color = colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
+//    } else {
+//      const parentId = cleanArr(state.api.get('canonical_parent'))[0]
+//      if (!parentColors[parentId]) {
+//        state.api.id = parentId
+//        parentColors[parentId] =
+//          colorToString(state.api.get('color').toString()) || DEFAULT_COLOR
+//        state.api.id = deviceId
+//      }
+//      color = parentColors[parentId]
+//    }
+//    const deviceObj = [
+//      state.deviceType[deviceId] || TYPE_DEVICE,
+//      deviceId,
+//      truncate(state.api.get('name').toString(), MAX_NAME_LEN),
+//      color,
+//      state.deviceDepth[deviceId] || 0,
+//    ] as MaxObjRecord
+//    ret.push(deviceObj)
+//  }
+//  //log('END DEVICES FOR ' + deviceIds.join(','))
+//  return ret
+//}
+//
+//function checkAndDescend(stateObj: ClassObj, objId: number, depth: number) {
+//  if (objId === 0) {
+//    //log('Zero ObjId')
+//    return
+//  }
+//  stateObj.ids.push(objId)
+//  state.deviceDepth[objId] = depth
+//  state.api.id = objId
+//  const className = state.api.get('class_display_name').toString()
+//  //log('CLASS_NAME: ' + className)
+//  let rawReturnChains = []
+//  if (className === 'Drum Rack') {
+//    rawReturnChains = state.api.get('return_chains')
+//    //log(
+//    //  '>> RAW RETURN_CHAINS ' +
+//    //    className +
+//    //    ' ' +
+//    //    JSON.stringify(rawReturnChains)
+//    //)
+//  }
+//
+//  if (parseInt(state.api.get('can_have_chains'))) {
+//    state.deviceType[objId] = TYPE_RACK
+//    //log('DESCENDING FROM ' + objId)
+//    const chains = cleanArr(state.api.get('chains'))
+//    //log('>> GOT CHAINS ' + JSON.stringify(chains))
+//    for (const chainId of chains) {
+//      stateObj.ids.push(chainId)
+//      state.deviceType[chainId] = TYPE_CHAIN
+//      state.deviceDepth[chainId] = depth + 1
+//
+//      state.api.id = chainId
+//      const devices = cleanArr(state.api.get('devices'))
+//      for (const deviceId of devices) {
+//        checkAndDescend(stateObj, deviceId, depth + 2)
+//      }
+//    }
+//
+//    const returnChains = cleanArr(rawReturnChains || ([] as IdArr))
+//    //log('>> GOT RETURN_CHAINS ' + JSON.stringify(returnChains))
+//    for (const returnChainId of returnChains) {
+//      stateObj.ids.push(returnChainId)
+//      state.deviceType[returnChainId] = TYPE_CHAIN
+//      state.deviceDepth[returnChainId] = depth + 1
+//
+//      state.api.id = returnChainId
+//      const devices = cleanArr(state.api.get('devices'))
+//      for (const deviceId of devices) {
+//        checkAndDescend(stateObj, deviceId, depth + 2)
+//      }
+//    }
+//  }
+//}
+function updateGenericTrack(type, val) {
     var stateObj = state[type];
     if (!stateObj) {
-        //log('EARLY UPDATE GENERIC ' + type)
         return;
     }
-    var objFn = type === 'device' ? getDevicesFor : getTracksFor;
-    stateObj.objs = objFn((stateObj.ids || []).slice(0, 128)); // limit
-    var strVal = JSON.stringify(stateObj.objs);
-    // no change, return
-    if (strVal == stateObj.last) {
-        //log('NOCHG UPDATE GENERIC ' + type)
-        return;
+    var idArr = (0, utils_1.cleanArr)(val);
+    var typeNum = consts_1.TYPE_TRACK;
+    if (type === 'return') {
+        typeNum = consts_1.TYPE_RETURN;
     }
-    //log(
-    //  '/' +
-    //    type +
-    //    'List :: ' +
-    //    type.toUpperCase() +
-    //    ': ' +
-    //    stateObj.objs.length +
-    //    ' : ' +
-    //    strVal.length +
-    //    ' => ' +
-    //    strVal
-    //)
-    outlet(consts_1.OUTLET_OSC, ['/' + type + 'List', strVal]);
-    stateObj.last = strVal;
+    else {
+        typeNum = consts_1.TYPE_MAIN;
+    }
+    stateObj.tree = makeTrackTree(type, typeNum, idArr);
 }
 function updateTracks(val) {
-    //log('HERE TRACKS ' + JSON.stringify(val))
     if (val[0] !== 'tracks') {
         //log('TRACKS EARLY')
         return;
     }
-    updateGeneric('track', val);
+    //log('HERE TRACKSz ' + JSON.stringify(val))
+    updateGenericTrack('track', val);
 }
 function updateReturns(val) {
     //log('HERE RETURNS')
@@ -266,7 +224,7 @@ function updateReturns(val) {
         //log('RETURNS EARLY')
         return;
     }
-    updateGeneric('return', val);
+    updateGenericTrack('return', val);
 }
 function updateMain(val) {
     //log('HERE MAIN ' + val.toString())
@@ -274,25 +232,143 @@ function updateMain(val) {
         //log('MAIN EARLY')
         return;
     }
-    updateGeneric('main', val);
+    updateGenericTrack('main', val);
 }
-function updateDevices(val) {
-    //log('HERE DEVICES ' + JSON.stringify(val))
-    if (val[0] !== 'devices') {
-        //log('DEVICES EARLY')
+//function updateDevices(val: IdObserverArg) {
+//  if (val[0] !== 'devices') {
+//    //log('DEVICES EARLY')
+//    return
+//  }
+//  //log('HERE DEVICES ' + JSON.stringify(val))
+//  updateGeneric('device', val)
+//}
+function onCurrDeviceChange(val) {
+    if (val[0] !== 'id') {
+        //log('DEVICE_ID EARLY')
         return;
     }
-    updateGeneric('device', val);
+    var newId = (0, utils_1.cleanArr)(val)[0];
+    if (state.currDeviceId === newId) {
+        return;
+    }
+    state.currDeviceId = newId;
+    log('NEW CURR DEVICE ID =' + state.currDeviceId);
+}
+function onCurrTrackChange(val) {
+    if (val[0] !== 'id') {
+        //log('Track_ID EARLY')
+        return;
+    }
+    var newId = (0, utils_1.cleanArr)(val)[0];
+    if (state.currTrackId === newId) {
+        return;
+    }
+    state.currTrackId = newId;
+    var currTrackIdStr = state.currTrackId.toString();
+    log('NEW CURR TRACK ID =' + state.currTrackId);
+    var trackTree = state.track.tree;
+    var returnTree = state.return.tree;
+    var mainTree = state.main.tree;
+    var ret = [];
+    // is the given currTrackId a (return|main) or track?
+    if (returnTree[currTrackIdStr] || mainTree[currTrackIdStr]) {
+        // return or main
+        for (var _i = 0, _a = trackTree['0'].children; _i < _a.length; _i++) {
+            var topLevelTrackId = _a[_i];
+            // top-level tracks
+            ret.push(trackTree[topLevelTrackId.toString()].obj);
+        }
+    }
+    else if (trackTree[state.currTrackId.toString()]) {
+        // currTrackId is a track
+        //log('IS TRACK ' + state.currTrackId)
+        // child tracks
+        for (var _b = 0, _c = trackTree[state.currTrackId.toString()]
+            .children; _b < _c.length; _b++) {
+            var childTrackId = _c[_b];
+            log(' >>> PUSH CHILD ' + childTrackId);
+            ret.push(trackTree[childTrackId.toString()].obj);
+        }
+        // self and siblings
+        var parentId = trackTree[state.currTrackId.toString()].parent;
+        var foundSelf = false;
+        var unshiftCount = 0;
+        for (var _d = 0, _e = trackTree[parentId.toString()]
+            .children; _d < _e.length; _d++) {
+            var selfOrSiblingTrackId = _e[_d];
+            var selfOrSiblingObj = trackTree[selfOrSiblingTrackId.toString()].obj;
+            //log(' >>> SIB OBJ ' + JSON.stringify(selfOrSiblingObj))
+            if (foundSelf) {
+                ret.push(selfOrSiblingObj);
+            }
+            else {
+                ret.splice(unshiftCount, 0, selfOrSiblingObj);
+                unshiftCount++;
+            }
+            if (selfOrSiblingTrackId === state.currTrackId) {
+                foundSelf = true;
+            }
+        }
+        // walk up hierarchy to root
+        var lastTrackAncestorId = null;
+        var currentTrackParentId = parentId;
+        while (parentId) {
+            var parentNode = trackTree[parentId.toString()];
+            if (parentNode.parent === 0) {
+                // got to the top level -- we will add all top-level tracks below
+                break;
+            }
+            var parentObj = parentNode.obj;
+            ret.unshift(parentObj);
+            if (parentObj) {
+                //log(' >>> PARENT OBJ ' + JSON.stringify(parentObj))
+                lastTrackAncestorId = parentId;
+                parentId = trackTree[parentId.toString()].parent;
+            }
+        }
+        // now get top-level tracks
+        if (currentTrackParentId) {
+            var foundAncestor = false;
+            unshiftCount = 0;
+            for (var _f = 0, _g = trackTree['0'].children; _f < _g.length; _f++) {
+                var topLevelTrackId = _g[_f];
+                var topLevelObj = trackTree[topLevelTrackId.toString()].obj;
+                if (foundAncestor) {
+                    ret.push(topLevelObj);
+                }
+                else {
+                    ret.splice(unshiftCount, 0, topLevelObj);
+                    unshiftCount++;
+                }
+                if (lastTrackAncestorId === topLevelTrackId) {
+                    foundAncestor = true;
+                }
+            }
+        }
+    }
+    else {
+        log('DERP');
+        return;
+    }
+    // returns
+    for (var _h = 0, _j = returnTree[0].children; _h < _j.length; _h++) {
+        var returnTrackId = _j[_h];
+        ret.push(returnTree[returnTrackId.toString()].obj);
+    }
+    // main
+    var mainId = mainTree['0'].children[0];
+    ret.push(mainTree[mainId.toString()].obj);
+    log('/NAV/TRACKS=' + JSON.stringify(ret));
+    outlet(consts_1.OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)]);
 }
 function init() {
     //log('TRACKS DEVICES INIT')
     state.deviceDepth = {};
-    state.track = { watch: null, ids: [], objs: [], last: null };
-    state.return = { watch: null, ids: [], objs: [], last: null };
-    state.main = { watch: null, ids: [], objs: [], last: null };
-    state.device = { watch: null, ids: [], objs: [], last: null };
+    state.track = { watch: null, tree: {}, last: null };
+    state.return = { watch: null, tree: {}, last: null };
+    state.main = { watch: null, tree: {}, last: null };
+    //state.device = { watch: null, last: null }
     state.deviceType = {};
-    state.trackType = {};
     state.api = null;
     // general purpose API obj to do lookups, etc
     state.api = new LiveAPI(consts_1.noFn, 'live_set');
@@ -304,9 +380,18 @@ function init() {
     state.return.watch.property = 'return_tracks';
     state.main.watch = new LiveAPI(updateMain, 'live_set master_track');
     state.main.watch.property = 'id';
-    state.device.watch = new LiveAPI(updateDevices, 'live_set view selected_track');
-    state.device.watch.mode = 1; // follow path, not object
-    state.device.watch.property = 'devices';
+    //state.device.watch = new LiveAPI(
+    //  updateDevices,
+    //  'live_set view selected_track'
+    //)
+    //state.device.watch.mode = 1 // follow path, not object
+    //state.device.watch.property = 'devices'
+    state.currTrackWatcher = new LiveAPI(onCurrTrackChange, 'live_set view selected_track');
+    state.currTrackWatcher.mode = 1;
+    state.currTrackWatcher.property = 'id';
+    state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set appointed_device');
+    state.currDeviceWatcher.mode = 1;
+    state.currDeviceWatcher.property = 'id';
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a

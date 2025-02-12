@@ -36,9 +36,15 @@ type IdObserverArg = [
 type IdArr = number[]
 type ObjType = 'track' | 'return' | 'main' | 'device'
 
+type TreeNode = {
+  obj: MaxObjRecord
+  parent: number
+  children: IdArr
+}
+
+type Tree = Record<string, TreeNode>
 type ClassObj = {
   watch: LiveAPI
-  ids: IdArr
-  objs: MaxObjRecord[]
   last: string
+  tree: Tree
 }

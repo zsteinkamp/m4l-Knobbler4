@@ -19,3 +19,10 @@ export const noFn = () => {}
 export const MAX_NAME_LEN = 32
 
 export const nullString = '- - -'
+
+// indices into MaxObjRecord arrays for fields
+export const FIELD_TYPE = 0
+export const FIELD_ID = 1
+export const FIELD_NAME = 2
+export const FIELD_COLOR = 3
+export const FIELD_INDENT = 4
