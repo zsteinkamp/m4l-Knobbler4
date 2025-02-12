@@ -100,13 +100,15 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         }
     }
     // deviceParamMap is custom or crafted parameter organization
-    var deviceParamMap = k4_deviceParamMaps_1.DeviceParamMaps[deviceType];
-    var paramArr = getBasicParamArr(paramIds);
+    log('BBANKS ' + deviceType);
+    var deviceParamMap = (0, k4_deviceParamMaps_1.deviceParamMapFor)(deviceType);
     if (!deviceParamMap) {
+        var paramArr = getBasicParamArr(paramIds);
         // nothing to customize, return the basic array
-        //log('BASIC RETURN ' + JSON.stringify(paramArr))
+        log('BASIC RETURN ' + JSON.stringify(paramArr));
         return paramArr;
     }
+    var ret = [];
     // cache id to name mapping because it is super slow with giant devices like
     // Operator and honestly it should just be a compile-time step of the data
     // files that need this information. frankly this is stupid and should be
@@ -166,10 +168,10 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
             row.paramIdxArr.push(pIdx + 1);
         });
         //log('ROW ' + JSON.stringify(row))
-        paramArr.splice(idx, 0, row);
+        ret.push(row);
     });
     //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
-    return paramArr;
+    return ret;
 }
 function sendBankNames() {
     var currBankIdx = state.currBank - 1;
@@ -271,7 +273,7 @@ function updateDeviceOnOff(iargs) {
 function id(deviceId) {
     var api = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
     api.id = deviceId;
-    var deviceType = api.get('class_display_name').toString();
+    var deviceType = api.get('class_name').toString();
     //log(
     //  JSON.stringify({
     //    deviceType,
