@@ -150,6 +150,8 @@ function onCurrDeviceChange(val) {
         return;
     }
     if (newId === 0) {
+        // if no device is selected, null out the devices list
+        outlet(consts_1.OUTLET_OSC, ['/nav/devices', JSON.stringify([])]);
         return;
     }
     state.currDeviceId = newId;
