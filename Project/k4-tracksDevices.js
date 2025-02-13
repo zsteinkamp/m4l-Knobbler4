@@ -49,9 +49,12 @@ var makeTrackTree = function (type, typeNum, trackIds) {
     // iterate over given IDs, already sorted in the right order
     for (var _i = 0, trackIds_1 = trackIds; _i < trackIds_1.length; _i++) {
         var trackId = trackIds_1[_i];
+        if (!trackId) {
+            continue;
+        }
         var trackIdStr = trackId.toString();
         state.api.id = trackId;
-        //log(trackId + ' PARENT_ID ' + parentId)
+        //log('TRACK ID ' + trackId)
         if (!tree[trackIdStr]) {
             tree[trackIdStr] = getEmptyTreeNode();
         }

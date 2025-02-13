@@ -69,9 +69,12 @@ const makeTrackTree = (type: ObjType, typeNum: number, trackIds: IdArr) => {
 
   // iterate over given IDs, already sorted in the right order
   for (const trackId of trackIds) {
+    if (!trackId) {
+      continue
+    }
     const trackIdStr = trackId.toString()
     state.api.id = trackId
-    //log(trackId + ' PARENT_ID ' + parentId)
+    //log('TRACK ID ' + trackId)
     if (!tree[trackIdStr]) {
       tree[trackIdStr] = getEmptyTreeNode()
     }
