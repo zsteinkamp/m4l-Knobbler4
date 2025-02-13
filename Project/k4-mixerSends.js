@@ -16,7 +16,7 @@ var state = {
     returnsObj: null,
     mixerObj: null,
     trackObj: null,
-    lastTrackId: null,
+    lastTrackId: 0,
     volObj: null,
     panObj: null,
     crossfaderObj: null,
@@ -31,6 +31,7 @@ var state = {
 function pauseUnpause(key) {
     if (state.pause[key].paused) {
         state.pause[key].task.cancel();
+        state.pause[key].task.freepeer();
     }
     state.pause[key].paused = true;
     state.pause[key].task = new Task(function () {
@@ -100,10 +101,8 @@ function sendRecordStatus(lookupObj) {
     var armStatus = parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'));
     var inputStatus = (0, toggleInput_1.getTrackInputStatus)(lookupObj);
     //log('INPUT STATUS ' + JSON.stringify(inputStatus))
-    outlet(consts_1.OUTLET_OSC, [
-        '/mixer/recordArm',
-        armStatus && inputStatus && inputStatus.inputEnabled,
-    ]);
+    var recordArm = armStatus && inputStatus && inputStatus.inputEnabled ? 1 : 0;
+    outlet(consts_1.OUTLET_OSC, ['/mixer/recordArm', recordArm]);
 }
 var Intent;
 (function (Intent) {
@@ -229,13 +228,17 @@ var onTrackChange = function (args) {
     if (!state.trackObj) {
         return;
     }
-    var id = parseInt((0, utils_1.cleanArr)(args)[0]);
+    if (args[1].toString() !== 'id') {
+        return;
+    }
+    var id = (0, utils_1.cleanArr)(args)[0];
+    //log('TRACK CHANGE ' + [id, state.lastTrackId].join(' '))
     if (id === state.lastTrackId) {
+        //log('SAME AS LAST, eARLY ' + id)
         return;
     }
     state.lastTrackId = id;
     state.trackLookupObj.id = id;
-    //log('TRACK CHANGE ' + id)
     // track type
     var path = state.trackLookupObj.unquotedpath;
     var trackType = consts_1.TYPE_TRACK;
@@ -252,8 +255,8 @@ var onTrackChange = function (args) {
     // disable volume/pan for MIDI tracks
     var hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'));
     outlet(consts_1.OUTLET_OSC, ['/mixer/hasOutput', hasOutput]);
-    var sends = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
-    setSendWatcherIds(sends);
+    //const sends = cleanArr(state.mixerObj.get('sends'))
+    //setSendWatcherIds(sends)
     //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
     sendRecordStatus(state.trackLookupObj);
 };
@@ -289,7 +292,7 @@ function refresh() {
     state.volObj = null;
     state.panObj = null;
     state.crossfaderObj = null;
-    state.lastTrackId = null;
+    state.lastTrackId = 0;
     init();
 }
 function init() {

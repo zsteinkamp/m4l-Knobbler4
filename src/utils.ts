@@ -40,7 +40,7 @@ export function truncate(str: string, len: number) {
   return str.substring(0, len - 2) + '…'
 }
 
-const tasks: Record<string, Task[]> = {}
+const tasks: Record<string, MaxTask[]> = {}
 export function debouncedTask(
   key: 'sendVal' | 'allowUpdates' | 'allowMapping' | 'allowUpdateFromOsc',
   slot: number,
@@ -52,9 +52,10 @@ export function debouncedTask(
   }
   if (tasks[key][slot]) {
     tasks[key][slot].cancel()
+    tasks[key][slot].freepeer()
     tasks[key][slot] = null
   }
-  tasks[key][slot] = task
+  tasks[key][slot] = task as MaxTask
   tasks[key][slot].schedule(delayMs)
 }
 

@@ -84,6 +84,7 @@ function init(slot) {
     };
     if (deviceCheckerTask[slot]) {
         deviceCheckerTask[slot].cancel();
+        deviceCheckerTask[slot].freepeer();
         deviceCheckerTask[slot] = null;
     }
     if (paramNameObj[slot]) {
@@ -275,6 +276,7 @@ function setPath(slot, paramPath) {
     // poll to see if the mapped device is still present
     if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
         deviceCheckerTask[slot].cancel();
+        deviceCheckerTask[slot].freepeer();
         deviceCheckerTask[slot] = null;
     }
     deviceCheckerTask[slot] = new Task(function () { return checkDevicePresent(slot); });

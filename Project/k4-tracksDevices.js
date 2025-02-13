@@ -253,10 +253,10 @@ function onCurrTrackChange(val) {
         return;
     }
     var newId = (0, utils_1.cleanArr)(val)[0];
-    //if (state.currTrackId === newId) {
-    //  //log('Track change SAME')
-    //  return
-    //}
+    if (state.currTrackId === newId) {
+        //log('Track change SAME')
+        return;
+    }
     if (newId === 0) {
         log('Track change ZERO');
         return;

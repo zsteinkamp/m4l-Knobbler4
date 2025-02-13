@@ -31,27 +31,28 @@ const state = {
   returnsObj: null as LiveAPI,
   mixerObj: null as LiveAPI,
   trackObj: null as LiveAPI,
-  lastTrackId: null as number,
+  lastTrackId: 0 as number,
   volObj: null as LiveAPI,
   panObj: null as LiveAPI,
   crossfaderObj: null as LiveAPI,
   watchers: [] as LiveAPI[],
   pause: {
-    send: { paused: false as boolean, task: null as Task },
-    vol: { paused: false as boolean, task: null as Task },
-    pan: { paused: false as boolean, task: null as Task },
-    crossfader: { paused: false as boolean, task: null as Task },
-  } as Record<PauseTypes, { paused: boolean; task: Task }>,
+    send: { paused: false as boolean, task: null as MaxTask },
+    vol: { paused: false as boolean, task: null as MaxTask },
+    pan: { paused: false as boolean, task: null as MaxTask },
+    crossfader: { paused: false as boolean, task: null as MaxTask },
+  } as Record<PauseTypes, { paused: boolean; task: MaxTask }>,
 }
 
 function pauseUnpause(key: PauseTypes) {
   if (state.pause[key].paused) {
     state.pause[key].task.cancel()
+    state.pause[key].task.freepeer()
   }
   state.pause[key].paused = true
   state.pause[key].task = new Task(() => {
     state.pause[key].paused = false
-  })
+  }) as MaxTask
   state.pause[key].task.schedule(300)
 }
 
@@ -119,10 +120,8 @@ function sendRecordStatus(lookupObj: LiveAPI) {
     parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'))
   const inputStatus = getTrackInputStatus(lookupObj)
   //log('INPUT STATUS ' + JSON.stringify(inputStatus))
-  outlet(OUTLET_OSC, [
-    '/mixer/recordArm',
-    armStatus && inputStatus && inputStatus.inputEnabled,
-  ])
+  const recordArm = armStatus && inputStatus && inputStatus.inputEnabled ? 1 : 0
+  outlet(OUTLET_OSC, ['/mixer/recordArm', recordArm])
 }
 
 enum Intent {
@@ -255,14 +254,20 @@ const onTrackChange = (args: IdObserverArg) => {
   if (!state.trackObj) {
     return
   }
-  const id = parseInt((cleanArr(args) as IdObserverArg)[0])
+  if (args[1].toString() !== 'id') {
+    return
+  }
+
+  const id = cleanArr(args)[0]
+
+  //log('TRACK CHANGE ' + [id, state.lastTrackId].join(' '))
 
   if (id === state.lastTrackId) {
+    //log('SAME AS LAST, eARLY ' + id)
     return
   }
   state.lastTrackId = id
   state.trackLookupObj.id = id
-  //log('TRACK CHANGE ' + id)
 
   // track type
   const path = state.trackLookupObj.unquotedpath
@@ -280,8 +285,8 @@ const onTrackChange = (args: IdObserverArg) => {
   const hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'))
   outlet(OUTLET_OSC, ['/mixer/hasOutput', hasOutput])
 
-  const sends = cleanArr(state.mixerObj.get('sends'))
-  setSendWatcherIds(sends)
+  //const sends = cleanArr(state.mixerObj.get('sends'))
+  //setSendWatcherIds(sends)
   //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
 
   sendRecordStatus(state.trackLookupObj)
@@ -321,7 +326,7 @@ function refresh() {
   state.volObj = null
   state.panObj = null
   state.crossfaderObj = null
-  state.lastTrackId = null
+  state.lastTrackId = 0
   init()
 }
 

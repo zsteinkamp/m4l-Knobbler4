@@ -48,3 +48,5 @@ type ClassObj = {
   last: string
   tree: Tree
 }
+
+type MaxTask = Task & { freepeer: () => void }

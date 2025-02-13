@@ -49,6 +49,7 @@ function debouncedTask(key, slot, task, delayMs) {
     }
     if (tasks[key][slot]) {
         tasks[key][slot].cancel();
+        tasks[key][slot].freepeer();
         tasks[key][slot] = null;
     }
     tasks[key][slot] = task;
