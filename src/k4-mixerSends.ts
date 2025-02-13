@@ -408,7 +408,7 @@ function handleSends(...sendArr: IdObserverArg) {
 
   setSendWatcherIds(sendIds)
 
-  init()
+  //init()
 }
 
 log('reloaded k4-mixerSends')

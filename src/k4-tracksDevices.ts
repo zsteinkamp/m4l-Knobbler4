@@ -295,7 +295,7 @@ function onCurrTrackChange(val: IdObserverArg) {
     return
   }
   if (newId === 0) {
-    log('Track change ZERO')
+    //log('Track change ZERO')
     return
   }
   state.currTrackId = newId
