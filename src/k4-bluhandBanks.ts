@@ -273,7 +273,7 @@ function gotoDevice(deviceIdStr: string) {
 
 function gotoChain(chainIdStr: string) {
   const chainId = parseInt(chainIdStr)
-  log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
+  //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
   unfoldParentTracks(chainId)
   const viewApi = getLiveSetViewApi()
   const api = getUtilApi()

@@ -240,7 +240,7 @@ function gotoDevice(deviceIdStr) {
 }
 function gotoChain(chainIdStr) {
     var chainId = parseInt(chainIdStr);
-    log('GOTO CHAIN ' + chainId + ' ' + typeof chainId);
+    //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
     unfoldParentTracks(chainId);
     var viewApi = getLiveSetViewApi();
     var api = getUtilApi();
