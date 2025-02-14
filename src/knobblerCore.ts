@@ -8,6 +8,7 @@ import {
 import {
   DEFAULT_COLOR_FF,
   MAX_SLOTS,
+  noFn,
   nullString,
   OUTLET_MSGS,
   OUTLET_OSC,
@@ -27,7 +28,7 @@ const parentColorObj: LiveAPI[] = []
 const param: ParamType[] = []
 const outMin: number[] = []
 const outMax: number[] = []
-const deviceCheckerTask: Task[] = []
+const deviceCheckerTask: MaxTask[] = []
 
 // other vars
 const allowMapping: boolean[] = []
@@ -54,6 +55,11 @@ function clearPath(slot: number) {
   //log()
   init(slot)
   refreshSlotUI(slot)
+}
+
+function bkMap(slot: number, id: number) {
+  const api = new LiveAPI(noFn, 'id ' + id)
+  setPath(slot, api.unquotedpath)
 }
 
 function initAll() {
@@ -86,6 +92,7 @@ function init(slot: number) {
   }
   if (deviceCheckerTask[slot]) {
     deviceCheckerTask[slot].cancel()
+    deviceCheckerTask[slot].freepeer()
     deviceCheckerTask[slot] = null
   }
   if (paramNameObj[slot]) {
@@ -306,9 +313,10 @@ function setPath(slot: number, paramPath: string) {
   // poll to see if the mapped device is still present
   if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
     deviceCheckerTask[slot].cancel()
+    deviceCheckerTask[slot].freepeer()
     deviceCheckerTask[slot] = null
   }
-  deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot))
+  deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot)) as MaxTask
   deviceCheckerTask[slot].interval = 1000 // every second
   deviceCheckerTask[slot].repeat(-1)
 
@@ -558,6 +566,7 @@ function val(slot: number, val: number) {
 const module = {}
 
 export {
+  bkMap,
   clearCustomName,
   clearPath,
   gotoTrackFor,

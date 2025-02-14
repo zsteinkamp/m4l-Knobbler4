@@ -1,8 +1,7 @@
 import { cleanArr, logFactory } from './utils'
 import config from './config'
 import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
-
-import { DeviceParamMaps } from './k4-deviceParamMaps'
+import { deviceParamMapFor } from './k4-deviceParamMaps'
 import {
   deprecatedDeviceDelta,
   deprecatedTrackDelta,
@@ -121,16 +120,17 @@ function getBankParamArr(
   }
 
   // deviceParamMap is custom or crafted parameter organization
-  const deviceParamMap = DeviceParamMaps[deviceType]
-
-  const paramArr = getBasicParamArr(paramIds)
+  //log('BBANKS ' + deviceType)
+  const deviceParamMap = deviceParamMapFor(deviceType)
 
   if (!deviceParamMap) {
+    const paramArr = getBasicParamArr(paramIds)
     // nothing to customize, return the basic array
     //log('BASIC RETURN ' + JSON.stringify(paramArr))
     return paramArr
   }
 
+  const ret: BluhandBank[] = []
   // cache id to name mapping because it is super slow with giant devices like
   // Operator and honestly it should just be a compile-time step of the data
   // files that need this information. frankly this is stupid and should be
@@ -176,25 +176,26 @@ function getBankParamArr(
         }
       }
       if (!found) {
-        log(
-          'ERROR (' +
-            deviceType +
-            ') NO pIDX FOR NAME ' +
-            paramName +
-            ' ' +
-            JSON.stringify(Object.keys(paramNameToIdx))
-        )
+        // the world of parameters is a complicated one
+        //log(
+        //  'ERROR (' +
+        //    deviceType +
+        //    ') NO pIDX FOR NAME ' +
+        //    paramName +
+        //    ' ' +
+        //    JSON.stringify(Object.keys(paramNameToIdx))
+        //)
         return
       }
       row.paramIdxArr.push(pIdx + 1)
     })
 
     //log('ROW ' + JSON.stringify(row))
-    paramArr.splice(idx, 0, row)
+    ret.push(row)
   })
 
   //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
-  return paramArr
+  return ret
 }
 
 function sendBankNames() {
@@ -262,14 +263,17 @@ function unfoldParentTracks(objId: number) {
   }
 }
 
-function gotoDevice(deviceId: number) {
+function gotoDevice(deviceIdStr: string) {
+  const deviceId = parseInt(deviceIdStr)
   unfoldParentTracks(deviceId)
   const api = getLiveSetViewApi()
   //log('GOTO DEVICE ' + deviceId)
   api.call('select_device', ['id', deviceId])
 }
 
-function gotoChain(chainId: number) {
+function gotoChain(chainIdStr: string) {
+  const chainId = parseInt(chainIdStr)
+  //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
   unfoldParentTracks(chainId)
   const viewApi = getLiveSetViewApi()
   const api = getUtilApi()
@@ -281,7 +285,8 @@ function gotoChain(chainId: number) {
   }
 }
 
-function gotoTrack(trackId: number) {
+function gotoTrack(trackIdStr: string) {
+  const trackId = parseInt(trackIdStr)
   unfoldParentTracks(trackId)
   const api = getLiveSetViewApi()
   api.set('selected_track', ['id', trackId])
@@ -305,7 +310,7 @@ function updateDeviceOnOff(iargs: IArguments) {
 function id(deviceId: number) {
   const api = new LiveAPI(noFn, 'id ' + deviceId)
   api.id = deviceId
-  const deviceType = api.get('class_display_name').toString()
+  const deviceType = api.get('class_name').toString()
   //log(
   //  JSON.stringify({
   //    deviceType,

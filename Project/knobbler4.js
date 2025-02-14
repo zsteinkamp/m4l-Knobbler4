@@ -13,6 +13,9 @@ setinletassist(consts_1.OUTLET_MSGS, 'Output messages for other devices or bpatc
 function initAll() {
     KnobblerCore.initAll();
 }
+function bkMap(slot, id) {
+    KnobblerCore.bkMap(slot, id);
+}
 function clearCustomName(slot) {
     KnobblerCore.clearCustomName(slot);
 }

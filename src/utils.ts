@@ -1,3 +1,5 @@
+import { DEFAULT_COLOR } from './consts'
+
 export type logFn = (_: any) => void
 export function logFactory({ outputLogs = true }) {
   function log(_: any) {
@@ -19,6 +21,9 @@ export function isValidPath(path: string) {
 }
 
 export function colorToString(colorVal: string) {
+  if (!colorVal) {
+    return DEFAULT_COLOR
+  }
   let retString = parseInt(colorVal).toString(16).toUpperCase()
   const strlen = retString.length
   for (let i = 0; i < 6 - strlen; i++) {
@@ -35,7 +40,7 @@ export function truncate(str: string, len: number) {
   return str.substring(0, len - 2) + '…'
 }
 
-const tasks: Record<string, Task[]> = {}
+const tasks: Record<string, MaxTask[]> = {}
 export function debouncedTask(
   key: 'sendVal' | 'allowUpdates' | 'allowMapping' | 'allowUpdateFromOsc',
   slot: number,
@@ -47,14 +52,15 @@ export function debouncedTask(
   }
   if (tasks[key][slot]) {
     tasks[key][slot].cancel()
+    tasks[key][slot].freepeer()
     tasks[key][slot] = null
   }
-  tasks[key][slot] = task
+  tasks[key][slot] = task as MaxTask
   tasks[key][slot].schedule(delayMs)
 }
 
 export function cleanArr(arr: IdObserverArg) {
-  if (!arr || arr.length === 0) {
+  if (!arr) {
     return []
   }
   return arr.filter((e: any) => {

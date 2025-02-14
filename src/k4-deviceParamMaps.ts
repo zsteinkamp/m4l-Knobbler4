@@ -1,273 +1,34 @@
-export const DeviceParamMaps: Record<string, NameBank[]> = {
-  Analog: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'OSC1 Shape',
-        'OSC1 Detune',
-        'F1 Freq',
-        'F1 Resonance',
-        'F1 Freq < Env',
-        'Unison On/Off',
-        'Unison Detune',
-        'Volume',
-        'OSC2 Shape',
-        'OSC2 Octave',
-        'F1 Type',
-        'FEG1 Attack',
-        'FEG1 Decay',
-        'AEG1 Attack',
-        'AEG1 Decay',
-        'AEG1 Release',
-      ],
-    },
-  ],
-  // "Chorus-Ensemble" not enough params to matter
-  Collision: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'Res 1 Type',
-        'Res 1 Brightness',
-        'Res 1 Opening',
-        'Res 1 Decay',
-        'Noise On/Off',
-        'Noise Filter Freq',
-        'Noise Volume',
-        'Volume',
-        'Res 1 Material',
-        'Res 1 Inharmonics',
-        'Res 1 Ratio',
-        'Res 1 Radius',
-        'Noise Freq < Env',
-        'Mallet Volume',
-        'Mallet Noise Amount',
-        'Mallet Stiffness',
-      ],
-    },
-  ],
-  Compressor: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'Ratio',
-        'Threshold',
-        'Attack',
-        'Release',
-        'Knee',
-        'Model',
-        'Dry/Wet',
-        'Output Gain',
-        'LookAhead',
-        'Env Mode',
-        'Makeup',
-        'Auto Release On/Off',
-        'S/C On',
-        'S/C Gain',
-        'S/C EQ Freq',
-        'S/C EQ Q',
-      ],
-    },
-  ],
-  Electric: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'M Stiffness',
-        'M Force',
-        'Noise Amount',
-        'F Tine Vol',
-        'F Tone Vol',
-        'F Release',
-        'P Symmetry',
-        'Volume',
-        'Detune',
-        'F Tine Color',
-        'Noise Decay',
-        'F Tine Decay',
-        'Damp Amount',
-        'Pickup Model',
-        'P Amp In',
-        'P Distance',
-      ],
-    },
-  ],
+import { logFactory } from './utils'
+import config from './config'
+const log = logFactory(config)
 
-  Meld: [
-    {
-      name: 'A Params',
-      paramNames: [
-        'A Osc Type',
-        8, // dial A1
-        9, // dial A2
-        'A Amp Attack',
-        'A Amp Decay',
-        'A Amp Sustain',
-        'A Amp Release',
-        'Volume',
+import { BANK_NAME_DICT, DEVICE_DICT } from './deviceParams'
 
-        'A Filter Type',
-        'A Filter Freq',
-        16, // Filter Adj 1 (e.g. Q)
-        17, // Filter Adj 2 (e.g. Drive)
-        'A Filter Filter Scale Aware',
-        'Voice Spread',
-        'Drive',
-        'A Volume',
-      ],
-    },
-    {
-      name: 'B Params',
-      paramNames: [
-        'B Osc Type',
-        68, // dial B1
-        69, // dial B2
-        'B Amp Attack',
-        'B Amp Decay',
-        'B Amp Sustain',
-        'B Amp Release',
-        'Volume',
-
-        'B Filter Type',
-        'B Filter Freq',
-        76, // Filter Adj 1 (e.g. Q)
-        77, // Filter Adj 2 (e.g. Drive)
-        'B Filter Filter Scale Aware',
-        'Voice Spread',
-        'Drive',
-        'B Volume',
-      ],
-    },
-  ],
-  Operator: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'Osc-A Level',
-        'Osc-B Level',
-        'Osc-C Level',
-        'Osc-D Level',
-        'Fe Decay',
-        'Tone',
-        'Time',
-        'Volume',
-        'A Fine',
-        'B Fine',
-        'C Fine',
-        'D Fine',
-        'Filter Type',
-        'Filter Freq',
-        'Filter Res',
-        'Fe Amount',
-      ],
-    },
-  ],
-  Roar: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'Drive',
-        'Shaper 1 Type',
-        'Shaper 1 Amt',
-        'Shaper 1 Bias',
-        'Flt 1 Freq',
-        'Comp Amt',
-        'Output',
-        'Dry/Wet',
-        'Drive',
-        'Tone Amt',
-        'Tone Freq',
-        'Color On',
-        'Blend',
-        'Mid High X-Over',
-        'Fb Amt',
-        'Comp Amt',
-      ],
-    },
-  ],
-  Simpler: [
-    {
-      name: 'Classic Mode',
-      paramNames: [
-        'S Start',
-        'S Length',
-        'S Loop Length',
-        'Ve Attack',
-        'Ve Decay',
-        'Ve Sustain',
-        'Ve Release',
-        'Volume',
-        'Filter Freq',
-        'Filter Res',
-        'Filter Drive',
-        'Fe < Env',
-        'Fe Attack',
-        'Fe Decay',
-        'Transpose',
-        'Detune',
-      ],
-    },
-    {
-      name: 'One-Shot / Slice',
-      paramNames: [
-        'Fade In',
-        'Fade Out',
-        'Trigger Mode',
-        'Ve Attack',
-        'Ve Decay',
-        'Ve Sustain',
-        'Ve Release',
-        'Volume',
-        'Filter Freq',
-        'Filter Res',
-        'Filter Drive',
-        'Fe < Env',
-        'Fe Attack',
-        'Fe Decay',
-        'Transpose',
-        'Detune',
-      ],
-    },
-  ],
-  Utility: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'Gain',
-        'Balance',
-        4, // Width or Mid/Side Balance
-        'Channel Mode',
-        'Bass Mono',
-        'Bass Freq',
-        'Mono',
-        'Mute',
-        'Left Inv',
-        'Right Inv',
-        'DC Filter',
-      ],
-    },
-  ],
-  Wavetable: [
-    {
-      name: 'Basic Params',
-      paramNames: [
-        'Osc 1 Pos',
-        'Osc 1 Effect 1',
-        'Osc 1 Effect 2',
-        'Osc 1 Detune',
-        'Sub On',
-        'Sub Tone',
-        'Sub Gain',
-        'Volume',
-        'Filter 1 Freq',
-        'Filter 1 Res',
-        'Filter 1 Type',
-        'Filter 1 Drive',
-        'Amp Attack',
-        'Amp Decay',
-        'Amp Sustain',
-        'Amp Release',
-      ],
-    },
-  ],
+export function deviceParamMapFor(deviceName: string): NameBank[] {
+  if (!BANK_NAME_DICT[deviceName]) {
+    return null
+  }
+  if (BANK_NAME_DICT[deviceName].length !== DEVICE_DICT[deviceName].length) {
+    log('oopsie len mismatch ' + deviceName)
+    return null
+  }
+  const ret = [] as NameBank[]
+  //log('GOT HERE' + deviceName)
+  for (let i = 0; i < BANK_NAME_DICT[deviceName].length; i++) {
+    if (i % 2 === 0) {
+      ret.push({
+        name: BANK_NAME_DICT[deviceName][i],
+        paramNames: DEVICE_DICT[deviceName][i],
+      })
+    } else {
+      // odd numbered banks are appended to the prior one because knobbler has
+      // 16 sliders and banks are in groups of 8
+      const prev = ret[ret.length - 1]
+      prev.name += ' / ' + BANK_NAME_DICT[deviceName][i]
+      for (let j = 0; j < DEVICE_DICT[deviceName][i].length; j++) {
+        prev.paramNames[8 + j] = DEVICE_DICT[deviceName][i][j]
+      }
+    }
+  }
+  return ret
 }

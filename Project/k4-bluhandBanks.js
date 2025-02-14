@@ -100,13 +100,15 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         }
     }
     // deviceParamMap is custom or crafted parameter organization
-    var deviceParamMap = k4_deviceParamMaps_1.DeviceParamMaps[deviceType];
-    var paramArr = getBasicParamArr(paramIds);
+    //log('BBANKS ' + deviceType)
+    var deviceParamMap = (0, k4_deviceParamMaps_1.deviceParamMapFor)(deviceType);
     if (!deviceParamMap) {
+        var paramArr = getBasicParamArr(paramIds);
         // nothing to customize, return the basic array
         //log('BASIC RETURN ' + JSON.stringify(paramArr))
         return paramArr;
     }
+    var ret = [];
     // cache id to name mapping because it is super slow with giant devices like
     // Operator and honestly it should just be a compile-time step of the data
     // files that need this information. frankly this is stupid and should be
@@ -152,21 +154,24 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
                 }
             }
             if (!found) {
-                log('ERROR (' +
-                    deviceType +
-                    ') NO pIDX FOR NAME ' +
-                    paramName +
-                    ' ' +
-                    JSON.stringify(Object.keys(paramNameToIdx)));
+                // the world of parameters is a complicated one
+                //log(
+                //  'ERROR (' +
+                //    deviceType +
+                //    ') NO pIDX FOR NAME ' +
+                //    paramName +
+                //    ' ' +
+                //    JSON.stringify(Object.keys(paramNameToIdx))
+                //)
                 return;
             }
             row.paramIdxArr.push(pIdx + 1);
         });
         //log('ROW ' + JSON.stringify(row))
-        paramArr.splice(idx, 0, row);
+        ret.push(row);
     });
     //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
-    return paramArr;
+    return ret;
 }
 function sendBankNames() {
     var currBankIdx = state.currBank - 1;
@@ -226,13 +231,16 @@ function unfoldParentTracks(objId) {
         counter++;
     }
 }
-function gotoDevice(deviceId) {
+function gotoDevice(deviceIdStr) {
+    var deviceId = parseInt(deviceIdStr);
     unfoldParentTracks(deviceId);
     var api = getLiveSetViewApi();
     //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
-function gotoChain(chainId) {
+function gotoChain(chainIdStr) {
+    var chainId = parseInt(chainIdStr);
+    //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
     unfoldParentTracks(chainId);
     var viewApi = getLiveSetViewApi();
     var api = getUtilApi();
@@ -243,7 +251,8 @@ function gotoChain(chainId) {
         return;
     }
 }
-function gotoTrack(trackId) {
+function gotoTrack(trackIdStr) {
+    var trackId = parseInt(trackIdStr);
     unfoldParentTracks(trackId);
     var api = getLiveSetViewApi();
     api.set('selected_track', ['id', trackId]);
@@ -264,7 +273,7 @@ function updateDeviceOnOff(iargs) {
 function id(deviceId) {
     var api = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
     api.id = deviceId;
-    var deviceType = api.get('class_display_name').toString();
+    var deviceType = api.get('class_name').toString();
     //log(
     //  JSON.stringify({
     //    deviceType,

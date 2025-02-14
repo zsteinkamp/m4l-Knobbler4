@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cleanArr = exports.debouncedTask = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
     function log(_) {
@@ -22,6 +23,9 @@ function isValidPath(path) {
 }
 exports.isValidPath = isValidPath;
 function colorToString(colorVal) {
+    if (!colorVal) {
+        return consts_1.DEFAULT_COLOR;
+    }
     var retString = parseInt(colorVal).toString(16).toUpperCase();
     var strlen = retString.length;
     for (var i = 0; i < 6 - strlen; i++) {
@@ -45,6 +49,7 @@ function debouncedTask(key, slot, task, delayMs) {
     }
     if (tasks[key][slot]) {
         tasks[key][slot].cancel();
+        tasks[key][slot].freepeer();
         tasks[key][slot] = null;
     }
     tasks[key][slot] = task;
@@ -52,7 +57,7 @@ function debouncedTask(key, slot, task, delayMs) {
 }
 exports.debouncedTask = debouncedTask;
 function cleanArr(arr) {
-    if (!arr || arr.length === 0) {
+    if (!arr) {
         return [];
     }
     return arr.filter(function (e) {

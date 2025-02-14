@@ -1,24 +1,24 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.toggleInput = exports.enableInput = exports.disableInput = exports.getTrackInputStatus = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
-inlets = 1;
-outlets = 1;
+var consts_1 = require("./consts");
 var origInputs = {};
-var lo = null;
-var currTrack = null;
 var log = (0, utils_1.logFactory)(config_1.default);
-function getTrackStatus() {
+function getTrackInputStatus(currTrack) {
     var airt = null;
     var currentInput = null;
     var noInput = null;
     var allInputs = null;
     var inputEnabled = false;
-    //log(currTrack.type);
+    //log(
+    //  'GET INPUT STATUS ' + currTrack.type + ' ' + currTrack.get('can_be_armed')
+    //)
     if (currTrack.get('is_foldable') == '0' &&
-        currTrack.get('can_be_frozen') == '1') {
-        //log("IN HERE");
-        var airt = JSON.parse(currTrack.get('available_input_routing_types')).available_input_routing_types;
-        currentInput = JSON.parse(currTrack.get('input_routing_type')).input_routing_type;
+        currTrack.get('can_be_armed') == '1') {
+        var airt = JSON.parse(currTrack.get('available_input_routing_types').toString()).available_input_routing_types;
+        currentInput = JSON.parse(currTrack.get('input_routing_type').toString()).input_routing_type;
         allInputs = airt[0];
         noInput = airt[airt.length - 1]; // "No Input" is the last available input routing type
         inputEnabled = currentInput.display_name !== noInput.display_name;
@@ -29,59 +29,54 @@ function getTrackStatus() {
         inputEnabled: inputEnabled,
         allInputs: allInputs,
     };
-    //log(JSON.stringify(ret));
+    //log('TRACK_INPUT_STATUS ' + JSON.stringify(ret))
     return ret;
 }
-function updateTrackDisplay() {
-    var trackStatus = getTrackStatus();
-    //log('inputEnabled?', trackStatus.inputEnabled);
-    if (trackStatus.inputEnabled) {
-        outlet(0, ['/toggleInput', 1]);
-    }
-    else {
-        outlet(0, ['/toggleInput', 0]);
-    }
-}
-function currentTrackCallback(a) {
-    var args = arrayfromargs(a);
-    if (args.shift() !== 'selected_track') {
-        //log("RETURNING1");
-        return;
-    }
-    var trackId = args.join(' ');
-    if (trackId === 'id 0') {
-        //log("RETURNING2");
-        return;
-    }
-    currTrack = new LiveAPI(function () { }, trackId);
-    updateTrackDisplay();
-}
-function init() {
-    //post("INIT\n");
-    lo = new LiveAPI(currentTrackCallback, 'live_set view');
-    lo.mode = 1;
-    lo.property = 'selected_track';
-}
-function toggle() {
-    //log("IN TOGGLE");
-    var trackStatus = getTrackStatus();
+exports.getTrackInputStatus = getTrackInputStatus;
+var Intent;
+(function (Intent) {
+    Intent[Intent["Disable"] = 0] = "Disable";
+    Intent[Intent["Enable"] = 1] = "Enable";
+    Intent[Intent["Toggle"] = 2] = "Toggle";
+})(Intent || (Intent = {}));
+function changeInternal(intent) {
+    var currTrack = new LiveAPI(consts_1.noFn, 'live_set view selected_track');
+    //log('CHANGE INTERNAL id=' + currTrack.id + ' ' + intent)
     var ret = null;
+    var trackStatus = getTrackInputStatus(currTrack);
     if (trackStatus.inputEnabled) {
-        origInputs[currTrack.id] = trackStatus.currentInput;
-        // set to No Input
-        ret = trackStatus.noInput;
+        if (intent === Intent.Disable || intent === Intent.Toggle) {
+            origInputs[currTrack.id] = trackStatus.currentInput;
+            // set to No Input
+            ret = trackStatus.noInput;
+            //log('GONNA ENABLE ' + JSON.stringify(ret))
+        }
     }
     else {
-        // set to Original, TODO default to All Inputs
-        ret = origInputs[currTrack.id] || trackStatus.allInputs;
+        // input disabled
+        if (intent === Intent.Enable || intent === Intent.Toggle) {
+            ret = origInputs[currTrack.id] || trackStatus.allInputs;
+            if (!ret) {
+                //log('FALLBACK')
+                ret = JSON.parse(currTrack.get('available_input_routing_types').toString()).available_input_routing_types[0];
+            }
+        }
     }
-    if (trackStatus.currentInput) {
+    if (ret) {
+        //log('SET ROUTING TYPE ' + JSON.stringify(ret))
         currTrack.set('input_routing_type', ret);
     }
-    updateTrackDisplay();
 }
+function disableInput() {
+    changeInternal(Intent.Disable);
+}
+exports.disableInput = disableInput;
+function enableInput() {
+    changeInternal(Intent.Enable);
+}
+exports.enableInput = enableInput;
+function toggleInput() {
+    changeInternal(Intent.Toggle);
+}
+exports.toggleInput = toggleInput;
 log('reloaded toggleInput');
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
-module.exports = {};
