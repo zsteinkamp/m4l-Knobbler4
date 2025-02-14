@@ -1,13 +1,14 @@
 "use strict";
 autowatch = 1;
 inlets = 1;
-outlets = 1;
+outlets = 2;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
-setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
+setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
+setoutletassist(consts_1.OUTLET_MSGS, 'Messages');
 var state = {
     api: null,
     track: {
@@ -33,6 +34,7 @@ var state = {
     currDeviceWatcher: null,
     currTrackId: null,
     currTrackWatcher: null,
+    controlSurfaceWatcher: null,
 };
 // make a tree so we can get depth
 var getEmptyTreeNode = function () {
@@ -365,6 +367,11 @@ function onCurrTrackChange(val) {
     //log('/nav/tracks=' + JSON.stringify(ret))
     outlet(consts_1.OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)]);
 }
+function onControlSurfaceChange(val) {
+    var numControlSurfaces = (0, utils_1.cleanArr)(val).filter(function (e) { return e; }).length;
+    outlet(consts_1.OUTLET_OSC, ['/numControlSurfaces', numControlSurfaces]);
+    outlet(consts_1.OUTLET_MSGS, ['num_control_surfaces', numControlSurfaces]);
+}
 function init() {
     //log('TRACKS DEVICES INIT')
     state.track = { watch: null, tree: {}, last: null };
@@ -376,6 +383,7 @@ function init() {
     state.currDeviceWatcher = null;
     state.currTrackId = null;
     state.currTrackWatcher = null;
+    state.controlSurfaceWatcher = null;
     // general purpose API obj to do lookups, etc
     state.api = new LiveAPI(consts_1.noFn, 'live_set');
     // set up watchers for each type, calls function to assemble and send OSC
@@ -398,6 +406,9 @@ function init() {
     state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set appointed_device');
     state.currDeviceWatcher.mode = 1;
     state.currDeviceWatcher.property = 'id';
+    state.currDeviceWatcher = new LiveAPI(onControlSurfaceChange, 'live_app');
+    state.currDeviceWatcher.mode = 1;
+    state.currDeviceWatcher.property = 'control_surfaces';
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a

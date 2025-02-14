@@ -1,6 +1,6 @@
 autowatch = 1
 inlets = 1
-outlets = 1
+outlets = 2
 
 import { cleanArr, colorToString, logFactory, truncate } from './utils'
 import config from './config'
@@ -8,6 +8,7 @@ import {
   FIELD_INDENT,
   INLET_MSGS,
   MAX_NAME_LEN,
+  OUTLET_MSGS,
   OUTLET_OSC,
   TYPE_CHAIN,
   TYPE_CHILD_CHAIN,
@@ -23,7 +24,8 @@ import {
 const log = logFactory(config)
 
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
-setinletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
+setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
+setoutletassist(OUTLET_MSGS, 'Messages')
 
 const state = {
   api: null as LiveAPI,
@@ -51,6 +53,7 @@ const state = {
   currDeviceWatcher: null as LiveAPI,
   currTrackId: null as number,
   currTrackWatcher: null as LiveAPI,
+  controlSurfaceWatcher: null as LiveAPI,
 }
 
 // make a tree so we can get depth
@@ -397,6 +400,12 @@ function onCurrTrackChange(val: IdObserverArg) {
   outlet(OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)])
 }
 
+function onControlSurfaceChange(val: IdObserverArg) {
+  const numControlSurfaces = cleanArr(val).filter((e) => e).length
+  outlet(OUTLET_OSC, ['/numControlSurfaces', numControlSurfaces])
+  outlet(OUTLET_MSGS, ['num_control_surfaces', numControlSurfaces])
+}
+
 function init() {
   //log('TRACKS DEVICES INIT')
   state.track = { watch: null, tree: {}, last: null }
@@ -408,6 +417,7 @@ function init() {
   state.currDeviceWatcher = null
   state.currTrackId = null
   state.currTrackWatcher = null
+  state.controlSurfaceWatcher = null
 
   // general purpose API obj to do lookups, etc
   state.api = new LiveAPI(noFn, 'live_set')
@@ -443,6 +453,10 @@ function init() {
   )
   state.currDeviceWatcher.mode = 1
   state.currDeviceWatcher.property = 'id'
+
+  state.currDeviceWatcher = new LiveAPI(onControlSurfaceChange, 'live_app')
+  state.currDeviceWatcher.mode = 1
+  state.currDeviceWatcher.property = 'control_surfaces'
 }
 
 log('reloaded k4-tracksDevices')
