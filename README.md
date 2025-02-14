@@ -117,7 +117,8 @@ The Toggle Record Enable button gives you a way to easily disable and re-enable 
 
 ## Changelog
 
-- 2025-02-13 [v21](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v21/Knobbler4-v21.zip) - Support channel mixer view in the native app; Direct mapping from Bluhand to Knobbler; Move more nav logic from the ipad app into the device for better performance and reliability; Imported Ableton's device parameter bank definitions from control scripts.
+- 2025-02-14 [v22](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v21/Knobbler4-v21.zip) - Support exclusive arm/solo
+- 2025-02-13 ~~[v21](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v21/Knobbler4-v21.zip) - Support channel mixer view in the native app; Direct mapping from Bluhand to Knobbler; Move more nav logic from the ipad app into the device for better performance and reliability; Imported Ableton's device parameter bank definitions from control scripts.~~
 - 2025-02-05 [v20](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v20/Knobbler4-v20.zip) - Handle collapsed tracks, stability improvements; ability to just refresh menu data.
 - 2025-02-03 [v19](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v19/Knobbler4-v19.zip) - Support device on/off; Pass device and rack types to native app; Cache device name lookups for Bluhand banks; Cache parent colors.
 - 2025-02-01 [v18](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v18/Knobbler4-v18.zip) - Adds automation state and enabled/disabled (green circle / greyed out) where appropriate; Make rack macro knobs share the layout they have on screen (two rows evenly divided).
