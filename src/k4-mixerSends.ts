@@ -11,7 +11,11 @@ import {
   TYPE_GROUP,
   DEFAULT_COLOR,
 } from './consts'
-import { getTrackInputStatus, disableInput, enableInput } from './toggleInput'
+import {
+  getTrackInputStatus,
+  disableTrackInput,
+  enableTrackInput,
+} from './toggleInput'
 
 autowatch = 1
 inlets = 1
@@ -118,16 +122,20 @@ function toggleXFadeB() {
 function sendRecordStatus(lookupObj: LiveAPI) {
   const armStatus =
     parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'))
-  const inputStatus = getTrackInputStatus(lookupObj)
-  //log('INPUT STATUS ' + JSON.stringify(inputStatus))
-  const recordArm = armStatus && inputStatus && inputStatus.inputEnabled ? 1 : 0
-  outlet(OUTLET_OSC, ['/mixer/recordArm', recordArm])
+  const trackInputStatus = getTrackInputStatus(lookupObj)
+  const inputStatus = trackInputStatus && trackInputStatus.inputEnabled
+  outlet(OUTLET_OSC, ['/mixer/recordArm', armStatus ? 1 : 0])
+  outlet(OUTLET_OSC, ['/mixer/inputEnabled', inputStatus ? 1 : 0])
 }
 
 enum Intent {
   Enable,
   Disable,
   Toggle,
+}
+function disableInput() {
+  disableTrackInput(state.trackObj)
+  sendRecordStatus(state.trackObj)
 }
 function enableRecord() {
   handleRecordInternal(Intent.Enable)
@@ -140,11 +148,23 @@ function handleRecordInternal(intent: Intent) {
     return
   }
   if (intent === Intent.Enable) {
-    enableInput()
+    enableTrackInput(state.trackObj)
     state.trackObj.set('arm', 1)
+    // TODO handle exclusive
+    const api = new LiveAPI(noFn, 'live_set')
+    if (parseInt(api.get('exclusive_arm')) === 1) {
+      // disarm any other track
+      const tracks = cleanArr(api.get('tracks'))
+      for (const trackId of tracks) {
+        if (trackId === parseInt(state.trackObj.id.toString())) {
+          continue
+        }
+        api.id = trackId
+        api.set('arm', 0)
+      }
+    }
   } else if (intent === Intent.Disable) {
     state.trackObj.set('arm', 0)
-    disableInput()
   }
   sendRecordStatus(state.trackObj)
 }
@@ -161,7 +181,26 @@ function toggleSolo() {
     return
   }
   const currState = parseInt(state.trackObj.get('solo'))
-  state.trackObj.set('solo', currState ? 0 : 1)
+  const newState = currState ? 0 : 1
+
+  if (newState) {
+    // enabling solo, look at exclusive
+    const api = new LiveAPI(noFn, 'live_set')
+    if (parseInt(api.get('exclusive_solo')) === 1) {
+      // un-solo any other track
+      const tracks = cleanArr(api.get('tracks'))
+      const returns = cleanArr(api.get('return_tracks'))
+      for (const trackId of [...tracks, ...returns]) {
+        if (trackId === parseInt(state.trackObj.id.toString())) {
+          continue
+        }
+        api.id = trackId
+        api.set('solo', 0)
+      }
+    }
+  }
+  state.trackObj.set('solo', newState)
+  // TODO handle exclusive
 }
 
 function handleCrossfader(val: string) {

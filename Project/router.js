@@ -332,6 +332,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_MIXER,
+        prefix: '/mixer/disableInput',
+        handler: bareMsg,
+        msg: 'disableInput',
+    },
+    {
+        outlet: OUTLET_MIXER,
         prefix: '/mixer/enableRecord',
         handler: bareMsg,
         msg: 'enableRecord',

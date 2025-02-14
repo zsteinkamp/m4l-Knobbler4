@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toggleInput = exports.enableInput = exports.disableInput = exports.getTrackInputStatus = void 0;
+exports.toggleTrackInput = exports.enableTrackInput = exports.disableTrackInput = exports.getTrackInputStatus = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
-var consts_1 = require("./consts");
 var origInputs = {};
 var log = (0, utils_1.logFactory)(config_1.default);
 function getTrackInputStatus(currTrack) {
@@ -39,14 +38,13 @@ var Intent;
     Intent[Intent["Enable"] = 1] = "Enable";
     Intent[Intent["Toggle"] = 2] = "Toggle";
 })(Intent || (Intent = {}));
-function changeInternal(intent) {
-    var currTrack = new LiveAPI(consts_1.noFn, 'live_set view selected_track');
-    //log('CHANGE INTERNAL id=' + currTrack.id + ' ' + intent)
+function changeInternal(trackObj, intent) {
+    //log('CHANGE INTERNAL id=' + trackObj.id + ' ' + intent)
     var ret = null;
-    var trackStatus = getTrackInputStatus(currTrack);
+    var trackStatus = getTrackInputStatus(trackObj);
     if (trackStatus.inputEnabled) {
         if (intent === Intent.Disable || intent === Intent.Toggle) {
-            origInputs[currTrack.id] = trackStatus.currentInput;
+            origInputs[trackObj.id] = trackStatus.currentInput;
             // set to No Input
             ret = trackStatus.noInput;
             //log('GONNA ENABLE ' + JSON.stringify(ret))
@@ -55,28 +53,28 @@ function changeInternal(intent) {
     else {
         // input disabled
         if (intent === Intent.Enable || intent === Intent.Toggle) {
-            ret = origInputs[currTrack.id] || trackStatus.allInputs;
+            ret = origInputs[trackObj.id] || trackStatus.allInputs;
             if (!ret) {
                 //log('FALLBACK')
-                ret = JSON.parse(currTrack.get('available_input_routing_types').toString()).available_input_routing_types[0];
+                ret = JSON.parse(trackObj.get('available_input_routing_types').toString()).available_input_routing_types[0];
             }
         }
     }
     if (ret) {
         //log('SET ROUTING TYPE ' + JSON.stringify(ret))
-        currTrack.set('input_routing_type', ret);
+        trackObj.set('input_routing_type', ret);
     }
 }
-function disableInput() {
-    changeInternal(Intent.Disable);
+function disableTrackInput(trackObj) {
+    changeInternal(trackObj, Intent.Disable);
 }
-exports.disableInput = disableInput;
-function enableInput() {
-    changeInternal(Intent.Enable);
+exports.disableTrackInput = disableTrackInput;
+function enableTrackInput(trackObj) {
+    changeInternal(trackObj, Intent.Enable);
 }
-exports.enableInput = enableInput;
-function toggleInput() {
-    changeInternal(Intent.Toggle);
+exports.enableTrackInput = enableTrackInput;
+function toggleTrackInput(trackObj) {
+    changeInternal(trackObj, Intent.Toggle);
 }
-exports.toggleInput = toggleInput;
+exports.toggleTrackInput = toggleTrackInput;
 log('reloaded toggleInput');

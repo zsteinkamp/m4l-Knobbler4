@@ -1,4 +1,13 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
@@ -99,10 +108,10 @@ function toggleXFadeB() {
 }
 function sendRecordStatus(lookupObj) {
     var armStatus = parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'));
-    var inputStatus = (0, toggleInput_1.getTrackInputStatus)(lookupObj);
-    //log('INPUT STATUS ' + JSON.stringify(inputStatus))
-    var recordArm = armStatus && inputStatus && inputStatus.inputEnabled ? 1 : 0;
-    outlet(consts_1.OUTLET_OSC, ['/mixer/recordArm', recordArm]);
+    var trackInputStatus = (0, toggleInput_1.getTrackInputStatus)(lookupObj);
+    var inputStatus = trackInputStatus && trackInputStatus.inputEnabled;
+    outlet(consts_1.OUTLET_OSC, ['/mixer/recordArm', armStatus ? 1 : 0]);
+    outlet(consts_1.OUTLET_OSC, ['/mixer/inputEnabled', inputStatus ? 1 : 0]);
 }
 var Intent;
 (function (Intent) {
@@ -110,6 +119,10 @@ var Intent;
     Intent[Intent["Disable"] = 1] = "Disable";
     Intent[Intent["Toggle"] = 2] = "Toggle";
 })(Intent || (Intent = {}));
+function disableInput() {
+    (0, toggleInput_1.disableTrackInput)(state.trackObj);
+    sendRecordStatus(state.trackObj);
+}
 function enableRecord() {
     handleRecordInternal(Intent.Enable);
 }
@@ -121,12 +134,25 @@ function handleRecordInternal(intent) {
         return;
     }
     if (intent === Intent.Enable) {
-        (0, toggleInput_1.enableInput)();
+        (0, toggleInput_1.enableTrackInput)(state.trackObj);
         state.trackObj.set('arm', 1);
+        // TODO handle exclusive
+        var api = new LiveAPI(consts_1.noFn, 'live_set');
+        if (parseInt(api.get('exclusive_arm')) === 1) {
+            // disarm any other track
+            var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
+            for (var _i = 0, tracks_1 = tracks; _i < tracks_1.length; _i++) {
+                var trackId = tracks_1[_i];
+                if (trackId === parseInt(state.trackObj.id.toString())) {
+                    continue;
+                }
+                api.id = trackId;
+                api.set('arm', 0);
+            }
+        }
     }
     else if (intent === Intent.Disable) {
         state.trackObj.set('arm', 0);
-        (0, toggleInput_1.disableInput)();
     }
     sendRecordStatus(state.trackObj);
 }
@@ -142,7 +168,26 @@ function toggleSolo() {
         return;
     }
     var currState = parseInt(state.trackObj.get('solo'));
-    state.trackObj.set('solo', currState ? 0 : 1);
+    var newState = currState ? 0 : 1;
+    if (newState) {
+        // enabling solo, look at exclusive
+        var api = new LiveAPI(consts_1.noFn, 'live_set');
+        if (parseInt(api.get('exclusive_solo')) === 1) {
+            // un-solo any other track
+            var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
+            var returns = (0, utils_1.cleanArr)(api.get('return_tracks'));
+            for (var _i = 0, _a = __spreadArray(__spreadArray([], tracks, true), returns, true); _i < _a.length; _i++) {
+                var trackId = _a[_i];
+                if (trackId === parseInt(state.trackObj.id.toString())) {
+                    continue;
+                }
+                api.id = trackId;
+                api.set('solo', 0);
+            }
+        }
+    }
+    state.trackObj.set('solo', newState);
+    // TODO handle exclusive
 }
 function handleCrossfader(val) {
     //log('PAN OVJ VAL=' + val + ' type=' + typeof val)

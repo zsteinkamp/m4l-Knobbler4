@@ -47,14 +47,13 @@ enum Intent {
   Toggle,
 }
 
-function changeInternal(intent: Intent) {
-  const currTrack = new LiveAPI(noFn, 'live_set view selected_track')
-  //log('CHANGE INTERNAL id=' + currTrack.id + ' ' + intent)
+function changeInternal(trackObj: LiveAPI, intent: Intent) {
+  //log('CHANGE INTERNAL id=' + trackObj.id + ' ' + intent)
   let ret = null
-  const trackStatus = getTrackInputStatus(currTrack)
+  const trackStatus = getTrackInputStatus(trackObj)
   if (trackStatus.inputEnabled) {
     if (intent === Intent.Disable || intent === Intent.Toggle) {
-      origInputs[currTrack.id] = trackStatus.currentInput
+      origInputs[trackObj.id] = trackStatus.currentInput
       // set to No Input
       ret = trackStatus.noInput
       //log('GONNA ENABLE ' + JSON.stringify(ret))
@@ -62,30 +61,30 @@ function changeInternal(intent: Intent) {
   } else {
     // input disabled
     if (intent === Intent.Enable || intent === Intent.Toggle) {
-      ret = origInputs[currTrack.id] || trackStatus.allInputs
+      ret = origInputs[trackObj.id] || trackStatus.allInputs
 
       if (!ret) {
         //log('FALLBACK')
         ret = JSON.parse(
-          currTrack.get('available_input_routing_types').toString()
+          trackObj.get('available_input_routing_types').toString()
         ).available_input_routing_types[0]
       }
     }
   }
   if (ret) {
     //log('SET ROUTING TYPE ' + JSON.stringify(ret))
-    currTrack.set('input_routing_type', ret)
+    trackObj.set('input_routing_type', ret)
   }
 }
 
-export function disableInput() {
-  changeInternal(Intent.Disable)
+export function disableTrackInput(trackObj: LiveAPI) {
+  changeInternal(trackObj, Intent.Disable)
 }
-export function enableInput() {
-  changeInternal(Intent.Enable)
+export function enableTrackInput(trackObj: LiveAPI) {
+  changeInternal(trackObj, Intent.Enable)
 }
-export function toggleInput() {
-  changeInternal(Intent.Toggle)
+export function toggleTrackInput(trackObj: LiveAPI) {
+  changeInternal(trackObj, Intent.Toggle)
 }
 
 log('reloaded toggleInput')
