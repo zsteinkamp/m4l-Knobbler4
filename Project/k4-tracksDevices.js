@@ -371,9 +371,7 @@ function onControlSurfaceChange(val) {
     var numControlSurfaces = (0, utils_1.cleanArr)(val).filter(function (e) { return e; }).length;
     outlet(consts_1.OUTLET_OSC, ['/numControlSurfaces', numControlSurfaces]);
     outlet(consts_1.OUTLET_MSGS, ['num_control_surfaces', numControlSurfaces]);
-    initDeviceWatcher();
 }
-function initDeviceWatcher() { }
 function init() {
     //log('TRACKS DEVICES INIT')
     state.track = { watch: null, tree: {}, last: null };

@@ -404,10 +404,7 @@ function onControlSurfaceChange(val: IdObserverArg) {
   const numControlSurfaces = cleanArr(val).filter((e) => e).length
   outlet(OUTLET_OSC, ['/numControlSurfaces', numControlSurfaces])
   outlet(OUTLET_MSGS, ['num_control_surfaces', numControlSurfaces])
-  initDeviceWatcher()
 }
-
-function initDeviceWatcher() {}
 
 function init() {
   //log('TRACKS DEVICES INIT')
