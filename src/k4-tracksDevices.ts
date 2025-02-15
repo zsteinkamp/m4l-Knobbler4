@@ -404,7 +404,10 @@ function onControlSurfaceChange(val: IdObserverArg) {
   const numControlSurfaces = cleanArr(val).filter((e) => e).length
   outlet(OUTLET_OSC, ['/numControlSurfaces', numControlSurfaces])
   outlet(OUTLET_MSGS, ['num_control_surfaces', numControlSurfaces])
+  initDeviceWatcher()
 }
+
+function initDeviceWatcher() {}
 
 function init() {
   //log('TRACKS DEVICES INIT')
@@ -412,11 +415,8 @@ function init() {
   state.return = { watch: null, tree: {}, last: null }
   state.main = { watch: null, tree: {}, last: null }
   //state.device = { watch: null, last: null }
-  state.api = null
   state.currDeviceId = null
-  state.currDeviceWatcher = null
   state.currTrackId = null
-  state.currTrackWatcher = null
   state.controlSurfaceWatcher = null
 
   // general purpose API obj to do lookups, etc
@@ -454,9 +454,9 @@ function init() {
   state.currDeviceWatcher.mode = 1
   state.currDeviceWatcher.property = 'id'
 
-  state.currDeviceWatcher = new LiveAPI(onControlSurfaceChange, 'live_app')
-  state.currDeviceWatcher.mode = 1
-  state.currDeviceWatcher.property = 'control_surfaces'
+  state.controlSurfaceWatcher = new LiveAPI(onControlSurfaceChange, 'live_app')
+  state.controlSurfaceWatcher.mode = 1
+  state.controlSurfaceWatcher.property = 'control_surfaces'
 }
 
 log('reloaded k4-tracksDevices')

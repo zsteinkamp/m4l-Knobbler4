@@ -371,18 +371,17 @@ function onControlSurfaceChange(val) {
     var numControlSurfaces = (0, utils_1.cleanArr)(val).filter(function (e) { return e; }).length;
     outlet(consts_1.OUTLET_OSC, ['/numControlSurfaces', numControlSurfaces]);
     outlet(consts_1.OUTLET_MSGS, ['num_control_surfaces', numControlSurfaces]);
+    initDeviceWatcher();
 }
+function initDeviceWatcher() { }
 function init() {
     //log('TRACKS DEVICES INIT')
     state.track = { watch: null, tree: {}, last: null };
     state.return = { watch: null, tree: {}, last: null };
     state.main = { watch: null, tree: {}, last: null };
     //state.device = { watch: null, last: null }
-    state.api = null;
     state.currDeviceId = null;
-    state.currDeviceWatcher = null;
     state.currTrackId = null;
-    state.currTrackWatcher = null;
     state.controlSurfaceWatcher = null;
     // general purpose API obj to do lookups, etc
     state.api = new LiveAPI(consts_1.noFn, 'live_set');
@@ -406,9 +405,9 @@ function init() {
     state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set appointed_device');
     state.currDeviceWatcher.mode = 1;
     state.currDeviceWatcher.property = 'id';
-    state.currDeviceWatcher = new LiveAPI(onControlSurfaceChange, 'live_app');
-    state.currDeviceWatcher.mode = 1;
-    state.currDeviceWatcher.property = 'control_surfaces';
+    state.controlSurfaceWatcher = new LiveAPI(onControlSurfaceChange, 'live_app');
+    state.controlSurfaceWatcher.mode = 1;
+    state.controlSurfaceWatcher.property = 'control_surfaces';
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a
