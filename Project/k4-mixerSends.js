@@ -147,7 +147,9 @@ function handleRecordInternal(intent) {
                     continue;
                 }
                 api.id = trackId;
-                api.set('arm', 0);
+                if (parseInt(api.get('can_be_armed'))) {
+                    api.set('arm', 0);
+                }
             }
         }
     }
