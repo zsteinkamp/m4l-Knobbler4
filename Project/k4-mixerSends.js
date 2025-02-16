@@ -393,6 +393,7 @@ function init() {
         state.crossfaderObj.property = 'value';
         state.crossfaderObj.mode = 1;
     }
+    outlet(consts_1.OUTLET_MSGS, ['gate', 1]);
 }
 function handleSends() {
     var sendArr = [];

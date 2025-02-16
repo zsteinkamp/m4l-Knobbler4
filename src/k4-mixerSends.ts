@@ -441,6 +441,7 @@ function init() {
     state.crossfaderObj.property = 'value'
     state.crossfaderObj.mode = 1
   }
+  outlet(OUTLET_MSGS, ['gate', 1])
 }
 
 function handleSends(...sendArr: IdObserverArg) {
