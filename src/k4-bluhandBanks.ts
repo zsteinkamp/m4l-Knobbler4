@@ -6,6 +6,7 @@ import {
   deprecatedDeviceDelta,
   deprecatedTrackDelta,
 } from './deprecatedMethods'
+import { MAX_DEVICES } from './deviceParams'
 
 autowatch = 1
 inlets = 1
@@ -109,7 +110,7 @@ function getBankParamArr(
   deviceType: string,
   deviceObj: LiveAPI
 ) {
-  if (deviceType.substring(0, 4) === 'Max ') {
+  if (MAX_DEVICES.indexOf(deviceType) > -1) {
     // Max device, look for live.banks
     const bankCount =
       (deviceObj.call('get_bank_count', null) as unknown as number) || 0

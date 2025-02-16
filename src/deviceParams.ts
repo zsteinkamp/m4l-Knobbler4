@@ -2114,7 +2114,7 @@ export const BANK_NAME_DICT: Record<string, string[]> = {
   Pedal: PDL_BANK_NAMES,
   InstrumentVector: WVT_BANK_NAMES,
 }
-const MAX_DEVICES = [
+export const MAX_DEVICES = [
   'MxDeviceInstrument',
   'MxDeviceAudioEffect',
   'MxDeviceMidiEffect',

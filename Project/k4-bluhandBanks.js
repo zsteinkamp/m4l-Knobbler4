@@ -13,6 +13,7 @@ var config_1 = require("./config");
 var consts_1 = require("./consts");
 var k4_deviceParamMaps_1 = require("./k4-deviceParamMaps");
 var deprecatedMethods_1 = require("./deprecatedMethods");
+var deviceParams_1 = require("./deviceParams");
 autowatch = 1;
 inlets = 1;
 outlets = 2;
@@ -92,7 +93,7 @@ function getBasicParamArr(paramIds) {
     return ret;
 }
 function getBankParamArr(paramIds, deviceType, deviceObj) {
-    if (deviceType.substring(0, 4) === 'Max ') {
+    if (deviceParams_1.MAX_DEVICES.indexOf(deviceType) > -1) {
         // Max device, look for live.banks
         var bankCount = deviceObj.call('get_bank_count', null) || 0;
         if (bankCount > 0) {

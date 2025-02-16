@@ -1,7 +1,7 @@
 "use strict";
 // from https://github.com/gluon/AbletonLive12_MIDIRemoteScripts/blob/main/_Generic/Devices.py
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BANK_NAME_DICT = exports.DEVICE_BOB_DICT = exports.DEVICE_DICT = void 0;
+exports.MAX_DEVICES = exports.BANK_NAME_DICT = exports.DEVICE_BOB_DICT = exports.DEVICE_DICT = void 0;
 var RCK_BANK1 = [
     'Macro 1',
     'Macro 2',
@@ -2115,7 +2115,7 @@ exports.BANK_NAME_DICT = {
     Pedal: PDL_BANK_NAMES,
     InstrumentVector: WVT_BANK_NAMES,
 };
-var MAX_DEVICES = [
+exports.MAX_DEVICES = [
     'MxDeviceInstrument',
     'MxDeviceAudioEffect',
     'MxDeviceMidiEffect',
