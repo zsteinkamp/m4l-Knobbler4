@@ -403,7 +403,6 @@ function handleSends() {
     //log('HANDLE SENDS ' + sendArr)
     var sendIds = (0, utils_1.cleanArr)(sendArr);
     setSendWatcherIds(sendIds);
-    //init()
 }
 log('reloaded k4-mixerSends');
 // NOTE: This section must appear in any .ts file that is directuly used by a

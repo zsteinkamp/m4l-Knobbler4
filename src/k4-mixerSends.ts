@@ -449,8 +449,6 @@ function handleSends(...sendArr: IdObserverArg) {
   const sendIds = cleanArr(sendArr)
 
   setSendWatcherIds(sendIds)
-
-  //init()
 }
 
 log('reloaded k4-mixerSends')
