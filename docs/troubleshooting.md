@@ -22,6 +22,6 @@ Simply download the latest version of the device and install it as you normally 
 
 You can use the "Swap Device" function in Ableton live to switch from an older version to a newer version, with all of your mapping preserved.
 
-<< image swap device >>
+![Device Swap Button](images/device-swap.png)
 
 #### 

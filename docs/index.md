@@ -1,19 +1,23 @@
 ## Knobbler4 - The Best Parameter Control Surface For Ableton Live
 
+![Overall view](images/overall.jpg)
+
 << Download unit ... device button | app store link >>
 
 Knobbler keeps you in the creative moment in your musicmaking by giving you fingertip access to the tracks, devices, and parameters in your Live Sets that matter the most.
 
 It's an auto-labeling, auto-coloring, bidirectional control surface that you can customize for each song. Pick back up right where you left off with perfect recall, so you can work on several songs at once, each with their own ideal layout, saved inside the song file itself.
 
+![Knobbler Screenshot](images/ipad-knobbler.png)
+
 ### Main Features
 
-* Two pages of 16 assignable, auto-labeling, auto-coloring, faders that always show you exactly what is happening in your music.
-* A page dedicated to all of the parameters of the currently selected device. Parameter banks are labeled, and just a touch away.
-* Eight device shortcut buttons to jump directly to the most important devices in your Live Set.
-* An innovative navigation system that lets you dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
-* A mixer channel strip for the currently selected track, giving you control over volume, mute, solo, record, send levels, and even the crossfader.
-* Direct access to familiar buttons from Live's toolbar, such as tap tempo, capture MIDI, and of course, transport controls.
+* Two pages of **16 assignable, auto-labeling, auto-coloring faders** that always show you exactly what is happening in your music.
+* A page dedicated to **all of the parameters** of the currently selected device. Parameter banks are labeled, and just a touch away.
+* Eight **device shortcut buttons** to jump directly to the most important devices in your Live Set.
+* An innovative **navigation system** that lets you dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
+* A **mixer channel strip** for the currently selected track, giving you control over volume, mute, solo, record, send levels, and even the crossfader.
+* **Direct access** to familiar buttons from Live's toolbar, such as tap tempo, capture MIDI, and of course, transport controls.
 
 ### Requirements
 

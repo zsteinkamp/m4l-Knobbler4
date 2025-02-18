@@ -8,5 +8,10 @@
   "vs-code-prettier-eslint.prettierLast": false,
   "[typescript]": {
     "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
-  } // set as "true" to run 'prettier' last not first
+  },
+  "cSpell.words": [
+    "Bluhand",
+    "playhead",
+    "Unmapping"
+  ] // set as "true" to run 'prettier' last not first
 }
