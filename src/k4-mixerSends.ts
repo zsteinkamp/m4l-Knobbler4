@@ -322,12 +322,6 @@ const onTrackChange = (args: IdObserverArg) => {
   }
   outlet(OUTLET_OSC, ['/mixer/type', trackType])
 
-  // disable volume/pan for MIDI tracks
-  const hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'))
-  outlet(OUTLET_OSC, ['/mixer/hasOutput', hasOutput])
-
-  //const sends = cleanArr(state.mixerObj.get('sends'))
-  //setSendWatcherIds(sends)
   //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
 
   sendRecordStatus(state.trackLookupObj)

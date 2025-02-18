@@ -299,11 +299,6 @@ var onTrackChange = function (args) {
         trackType = consts_1.TYPE_GROUP;
     }
     outlet(consts_1.OUTLET_OSC, ['/mixer/type', trackType]);
-    // disable volume/pan for MIDI tracks
-    var hasOutput = parseInt(state.trackLookupObj.get('has_audio_output'));
-    outlet(consts_1.OUTLET_OSC, ['/mixer/hasOutput', hasOutput]);
-    //const sends = cleanArr(state.mixerObj.get('sends'))
-    //setSendWatcherIds(sends)
     //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
     sendRecordStatus(state.trackLookupObj);
 };
