@@ -37,4 +37,4 @@ Visit the Apple App Store on your iPad to purchase and install the Knobbler app.
 - Now you can add the device to any of your Live Sets
   - The device is required to communicate with the iPad app
 
-Next, visit [Setup](./setup) or explore Knobbler's [Features](./features).
+Next, visit [Setup](./setup.md) or explore Knobbler's [Features](./features.md).

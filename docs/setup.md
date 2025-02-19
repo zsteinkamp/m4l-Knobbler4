@@ -17,6 +17,6 @@
 * You should see a "Connection Success" message. From there, it's time to get to Knobblin'!
   ![Setup Success](images/ipad-setup-success.png)
 
-Next, check out all of Knobbler's [Features](./features).
+Next, check out all of Knobbler's [Features](./features.md).
 
-If you're having trouble, then check out [Troubleshooting](./troubleshooting).
+If you're having trouble, then check out [Troubleshooting](./troubleshooting.md).
