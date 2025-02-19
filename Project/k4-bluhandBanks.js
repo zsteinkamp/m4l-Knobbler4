@@ -26,6 +26,8 @@ var state = {
     devicePath: null,
     onOffWatcher: null,
     paramsWatcher: null,
+    deviceWatcher: null,
+    currDeviceId: 0,
     currBank: 1,
     numBanks: 1,
     bankParamArr: [],
@@ -260,6 +262,8 @@ function gotoTrack(trackIdStr) {
     api.set('selected_track', ['id', trackId]);
 }
 function init() {
+    state.deviceWatcher = new LiveAPI(consts_1.noFn, 'live_set appointed_device');
+    state.deviceWatcher.mode = 1;
     state.paramsWatcher = new LiveAPI(onParameterChange, 'live_set appointed_device');
     state.paramsWatcher.mode = 1;
     state.paramsWatcher.property = 'parameters';
@@ -321,10 +325,17 @@ function onParameterChange(args) {
         }
     }
     //log('PARAMIDS ' + JSON.stringify(paramIds))
+    if (state.deviceWatcher.id !== state.currDeviceId) {
+        // changed device, reset bank
+        state.currBank = 1;
+        state.currDeviceId = state.deviceWatcher.id;
+    }
     state.devicePath = api.unquotedpath;
-    state.currBank = 1;
     state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
     state.numBanks = state.bankParamArr.length;
+    if (state.currBank > state.numBanks) {
+        state.currBank = state.numBanks;
+    }
     //log('STATE CHECK ' + JSON.stringify(state))
     sendCurrBank();
 }

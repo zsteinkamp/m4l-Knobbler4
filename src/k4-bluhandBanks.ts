@@ -28,6 +28,8 @@ const state = {
   devicePath: null as string,
   onOffWatcher: null as LiveAPI,
   paramsWatcher: null as LiveAPI,
+  deviceWatcher: null as LiveAPI,
+  currDeviceId: 0 as number,
   currBank: 1,
   numBanks: 1,
   bankParamArr: [] as BluhandBank[],
@@ -295,6 +297,9 @@ function gotoTrack(trackIdStr: string) {
 }
 
 function init() {
+  state.deviceWatcher = new LiveAPI(noFn, 'live_set appointed_device')
+  state.deviceWatcher.mode = 1
+
   state.paramsWatcher = new LiveAPI(
     onParameterChange,
     'live_set appointed_device'
@@ -367,10 +372,20 @@ function onParameterChange(args: IdObserverArg) {
   }
   //log('PARAMIDS ' + JSON.stringify(paramIds))
 
+  if (state.deviceWatcher.id !== state.currDeviceId) {
+    // changed device, reset bank
+    state.currBank = 1
+    state.currDeviceId = state.deviceWatcher.id
+  }
+
   state.devicePath = api.unquotedpath
-  state.currBank = 1
   state.bankParamArr = getBankParamArr(paramIds, deviceType, api)
   state.numBanks = state.bankParamArr.length
+
+  if (state.currBank > state.numBanks) {
+    state.currBank = state.numBanks
+  }
+
   //log('STATE CHECK ' + JSON.stringify(state))
   sendCurrBank()
 }
