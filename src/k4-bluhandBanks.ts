@@ -27,6 +27,7 @@ let paramNameToIdx: RecordNameToIdx = null
 const state = {
   devicePath: null as string,
   onOffWatcher: null as LiveAPI,
+  paramsWatcher: null as LiveAPI,
   currBank: 1,
   numBanks: 1,
   bankParamArr: [] as BluhandBank[],
@@ -218,11 +219,11 @@ function sendCurrBank() {
     return
   }
   const bluBank = state.bankParamArr[currBankIdx]
-  //log('MADE IT ' + JSON.stringify(bluBank))
   outlet(OUTLET_OSC, ['/bTxtCurrBank', bluBank.name])
   while (bluBank.paramIdxArr.length < 16) {
     bluBank.paramIdxArr.push(-1)
   }
+  //log('MADE IT ' + JSON.stringify(bluBank))
   bluBank.paramIdxArr.forEach((paramIdx, idx) => {
     outlet(OUTLET_MSGS, ['target', idx + 1])
     outlet(OUTLET_MSGS, ['paramIdx', paramIdx])
@@ -293,6 +294,15 @@ function gotoTrack(trackIdStr: string) {
   api.set('selected_track', ['id', trackId])
 }
 
+function init() {
+  state.paramsWatcher = new LiveAPI(
+    onParameterChange,
+    'live_set appointed_device'
+  )
+  state.paramsWatcher.mode = 1
+  state.paramsWatcher.property = 'parameters'
+}
+
 function toggleOnOff() {
   if (!state.onOffWatcher) {
     return
@@ -308,25 +318,26 @@ function updateDeviceOnOff(iargs: IArguments) {
   }
 }
 
-function id(deviceId: number) {
-  const api = new LiveAPI(noFn, 'id ' + deviceId)
-  api.id = deviceId
+function onParameterChange(args: IdObserverArg) {
+  //log('OPC ' + JSON.stringify(args))
+  const api = new LiveAPI(noFn, 'live_set appointed_device')
+  //log('APIID=' + api.id + ' ' + typeof api.id)
+  if (+api.id === 0) {
+    return
+  }
   const deviceType = api.get('class_name').toString()
-  //log(
-  //  JSON.stringify({
-  //    deviceType,
-  //    name: api.get('name').toString(),
-  //    type: api.type,
-  //  })
-  //)
-
   let paramIds = cleanArr(api.get('parameters'))
-  const onOffParamId = paramIds.shift() // remove device on/off
-  if (!state.onOffWatcher) {
-    state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId)
-    state.onOffWatcher.property = 'value'
+  if (paramIds.length === 0) {
+    //log('ZERO LEN PARAMIDS')
+    state.onOffWatcher && (state.onOffWatcher.id = 0)
   } else {
-    state.onOffWatcher.id = onOffParamId
+    const onOffParamId = paramIds.shift() // remove device on/off
+    if (!state.onOffWatcher) {
+      state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId)
+      state.onOffWatcher.property = 'value'
+    } else {
+      state.onOffWatcher.id = onOffParamId
+    }
   }
 
   const canHaveChains = parseInt(api.get('can_have_chains'))
