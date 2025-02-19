@@ -14,106 +14,7 @@ Also provides a high-resolution slider that operates on the currently selected p
 
 [Here is a playlist of videos featuring Knobbler4](https://www.youtube.com/playlist?list=PLqzTnRgmRId6cHDkhw_qqJL7dC67Qu440).
 
-## Installation
-
-### Requirements
-
-- Computer running Ableton Live 12
-  - Ensure "Local Network" permissions are granted to Ableton Live. See [Troubleshooting](TROUBLESHOOTING.md) for more details.
-- iPad or Android tablet running [TouchOSC](https://hexler.net/touchosc#get)
-  - Ensure "Local Network" permissions are granted to TouchOSC. See [Troubleshooting](TROUBLESHOOTING.md) for more details.
-
-### Steps
-
-_(If, after following the steps below, you are having troubles, then see the [Troubleshooting](TROUBLESHOOTING.md) page.)_
-
-1. Download the .zip file from the latest [release](https://github.com/zsteinkamp/m4l-Knobbler4/releases)
-1. Unzip the file
-1. Drag the `Knobbler4.amxd` file to Live's User Library
-1. Add Knobbler4 to a MIDI/Instrument track in your Live Set
-1. Copy the `Knobbler4.tosc` (or `Knobbler4-with-bluhand.tosc`) file to your tablet (e.g. with AirDrop)
-1. Configure TouchOSC on the tablet to talk OSC to your computer. (NOTE: If you want to connect over USB, see the [instructions here](USB.md).)
-   ![Ports](images/ports.png)
-   - In TouchOSC on the tablet, click the Chain icon in the toolbar
-   - Select "OSC" in the left-side menu
-   - Click "Browse" under Connection 1
-   - You should see your computer's hostname followed by "Knobbler4"
-     - If your computer's hostname does not appear, see [Troubleshooting](TROUBLESHOOTING.md).
-   - Select that item, then select the IPv4 address in the sub-menu (e.g. 10.1.1.1:2346)
-     ![Connection Selection](images/touchosc-connect-1.png)
-   - Set the "Receive Port" to 2347. This is the port that TouchOSC on the tablet listens on.
-     ![Connection Selection](images/touchosc-connect-2.png)
-   - Press `Done` in the upper-right
-1. In the TouchOSC toolbar, press the "Play" (triangle) icon to toggle out of Editor mode.
-1. Back in Knobbler, click "Rescan Net".
-1. Your tablet should show up in the drop-down below. Select it, and you should be in business!
-   ![Select iPad](images/ipad-connect.png)
-   - If the tablet does not show up, see [Troubleshooting](TROUBLESHOOTING.md).
-
-_NOTE: You **MUST** have a control surface configured in Ableton Live. If you do, then you will see the "Blue Hand" icon in the title bar of the selected device._
-
-![Blue Hand Icon](images/blue-hand.png)
-
-If you don't see it, see instructions in the [Troubleshooting](TROUBLESHOOTING.md) document to fix that.
-
-## Usage
-
-### Mapping Parameters
-
-1. Select any parameter in Ableton Live by clicking on it. A border or corners of a border will appear around the object, e.g. "Frequency" below...
-
-   <img alt="Selected Parameter" src="images/selected-param.png" style="width: 384"/>
-
-2. Touch any unmapped slider on the tablet screen.
-3. Voila!
-
-### Unmapping Parameters
-
-1. Touch the `X` icon in the upper-left corner of the tablet screen. The sliders will all turn into red rectangles.
-2. Touch a red rectangle to unmap the parameter.
-3. Touch the `X` icon again to leave unmapping mode.
-
-### Bluhand
-
-Ableton Live uses a blue hand icon to indicate which device is currently under control of a control surface.
-
-   <img alt="Selected device" src="images/bluhand-device.jpg" style="width: 384"/>
-
-If you use the `Knobbler4-with-Bluhand.tosc` TouchOSC layout on your tablet, then you can use the `Bluhand` tab to access all of the parameters the currently selected device offers.
-
-   <img alt="Device parameters on iPad" src="images/bluhand-ipad.jpg" style="width: 384"/>
-
-If the current device has more than 16 parameters, then you can use the `<<<` and `>>>` controls in the upper-right of the Bluhand tab to access different banks / pages of parameters.
-
-HOT TIP: You can assign a keystroke to a device. This lets you access all of a device's parameters on the tablet with a single keystroke. To do this:
-
-- Press Cmd-K
-- Select the device you want to assign
-- Press the key you want to use to focus that device
-  ![Key mapping](images/key-mapping.png)
-- Press Cmd-K to exit mapping mode
-  Now, with TouchOSC on the Bluhand tab, you can press a single key (e.g. "k" for your kickdrum) and access all of its parameters on the tablet.
-  ![Jump to device](images/key-device.jpg)
-
-NOTE: If you do not see the Blue Hand icon on the current device, then go to the Ableton Live settings and configure any control surface to connect any input port. You may need to configure an IAC MIDI port in the Audio MIDI Setup app if on a Mac.
-
-### Double-tap Default
-
-Double-tap any slider to return the parameter to its default value.
-
-### Jump to Track
-
-Tap a track name on one of the Knobbler tabs to navigate to that track in Live.
-
-### Current Param Slider
-
-Along the bottom of the tablet screen is a horizontal slider that is used to control the currently selected parameter in your Live Set. This parameter does not have to be mapped to a slider. You can use that slider to control the paramter with a high degree of accuracy.
-
-### Toggle Record Enable
-
-Recording automation is sometimes frustrating, especially in MIDI tracks since you cannot disable recording easily. I created this feature so that I could easily record and overdub automation without recording into or changing anything about MIDI clips.
-
-The Toggle Record Enable button gives you a way to easily disable and re-enable MIDI or audio recording in the currently selected track. The input settings are retained when recording is disabled.
+## [Knobbler Documentation Site](https://plugins.steinkamp.us/m4l-Knobbler4)
 
 ## Changelog
 
@@ -142,10 +43,6 @@ The Toggle Record Enable button gives you a way to easily disable and re-enable 
 - 2024-10-12 [v3](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v3/Knobbler4-v3.zip) - Fix bug related to slider 25 masquerading as slider 15; Typography refinement in the .tosc file; Consolidate back to a single `Knobbler4.tosc` file (Bluhand is back, baby!); Fix value display in Bluhand if the value was a bare number; Fix bug with changing devices in Bluhand if you were not on bank 1, the display would be incorrect. _NOTE: Use the Files app on the iPad to delete the `.tosc` files before updating with the new version from here._
 - 2024-09-22 [v2](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v2/Knobbler4-v2.zip) - Re-adds Bluhand functionality, double-tap a slider to return to the default value. Make sure you update the `.tosc` files on your iPad when downloading this update!
 - 2024-09-08 [v1](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v1/Knobbler4-v1.zip) - Initial release.
-
-## OSC API
-
-Knobbler uses the standard OSC protocol to communicate between the Max for Live device and TouchOSC on your iPad or other tablet. If you would like to develop your own TouchOSC template, or create an alternative interface (e.g. hardware!) then have a look at the [OSC API specs here](./OSC-API.md).
 
 ## Development
 

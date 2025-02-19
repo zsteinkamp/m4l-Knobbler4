@@ -64,7 +64,7 @@ You can use the app Protokol on your tablet (from the same people who make Touch
 
 ![Blue Hand Icon](images/blue-hand.png)
 
-If you do not see the Blue Hand, then you will need to set up a "dummy" control surface in order for the Bluhand portion of Knobbler to work. To do this, you can open the settings in Live and switch to the Link, Tempo & MIDI tab. Chooose any control surface from the list and assign its input to the IAC driver.
+If you do not see the Blue Hand, then you will need to set up a "dummy" control surface in order for the Bluhand portion of Knobbler to work. To do this, you can open the settings in Live and switch to the Link, Tempo & MIDI tab. Chooose any supported control surface from the list ("ADVANCE" is a good choice) and assign its input to the IAC driver. The full list of tested control surfaces is available in [control-surfaces.txt](control-surfaces.txt).
 
 ![Control surface setup](images/control-surface-setup.png)
 
