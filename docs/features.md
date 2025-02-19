@@ -12,7 +12,7 @@ Read all about Knobbler's features in detail here.
 
 ### Knobbler Pages
 
-![Unmapping Shortcuts](images/ipad-knobbler.png)
+![Unmapping Shortcuts](images/ipad-with-none.png)
 
 This was Knobbler's first feature -- as a page of sliders that you can map to whatever you like. If you'd like to read the history of Knobbler, [check it out!](https://steinkamp.us/posts/2022-03-16-knobbler)
 
