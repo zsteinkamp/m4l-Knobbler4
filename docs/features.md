@@ -1,14 +1,6 @@
 ## Features
 
-Read all about Knobbler's features in detail here.
-
-- [Knobbler Pages](#knobbler-pages)
-- [Bluhand Page](#bluhand-page)
-- [Device Shortcuts](#device-shortcuts)
-- [Navigation](#navigation)
-- [Channel Strip](#channel-strip)
-- [Toolbar](#toolbar)
-- [Setup Page](#setup-page)
+Read all about Knobbler's features in detail here. You can use the navigation on the right to jump to different parts of this long document.
 
 ### Knobbler Pages
 
