@@ -12,8 +12,6 @@ Read all about Knobbler's features in detail here.
 
 ### Knobbler Pages
 
-[Back to top...](#)
-
 ![Unmapping Shortcuts](images/ipad-knobbler.png)
 
 This was Knobbler's first feature -- as a page of sliders that you can map to whatever you like. If you'd like to read the history of Knobbler, [check it out!](https://steinkamp.us/posts/2022-03-16-knobbler)
@@ -58,8 +56,6 @@ All sliders in Knobbler respond to a double-tap by resetting the parameter to it
 
 ### Bluhand Page
 
-[Back to top...](#)
-
 ![Bluhand Page](images/ipad-bluhand-pink.png)
 
 Bluhand gives you a parameter-focused view of the currently selected device.
@@ -92,8 +88,6 @@ Then go to a Knobbler page. All of the sliders will be highlighted in green. Tap
 
 ### Device Shortcuts
 
-[Back to top...](#)
-
 Toward the top of the Knobbler and Bluhand pages, there are eight buttons that you can use to instantly jump to the most important devices in your Live Set.
 
 ![Device Shortcuts](images/ipad-shortcuts.png)
@@ -118,8 +112,6 @@ Regardless of whether you are on a Bluhand or Knobbler page, tapping a shortcut 
 
 ### Navigation
 
-[Back to top...](#)
-
 ![Navigation](images/ipad-with-nav.png)
 
 Move around your Live Set with more speed and ease than ever before!
@@ -135,8 +127,6 @@ Sometimes track colors or names may get out of sync. Tap the Refresh button in t
 ![Navigation](images/ipad-toolbar-refresh.png)
 
 ### Channel Strip
-
-[Back to top...](#)
 
 ![Channel Strip Mixer](images/ipad-with-mixer.png)
 
@@ -185,8 +175,6 @@ If you select the Main track, the `A`/`B` buttons are replaced with a crossfader
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
 
 ### Toolbar
-
-[Back to top...](#)
 
 ![Toolbar](images/ipad-toolbar.png)
 
@@ -269,8 +257,6 @@ These buttons allow you to navigate to locators in your Live Set. The beginning 
 Toggles the display of the Navigation widget on the right side of the screen. You can also swipe in from the side to show it, and swipe from its left edge to hide it.
 
 ### Setup Page
-
-[Back to top...](#)
 
 This is the page where you will tell Knobbler how to find its counterpart on your computer. Knobbler advertises itself on your network, so setup should be easy.
 
