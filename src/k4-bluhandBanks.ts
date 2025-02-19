@@ -28,7 +28,6 @@ const state = {
   devicePath: null as string,
   onOffWatcher: null as LiveAPI,
   paramsWatcher: null as LiveAPI,
-  deviceWatcher: null as LiveAPI,
   currDeviceId: 0 as number,
   currBank: 1,
   numBanks: 1,
@@ -198,7 +197,7 @@ function getBankParamArr(
     ret.push(row)
   })
 
-  //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
+  //log('PARAMARRFINAL ' + JSON.stringify(ret))
   return ret
 }
 
@@ -214,9 +213,9 @@ function sendBankNames() {
 
 function sendCurrBank() {
   //log('SEND CURR BANK ' + JSON.stringify(state))
-  const currBankIdx = state.currBank - 1
+  const currBankIdx = Math.max(0, state.currBank - 1)
   if (!state.bankParamArr || !state.bankParamArr[currBankIdx]) {
-    //log('EARLY')
+    //log('EARLY ' + JSON.stringify(state.bankParamArr) + ' ' + currBankIdx)
     sendBankNames()
     return
   }
@@ -297,9 +296,6 @@ function gotoTrack(trackIdStr: string) {
 }
 
 function init() {
-  state.deviceWatcher = new LiveAPI(noFn, 'live_set appointed_device')
-  state.deviceWatcher.mode = 1
-
   state.paramsWatcher = new LiveAPI(
     onParameterChange,
     'live_set appointed_device'
@@ -324,6 +320,9 @@ function updateDeviceOnOff(iargs: IArguments) {
 }
 
 function onParameterChange(args: IdObserverArg) {
+  if (args[0].toString() !== 'parameters') {
+    return
+  }
   //log('OPC ' + JSON.stringify(args))
   const api = new LiveAPI(noFn, 'live_set appointed_device')
   //log('APIID=' + api.id + ' ' + typeof api.id)
@@ -372,10 +371,10 @@ function onParameterChange(args: IdObserverArg) {
   }
   //log('PARAMIDS ' + JSON.stringify(paramIds))
 
-  if (state.deviceWatcher.id !== state.currDeviceId) {
+  if (state.paramsWatcher.id !== state.currDeviceId) {
     // changed device, reset bank
     state.currBank = 1
-    state.currDeviceId = state.deviceWatcher.id
+    state.currDeviceId = state.paramsWatcher.id
   }
 
   state.devicePath = api.unquotedpath

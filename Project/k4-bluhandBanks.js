@@ -26,7 +26,6 @@ var state = {
     devicePath: null,
     onOffWatcher: null,
     paramsWatcher: null,
-    deviceWatcher: null,
     currDeviceId: 0,
     currBank: 1,
     numBanks: 1,
@@ -174,7 +173,7 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         //log('ROW ' + JSON.stringify(row))
         ret.push(row);
     });
-    //log('PARAMARRFINAL ' + JSON.stringify(paramArr))
+    //log('PARAMARRFINAL ' + JSON.stringify(ret))
     return ret;
 }
 function sendBankNames() {
@@ -187,9 +186,9 @@ function sendBankNames() {
 }
 function sendCurrBank() {
     //log('SEND CURR BANK ' + JSON.stringify(state))
-    var currBankIdx = state.currBank - 1;
+    var currBankIdx = Math.max(0, state.currBank - 1);
     if (!state.bankParamArr || !state.bankParamArr[currBankIdx]) {
-        //log('EARLY')
+        //log('EARLY ' + JSON.stringify(state.bankParamArr) + ' ' + currBankIdx)
         sendBankNames();
         return;
     }
@@ -262,8 +261,6 @@ function gotoTrack(trackIdStr) {
     api.set('selected_track', ['id', trackId]);
 }
 function init() {
-    state.deviceWatcher = new LiveAPI(consts_1.noFn, 'live_set appointed_device');
-    state.deviceWatcher.mode = 1;
     state.paramsWatcher = new LiveAPI(onParameterChange, 'live_set appointed_device');
     state.paramsWatcher.mode = 1;
     state.paramsWatcher.property = 'parameters';
@@ -282,6 +279,9 @@ function updateDeviceOnOff(iargs) {
     }
 }
 function onParameterChange(args) {
+    if (args[0].toString() !== 'parameters') {
+        return;
+    }
     //log('OPC ' + JSON.stringify(args))
     var api = new LiveAPI(consts_1.noFn, 'live_set appointed_device');
     //log('APIID=' + api.id + ' ' + typeof api.id)
@@ -325,10 +325,10 @@ function onParameterChange(args) {
         }
     }
     //log('PARAMIDS ' + JSON.stringify(paramIds))
-    if (state.deviceWatcher.id !== state.currDeviceId) {
+    if (state.paramsWatcher.id !== state.currDeviceId) {
         // changed device, reset bank
         state.currBank = 1;
-        state.currDeviceId = state.deviceWatcher.id;
+        state.currDeviceId = state.paramsWatcher.id;
     }
     state.devicePath = api.unquotedpath;
     state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
