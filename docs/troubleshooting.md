@@ -32,9 +32,9 @@ On the Mac, ensure `Ableton Live` is given permission to browse the local networ
 
 ![Mac Local Network Settings](images/mac-local-network.png)
 
-On iOS, go to `Settings` .. `Apps` .. `TouchOSC`, and ensure its `Local Network` switch is enabled.
+On iOS, go to `Settings` .. `Apps` .. `Knobbler`, and ensure its `Local Network` switch is enabled.
 
-![iOS Local Network Settings](images/ios-local-network.png).
+![iOS Local Network Settings](images/ios-local-network.png)
 
 You may need to restart the apps or machines on the various sides of the connection for the changes to actually take effect.
 
@@ -48,17 +48,11 @@ This indicates there is a problem with network data going from the computer to t
 
 First, try clicking `Rescan Network` and choosing your tablet from the dropdown. If this fixes the problem, then it points to a prior incorrect value in the Hostname or Port fields that is now fixed.
 
-If that does not work, then check to see if any other apps may be running on the tablet that could interfere with TouchOSC receiving data. Most likely this would be the app Protokol (mentioned below) used to debug the connection. If it is left running, it will eat all the network messages destined for TouchOSC. You will need to restart TouchOSC after closing Protokol.
+If that does not work, then check to see if any other apps may be running on the tablet that could interfere with Knobbler receiving data. Most likely this would be the app Protokol (mentioned below) used to debug the connection. If it is left running, it will eat all the network messages destined for TouchOSC. You will need to restart Knobbler after closing Protokol.
 
-If that still does not fix it, then in TouchOSC, ensure that you have the correct receive port number (2347) entered in the Knobbler4 device in Ableton Live.
+If the port is correct, then the last thing to try is to use the iPad's IP address instead of its hostname in the Knobbler device configuration. To see the iPad's IP address, go to the WiFi settings and click the information icon next to your WiFi network.
 
-If the port is correct, then the last thing to try is to use the tablet's IP address instead of its hostname in the Knobbler device configuration. To see the tablet's IP address, you can click the "(i)" icon in the OSC Connection Settings page.
-
-![(i) icon](images/touchosc-info.png)
-
-Then note the IPv4 address next to `en0` or `en1`.
-
-![IP Addresses](images/touchosc-ip.png)
+![(i) icon](images/ipad-ip-addr.jpeg)
 
 Use that IP address in the Host field in the Knobbler device instead of the tablet hostname.
 
@@ -78,17 +72,17 @@ If you open Knobbler in Max to edit, you must completely quit out of Max in orde
 
 You may also use Protokol to troubleshoot OSC issues, and if that is left open then it will keep eating those OSC packets.
 
-If no other applications are open, then ensure the connection settings in TouchOSC on the tablet exactly follow the instructions in the the [README.md](README.md), including browsing for the computer hostname and port with Knobbler open in your Live Set.
+If no other applications are open, then ensure the connection settings in Knobbler on the tablet exactly follow the instructions in the the [Setup Instructions](setup.md), including browsing for the computer hostname and port with Knobbler open in your Live Set.
 
 You may need to use the IP address of your computer rather than browsing for it. You can get that from your computer's network settings. Make sure to get the address of the interface that you are actually using to connect to the tablet, e.g. wired Ethernet or WiFi.
 
-You can use the app Protokol on your tablet (from the same people who make TouchOSC) to observe OSC messages. You will need to close TouchOSC before opening Protokol, and vice-versa for things to work properly.
+You can use the app Protokol on your tablet (from the same people who make TouchOSC) to observe OSC messages. You will need to close Knobbler before opening Protokol, and vice-versa for things to work properly.
 
 ### PROBLEM: I do not have a Blue Hand icon showing up in the currently selected device's title bar.
 
 ![Blue Hand Icon](images/blue-hand.png)
 
-If you do not see the Blue Hand, then you will need to set up a "dummy" control surface in order for the Bluhand portion of Knobbler to work. To do this, you can open the settings in Live and switch to the Link, Tempo & MIDI tab. Chooose any supported control surface from the list ("ADVANCE" is a good choice) and assign its input to the IAC driver. The full list of tested control surfaces is available in [control-surfaces.txt](control-surfaces.txt).
+If you do not see the Blue Hand, then you will need to set up a "dummy" control surface in order for the Bluhand portion of Knobbler to work. To do this, you can open the settings in Live and switch to the Link, Tempo & MIDI tab. Chooose any supported control surface from the list ("ADVANCE" is a good choice) and assign its input to the IAC driver. The full list of tested control surfaces is available in [control-surfaces.md](control-surfaces.md).
 
 ![Control surface setup](images/control-surface-setup.png)
 
