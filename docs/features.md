@@ -54,6 +54,10 @@ To unmap a Knobbler slider, tap the Unmap button in the [Toolbar](#toolbar). All
 
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
 
+#### Select Track
+
+If you tap the track name under the Knobbler slider, that will select that track in Live, which will update the channel strip on the left side of the screen. This is a convenient way to access the mixer controls for a parameter you have mapped.
+
 ### Bluhand Page
 
 ![Bluhand Page](images/ipad-bluhand-pink.png)
