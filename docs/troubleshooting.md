@@ -1,6 +1,6 @@
 ## Troubleshooting
 
-### PROBLEM: I see a warning about control surfaces in the Knobbler device in Ableton Live. Halp!
+#### PROBLEM: I see a warning about control surfaces in the Knobbler device in Ableton Live. Halp!
 
 Knobbler relies on some functionality of Ableton Live that it only enables when there is a Control Surface configured. To remedy the situation:
 
@@ -12,7 +12,7 @@ Knobbler relies on some functionality of Ableton Live that it only enables when 
 
 Note that many other choices in the Control Surfaces menu also work, but not all of them. The full list of working control surfaces can be found [here](https://raw.githubusercontent.com/zsteinkamp/m4l-Knobbler4/refs/heads/main/control_surfaces.txt). Look for the ones with a "*" next to them.
 
-### PROBLEM: I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
+#### PROBLEM: I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
 
 The Knobbler app and device are constantly being improved. By virtue of being an iPad app, the Knobbler app is likely set to auto-update. It is likely that a future version of the Knobbler iPad app requires functionality provided by a future version of the Knobbler device. 
 
@@ -24,7 +24,7 @@ You can use the "Swap Device" function in Ableton live to switch from an older v
 
 ![Device Swap Button](images/device-swap.png)
 
-### PROBLEM: I am unable to successfully browse my network for my computer / tablet.
+#### PROBLEM: I am unable to successfully browse my network for my computer / tablet.
 
 This generally indicates either a problem with application permissions (more common) or WiFi network setup (less common).
 
@@ -42,7 +42,7 @@ If both sides have Local Network discovery enabled, then it's possible that the 
 
 Check in your network equipment's configuration interfaces around the terms "Bonjour", "Zeroconf", "uPnP", "mDNS", "Multicast DNS", or "Service Auto-Discovery". Some routers have options to disable this traffic, and many people don't know what it is and disable it.
 
-### PROBLEM: I can move sliders on the tablet screen and see parameters in Ableton Live update, but no labels, colors, or values are shown on the tablet.
+#### PROBLEM: I can move sliders on the tablet screen and see parameters in Ableton Live update, but no labels, colors, or values are shown on the tablet.
 
 This indicates there is a problem with network data going from the computer to the tablet.
 
@@ -62,7 +62,7 @@ Then click "Refresh iPad" to see if that fixes it.
 
 If you've tried all that, please send screen shots or screen recordings to zack@steinkamp.us :)
 
-### PROBLEM: Things are updating on the tablet, but moving the sliders on the tablet does not change or map any any parameters.
+#### PROBLEM: Things are updating on the tablet, but moving the sliders on the tablet does not change or map any any parameters.
 
 This indicates a problem in network communication from the tablet to Ableton Live.
 
@@ -78,7 +78,7 @@ You may need to use the IP address of your computer rather than browsing for it.
 
 You can use the app Protokol on your tablet (from the same people who make TouchOSC) to observe OSC messages. You will need to close Knobbler before opening Protokol, and vice-versa for things to work properly.
 
-### PROBLEM: I do not have a Blue Hand icon showing up in the currently selected device's title bar.
+#### PROBLEM: I do not have a Blue Hand icon showing up in the currently selected device's title bar.
 
 ![Blue Hand Icon](images/blue-hand.png)
 
@@ -90,6 +90,6 @@ If you do not have the IAC driver set up, then open the Audio & Midi Setup app, 
 
 ![IAC Driver configuration](images/iac-driver.png)
 
-### PROBLEM: HALP! Nothing above covers what I'm experiencing!
+#### PROBLEM: HALP! Nothing above covers what I'm experiencing!
 
 Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, events from your childhood that relate, etc. zack@steinkamp.us
