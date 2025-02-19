@@ -1,3 +1,10 @@
+## Control Surfaces
+
+The following is a list of all control surfaces, as of Live 12.1.
+
+Items with a `*` next to them are ones that work properly with Knobbler.
+
+```
 * ADVANCE
   AIRA MX 1
 * Akai Force MPC
@@ -126,3 +133,4 @@
 * UC33e
 * VCM600
 * ZERO8
+```

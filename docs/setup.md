@@ -20,3 +20,5 @@
 Next, check out all of Knobbler's [Features](./features.md).
 
 If you're having trouble, then check out [Troubleshooting](./troubleshooting.md).
+
+Perhaps you want to connect over [USB](./USB.md)?
