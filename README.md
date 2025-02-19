@@ -18,6 +18,7 @@ Also provides a high-resolution slider that operates on the currently selected p
 
 ## Changelog
 
+- 2025-02-19 [v26](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v26/Knobbler4-v26.zip) - ACTUALLY Fix bug related to adding/removing VST parameters - ended up nicely simplifying parameter logic in Bluhand.
 - 2025-02-19 [v25](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v25/Knobbler4-v25.zip) - Fix bug related to adding/removing VST parameters - ended up nicely simplifying parameter logic in Bluhand
 - 2025-02-18 [v24](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v24/Knobbler4-v24.zip) - Watch `has_audio_output` more closely to enable/disable mixer controls appropriately. Thanks Andrew Norris for the bug report! Check out Andrew's stuff at https://andrewnorris.uk/
 - 2025-02-16 [v23](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v23/Knobbler4-v23.zip) - Detect control surfaces and show a warning if not present (required for Bluhand); Overhaul refresh system to be snappier and not get lost; Fix bug in exclusive arm code that would try to arm un-armable tracks and generate a warning in the Max console.
