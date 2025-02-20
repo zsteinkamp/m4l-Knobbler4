@@ -1,5 +1,7 @@
 ## Knobbler4 - The Best Parameter Control Surface For Ableton Live
 
+> NOTE: The native Knobbler app for iPad is currently being Beta tested. You can still download Knobbler and use the included TouchOSC template, but many features listed here do not work with it. If you would like to be a beta tester for the iPad app, send me an email! [zack@steinkamp.us](mailto:zack@steinkamp.us)
+
 ![Overall view](images/overall.jpg)
 
 Knobbler is an iPad app that communicates with a Max device that you add to your Live Set. It requires an iPad and a computer running Live 12 Standard or Live 12 Suite, able to communicate directly with one another over a network.
@@ -7,8 +9,6 @@ Knobbler is an iPad app that communicates with a Max device that you add to your
 ![Big Picture Diagram](images/overview-app-device.png)
 
 Knobbler keeps you in the creative moment in your musicmaking by giving you fingertip access to the tracks, devices, and parameters in your Live Sets that matter the most.
-
-<< Download unit ... device button | app store link >>
 
 It's an auto-labeling, auto-coloring, bidirectional control surface that you can customize for each song. Pick back up right where you left off with perfect recall, so you can work on several songs at once, each with their own ideal layout, saved inside the song file itself.
 
