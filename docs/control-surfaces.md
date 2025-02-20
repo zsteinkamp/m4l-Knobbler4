@@ -2,7 +2,7 @@
 
 The following is a list of all control surfaces, as of Live 12.1.
 
-Items with a `*` next to them are ones that work properly with Knobbler.
+Items with a `*` next to them are ones that work properly to enable the "Blue Hand" in Ableton Live, which is required by Knobbler. You do not have to own one of these control surfaces. One only needs to be selected in Ableton Live's MIDI settings page.
 
 ```
 * ADVANCE
