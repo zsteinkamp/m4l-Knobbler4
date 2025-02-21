@@ -1,0 +1,14 @@
+- fname: index.md
+  title: Main Page
+- fname: features.md
+  title: Feature Walkthrough
+- fname: setup.md
+  title: Setup
+- fname: troubleshooting.md
+  title: Troubleshooting
+- fname: OSC-API.md
+  title: OSC-API
+- fname: USB.md
+  title: USB Connection
+- fname: control-surfaces.md
+  title: Control Surfaces
