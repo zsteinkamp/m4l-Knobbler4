@@ -1,6 +1,6 @@
 ## Knobbler4 - The Best Parameter Control Surface For Ableton Live
 
-> NOTE: The native Knobbler app for iPad is currently being Beta tested. You can still download Knobbler and use the included TouchOSC template, but many features listed here do not work with it. If you would like to be a beta tester for the iPad app, send me an email! [zack@steinkamp.us](mailto:zack@steinkamp.us)
+## [Get Knobbler in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
 
 ![Overall view](images/overall.jpg)
 
@@ -27,10 +27,11 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 
 ### Download
 
-Download the latest Knobbler device for Ableton Live.
-<< download button >>
 Visit the Apple App Store on your iPad to purchase and install the Knobbler app. Just search for Knobbler or click this button.
-<< app store button >>
+
+## [Get Knobbler in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+
+Then download the latest Knobbler device for Ableton Live. Click the button below...
 
 ### Installation
 

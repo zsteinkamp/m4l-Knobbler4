@@ -6,6 +6,8 @@
   - (I like to dedicate a track to it and keep it out of the way)
 - Open the Knobbler app on your iPad
   ![Start the app](images/knobbler-icon-finger.jpg)
+- If it's the first time, make sure to allow Knobbler to find devices on your network. This is how it will find its companion device in your Ableton Live set.
+    ![Allow Permissions](images/ipad_allow_network.jpg)
 - Click "Rescan Net" in the Knobbler device in Ableton Live.
   ![Click Rescan Net](images/device-rescan.png)
 - Choose your iPad from the drop-down list.
