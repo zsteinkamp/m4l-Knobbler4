@@ -16,7 +16,9 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 
 ### Main Features
 
-- Two pages of **16 assignable, auto-labeling, auto-coloring faders** that always show you exactly what is happening in your music.
+- Two pages of **16 assignable, auto-labeling, auto-coloring, high-resolution faders** that always show you exactly what is happening in your music.
+  * Knobbler faders have 500 steps of resolution, compared with 127 steps for most MIDI controllers
+  * Knobbler runs over Wi-Fi, eliminating > 2ms MIDI latency
 - A page dedicated to **all of the parameters** of the currently selected device. Parameter banks are labeled, and just a touch away.
 - Eight **device shortcut buttons** to jump directly to the most important devices in your Live Set.
 - An innovative **navigation system** that lets you dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
