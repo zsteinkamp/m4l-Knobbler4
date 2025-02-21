@@ -36,6 +36,11 @@ On iOS, go to `Settings` .. `Apps` .. `Knobbler`, and ensure its `Local Network`
 
 ![iOS Local Network Settings](images/ios-local-network.png)
 
+On Windows, the settings look like this:
+![Windows Settings 1](images/windows_firewall_1.png)
+![Windows Settings 2](images/windows_firewall_2.png)
+![Windows Settings 3](images/windows_firewall_3.png)
+
 You may need to restart the apps or machines on the various sides of the connection for the changes to actually take effect.
 
 If both sides have Local Network discovery enabled, then it's possible that the WiFi or other network equipment has this kind of discovery blocked.
