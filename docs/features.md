@@ -2,6 +2,21 @@
 
 Read all about Knobbler's features in detail here. You can use the navigation on the right to jump to different parts of this long document.
 
+### Knobbler Knobs
+
+Knobbler's knobs are pretty self-explanatory. They're very high-resolution (500 steps) and operate at a latency that is lower than MIDI. The full multitouch capabilities of the iPad are at your fingertips.
+
+#### Knob States
+
+![Knob States](images/knob-states.png)
+
+Knobbler knobs indicate their state with a dot in the upper left corner, similar to how it is presented in Ableton Live.
+
+* Green Dot = The parameter is controlled by another device, or is mapped to a macro knob. The slider will also be greyed out.
+* Red Dot = Automation has been recorded for this parameter.
+* Grey Dot = Automation has been overridden for this parameter (i.e. automation was recorded, but the parameter was changed manually.) Tap the Re-Enable Automation button in the toolbar to re-enable the automation.
+    ![Re-enable automation](images/ipad-toolbar-reenable.png)
+
 ### Knobbler Pages
 
 ![Unmapping Shortcuts](images/ipad-with-none.png)
