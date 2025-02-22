@@ -64,6 +64,10 @@ Sets the value of Slot N, as a float between 0 and 1, inclusive. Knobbler will t
 
 Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet.
 
+#### `/bBankN`
+
+Go to bank index N.
+
 #### `/bbankPrev`
 
 If not looking at the first bank, has the effect of switching the Tablet to the previous bank of parameters. Causes a full update of slot names and values.
@@ -72,11 +76,11 @@ If not looking at the first bank, has the effect of switching the Tablet to the 
 
 If more banks of parameters are available, then switch the Tablet to the next bank of parameters. Causes a full update of slot names and values.
 
-### `/shortcutNMap`
+#### `/shortcutNMap`
 
 For shortcut button N, will map the button if it is not yet mapped. If mapped already, it will focus the Live UI on the mapped device.
 
-### `/shortcutNUnmap`
+#### `/shortcutNUnmap`
 
 For shortcut button N, will unmap the button.
 
@@ -119,6 +123,140 @@ Updates the shortcut button N to the given color value (RRGGBBAA).
 
 Updates the device name displayed beneath the shortcut button N.
 
+## Navigation
+
+### Knobbler4 to Tablet
+
+#### `/nav/currTrackId {integer}`
+
+Live object ID number for the currently selected track.
+
+#### `/nav/tracks`
+
+JSON-stringified array of track array objects. See the source file `src/consts.ts` to see the field ID definitions. e.g.
+
+```
+[
+  [0,3,"1-MIDI","FFF034",0],
+  [0,10,"2-MIDI","99724B",0],
+  [0,11,"3-Audio","F7F47C",0],
+  [0,12,"4-Audio","FFA529",0],
+  [2,13,"A-Reverb","10A4EE",0],
+  [2,14,"B-Delay","00BFAF",0],
+  [3,15,"Main","19E9FF",0]
+]
+```
+
+#### `/nav/currDeviceId {integer}`
+
+Live object ID number for the currently selected device, a.k.a. `live_set appointed_device`. This only has a value if a compatible control surface is chosen in the MIDI settings.
+
+#### `/nav/devices` 
+
+JSON-stringified array of device objects. See the source file `src/consts.ts` to see the field ID definitions. e.g.
+
+```
+[
+  [5,8,"Knobbler4-v26","FFF034",0]
+]
+```
+
+## Mixer / Channel Strip
+
+### Knobbler4 to Tablet
+
+#### `/mixer/returnTrackColors {string}`
+
+JSON-stringified list of color values for the 12 possible return tracks. e.g. 
+
+```
+[
+  "#10A4EE","#00BFAF","#990000",
+  "#990000","#990000","#990000",
+  "#990000","#990000","#990000",
+  "#990000","#990000","#990000"
+]
+```
+
+#### `/mixer/type {type}`
+
+Indicates the type of track - normal, group, return, or main. See `src/consts.ts` for the track type definitions.
+
+#### `/mixer/recordArm { 0 | 1 }`
+
+Indicates whether the track is armed for recording.
+
+#### `/mixer/inputEnabled { 0 | 1 }`
+
+Indicates whether input is enabled for the current track.
+
+#### `/mixer/vol { 0., 1. }`
+
+The track volume level. `0.85` is 0.0db.
+
+#### `/mixer/pan { -1., 1. }`
+
+The pan position for the track.
+
+#### `/mixer/crossfader { 0 | 1 | 2 }`
+
+The crossfader value for the track. 0 = A, 1 = none, 2 = B.
+
+#### `/mixer/sendN {float}`
+
+The amount to send to return track N, with N being a value from 1-12.
+
+#### `/mixer/numSends {0-12}`
+
+The number of return tracks.
+
+
+#### `/mixer/xFadeA { 0 | 1 }`
+#### `/mixer/xFadeB { 0 | 1 }`
+Indicates if the A or B crossfader buttons are selected for the given track.
+
+#### `/mixer/solo { 0 | 1 }`
+Indicates the Solo state of the track.
+
+#### `/mixer/mute { 0 | 1 }`
+Indicates the Mute state of the track.
+
+#### `/mixer/trackColor { colorInteger }`
+The color of the current track, in integer form ((r<<16) + (g<<8) + b)
+
+#### `/mixer/hasOutput 0{ 0 | 1 }`
+Indicates whether the track has audio output. Controls the enabled state of some mixer components, e.g. the volume slider.
+
+#### `/mixer/volStr {string}`
+String value of the current track volume level. Displayed above the volume slider in the mixer.
+
+
+## Toolbar
+
+### Knobbler4 to Tablet
+
+#### `/arrangementOverdub { 0 | 1 }`
+Indicates if the arrangement overdub button is engaged.
+
+#### `/sessionRecord { 0 | 1 }`
+Indicates if the session automation record button is engaged.
+
+#### `/reEnableAutomationEnabled { 0 | 1 }`
+Indicates that automation has been overridden, and is available to be re-enabled.
+
+#### `/metronome { 0 | 1 }`
+Indicates whether the metronome is enabled.
+
+#### `/isPlaying { 0 | 1 }`
+Indicates if Live is playing.
+
+#### `/recordMode { 0 | 1 }`
+Indicates if Live is recording.
+
+#### `/tempo {float}`
+The current tempo value.
+
+
 ## Misc
 
 ### Knobbler4 to Tablet
@@ -131,11 +269,12 @@ Response to a `/syn` message to facilitate, e.g. for feedback in setting up the 
 
 Update the "active" state of the Toggle Input interface button.
 
+#### `/numControlSurfaces {integer}`
+
+Number of detected control surfaces.
+
+
 ### Tablet to Knobbler4
-
-#### `/currentParam {float}`
-
-Sets the currently selected parameter in the Live Set (usually indicated with lines at the corners of the parameter) to the given value.
 
 #### `/toggleInput {0,1}`
 
