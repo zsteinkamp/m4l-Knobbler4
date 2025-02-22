@@ -182,14 +182,18 @@ function onCurrDeviceChange(val: IdObserverArg) {
   }
   const newId = cleanArr(val)[0]
   if (state.currDeviceId === newId) {
-    return
-  }
-  if (newId === 0) {
-    // if no device is selected, null out the devices list
-    outlet(OUTLET_OSC, ['/nav/devices', JSON.stringify([])])
+    // same
     return
   }
   state.currDeviceId = newId
+  //log('DEVICE ID=' + newId + ' TRACKID=' + state.currTrackId)
+  if (parseInt(newId.toString()) === 0) {
+    // if no device is selected, null out the devices list
+    outlet(OUTLET_OSC, ['/nav/currDeviceId', -1])
+    //log('/nav/devices=' + JSON.stringify([]))
+    outlet(OUTLET_OSC, ['/nav/devices', JSON.stringify([])])
+    return
+  }
 
   //log('NEW CURR DEVICE ID=' + state.currDeviceId)
   outlet(OUTLET_OSC, ['/nav/currDeviceId', state.currDeviceId])
