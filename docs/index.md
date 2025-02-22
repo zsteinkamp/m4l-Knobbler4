@@ -2,7 +2,7 @@
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-<a href="https://apps.apple.com/us/app/knobbler/id6740183923"><img src="images/app-store.png" className="w-24" /></a>
+[Download Knobbler for your iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
 
 Knobbler is an iPad app that communicates with a Max device that you add to your Live Set. It requires an iPad and a computer running Live 12 Standard or Live 12 Suite, able to communicate directly with one another over a network.
 
