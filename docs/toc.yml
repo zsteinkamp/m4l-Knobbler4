@@ -8,6 +8,8 @@
   title: Troubleshooting
 - fname: __sep__
   title: ----------------Separator
+- fname: credits.md
+  title: Credits
 - fname: OSC-API.md
   title: OSC-API
 - fname: USB.md
