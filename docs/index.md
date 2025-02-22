@@ -1,8 +1,8 @@
 ## Knobbler4 - The Best Parameter Control Surface For Ableton Live
 
-## [Get Knobbler in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+<iframe width="560" height="315" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-![Overall view](images/overall.jpg)
+<a href="https://apps.apple.com/us/app/knobbler/id6740183923"><img src="images/app-store.png" style="max-width: 12em" /></a>
 
 Knobbler is an iPad app that communicates with a Max device that you add to your Live Set. It requires an iPad and a computer running Live 12 Standard or Live 12 Suite, able to communicate directly with one another over a network.
 
@@ -17,8 +17,8 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 ### Main Features
 
 - Two pages of **16 assignable, auto-labeling, auto-coloring, high-resolution faders** that always show you exactly what is happening in your music.
-  * Knobbler faders have 500 steps of resolution, compared with 127 steps for most MIDI controllers
-  * Knobbler runs over Wi-Fi, eliminating > 2ms MIDI latency
+  - Knobbler faders have 500 steps of resolution, compared with 127 steps for most MIDI controllers
+  - Knobbler runs over Wi-Fi, eliminating > 2ms MIDI latency
 - A page dedicated to **all of the parameters** of the currently selected device. Parameter banks are labeled, and just a touch away.
 - Eight **device shortcut buttons** to jump directly to the most important devices in your Live Set.
 - An innovative **navigation system** that lets you dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
@@ -29,9 +29,9 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 
 Visit the Apple App Store on your iPad to purchase and install the Knobbler app. Just search for Knobbler or click this button.
 
-## [Get Knobbler in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+<a href="https://apps.apple.com/us/app/knobbler/id6740183923"><img src="images/app-store.png" style="max-width: 12em" /></a>
 
-Then download the latest Knobbler device for Ableton Live. Click the button below...
+Then download the latest Knobbler device for Ableton Live. Click the blue device download button below...
 
 ### Installation
 
