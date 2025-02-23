@@ -2,6 +2,8 @@
 
 Read all about Knobbler's features in detail here. You can use the navigation on the right to jump to different parts of this long document.
 
+* [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
+
 ### Knobbler Knobs
 
 Knobbler's knobs are pretty self-explanatory. They're very high-resolution (500 steps) and operate at a latency that is lower than MIDI. The full multitouch capabilities of the iPad are at your fingertips.
