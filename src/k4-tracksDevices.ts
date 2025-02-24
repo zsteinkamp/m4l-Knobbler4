@@ -5,7 +5,6 @@ outlets = 2
 import { cleanArr, colorToString, logFactory, truncate } from './utils'
 import config from './config'
 import {
-  FIELD_ID,
   FIELD_INDENT,
   INLET_MSGS,
   MAX_NAME_LEN,
