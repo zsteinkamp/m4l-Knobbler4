@@ -309,26 +309,35 @@ function onCurrTrackChange(val) {
             var selfOrSiblingObj = trackTree[selfOrSiblingTrackId.toString()].obj;
             //log(' >>> SIB OBJ ' + JSON.stringify(selfOrSiblingObj))
             if (foundSelf) {
+                //log('ALREADY FOUND SELF id=' + selfOrSiblingTrackId)
                 ret.push(selfOrSiblingObj);
             }
             else {
+                //log('SPLICE unshift=' + unshiftCount + ' id=' + selfOrSiblingTrackId)
                 ret.splice(unshiftCount, 0, selfOrSiblingObj);
                 unshiftCount++;
             }
             if (selfOrSiblingTrackId === state.currTrackId) {
+                //log('FOUND SELF id=' + selfOrSiblingTrackId)
                 foundSelf = true;
             }
         }
+        //log('CURRENT STATE 1 ' + JSON.stringify(ret))
         // walk up hierarchy to root
         var lastTrackAncestorId = null;
         var currentTrackParentId = parentId;
+        //log('OUTSIDE parentId=' + parentId)
         while (parentId) {
             var parentNode = trackTree[parentId.toString()];
+            //log('INSIDE parentNode=' + JSON.stringify(parentNode))
             if (parentNode.parent === 0) {
                 // got to the top level -- we will add all top-level tracks below
+                //log('INSIDE BREAK')
+                lastTrackAncestorId = parentId;
                 break;
             }
             var parentObj = parentNode.obj;
+            //log('UNSHIFT HERE ' + JSON.stringify(parentObj))
             ret.unshift(parentObj);
             if (parentObj) {
                 //log(' >>> PARENT OBJ ' + JSON.stringify(parentObj))
@@ -336,6 +345,7 @@ function onCurrTrackChange(val) {
                 parentId = trackTree[parentId.toString()].parent;
             }
         }
+        //log('CURRENT STATE 2 ' + JSON.stringify(ret))
         // now get top-level tracks
         if (currentTrackParentId) {
             var foundAncestor = false;
@@ -345,12 +355,19 @@ function onCurrTrackChange(val) {
                 var topLevelObj = trackTree[topLevelTrackId.toString()].obj;
                 if (foundAncestor) {
                     ret.push(topLevelObj);
+                    //log('INSIDE PUSH ' + JSON.stringify(topLevelObj))
                 }
                 else {
                     ret.splice(unshiftCount, 0, topLevelObj);
                     unshiftCount++;
+                    //log('INSIDE SPLICE ' + JSON.stringify(topLevelObj))
                 }
+                //log(
+                //  'INSIDE TEST FOUND ANCESTOR ' +
+                //    JSON.stringify({ topLevelTrackId, lastTrackAncestorId })
+                //)
                 if (lastTrackAncestorId === topLevelTrackId) {
+                    //log('INSIDE TEST FOUND ANCESTOR TRUE')
                     foundAncestor = true;
                 }
             }
