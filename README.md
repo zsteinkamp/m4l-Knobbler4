@@ -1,6 +1,6 @@
 # Knobbler4
 
-Knobbler4 turns your iPad or Android tablet into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live. Add the Knobbler4 device to your Live Set and use your tablet to control devices and parameters.
+Knobbler4 turns your iPad (Android tablets soon) into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live. Add the Knobbler4 device to your Live Set and use your tablet to control devices and parameters.
 
 ![Knobbler4 in Action](images/external-with-hand.jpg)
 
@@ -10,7 +10,9 @@ Parameter mapping configuration is saved with your Live Set, so you can switch b
 
 Parameter sliders and values are updated in real time, with the same units (e.g. dB, ms, %) displayed as what you see in Live. Double tap a slider on the tablet to reset the parameter to its default value.
 
-Also provides a high-resolution slider that operates on the currently selected parameter in your Live Set, and a Record-Enable toggle switch to improve the process of overdubbing automation.
+Quickly see and navigate around your tracks, groups, racks, chains, and devices with a touch.
+
+Swipe out a channel strip to adjust the mixer settings of the currently selected track.
 
 [Here is a playlist of videos featuring Knobbler4](https://www.youtube.com/playlist?list=PLqzTnRgmRId6cHDkhw_qqJL7dC67Qu440).
 
