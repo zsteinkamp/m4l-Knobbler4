@@ -2,10 +2,12 @@
 
 <iframe width="100%" style="aspect-ratio: 16 / 9" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-* [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
-* [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
+- [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
+- [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
 
 [Download Knobbler for your iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+
+[Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
 
 Knobbler is an iPad app that communicates with a Max device that you add to your Live Set. It requires an iPad and a computer running Live 12 Standard or Live 12 Suite, able to communicate directly with one another over a network.
 
