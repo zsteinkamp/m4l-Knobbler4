@@ -264,7 +264,7 @@ function updateDeviceNav() {
 }
 function onCurrTrackChange(val) {
     if (val[0] !== 'id' && val[1].toString() !== 'id') {
-        log('Track change EARLY');
+        //log('Track change EARLY')
         return;
     }
     var newId = (0, utils_1.cleanArr)(val)[0];
@@ -273,7 +273,7 @@ function onCurrTrackChange(val) {
         return;
     }
     if (newId === 0) {
-        log('Track change ZERO');
+        //log('Track change ZERO')
         return;
     }
     state.currTrackId = newId;

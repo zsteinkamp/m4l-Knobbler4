@@ -302,7 +302,7 @@ function updateDeviceNav() {
 
 function onCurrTrackChange(val: IdObserverArg) {
   if (val[0] !== 'id' && val[1].toString() !== 'id') {
-    log('Track change EARLY')
+    //log('Track change EARLY')
     return
   }
   const newId = cleanArr(val)[0]
@@ -311,7 +311,7 @@ function onCurrTrackChange(val: IdObserverArg) {
     return
   }
   if (newId === 0) {
-    log('Track change ZERO')
+    //log('Track change ZERO')
     return
   }
   state.currTrackId = newId
