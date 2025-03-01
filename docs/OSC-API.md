@@ -1,4 +1,4 @@
-## OSC-API 
+## OSC-API
 
 This document exists to catalog the full set of OSC messages used for control and display between the Knobbler4 Max for Live device and a physical interface, such as an app or TouchOSC running on an iPad. Because the standard OSC protocol is used, you are free to develop alternative interfaces to interact with Knobbler4.
 
@@ -84,7 +84,6 @@ For shortcut button N, will map the button if it is not yet mapped. If mapped al
 
 For shortcut button N, will unmap the button.
 
-
 ### Knobbler4 to Tablet
 
 #### /bcurrDeviceName {string}
@@ -149,9 +148,9 @@ JSON-stringified array of track array objects. See the source file `src/consts.t
 
 #### /nav/currDeviceId {integer}
 
-Live object ID number for the currently selected device, a.k.a. `live_set appointed_device`. This only has a value if a compatible control surface is chosen in the MIDI settings.
+Live object ID number for the currently selected device.
 
-#### /nav/devices` 
+#### /nav/devices`
 
 JSON-stringified array of device objects. See the source file `src/consts.ts` to see the field ID definitions. e.g.
 
@@ -167,7 +166,7 @@ JSON-stringified array of device objects. See the source file `src/consts.ts` to
 
 #### /mixer/returnTrackColors {string}
 
-JSON-stringified list of color values for the 12 possible return tracks. e.g. 
+JSON-stringified list of color values for the 12 possible return tracks. e.g.
 
 ```
 [
@@ -210,52 +209,67 @@ The amount to send to return track N, with N being a value from 1-12.
 
 The number of return tracks.
 
-
 #### /mixer/xFadeA { 0 | 1 }
+
 #### /mixer/xFadeB { 0 | 1 }
+
 Indicates if the A or B crossfader buttons are selected for the given track.
 
 #### /mixer/solo { 0 | 1 }
+
 Indicates the Solo state of the track.
 
 #### /mixer/mute { 0 | 1 }
+
 Indicates the Mute state of the track.
 
 #### /mixer/trackColor { colorInteger }
+
 The color of the current track, in integer form ((r<<16) + (g<<8) + b)
 
-#### /mixer/hasOutput 0{ 0 | 1 }
+#### /mixer/hasOutput { 0 | 1 }
+
 Indicates whether the track has audio output. Controls the enabled state of some mixer components, e.g. the volume slider.
 
 #### /mixer/volStr {string}
+
 String value of the current track volume level. Displayed above the volume slider in the mixer.
 
+#### /track/isFrozen { 0 | 1 }
+
+Indicates whether the currently selected track is frozen.
 
 ## Toolbar
 
 ### Knobbler4 to Tablet
 
 #### /arrangementOverdub { 0 | 1 }
+
 Indicates if the arrangement overdub button is engaged.
 
 #### /sessionRecord { 0 | 1 }
+
 Indicates if the session automation record button is engaged.
 
 #### /reEnableAutomationEnabled { 0 | 1 }
+
 Indicates that automation has been overridden, and is available to be re-enabled.
 
 #### /metronome { 0 | 1 }
+
 Indicates whether the metronome is enabled.
 
 #### /isPlaying { 0 | 1 }
+
 Indicates if Live is playing.
 
 #### /recordMode { 0 | 1 }
+
 Indicates if Live is recording.
 
 #### /tempo {float}
-The current tempo value.
 
+The current tempo value.
 
 ## Misc
 
@@ -272,7 +286,6 @@ Update the "active" state of the Toggle Input interface button.
 #### /numControlSurfaces {integer}
 
 Number of detected control surfaces.
-
 
 ### Tablet to Knobbler4
 

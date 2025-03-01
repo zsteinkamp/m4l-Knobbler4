@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-03-01 [v29](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v29/Knobbler4-v29.amxd) - Eliminate the control surface requirement! More reliable navigation display.
 - 2025-02-24 [v28](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v28/Knobbler4-v28.amxd) - Fix bug where grouped tracks would be displayed at the end of the track list in the nav. Thanks Andrew C for the bug report.
 - 2025-02-22 [v27](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v27/Knobbler4-v27.amxd) - Fix bug related to navigating in tracks without devices. First release without TouchOSC template. Long live TouchOSC! All in on Knobbler for iPad now.
 - 2025-02-19 [v26](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v26/Knobbler4-v26.zip) - ACTUALLY Fix bug related to adding/removing VST parameters - ended up nicely simplifying parameter logic in Bluhand.
