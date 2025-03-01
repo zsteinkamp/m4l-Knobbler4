@@ -34,7 +34,6 @@ var state = {
     currDeviceWatcher: null,
     currTrackId: null,
     currTrackWatcher: null,
-    controlSurfaceWatcher: null,
 };
 // make a tree so we can get depth
 var getEmptyTreeNode = function () {
@@ -388,11 +387,6 @@ function onCurrTrackChange(val) {
     //log('/nav/tracks=' + JSON.stringify(ret))
     outlet(consts_1.OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)]);
 }
-function onControlSurfaceChange(val) {
-    var numControlSurfaces = (0, utils_1.cleanArr)(val).filter(function (e) { return e; }).length;
-    outlet(consts_1.OUTLET_OSC, ['/numControlSurfaces', numControlSurfaces]);
-    outlet(consts_1.OUTLET_MSGS, ['num_control_surfaces', numControlSurfaces]);
-}
 function init() {
     //log('TRACKS DEVICES INIT')
     state.track = { watch: null, tree: {}, last: null };
@@ -401,7 +395,6 @@ function init() {
     //state.device = { watch: null, last: null }
     state.currDeviceId = null;
     state.currTrackId = null;
-    state.controlSurfaceWatcher = null;
     // general purpose API obj to do lookups, etc
     state.api = new LiveAPI(consts_1.noFn, 'live_set');
     // set up watchers for each type, calls function to assemble and send OSC
@@ -421,12 +414,9 @@ function init() {
     state.currTrackWatcher = new LiveAPI(onCurrTrackChange, 'live_set view selected_track');
     state.currTrackWatcher.mode = 1;
     state.currTrackWatcher.property = 'id';
-    state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set appointed_device');
+    state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set view selected_track view selected_device');
     state.currDeviceWatcher.mode = 1;
     state.currDeviceWatcher.property = 'id';
-    state.controlSurfaceWatcher = new LiveAPI(onControlSurfaceChange, 'live_app');
-    state.controlSurfaceWatcher.mode = 1;
-    state.controlSurfaceWatcher.property = 'control_surfaces';
 }
 log('reloaded k4-tracksDevices');
 // NOTE: This section must appear in any .ts file that is directuly used by a

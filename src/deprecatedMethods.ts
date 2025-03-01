@@ -98,7 +98,10 @@ export function deprecatedTrackDelta(delta: -1 | 1) {
 }
 
 export function deprecatedDeviceDelta(delta: -1 | 1) {
-  const devObj = new LiveAPI(() => {}, 'live_set appointed_device')
+  const devObj = new LiveAPI(
+    () => {},
+    'live_set view selected_track view selected_device'
+  )
   if (devObj.id == 0) {
     return
   }

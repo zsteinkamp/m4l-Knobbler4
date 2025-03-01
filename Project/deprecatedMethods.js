@@ -102,7 +102,7 @@ function deprecatedTrackDelta(delta) {
 }
 exports.deprecatedTrackDelta = deprecatedTrackDelta;
 function deprecatedDeviceDelta(delta) {
-    var devObj = new LiveAPI(function () { }, 'live_set appointed_device');
+    var devObj = new LiveAPI(function () { }, 'live_set view selected_track view selected_device');
     if (devObj.id == 0) {
         return;
     }

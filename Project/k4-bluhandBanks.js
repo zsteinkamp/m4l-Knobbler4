@@ -261,7 +261,7 @@ function gotoTrack(trackIdStr) {
     api.set('selected_track', ['id', trackId]);
 }
 function init() {
-    state.paramsWatcher = new LiveAPI(onParameterChange, 'live_set appointed_device');
+    state.paramsWatcher = new LiveAPI(onParameterChange, 'live_set view selected_track view selected_device');
     state.paramsWatcher.mode = 1;
     state.paramsWatcher.property = 'parameters';
 }
@@ -283,7 +283,7 @@ function onParameterChange(args) {
         return;
     }
     //log('OPC ' + JSON.stringify(args))
-    var api = new LiveAPI(consts_1.noFn, 'live_set appointed_device');
+    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
     //log('APIID=' + api.id + ' ' + typeof api.id)
     if (+api.id === 0) {
         return;

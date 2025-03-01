@@ -298,7 +298,7 @@ function gotoTrack(trackIdStr: string) {
 function init() {
   state.paramsWatcher = new LiveAPI(
     onParameterChange,
-    'live_set appointed_device'
+    'live_set view selected_track view selected_device'
   )
   state.paramsWatcher.mode = 1
   state.paramsWatcher.property = 'parameters'
@@ -324,7 +324,10 @@ function onParameterChange(args: IdObserverArg) {
     return
   }
   //log('OPC ' + JSON.stringify(args))
-  const api = new LiveAPI(noFn, 'live_set appointed_device')
+  const api = new LiveAPI(
+    noFn,
+    'live_set view selected_track view selected_device'
+  )
   //log('APIID=' + api.id + ' ' + typeof api.id)
   if (+api.id === 0) {
     return
