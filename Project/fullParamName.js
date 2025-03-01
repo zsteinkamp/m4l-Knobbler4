@@ -14,8 +14,13 @@ function updateParamName(objId) {
     var nameArr = [];
     var counter = 0;
     var obj = new LiveAPI(function () { }, 'id ' + objId);
-    if (obj.id == 0) {
-        return consts_1.nullString;
+    if (+obj.id === 0) {
+        // no device selected, how about track?
+        obj.path = 'live_set view selected_track';
+        if (+obj.id === 0) {
+            return consts_1.nullString;
+        }
+        outlet(OUTLET_PARAM_NAME, obj.get('name').toString());
     }
     while (counter < 20) {
         if (obj.type === 'MixerDevice') {

@@ -19,8 +19,13 @@ function updateParamName(objId: string) {
   let counter = 0
   const obj = new LiveAPI(() => {}, 'id ' + objId)
 
-  if (obj.id == 0) {
-    return nullString
+  if (+obj.id === 0) {
+    // no device selected, how about track?
+    obj.path = 'live_set view selected_track'
+    if (+obj.id === 0) {
+      return nullString
+    }
+    outlet(OUTLET_PARAM_NAME, obj.get('name').toString())
   }
 
   while (counter < 20) {

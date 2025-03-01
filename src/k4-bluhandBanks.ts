@@ -266,10 +266,34 @@ function unfoldParentTracks(objId: number) {
   }
 }
 
+function getParentTrackForDevice(deviceId: number) {
+  const util = new LiveAPI(noFn, 'id ' + deviceId)
+  const counter = 0
+  while (counter < 20) {
+    util.id = util.get('canonical_parent')[1]
+    //log('PARENT TYPE=' + util.type)
+    if (util.type === 'Track') {
+      return +util.id
+    }
+  }
+  return 0
+}
+
 function gotoDevice(deviceIdStr: string) {
   const deviceId = parseInt(deviceIdStr)
-  unfoldParentTracks(deviceId)
+  if (deviceId === 0) {
+    return
+  }
   const api = getLiveSetViewApi()
+
+  // make sure the track is selected
+  const trackId = getParentTrackForDevice(deviceId)
+  if (trackId === 0) {
+    log('no track for device ' + deviceId)
+    return
+  }
+  gotoTrack(trackId.toString())
+
   //log('GOTO DEVICE ' + deviceId)
   api.call('select_device', ['id', deviceId])
 }
@@ -289,6 +313,7 @@ function gotoChain(chainIdStr: string) {
 }
 
 function gotoTrack(trackIdStr: string) {
+  //log('gotoTrack ' + trackIdStr)
   const trackId = parseInt(trackIdStr)
   unfoldParentTracks(trackId)
   const api = getLiveSetViewApi()

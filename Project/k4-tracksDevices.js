@@ -34,6 +34,9 @@ var state = {
     currDeviceWatcher: null,
     currTrackId: null,
     currTrackWatcher: null,
+    currTrackNameWatcher: null,
+    currTrackColorWatcher: null,
+    ignoreTrackColorNameChanges: true,
 };
 // make a tree so we can get depth
 var getEmptyTreeNode = function () {
@@ -155,8 +158,11 @@ function onCurrDeviceChange(val) {
         return;
     }
     state.currDeviceId = newId;
+    updateDeviceNav();
+}
+function updateDeviceNav() {
     //log('DEVICE ID=' + newId + ' TRACKID=' + state.currTrackId)
-    if (parseInt(newId.toString()) === 0) {
+    if (+state.currDeviceId === 0) {
         // if no device is selected, null out the devices list
         outlet(consts_1.OUTLET_OSC, ['/nav/currDeviceId', -1]);
         //log('/nav/devices=' + JSON.stringify([]))
@@ -257,9 +263,8 @@ function onCurrDeviceChange(val) {
     outlet(consts_1.OUTLET_OSC, ['/nav/devices', JSON.stringify(ret)]);
 }
 function onCurrTrackChange(val) {
-    //log('TRACK CHANGE ' + val)
-    if (val[0] !== 'id') {
-        //log('Track change EARLY')
+    if (val[0] !== 'id' && val[1].toString() !== 'id') {
+        log('Track change EARLY');
         return;
     }
     var newId = (0, utils_1.cleanArr)(val)[0];
@@ -268,13 +273,42 @@ function onCurrTrackChange(val) {
         return;
     }
     if (newId === 0) {
-        //log('Track change ZERO')
+        log('Track change ZERO');
         return;
     }
     state.currTrackId = newId;
     var currTrackIdStr = state.currTrackId.toString();
-    //log('NEW CURR TRACK ID =' + state.currTrackId)
-    outlet(consts_1.OUTLET_OSC, ['/nav/currTrackId', state.currTrackId]);
+    // ignore the burst of name/color changes
+    state.ignoreTrackColorNameChanges = true;
+    var t = new Task(function () {
+        state.ignoreTrackColorNameChanges = false;
+    });
+    t.schedule(500);
+    // color and name watchers
+    if (!state.currTrackColorWatcher) {
+        state.currTrackColorWatcher = new LiveAPI(onCurrTrackColorChange, 'id ' + state.currTrackId);
+        state.currTrackColorWatcher.property = 'color';
+    }
+    else {
+        state.currTrackColorWatcher.id = +currTrackIdStr;
+    }
+    if (!state.currTrackNameWatcher) {
+        state.currTrackNameWatcher = new LiveAPI(onCurrTrackNameChange, 'id ' + state.currTrackId);
+        state.currTrackNameWatcher.property = 'name';
+    }
+    else {
+        state.currTrackNameWatcher.id = +currTrackIdStr;
+    }
+    updateTrackNav();
+}
+function updateTrackNav() {
+    var currTrackIdStr = state.currTrackId.toString();
+    // Rebuild trees on track nav
+    var utilObj = new LiveAPI(consts_1.noFn, 'live_set');
+    state.track.tree = makeTrackTree('track', consts_1.TYPE_TRACK, (0, utils_1.cleanArr)(utilObj.get('tracks')));
+    state.return.tree = makeTrackTree('return', consts_1.TYPE_RETURN, (0, utils_1.cleanArr)(utilObj.get('return_tracks')));
+    utilObj.path = 'live_set';
+    state.main.tree = makeTrackTree('main', consts_1.TYPE_MAIN, (0, utils_1.cleanArr)(utilObj.get('master_track')));
     var trackTree = state.track.tree;
     var returnTree = state.return.tree;
     var mainTree = state.main.tree;
@@ -386,6 +420,45 @@ function onCurrTrackChange(val) {
     ret.push(mainTree[mainId.toString()].obj);
     //log('/nav/tracks=' + JSON.stringify(ret))
     outlet(consts_1.OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)]);
+    //log('NEW CURR TRACK ID =' + state.currTrackId)
+    outlet(consts_1.OUTLET_OSC, ['/nav/currTrackId', state.currTrackId]);
+    // ensure a device is selected if one exists
+    utilObj.path = 'live_set view selected_track view selected_device';
+    //log('HERE ' + utilObj.id)
+    if (+utilObj.id === 0) {
+        utilObj.path = 'live_set view selected_track';
+        //log('TACKNAME ' + utilObj.get('name'))
+        var devices = (0, utils_1.cleanArr)(utilObj.get('devices'));
+        //log('DEVICES ' + devices)
+        if (devices.length > 0) {
+            utilObj.path = 'live_set view';
+            utilObj.call('select_device', 'id ' + devices[0]);
+        }
+    }
+}
+function refreshNav() {
+    updateTrackNav();
+    updateDeviceNav();
+}
+function onCurrTrackColorChange(args) {
+    if (state.ignoreTrackColorNameChanges) {
+        return;
+    }
+    if (args[0] !== 'color') {
+        return;
+    }
+    //log('CURR TRACK COLOR CHANGE ' + args)
+    refreshNav();
+}
+function onCurrTrackNameChange(args) {
+    if (state.ignoreTrackColorNameChanges) {
+        return;
+    }
+    if (args[0] !== 'name') {
+        return;
+    }
+    //log('CURR TRACK NAME CHANGE ' + args)
+    updateTrackNav();
 }
 function init() {
     //log('TRACKS DEVICES INIT')
@@ -411,6 +484,8 @@ function init() {
     //)
     //state.device.watch.mode = 1 // follow path, not object
     //state.device.watch.property = 'devices'
+    state.currTrackColorWatcher = null;
+    state.currTrackNameWatcher = null;
     state.currTrackWatcher = new LiveAPI(onCurrTrackChange, 'live_set view selected_track');
     state.currTrackWatcher.mode = 1;
     state.currTrackWatcher.property = 'id';

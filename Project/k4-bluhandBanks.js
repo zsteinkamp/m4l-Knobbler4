@@ -234,10 +234,31 @@ function unfoldParentTracks(objId) {
         counter++;
     }
 }
+function getParentTrackForDevice(deviceId) {
+    var util = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
+    var counter = 0;
+    while (counter < 20) {
+        util.id = util.get('canonical_parent')[1];
+        //log('PARENT TYPE=' + util.type)
+        if (util.type === 'Track') {
+            return +util.id;
+        }
+    }
+    return 0;
+}
 function gotoDevice(deviceIdStr) {
     var deviceId = parseInt(deviceIdStr);
-    unfoldParentTracks(deviceId);
+    if (deviceId === 0) {
+        return;
+    }
     var api = getLiveSetViewApi();
+    // make sure the track is selected
+    var trackId = getParentTrackForDevice(deviceId);
+    if (trackId === 0) {
+        log('no track for device ' + deviceId);
+        return;
+    }
+    gotoTrack(trackId.toString());
     //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
@@ -255,6 +276,7 @@ function gotoChain(chainIdStr) {
     }
 }
 function gotoTrack(trackIdStr) {
+    //log('gotoTrack ' + trackIdStr)
     var trackId = parseInt(trackIdStr);
     unfoldParentTracks(trackId);
     var api = getLiveSetViewApi();
