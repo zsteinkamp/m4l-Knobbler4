@@ -162,7 +162,7 @@ JSON-stringified array of device objects. See the source file `src/consts.ts` to
 
 #### /hideChains {deviceID}
 
-If collapsing a chain device, this message is sent to Live so that it can hide the chain devices display in that device. Otherwise every chain will eventually be fully expanded and that gets overwhelming / messy.
+If collapsing a rack, this message is sent to Live so that it can hide the chain devices display in that rack. Otherwise every rack will eventually be fully expanded and that gets overwhelming / messy.
 
 ## Mixer / Channel Strip
 
