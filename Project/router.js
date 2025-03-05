@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 8;
+outlets = 9;
 var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
@@ -13,7 +13,8 @@ var OUTLET_LOOP = 3;
 var OUTLET_REFRESH = 4;
 var OUTLET_ACK = 5;
 var OUTLET_MIXER = 6;
-var OUTLET_UNKNOWN = 7;
+var OUTLET_PAGE = 7;
+var OUTLET_UNKNOWN = 8;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -22,6 +23,7 @@ setoutletassist(OUTLET_LOOP, 'Messages for Loop Checker');
 setoutletassist(OUTLET_REFRESH, 'Messages for Refresh');
 setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn');
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer');
+setoutletassist(OUTLET_PAGE, 'Messages for Page');
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
@@ -377,6 +379,24 @@ var ROUTER = [
         prefix: '/mixer/crossfader',
         handler: stdVal,
         msg: 'handleCrossfader',
+    },
+    {
+        outlet: OUTLET_PAGE,
+        prefix: '/page/knobbler1',
+        handler: bareMsg,
+        msg: 'knobbler1',
+    },
+    {
+        outlet: OUTLET_PAGE,
+        prefix: '/page/knobbler2',
+        handler: bareMsg,
+        msg: 'knobbler2',
+    },
+    {
+        outlet: OUTLET_PAGE,
+        prefix: '/page/bluhand',
+        handler: bareMsg,
+        msg: 'bluhand',
     },
 ];
 ROUTER.sort(function (a, b) {

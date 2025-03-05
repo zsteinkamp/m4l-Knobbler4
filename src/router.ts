@@ -3,7 +3,7 @@ import { logFactory } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 8
+outlets = 9
 
 const log = logFactory(config)
 
@@ -15,7 +15,8 @@ const OUTLET_LOOP = 3
 const OUTLET_REFRESH = 4
 const OUTLET_ACK = 5
 const OUTLET_MIXER = 6
-const OUTLET_UNKNOWN = 7
+const OUTLET_PAGE = 7
+const OUTLET_UNKNOWN = 8
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -25,6 +26,7 @@ setoutletassist(OUTLET_LOOP, 'Messages for Loop Checker')
 setoutletassist(OUTLET_REFRESH, 'Messages for Refresh')
 setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn')
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer')
+setoutletassist(OUTLET_PAGE, 'Messages for Page')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 
 type RouterItem = {
@@ -390,6 +392,24 @@ const ROUTER: RouterItem[] = [
     prefix: '/mixer/crossfader',
     handler: stdVal,
     msg: 'handleCrossfader',
+  },
+  {
+    outlet: OUTLET_PAGE,
+    prefix: '/page/knobbler1',
+    handler: bareMsg,
+    msg: 'knobbler1',
+  },
+  {
+    outlet: OUTLET_PAGE,
+    prefix: '/page/knobbler2',
+    handler: bareMsg,
+    msg: 'knobbler2',
+  },
+  {
+    outlet: OUTLET_PAGE,
+    prefix: '/page/bluhand',
+    handler: bareMsg,
+    msg: 'bluhand',
   },
 ]
 ROUTER.sort((a, b) => {
