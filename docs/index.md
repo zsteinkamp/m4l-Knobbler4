@@ -9,7 +9,7 @@
 
 [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
 
-Knobbler is an iPad app that communicates with a Max device that you add to your Live Set. It requires an iPad and a computer running Live 12 Standard or Live 12 Suite, able to communicate directly with one another over a network.
+Knobbler is an iPad app that communicates with a Max device that you add to your Live Set. It requires an iPad and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a network.
 
 ![Big Picture Diagram](images/overview-app-device.png)
 
