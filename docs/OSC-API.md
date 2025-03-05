@@ -160,6 +160,10 @@ JSON-stringified array of device objects. See the source file `src/consts.ts` to
 ]
 ```
 
+#### /hideChains {deviceID}
+
+If collapsing a chain device, this message is sent to Live so that it can hide the chain devices display in that device. Otherwise every chain will eventually be fully expanded and that gets overwhelming / messy.
+
 ## Mixer / Channel Strip
 
 ### Knobbler4 to Tablet
@@ -282,9 +286,10 @@ Response to a `/syn` message to facilitate, e.g. for feedback in setting up the 
 #### /page/X
 
 Sent when one of the tabs in the Max for Live device is clicked. `X` can be:
-* knobbler1
-* knobbler2
-* bluhand
+
+- knobbler1
+- knobbler2
+- bluhand
 
 #### /toggleInput {0, 1}
 

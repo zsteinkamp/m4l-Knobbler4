@@ -262,6 +262,18 @@ function gotoDevice(deviceIdStr) {
     //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
+function hideChains(deviceId) {
+    //log('HIDE CHAINS ' + JSON.stringify(deviceId))
+    var obj = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
+    if (+obj.id === 0) {
+        return;
+    }
+    if (+obj.get('can_have_chains')) {
+        // have to go to the 'view' child of the object to set chain device visibility
+        obj.goto('view');
+        obj.set('is_showing_chain_devices', 0);
+    }
+}
 function gotoChain(chainIdStr) {
     var chainId = parseInt(chainIdStr);
     //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)

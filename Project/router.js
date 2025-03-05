@@ -398,6 +398,12 @@ var ROUTER = [
         handler: bareMsg,
         msg: 'bluhand',
     },
+    {
+        outlet: OUTLET_BLUHAND,
+        prefix: '/hideChains',
+        handler: stdVal,
+        msg: 'hideChains',
+    },
 ];
 ROUTER.sort(function (a, b) {
     return a.prefix.length > b.prefix.length ? -1 : 1;

@@ -298,6 +298,19 @@ function gotoDevice(deviceIdStr: string) {
   api.call('select_device', ['id', deviceId])
 }
 
+function hideChains(deviceId: string) {
+  //log('HIDE CHAINS ' + JSON.stringify(deviceId))
+  const obj = new LiveAPI(noFn, 'id ' + deviceId)
+  if (+obj.id === 0) {
+    return
+  }
+  if (+obj.get('can_have_chains')) {
+    // have to go to the 'view' child of the object to set chain device visibility
+    obj.goto('view')
+    obj.set('is_showing_chain_devices', 0)
+  }
+}
+
 function gotoChain(chainIdStr: string) {
   const chainId = parseInt(chainIdStr)
   //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
