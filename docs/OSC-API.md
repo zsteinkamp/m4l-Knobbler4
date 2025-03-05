@@ -279,13 +279,16 @@ The current tempo value.
 
 Response to a `/syn` message to facilitate, e.g. for feedback in setting up the tablet-computer connection.
 
+#### /page/X
+
+Sent when one of the tabs in the Max for Live device is clicked. `X` can be:
+* knobbler1
+* knobbler2
+* bluhand
+
 #### /toggleInput {0, 1}
 
 Update the "active" state of the Toggle Input interface button.
-
-#### /numControlSurfaces {integer}
-
-Number of detected control surfaces.
 
 ### Tablet to Knobbler4
 
