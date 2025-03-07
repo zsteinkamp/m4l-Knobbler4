@@ -1,6 +1,6 @@
 ## Troubleshooting
 
-#### PROBLEM: I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
+#### I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
 
 Simply download the latest version of the device and install it as you normally would, by dragging it to the User Library in Ableton Live.
 
@@ -14,7 +14,7 @@ The Knobbler app and device are constantly being improved. By virtue of being an
 
 When the Knobbler device first communicates with the iPad, it sends a version number. The iPad app has a minimum device version coded into it, and it will prompt you if it is communicating with a device that is too old.
 
-#### PROBLEM: I am unable to successfully browse my network for my computer / tablet.
+#### I am unable to successfully browse my network for my computer / tablet.
 
 This generally indicates either a problem with application permissions (more common) or WiFi network setup (less common).
 
@@ -37,7 +37,7 @@ If both sides have Local Network discovery enabled, then it's possible that the 
 
 Check in your network equipment's configuration interfaces around the terms "Bonjour", "Zeroconf", "uPnP", "mDNS", "Multicast DNS", or "Service Auto-Discovery". Some routers have options to disable this traffic, and many people don't know what it is and disable it.
 
-#### PROBLEM: I can move sliders on the tablet screen and see parameters in Ableton Live update, but no labels, colors, or values are shown on the tablet.
+#### I can move sliders on the tablet screen and see parameters in Ableton Live update, but no labels, colors, or values are shown on the tablet.
 
 This indicates there is a problem with the computer-to-tablet network connection.
 
@@ -59,7 +59,7 @@ Then click "Refresh iPad" to see if that fixes it.
 
 If you've tried all that, please send screen shots or screen recordings to zack@steinkamp.us :)
 
-#### PROBLEM: Things are updating on the tablet, but moving the sliders on the tablet does not change or map any any parameters.
+#### Things are updating on the tablet, but moving the sliders on the tablet does not change or map any any parameters.
 
 This indicates a problem in network communication from the tablet to Ableton Live.
 
@@ -77,7 +77,11 @@ Furthermore, ensure that the Firewall settings for your computer or network are 
 
 You may need to use the IP address of your computer rather than browsing for it. You can get that from your computer's network settings. Make sure to get the address of the interface that you are actually using to connect to the tablet, e.g. wired Ethernet or WiFi.
 
-#### PROBLEM: The ports in the device and in the app are different. What gives?
+#### When I navigate into rack chains, the chains and devices stay hidden in Live.
+
+If you want to have the Live UI follow what you are seeing in Knobbler's navigation panel, you will need to configure a Control Surface in Live'a MIDI settings. Choose the "ADVANCE" control surface from the dropdown, and nested devices will be displayed as you navigate.
+
+#### The ports in the device and in the app are different. What gives?
 
 This is by design.
 
@@ -87,6 +91,6 @@ The Knobbler Max for Live device listens on UDP port 2346. The Knobbler app on y
 
 So, the Max for Live device should have "2346" in its port box, the app should have "2347" in its port box.
 
-#### PROBLEM: HALP! Nothing above covers what I'm experiencing!
+#### HALP! Nothing above covers what I'm experiencing!
 
 Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, screenshots (there are never too many screenshots), events from your childhood that relate, etc. zack@steinkamp.us
