@@ -6,6 +6,8 @@
   title: Setup
 - fname: troubleshooting.md
   title: Troubleshooting
+- fname: updating.md
+  title: Updating the Max for Live Device
 - fname: __sep__
   title: ----------------Separator
 - fname: credits.md
