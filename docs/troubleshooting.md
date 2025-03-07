@@ -2,15 +2,17 @@
 
 #### PROBLEM: I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
 
-The Knobbler app and device are constantly being improved. By virtue of being an iPad app, the Knobbler app is likely set to auto-update. It is possible that a future version of the Knobbler iPad app requires functionality provided by a future version of the Knobbler Ableton Livedevice.
-
-When the Knobbler device first communicates with the iPad, it sends a version number. The iPad app has a minimum device version coded into it, and it will prompt you if it is communicating with a device that is too old.
-
 Simply download the latest version of the device and install it as you normally would, by dragging it to the User Library in Ableton Live.
 
 You can use the "Swap Device" function in Ableton live to switch from an older version to a newer version, with all of your mapping preserved.
 
 ![Device Swap Button](images/device-swap.png)
+
+Swap to the newer version and save your Live Set.
+
+The Knobbler app and device are constantly being improved. By virtue of being an iPad app, the Knobbler app is likely set to auto-update. It is possible that a future version of the Knobbler iPad app requires functionality provided by a future version of the Knobbler Ableton Live device.
+
+When the Knobbler device first communicates with the iPad, it sends a version number. The iPad app has a minimum device version coded into it, and it will prompt you if it is communicating with a device that is too old.
 
 #### PROBLEM: I am unable to successfully browse my network for my computer / tablet.
 
@@ -75,6 +77,16 @@ Furthermore, ensure that the Firewall settings for your computer or network are 
 
 You may need to use the IP address of your computer rather than browsing for it. You can get that from your computer's network settings. Make sure to get the address of the interface that you are actually using to connect to the tablet, e.g. wired Ethernet or WiFi.
 
+#### PROBLEM: The ports in the device and in the app are different. What gives?
+
+This is by design.
+
+![Ports](images/network-ports.png)
+
+The Knobbler Max for Live device listens on UDP port 2346. The Knobbler app on your tablet listens on UDP port 2347. This is intentional, since while developing Knobbler I will run both on one computer (the app in a simulator), and you cannot have two things using the same port.
+
+So, the Max for Live device should have "2346" in its port box, the app should have "2347" in its port box.
+
 #### PROBLEM: HALP! Nothing above covers what I'm experiencing!
 
-Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, events from your childhood that relate, etc. zack@steinkamp.us
+Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, screenshots (there are never too many screenshots), events from your childhood that relate, etc. zack@steinkamp.us
