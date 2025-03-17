@@ -1,4 +1,4 @@
-import { cleanArr, logFactory } from './utils'
+import { cleanArr, isDeviceSupported, logFactory } from './utils'
 import config from './config'
 import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
 import { deviceParamMapFor } from './k4-deviceParamMaps'
@@ -124,6 +124,7 @@ function getBankParamArr(
 
   // deviceParamMap is custom or crafted parameter organization
   //log('BBANKS ' + deviceType)
+  //log('BBANKS INFO ' + deviceObj.info.toString())
   const deviceParamMap = deviceParamMapFor(deviceType)
 
   if (!deviceParamMap) {
@@ -268,12 +269,15 @@ function unfoldParentTracks(objId: number) {
 
 function getParentTrackForDevice(deviceId: number) {
   const util = new LiveAPI(noFn, 'id ' + deviceId)
-  const counter = 0
-  while (counter < 20) {
-    util.id = util.get('canonical_parent')[1]
-    //log('PARENT TYPE=' + util.type)
-    if (util.type === 'Track') {
-      return +util.id
+  if (isDeviceSupported(util)) {
+    let counter = 0
+    while (counter < 20) {
+      util.id = util.get('canonical_parent')[1]
+      //log('PARENT TYPE=' + util.type)
+      if (util.type === 'Track') {
+        return +util.id
+      }
+      counter++
     }
   }
   return 0
@@ -290,10 +294,9 @@ function gotoDevice(deviceIdStr: string) {
   const trackId = getParentTrackForDevice(deviceId)
   if (trackId === 0) {
     log('no track for device ' + deviceId)
-    return
+  } else {
+    gotoTrack(trackId.toString())
   }
-  gotoTrack(trackId.toString())
-
   //log('GOTO DEVICE ' + deviceId)
   api.call('select_device', ['id', deviceId])
 }
@@ -304,7 +307,7 @@ function hideChains(deviceId: string) {
   if (+obj.id === 0) {
     return
   }
-  if (+obj.get('can_have_chains')) {
+  if (isDeviceSupported(obj) && +obj.get('can_have_chains')) {
     // have to go to the 'view' child of the object to set chain device visibility
     obj.goto('view')
     obj.set('is_showing_chain_devices', 0)
@@ -370,8 +373,9 @@ function onParameterChange(args: IdObserverArg) {
   if (+api.id === 0) {
     return
   }
-  const deviceType = api.get('class_name').toString()
-  let paramIds = cleanArr(api.get('parameters'))
+  const isSupported = isDeviceSupported(api)
+  const deviceType = isSupported ? api.get('class_name').toString() : api.type
+  let paramIds = isSupported ? cleanArr(api.get('parameters')) : []
   if (paramIds.length === 0) {
     //log('ZERO LEN PARAMIDS')
     state.onOffWatcher && (state.onOffWatcher.id = 0)
@@ -385,7 +389,8 @@ function onParameterChange(args: IdObserverArg) {
     }
   }
 
-  const canHaveChains = parseInt(api.get('can_have_chains'))
+  const canHaveChains =
+    isDeviceSupported(api) && parseInt(api.get('can_have_chains'))
   //log('CAN_HAVE_CHAINS: ' + canHaveChains)
   if (canHaveChains) {
     // see if we should slice off some macros

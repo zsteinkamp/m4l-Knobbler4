@@ -40,6 +40,10 @@ export function truncate(str: string, len: number) {
   return str.substring(0, len - 2) + '…'
 }
 
+export function isDeviceSupported(obj: LiveAPI) {
+  return !!obj.info.match(/property/)
+}
+
 const tasks: Record<string, MaxTask[]> = {}
 export function debouncedTask(
   key: 'sendVal' | 'allowUpdates' | 'allowMapping' | 'allowUpdateFromOsc',

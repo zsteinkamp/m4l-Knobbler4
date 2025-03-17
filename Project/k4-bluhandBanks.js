@@ -104,6 +104,7 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     }
     // deviceParamMap is custom or crafted parameter organization
     //log('BBANKS ' + deviceType)
+    //log('BBANKS INFO ' + deviceObj.info.toString())
     var deviceParamMap = (0, k4_deviceParamMaps_1.deviceParamMapFor)(deviceType);
     if (!deviceParamMap) {
         var paramArr = getBasicParamArr(paramIds);
@@ -236,12 +237,15 @@ function unfoldParentTracks(objId) {
 }
 function getParentTrackForDevice(deviceId) {
     var util = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
-    var counter = 0;
-    while (counter < 20) {
-        util.id = util.get('canonical_parent')[1];
-        //log('PARENT TYPE=' + util.type)
-        if (util.type === 'Track') {
-            return +util.id;
+    if ((0, utils_1.isDeviceSupported)(util)) {
+        var counter = 0;
+        while (counter < 20) {
+            util.id = util.get('canonical_parent')[1];
+            //log('PARENT TYPE=' + util.type)
+            if (util.type === 'Track') {
+                return +util.id;
+            }
+            counter++;
         }
     }
     return 0;
@@ -256,9 +260,10 @@ function gotoDevice(deviceIdStr) {
     var trackId = getParentTrackForDevice(deviceId);
     if (trackId === 0) {
         log('no track for device ' + deviceId);
-        return;
     }
-    gotoTrack(trackId.toString());
+    else {
+        gotoTrack(trackId.toString());
+    }
     //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
@@ -268,7 +273,7 @@ function hideChains(deviceId) {
     if (+obj.id === 0) {
         return;
     }
-    if (+obj.get('can_have_chains')) {
+    if ((0, utils_1.isDeviceSupported)(obj) && +obj.get('can_have_chains')) {
         // have to go to the 'view' child of the object to set chain device visibility
         obj.goto('view');
         obj.set('is_showing_chain_devices', 0);
@@ -322,8 +327,9 @@ function onParameterChange(args) {
     if (+api.id === 0) {
         return;
     }
-    var deviceType = api.get('class_name').toString();
-    var paramIds = (0, utils_1.cleanArr)(api.get('parameters'));
+    var isSupported = (0, utils_1.isDeviceSupported)(api);
+    var deviceType = isSupported ? api.get('class_name').toString() : api.type;
+    var paramIds = isSupported ? (0, utils_1.cleanArr)(api.get('parameters')) : [];
     if (paramIds.length === 0) {
         //log('ZERO LEN PARAMIDS')
         state.onOffWatcher && (state.onOffWatcher.id = 0);
@@ -338,7 +344,7 @@ function onParameterChange(args) {
             state.onOffWatcher.id = onOffParamId;
         }
     }
-    var canHaveChains = parseInt(api.get('can_have_chains'));
+    var canHaveChains = (0, utils_1.isDeviceSupported)(api) && parseInt(api.get('can_have_chains'));
     //log('CAN_HAVE_CHAINS: ' + canHaveChains)
     if (canHaveChains) {
         // see if we should slice off some macros

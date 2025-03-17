@@ -2,7 +2,13 @@ autowatch = 1
 inlets = 1
 outlets = 2
 
-import { cleanArr, colorToString, logFactory, truncate } from './utils'
+import {
+  cleanArr,
+  colorToString,
+  isDeviceSupported,
+  logFactory,
+  truncate,
+} from './utils'
 import config from './config'
 import {
   FIELD_INDENT,
@@ -193,7 +199,7 @@ function onCurrDeviceChange(val: IdObserverArg) {
 }
 
 function updateDeviceNav() {
-  //log('DEVICE ID=' + newId + ' TRACKID=' + state.currTrackId)
+  //log('DEVICE ID=' + state.currDeviceId + ' TRACKID=' + state.currTrackId)
   if (+state.currDeviceId === 0) {
     // if no device is selected, null out the devices list
     outlet(OUTLET_OSC, ['/nav/currDeviceId', -1])
@@ -208,24 +214,35 @@ function updateDeviceNav() {
   const ret: MaxObjRecord[] = []
   const utilObj = new LiveAPI(noFn, 'live_set')
   const currDeviceObj = new LiveAPI(noFn, 'id ' + state.currDeviceId)
-  const parentObj = new LiveAPI(noFn, currDeviceObj.get('canonical_parent'))
+  const currIsSupported = isDeviceSupported(currDeviceObj)
+
+  const parentObj = new LiveAPI(
+    noFn,
+    currIsSupported
+      ? currDeviceObj.get('canonical_parent')
+      : 'id ' + state.currTrackId
+  )
+  // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
   const parentChildIds = cleanArr(parentObj.get('devices'))
 
   // first, self and siblings (with chain children under self)
   for (const childDeviceId of parentChildIds) {
     utilObj.id = childDeviceId
+    const objIsSupported = isDeviceSupported(utilObj)
     ret.push([
-      /* TYPE   */ parseInt(utilObj.get('can_have_chains'))
+      /* TYPE   */ objIsSupported && parseInt(utilObj.get('can_have_chains'))
         ? TYPE_RACK
         : TYPE_DEVICE,
       /* ID     */ childDeviceId,
-      /* NAME   */ truncate(utilObj.get('name').toString(), MAX_NAME_LEN),
+      /* NAME   */ objIsSupported
+        ? truncate(utilObj.get('name').toString(), MAX_NAME_LEN)
+        : '? Unsupported',
       /* COLOR  */ colorToString(parentObj.get('color').toString()),
       /* INDENT */ 0, // temporary indent
     ])
     if (childDeviceId === state.currDeviceId) {
       // add child chains below the current item
-      if (parseInt(currDeviceObj.get('can_have_chains'))) {
+      if (objIsSupported && parseInt(currDeviceObj.get('can_have_chains'))) {
         const chainIds = cleanArr(utilObj.get('chains'))
         for (const chainId of chainIds) {
           utilObj.id = chainId

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.debouncedTask = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.cleanArr = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
@@ -42,6 +42,10 @@ function truncate(str, len) {
     return str.substring(0, len - 2) + '…';
 }
 exports.truncate = truncate;
+function isDeviceSupported(obj) {
+    return !!obj.info.match(/property/);
+}
+exports.isDeviceSupported = isDeviceSupported;
 var tasks = {};
 function debouncedTask(key, slot, task, delayMs) {
     if (!tasks[key]) {

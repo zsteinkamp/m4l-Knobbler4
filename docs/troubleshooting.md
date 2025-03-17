@@ -91,6 +91,12 @@ The Knobbler Max for Live device listens on UDP port 2346. The Knobbler app on y
 
 So, the Max for Live device should have "2346" in its port box, the app should have "2347" in its port box.
 
+#### Some devices show up in the Navigation with the title "? Unsupported". What gives?
+
+Ableton seems to have "forgotten" about some old devices like CC Control. These devices do not adhere to Ableton's device API standard, and thus cannot provide Knobbler with information about themselves that it needs to operate, such as the title of the device or parent track.
+
+I have filed a support ticket with Ableton about this, and for now unfortunately things do not work properly in Knobbler with those devices. Their parameters will show up on the Bluhand page, but mapping to Knobbler page sliders does not work properly, and the device title on the Bluhand page does not update.
+
 #### HALP! Nothing above covers what I'm experiencing!
 
 Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, screenshots (there are never too many screenshots), events from your childhood that relate, etc. zack@steinkamp.us

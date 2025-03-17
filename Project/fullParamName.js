@@ -10,7 +10,7 @@ var INLET_INPUT = 0;
 setinletassist(INLET_INPUT, 'Input (object ID)');
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)');
 function updateParamName(objId) {
-    //log(objId)
+    //log('UpdateParamName ' + objId)
     var nameArr = [];
     var counter = 0;
     var obj = new LiveAPI(function () { }, 'id ' + objId);
@@ -21,6 +21,11 @@ function updateParamName(objId) {
             return consts_1.nullString;
         }
         outlet(OUTLET_PARAM_NAME, obj.get('name').toString());
+    }
+    if (!(0, utils_1.isDeviceSupported)(obj)) {
+        log('Unsupported / Incomplete device type ' + obj.type);
+        outlet(OUTLET_PARAM_NAME, '? Unsupported');
+        return;
     }
     while (counter < 20) {
         if (obj.type === 'MixerDevice') {

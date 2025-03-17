@@ -161,7 +161,7 @@ function onCurrDeviceChange(val) {
     updateDeviceNav();
 }
 function updateDeviceNav() {
-    //log('DEVICE ID=' + newId + ' TRACKID=' + state.currTrackId)
+    //log('DEVICE ID=' + state.currDeviceId + ' TRACKID=' + state.currTrackId)
     if (+state.currDeviceId === 0) {
         // if no device is selected, null out the devices list
         outlet(consts_1.OUTLET_OSC, ['/nav/currDeviceId', -1]);
@@ -174,24 +174,31 @@ function updateDeviceNav() {
     var ret = [];
     var utilObj = new LiveAPI(consts_1.noFn, 'live_set');
     var currDeviceObj = new LiveAPI(consts_1.noFn, 'id ' + state.currDeviceId);
-    var parentObj = new LiveAPI(consts_1.noFn, currDeviceObj.get('canonical_parent'));
+    var currIsSupported = (0, utils_1.isDeviceSupported)(currDeviceObj);
+    var parentObj = new LiveAPI(consts_1.noFn, currIsSupported
+        ? currDeviceObj.get('canonical_parent')
+        : 'id ' + state.currTrackId);
+    // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
     var parentChildIds = (0, utils_1.cleanArr)(parentObj.get('devices'));
     // first, self and siblings (with chain children under self)
     for (var _i = 0, parentChildIds_1 = parentChildIds; _i < parentChildIds_1.length; _i++) {
         var childDeviceId = parentChildIds_1[_i];
         utilObj.id = childDeviceId;
+        var objIsSupported = (0, utils_1.isDeviceSupported)(utilObj);
         ret.push([
-            /* TYPE   */ parseInt(utilObj.get('can_have_chains'))
+            /* TYPE   */ objIsSupported && parseInt(utilObj.get('can_have_chains'))
                 ? consts_1.TYPE_RACK
                 : consts_1.TYPE_DEVICE,
             /* ID     */ childDeviceId,
-            /* NAME   */ (0, utils_1.truncate)(utilObj.get('name').toString(), consts_1.MAX_NAME_LEN),
+            /* NAME   */ objIsSupported
+                ? (0, utils_1.truncate)(utilObj.get('name').toString(), consts_1.MAX_NAME_LEN)
+                : '? Unsupported',
             /* COLOR  */ (0, utils_1.colorToString)(parentObj.get('color').toString()),
             /* INDENT */ 0, // temporary indent
         ]);
         if (childDeviceId === state.currDeviceId) {
             // add child chains below the current item
-            if (parseInt(currDeviceObj.get('can_have_chains'))) {
+            if (objIsSupported && parseInt(currDeviceObj.get('can_have_chains'))) {
                 var chainIds = (0, utils_1.cleanArr)(utilObj.get('chains'));
                 for (var _a = 0, chainIds_1 = chainIds; _a < chainIds_1.length; _a++) {
                     var chainId = chainIds_1[_a];

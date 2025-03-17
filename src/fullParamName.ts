@@ -1,4 +1,4 @@
-import { truncate, logFactory } from './utils'
+import { truncate, logFactory, isDeviceSupported } from './utils'
 import config from './config'
 import { nullString } from './consts'
 
@@ -14,7 +14,7 @@ setinletassist(INLET_INPUT, 'Input (object ID)')
 setoutletassist(OUTLET_PARAM_NAME, 'Param Name (string)')
 
 function updateParamName(objId: string) {
-  //log(objId)
+  //log('UpdateParamName ' + objId)
   const nameArr = []
   let counter = 0
   const obj = new LiveAPI(() => {}, 'id ' + objId)
@@ -26,6 +26,12 @@ function updateParamName(objId: string) {
       return nullString
     }
     outlet(OUTLET_PARAM_NAME, obj.get('name').toString())
+  }
+
+  if (!isDeviceSupported(obj)) {
+    log('Unsupported / Incomplete device type ' + obj.type)
+    outlet(OUTLET_PARAM_NAME, '? Unsupported')
+    return
   }
 
   while (counter < 20) {
