@@ -14,6 +14,12 @@ The Knobbler app and device are constantly being improved. By virtue of being an
 
 When the Knobbler device first communicates with the iPad, it sends a version number. The iPad app has a minimum device version coded into it, and it will prompt you if it is communicating with a device that is too old.
 
+#### I am going to be somewhere without WiFi. What can I do?
+
+If you have a Mac, check out the [instructions to set up an ad-hoc WiFi network](wifi-adhoc.md) on your computer that your iPad can join.
+
+If you are on Windows and you know how to do this, could you please send me steps/info/screenshots so I can add it? [zack@steinkamp.us](mailto:zack@steinkamp.us)
+
 #### I am unable to successfully browse my network for my computer / tablet.
 
 This generally indicates either a problem with application permissions (more common) or WiFi network setup (less common).

@@ -41,3 +41,7 @@ These instructions are Mac-specific. If you have a Windows machine and can contr
 
 7. Select your Mac in the "Found These Knobblers" section. You should get a "Connection Successful!" message.
    ![Connection Success](images/wifi-adhoc/connection-success.png)
+
+8. ...
+
+9. Profit!
