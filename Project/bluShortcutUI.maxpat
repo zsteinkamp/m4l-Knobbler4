@@ -241,7 +241,7 @@
 							"parameter_enum" : [ "val1", "val2" ],
 							"parameter_invisible" : 2,
 							"parameter_linknames" : 1,
-							"parameter_longname" : "unmap#1",
+							"parameter_longname" : "#1_sunmap",
 							"parameter_mmax" : 1,
 							"parameter_modmode" : 0,
 							"parameter_shortname" : "Unmap",
@@ -252,7 +252,7 @@
 ,
 					"text" : "X",
 					"texton" : "x",
-					"varname" : "unmap#1"
+					"varname" : "#1_sunmap"
 				}
 
 			}
@@ -287,7 +287,7 @@
 ,
 					"text" : "Compressor",
 					"textcolor" : [ 1.0, 0.67843137254902, 0.337254901960784, 1.0 ],
-					"varname" : "shortcutTxt1",
+					"varname" : "#1_shortcutTxt",
 					"wordwrap" : 0
 				}
 
@@ -393,7 +393,7 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-28" : [ "unmap#1", "Unmap", 0 ],
+			"obj-28" : [ "#1_sunmap", "Unmap", 0 ],
 			"parameterbanks" : 			{
 				"0" : 				{
 					"index" : 0,

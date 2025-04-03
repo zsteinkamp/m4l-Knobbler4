@@ -26,6 +26,7 @@ var state = {
     devicePath: null,
     onOffWatcher: null,
     paramsWatcher: null,
+    variationsWatcher: null,
     currDeviceId: 0,
     currBank: 1,
     numBanks: 1,
@@ -299,10 +300,28 @@ function gotoTrack(trackIdStr) {
     var api = getLiveSetViewApi();
     api.set('selected_track', ['id', trackId]);
 }
+function onVariationChange() {
+    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    if (!+api.get('can_have_chains')) {
+        // only applies to racks
+        return;
+    }
+    // send variation stuff
+    outlet(consts_1.OUTLET_OSC, [
+        '/blu/variations',
+        JSON.stringify({
+            count: +api.get('variation_count'),
+            selected: +api.get('selected_variation_index'),
+        }),
+    ]);
+}
 function init() {
     state.paramsWatcher = new LiveAPI(onParameterChange, 'live_set view selected_track view selected_device');
     state.paramsWatcher.mode = 1;
     state.paramsWatcher.property = 'parameters';
+    state.variationsWatcher = new LiveAPI(onVariationChange, 'live_set view selected_track view selected_device');
+    state.variationsWatcher.mode = 1;
+    state.variationsWatcher.property = 'variation_count';
 }
 function toggleOnOff() {
     if (!state.onOffWatcher) {
@@ -371,6 +390,10 @@ function onParameterChange(args) {
         state.currDeviceId = state.paramsWatcher.id;
     }
     state.devicePath = api.unquotedpath;
+    if (!canHaveChains) {
+        // null send variation stuff
+        outlet(consts_1.OUTLET_OSC, ['/blu/variations', '']);
+    }
     state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
     state.numBanks = state.bankParamArr.length;
     if (state.currBank > state.numBanks) {
@@ -378,6 +401,40 @@ function onParameterChange(args) {
     }
     //log('STATE CHECK ' + JSON.stringify(state))
     sendCurrBank();
+}
+function variationNew() {
+    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    if (!+api.get('can_have_chains')) {
+        // only applies to racks
+        return;
+    }
+    api.call('store_variation', null);
+}
+function variationDelete(idx) {
+    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    if (!+api.get('can_have_chains')) {
+        // only applies to racks
+        return;
+    }
+    api.set('selected_variation_index', idx);
+    api.call('delete_selected_variation', null);
+}
+function variationRecall(idx) {
+    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    if (!+api.get('can_have_chains')) {
+        // only applies to racks
+        return;
+    }
+    api.set('selected_variation_index', idx);
+    api.call('recall_selected_variation', null);
+}
+function randomMacros() {
+    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    if (!+api.get('can_have_chains')) {
+        // only applies to racks
+        return;
+    }
+    api.call('randomize_macros', null);
 }
 function gotoBank(idx) {
     //log('HERE ' + idx)

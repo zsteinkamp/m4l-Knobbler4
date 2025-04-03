@@ -63,7 +63,7 @@
 							"parameter_enum" : [ "val1", "val2" ],
 							"parameter_invisible" : 2,
 							"parameter_linknames" : 1,
-							"parameter_longname" : "unmap#1",
+							"parameter_longname" : "#1_unmap",
 							"parameter_mmax" : 1,
 							"parameter_modmode" : 0,
 							"parameter_shortname" : "Unmap",
@@ -74,7 +74,7 @@
 ,
 					"text" : "X",
 					"texton" : "x",
-					"varname" : "unmap#1"
+					"varname" : "#1_unmap"
 				}
 
 			}
@@ -278,7 +278,7 @@
 							"parameter_initial" : [ "" ],
 							"parameter_invisible" : 1,
 							"parameter_linknames" : 1,
-							"parameter_longname" : "eparam#1",
+							"parameter_longname" : "#1_eparam",
 							"parameter_modmode" : 0,
 							"parameter_shortname" : "path",
 							"parameter_type" : 3
@@ -288,7 +288,7 @@
 ,
 					"text" : "- - -",
 					"textcolor" : [ 1.0, 0.67843137254902, 0.337254901960784, 1.0 ],
-					"varname" : "eparam#1",
+					"varname" : "#1_eparam",
 					"wordwrap" : 0
 				}
 
@@ -444,7 +444,7 @@
 							"parameter_initial" : [ "" ],
 							"parameter_invisible" : 1,
 							"parameter_linknames" : 1,
-							"parameter_longname" : "path#1",
+							"parameter_longname" : "#1_path",
 							"parameter_modmode" : 0,
 							"parameter_shortname" : "path",
 							"parameter_type" : 3
@@ -453,7 +453,7 @@
 					}
 ,
 					"textcolor" : [ 0.917647, 0.67451, 0.290196, 1.0 ],
-					"varname" : "path#1"
+					"varname" : "#1_path"
 				}
 
 			}
@@ -638,7 +638,7 @@
 					"text" : "- - -",
 					"textcolor" : [ 1.0, 0.67843137254902, 0.337254901960784, 1.0 ],
 					"textjustification" : 0,
-					"varname" : "track#1"
+					"varname" : "#1_track"
 				}
 
 			}
@@ -673,7 +673,7 @@
 					"text" : "- - -",
 					"textcolor" : [ 1.0, 0.67843137254902, 0.337254901960784, 1.0 ],
 					"textjustification" : 0,
-					"varname" : "device#1"
+					"varname" : "#1_device"
 				}
 
 			}
@@ -762,7 +762,7 @@
 							"parameter_initial_enable" : 1,
 							"parameter_invisible" : 1,
 							"parameter_linknames" : 1,
-							"parameter_longname" : "targetMax#1",
+							"parameter_longname" : "#1_targetMax",
 							"parameter_mmax" : 100.0,
 							"parameter_modmode" : 0,
 							"parameter_shortname" : "Max",
@@ -775,7 +775,7 @@
 ,
 					"textcolor" : [ 1.0, 0.709804, 0.196078, 1.0 ],
 					"textjustification" : 0,
-					"varname" : "targetMax#1"
+					"varname" : "#1_targetMax"
 				}
 
 			}
@@ -828,7 +828,7 @@
 							"parameter_initial_enable" : 1,
 							"parameter_invisible" : 1,
 							"parameter_linknames" : 1,
-							"parameter_longname" : "targetMin#1",
+							"parameter_longname" : "#1_targetMin",
 							"parameter_mmax" : 100.0,
 							"parameter_modmode" : 0,
 							"parameter_shortname" : "Min",
@@ -841,7 +841,7 @@
 ,
 					"textcolor" : [ 1.0, 0.709804, 0.196078, 1.0 ],
 					"textjustification" : 0,
-					"varname" : "targetMin#1"
+					"varname" : "#1_targetMin"
 				}
 
 			}
@@ -1167,11 +1167,11 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-1" : [ "eparam#1", "path", 0 ],
-			"obj-28" : [ "unmap#1", "Unmap", 0 ],
-			"obj-3" : [ "targetMax#1", "Max", 0 ],
-			"obj-8" : [ "targetMin#1", "Min", 0 ],
-			"obj-86" : [ "path#1", "path", 0 ],
+			"obj-1" : [ "#1_eparam", "path", 0 ],
+			"obj-28" : [ "#1_unmap", "Unmap", 0 ],
+			"obj-3" : [ "#1_targetMax", "Max", 0 ],
+			"obj-8" : [ "#1_targetMin", "Min", 0 ],
+			"obj-86" : [ "#1_path", "path", 0 ],
 			"parameterbanks" : 			{
 
 			}
@@ -1733,7 +1733,6 @@
 			}
  ],
 		"textcolor" : [ 0.427450980392157, 0.843137254901961, 1.0, 1.0 ],
-		"bgcolor" : [ 0.211764705882353, 0.211764705882353, 0.211764705882353, 1.0 ],
 		"editing_bgcolor" : [ 0.309803921568627, 0.309803921568627, 0.309803921568627, 1.0 ],
 		"saved_attribute_attributes" : 		{
 			"locked_bgcolor" : 			{

@@ -417,6 +417,30 @@ const ROUTER: RouterItem[] = [
     handler: stdVal,
     msg: 'hideChains',
   },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/blu/macros/random',
+    handler: bareMsg,
+    msg: 'randomMacros',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/blu/variation/new',
+    handler: bareMsg,
+    msg: 'variationNew',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/blu/variation/delete',
+    handler: stdVal,
+    msg: 'variationDelete',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/blu/variation/select',
+    handler: stdVal,
+    msg: 'variationRecall',
+  },
 ]
 ROUTER.sort((a, b) => {
   return a.prefix.length > b.prefix.length ? -1 : 1

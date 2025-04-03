@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 1315.0, 271.0, 1870.0, 1468.0 ],
+		"rect" : [ 1397.0, 228.0, 1396.0, 1468.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -40,13 +40,37 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"color" : [ 0.309803921568627, 0.235294117647059, 0.686274509803922, 1.0 ],
+					"id" : "obj-25",
+					"maxclass" : "newobj",
+					"numinlets" : 0,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 334.0, 708.0, 96.0, 22.0 ],
+					"text" : "r #0---instanceId"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-8",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 309.0, 763.0, 146.0, 22.0 ],
+					"text" : "varname $1_shortcutPath"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-88",
 					"linecount" : 2,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 531.0, 1013.0, 156.0, 33.0 ],
-					"presentation_linecount" : 2,
 					"saved_attribute_attributes" : 					{
 						"textcolor" : 						{
 							"expression" : "themecolor.live_freeze_color"
@@ -1423,6 +1447,13 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-8", 0 ],
+					"source" : [ "obj-25", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-75", 0 ],
 					"source" : [ "obj-26", 0 ]
 				}
@@ -1758,6 +1789,13 @@
 					"destination" : [ "obj-101", 1 ],
 					"order" : 0,
 					"source" : [ "obj-79", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-15", 0 ],
+					"source" : [ "obj-8", 0 ]
 				}
 
 			}
