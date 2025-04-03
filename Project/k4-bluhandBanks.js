@@ -427,6 +427,7 @@ function variationRecall(idx) {
     }
     api.set('selected_variation_index', idx);
     api.call('recall_selected_variation', null);
+    onVariationChange();
 }
 function randomMacros() {
     var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');

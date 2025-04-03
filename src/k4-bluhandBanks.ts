@@ -501,6 +501,7 @@ function variationRecall(idx: number) {
   }
   api.set('selected_variation_index', idx)
   api.call('recall_selected_variation', null)
+  onVariationChange()
 }
 function randomMacros() {
   const api = new LiveAPI(
