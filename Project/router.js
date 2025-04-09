@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 9;
+outlets = 10;
 var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
@@ -14,7 +14,8 @@ var OUTLET_REFRESH = 4;
 var OUTLET_ACK = 5;
 var OUTLET_MIXER = 6;
 var OUTLET_PAGE = 7;
-var OUTLET_UNKNOWN = 8;
+var OUTLET_CLIPS = 8;
+var OUTLET_UNKNOWN = 9;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -24,6 +25,7 @@ setoutletassist(OUTLET_REFRESH, 'Messages for Refresh');
 setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn');
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer');
 setoutletassist(OUTLET_PAGE, 'Messages for Page');
+setoutletassist(OUTLET_CLIPS, 'Messages for Clips');
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
@@ -52,7 +54,7 @@ function stdSlot(router, msg) {
 // emits a message followed by a slot number followed by a value
 function stdSlotVal(router, msg, val) {
     var slot = getSlotNum(router, msg);
-    //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
+    log("STDSLOTVAL: outlet=".concat(router.outlet, " msg=").concat([router.msg, slot, val]));
     outlet(router.outlet, router.msg, slot, val);
 }
 var ROUTER = [
@@ -427,6 +429,30 @@ var ROUTER = [
         prefix: '/blu/variation/select',
         handler: stdVal,
         msg: 'variationRecall',
+    },
+    {
+        outlet: OUTLET_CLIPS,
+        prefix: '/clips/fire/track',
+        handler: stdSlotVal,
+        msg: 'fire',
+    },
+    {
+        outlet: OUTLET_CLIPS,
+        prefix: '/clips/stop/track',
+        handler: stdSlot,
+        msg: 'stop',
+    },
+    {
+        outlet: OUTLET_CLIPS,
+        prefix: '/clips/fold/track',
+        handler: stdSlot,
+        msg: 'groupFold',
+    },
+    {
+        outlet: OUTLET_CLIPS,
+        prefix: '/clips/unfold/track',
+        handler: stdSlot,
+        msg: 'groupUnfold',
     },
 ];
 ROUTER.sort(function (a, b) {

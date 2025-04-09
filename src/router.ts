@@ -3,7 +3,7 @@ import { logFactory } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 9
+outlets = 10
 
 const log = logFactory(config)
 
@@ -16,7 +16,8 @@ const OUTLET_REFRESH = 4
 const OUTLET_ACK = 5
 const OUTLET_MIXER = 6
 const OUTLET_PAGE = 7
-const OUTLET_UNKNOWN = 8
+const OUTLET_CLIPS = 8
+const OUTLET_UNKNOWN = 9
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -27,6 +28,7 @@ setoutletassist(OUTLET_REFRESH, 'Messages for Refresh')
 setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn')
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer')
 setoutletassist(OUTLET_PAGE, 'Messages for Page')
+setoutletassist(OUTLET_CLIPS, 'Messages for Clips')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 
 type RouterItem = {
@@ -64,7 +66,7 @@ function stdSlot(router: RouterItem, msg: string) {
 // emits a message followed by a slot number followed by a value
 function stdSlotVal(router: RouterItem, msg: string, val: number | string) {
   const slot = getSlotNum(router, msg)
-  //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
+  log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
   outlet(router.outlet, router.msg, slot, val)
 }
 
@@ -440,6 +442,30 @@ const ROUTER: RouterItem[] = [
     prefix: '/blu/variation/select',
     handler: stdVal,
     msg: 'variationRecall',
+  },
+  {
+    outlet: OUTLET_CLIPS,
+    prefix: '/clips/fire/track',
+    handler: stdSlotVal,
+    msg: 'fire',
+  },
+  {
+    outlet: OUTLET_CLIPS,
+    prefix: '/clips/stop/track',
+    handler: stdSlot,
+    msg: 'stop',
+  },
+  {
+    outlet: OUTLET_CLIPS,
+    prefix: '/clips/fold/track',
+    handler: stdSlot,
+    msg: 'groupFold',
+  },
+  {
+    outlet: OUTLET_CLIPS,
+    prefix: '/clips/unfold/track',
+    handler: stdSlot,
+    msg: 'groupUnfold',
   },
 ]
 ROUTER.sort((a, b) => {

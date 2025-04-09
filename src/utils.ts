@@ -1,9 +1,16 @@
 import { DEFAULT_COLOR } from './consts'
 
-export type logFn = (_: any) => void
+export type logFn = (...args: any[]) => void
 export function logFactory({ outputLogs = true }) {
-  function log(_: any) {
-    post(Array.prototype.slice.call(arguments).join(' '), '\n')
+  function log(...args: any[]) {
+    post(
+      args
+        .map((a) => {
+          return typeof a === 'string' ? a : JSON.stringify(a)
+        })
+        .join(' '),
+      '\n'
+    )
   }
   if (!outputLogs) {
     return () => {}

@@ -4,8 +4,16 @@ exports.cleanArr = exports.debouncedTask = exports.isDeviceSupported = exports.t
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
-    function log(_) {
-        post(Array.prototype.slice.call(arguments).join(' '), '\n');
+    function log() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        post(args
+            .map(function (a) {
+            return typeof a === 'string' ? a : JSON.stringify(a);
+        })
+            .join(' '), '\n');
     }
     if (!outputLogs) {
         return function () { };
