@@ -192,17 +192,23 @@ function fillTrackMetadata(trackId: number) {
 }
 
 function handlePlayingSlotIndex(slot: number, args: IArguments) {
-  // visible tracks have changed, so look for new items in the display list
   const argsArr = arrayfromargs(args)
   if (argsArr.shift() !== 'playing_slot_index') {
     return
   }
   state.trackSlots[slot].playingSlotIndex = argsArr.shift()
+
+  if (state.trackSlots[slot].arm) {
+    const clipSlotIdArr = cleanArr(
+      state.trackSlots[slot].obsTrackClipSlots.get('clip_slots')
+    )
+    refreshClipSlotsInSlot(slot, clipSlotIdArr)
+  }
+
   updateDisplay()
 }
 
 function handleFiredSlotIndex(slot: number, args: IArguments) {
-  // visible tracks have changed, so look for new items in the display list
   const argsArr = arrayfromargs(args)
   if (argsArr.shift() !== 'fired_slot_index') {
     return
@@ -212,7 +218,6 @@ function handleFiredSlotIndex(slot: number, args: IArguments) {
 }
 
 function handleArm(slot: number, args: IArguments) {
-  // visible tracks have changed, so look for new items in the display list
   const argsArr = arrayfromargs(args)
   if (argsArr.shift() !== 'arm') {
     return
@@ -221,14 +226,7 @@ function handleArm(slot: number, args: IArguments) {
   updateDisplay()
 }
 
-function handleClipSlots(slot: number, args: IArguments) {
-  // visible tracks have changed, so look for new items in the display list
-  const argsArr = arrayfromargs(args)
-  if (argsArr.shift() !== 'clip_slots') {
-    return
-  }
-  const clipSlotIdArr = cleanArr(argsArr as IdObserverArg)
-
+function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
   state.trackSlots[slot].clipSlots = []
   for (const clipSlotId of clipSlotIdArr) {
     state.utilObj.id = clipSlotId
@@ -251,6 +249,15 @@ function handleClipSlots(slot: number, args: IArguments) {
       name,
     })
   }
+}
+
+function handleClipSlots(slot: number, args: IArguments) {
+  const argsArr = arrayfromargs(args)
+  if (argsArr.shift() !== 'clip_slots') {
+    return
+  }
+  const clipSlotIdArr = cleanArr(argsArr as IdObserverArg)
+  refreshClipSlotsInSlot(slot, clipSlotIdArr)
 }
 
 function configureTrackSlot(slot: number, trackId: number) {

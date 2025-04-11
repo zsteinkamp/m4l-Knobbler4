@@ -121,16 +121,18 @@ function fillTrackMetadata(trackId) {
     };
 }
 function handlePlayingSlotIndex(slot, args) {
-    // visible tracks have changed, so look for new items in the display list
     var argsArr = arrayfromargs(args);
     if (argsArr.shift() !== 'playing_slot_index') {
         return;
     }
     state.trackSlots[slot].playingSlotIndex = argsArr.shift();
+    if (state.trackSlots[slot].arm) {
+        var clipSlotIdArr = (0, utils_1.cleanArr)(state.trackSlots[slot].obsTrackClipSlots.get('clip_slots'));
+        refreshClipSlotsInSlot(slot, clipSlotIdArr);
+    }
     updateDisplay();
 }
 function handleFiredSlotIndex(slot, args) {
-    // visible tracks have changed, so look for new items in the display list
     var argsArr = arrayfromargs(args);
     if (argsArr.shift() !== 'fired_slot_index') {
         return;
@@ -139,7 +141,6 @@ function handleFiredSlotIndex(slot, args) {
     updateDisplay();
 }
 function handleArm(slot, args) {
-    // visible tracks have changed, so look for new items in the display list
     var argsArr = arrayfromargs(args);
     if (argsArr.shift() !== 'arm') {
         return;
@@ -147,13 +148,7 @@ function handleArm(slot, args) {
     state.trackSlots[slot].arm = argsArr.shift();
     updateDisplay();
 }
-function handleClipSlots(slot, args) {
-    // visible tracks have changed, so look for new items in the display list
-    var argsArr = arrayfromargs(args);
-    if (argsArr.shift() !== 'clip_slots') {
-        return;
-    }
-    var clipSlotIdArr = (0, utils_1.cleanArr)(argsArr);
+function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
     state.trackSlots[slot].clipSlots = [];
     for (var _i = 0, clipSlotIdArr_1 = clipSlotIdArr; _i < clipSlotIdArr_1.length; _i++) {
         var clipSlotId = clipSlotIdArr_1[_i];
@@ -177,6 +172,14 @@ function handleClipSlots(slot, args) {
             name: name,
         });
     }
+}
+function handleClipSlots(slot, args) {
+    var argsArr = arrayfromargs(args);
+    if (argsArr.shift() !== 'clip_slots') {
+        return;
+    }
+    var clipSlotIdArr = (0, utils_1.cleanArr)(argsArr);
+    refreshClipSlotsInSlot(slot, clipSlotIdArr);
 }
 function configureTrackSlot(slot, trackId) {
     //log('CONFIGURE SLOT', { slot, trackId })
