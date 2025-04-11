@@ -34,7 +34,7 @@ function colorToString(colorVal) {
     if (!colorVal) {
         return consts_1.DEFAULT_COLOR;
     }
-    var retString = parseInt(colorVal).toString(16).toUpperCase();
+    var retString = parseInt(colorVal.toString()).toString(16).toUpperCase();
     var strlen = retString.length;
     for (var i = 0; i < 6 - strlen; i++) {
         retString = '0' + retString;

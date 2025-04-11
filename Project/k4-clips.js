@@ -15,7 +15,7 @@ var state = {
     obsVisibleTracks: null,
     obsScenes: null,
     obsSelScene: null,
-    obsSelTrackId: null,
+    obsSelTrack: null,
     obsSelTrackName: null,
     obsSelTrackColor: null,
     obsSelSceneName: null,
@@ -43,6 +43,19 @@ function fire(slot, clipSlot) {
     state.utilObj.id = trackId;
     state.utilObj.goto('clip_slots ' + clipSlot);
     state.utilObj.call('fire', null);
+}
+function fireScene(sceneIdx) {
+    var sceneId = state.sceneIds[sceneIdx];
+    if (!sceneId) {
+        log('INVALUD SCENE ID');
+        return;
+    }
+    state.utilObj.id = sceneId;
+    state.utilObj.call('fire', null);
+}
+function stopAll() {
+    state.utilObj.goto('live_set');
+    state.utilObj.call('stop_all_clips', null);
 }
 function stop(slot) {
     log('STOP', slot);
@@ -85,9 +98,13 @@ function dedupOscOutput(key, val) {
     log('OSC OUTPUT', key, val);
 }
 function formatScenes() {
-    return state.sceneIds.map(function (sceneId) {
+    var sceneRet = state.sceneIds.map(function (sceneId) {
         return [state.scenes[sceneId].name, state.scenes[sceneId].color];
     });
+    state.utilObj.path = 'live_set master_track';
+    var mainColor = (0, utils_1.colorToString)(state.utilObj.get('color'));
+    sceneRet.unshift(['Main', mainColor]);
+    return sceneRet;
 }
 function updateDisplay() {
     if (!state.updateDebounce) {
@@ -117,7 +134,7 @@ function fillTrackMetadata(trackId) {
     state.tracks[trackId.toString()] = {
         groupState: groupState,
         name: state.utilObj.get('name').toString(),
-        color: (0, utils_1.colorToString)(state.utilObj.get('color').toString()),
+        color: (0, utils_1.colorToString)(state.utilObj.get('color')),
     };
 }
 function handlePlayingSlotIndex(slot, args) {
@@ -156,6 +173,7 @@ function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
         var hasClip = !!+state.utilObj.get('has_clip');
         var hasStopButton = !!+state.utilObj.get('has_stop_button');
         var name = '';
+        var color = '';
         if (hasClip) {
             var clipId = (0, utils_1.cleanArr)(state.utilObj.get('clip'))[0];
             if (!clipId) {
@@ -165,11 +183,13 @@ function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
             //log('ID', state.utilObj.id, clipId)
             state.utilObj.id = clipId;
             name = state.utilObj.get('name').toString();
+            color = (0, utils_1.colorToString)(state.utilObj.get('color'));
         }
         state.trackSlots[slot].clipSlots.push({
             hasClip: hasClip,
             hasStopButton: hasStopButton,
             name: name,
+            color: color,
         });
     }
 }
@@ -225,6 +245,7 @@ function formatTrackSlot(slot) {
     var trackId = state.displayTrackIds[slot];
     var trackMeta = state.tracks[trackId.toString()];
     return [
+        trackId,
         trackMeta.name,
         trackMeta.color,
         trackMeta.groupState,
@@ -232,7 +253,7 @@ function formatTrackSlot(slot) {
         trackSlot.firedSlotIndex,
         trackSlot.arm,
         trackSlot.clipSlots.map(function (cs) {
-            return [cs.hasClip ? 1 : 0, cs.hasStopButton ? 1 : 0, cs.name];
+            return [cs.hasClip ? 1 : 0, cs.hasStopButton ? 1 : 0, cs.name, cs.color];
         }),
     ];
 }
@@ -271,7 +292,7 @@ function fillSceneMetadata(sceneId) {
     }
     state.scenes[sceneId.toString()] = {
         name: state.utilObj.get('name').toString(),
-        color: (0, utils_1.colorToString)(state.utilObj.get('color').toString()),
+        color: (0, utils_1.colorToString)(state.utilObj.get('color')),
     };
 }
 function handleScenes(args) {
@@ -297,6 +318,24 @@ function handleScenes(args) {
     }
     updateDisplay();
 }
+function handleSelTrack(args) {
+    // visible tracks have changed, so look for new items in the display list
+    var argsArr = arrayfromargs(args);
+    if (argsArr.shift() !== 'id') {
+        return;
+    }
+    var selTrackId = +argsArr[0];
+    dedupOscOutput('/clips/selectedTrack', selTrackId);
+}
+function handleSelScene(args) {
+    // visible tracks have changed, so look for new items in the display list
+    var argsArr = arrayfromargs(args);
+    if (argsArr.shift() !== 'id') {
+        return;
+    }
+    var selSceneId = +argsArr[0];
+    dedupOscOutput('/clips/selectedSceneIdx', state.sceneIds.indexOf(selSceneId));
+}
 function init() {
     state.outputLast = {};
     state.obsVisibleTracks = null;
@@ -311,6 +350,14 @@ function init() {
     if (!state.obsScenes) {
         state.obsScenes = new LiveAPI(handleScenes, 'live_set');
         state.obsScenes.property = 'scenes';
+    }
+    if (!state.obsSelTrack) {
+        state.obsSelTrack = new LiveAPI(handleSelTrack, 'live_set view selected_track');
+        state.obsSelTrack.mode = 1;
+    }
+    if (!state.obsSelScene) {
+        state.obsSelScene = new LiveAPI(handleSelScene, 'live_set view selected_scene');
+        state.obsSelScene.mode = 1;
     }
 }
 log('reloaded k4-clips');

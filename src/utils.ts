@@ -31,7 +31,7 @@ export function colorToString(colorVal: string) {
   if (!colorVal) {
     return DEFAULT_COLOR
   }
-  let retString = parseInt(colorVal).toString(16).toUpperCase()
+  let retString = parseInt(colorVal.toString()).toString(16).toUpperCase()
   const strlen = retString.length
   for (let i = 0; i < 6 - strlen; i++) {
     retString = '0' + retString

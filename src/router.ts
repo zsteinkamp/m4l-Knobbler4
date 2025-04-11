@@ -445,9 +445,21 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_CLIPS,
+    prefix: '/clips/fire/scene',
+    handler: stdSlot,
+    msg: 'fireScene',
+  },
+  {
+    outlet: OUTLET_CLIPS,
     prefix: '/clips/fire/track',
     handler: stdSlotVal,
     msg: 'fire',
+  },
+  {
+    outlet: OUTLET_CLIPS,
+    prefix: '/clips/stopAll',
+    handler: bareMsg,
+    msg: 'stopAll',
   },
   {
     outlet: OUTLET_CLIPS,
@@ -466,6 +478,12 @@ const ROUTER: RouterItem[] = [
     prefix: '/clips/unfold/track',
     handler: stdSlot,
     msg: 'groupUnfold',
+  },
+  {
+    outlet: OUTLET_CLIPS,
+    prefix: '/clips/init',
+    handler: bareMsg,
+    msg: 'init',
   },
 ]
 ROUTER.sort((a, b) => {

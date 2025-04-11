@@ -17,6 +17,7 @@ type ClipSlotType = {
   hasStopButton: boolean
   hasClip: boolean
   name: string
+  color: string
 }
 
 type SceneMeta = {
@@ -54,7 +55,7 @@ type StateType = {
   obsScenes: LiveAPI
   obsSelScene: LiveAPI
   obsSelTrackName: LiveAPI
-  obsSelTrackId: LiveAPI
+  obsSelTrack: LiveAPI
   obsSelTrackColor: LiveAPI
   obsSelSceneName: LiveAPI
   obsSelSceneColor: LiveAPI
@@ -77,7 +78,7 @@ const state: StateType = {
   obsVisibleTracks: null,
   obsScenes: null,
   obsSelScene: null,
-  obsSelTrackId: null,
+  obsSelTrack: null,
   obsSelTrackName: null,
   obsSelTrackColor: null,
   obsSelSceneName: null,
@@ -106,6 +107,19 @@ function fire(slot: number, clipSlot: number) {
   state.utilObj.id = trackId
   state.utilObj.goto('clip_slots ' + clipSlot)
   state.utilObj.call('fire', null)
+}
+function fireScene(sceneIdx: number) {
+  const sceneId = state.sceneIds[sceneIdx]
+  if (!sceneId) {
+    log('INVALUD SCENE ID')
+    return
+  }
+  state.utilObj.id = sceneId
+  state.utilObj.call('fire', null)
+}
+function stopAll() {
+  state.utilObj.goto('live_set')
+  state.utilObj.call('stop_all_clips', null)
 }
 function stop(slot: number) {
   log('STOP', slot)
@@ -151,9 +165,13 @@ function dedupOscOutput(key: string, val: string | number) {
 }
 
 function formatScenes() {
-  return state.sceneIds.map((sceneId) => {
+  const sceneRet = state.sceneIds.map((sceneId) => {
     return [state.scenes[sceneId].name, state.scenes[sceneId].color]
   })
+  state.utilObj.path = 'live_set master_track'
+  const mainColor = colorToString(state.utilObj.get('color'))
+  sceneRet.unshift(['Main', mainColor])
+  return sceneRet
 }
 
 function updateDisplay() {
@@ -187,7 +205,7 @@ function fillTrackMetadata(trackId: number) {
   state.tracks[trackId.toString()] = {
     groupState,
     name: state.utilObj.get('name').toString(),
-    color: colorToString(state.utilObj.get('color').toString()),
+    color: colorToString(state.utilObj.get('color')),
   }
 }
 
@@ -233,6 +251,7 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
     const hasClip = !!+state.utilObj.get('has_clip')
     const hasStopButton = !!+state.utilObj.get('has_stop_button')
     let name = ''
+    let color = ''
     if (hasClip) {
       const clipId = cleanArr(state.utilObj.get('clip'))[0]
       if (!clipId) {
@@ -242,11 +261,13 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
       //log('ID', state.utilObj.id, clipId)
       state.utilObj.id = clipId
       name = state.utilObj.get('name').toString()
+      color = colorToString(state.utilObj.get('color'))
     }
     state.trackSlots[slot].clipSlots.push({
       hasClip,
       hasStopButton,
       name,
+      color,
     })
   }
 }
@@ -320,6 +341,7 @@ function formatTrackSlot(slot: number) {
   const trackId = state.displayTrackIds[slot]
   const trackMeta = state.tracks[trackId.toString()]
   return [
+    trackId,
     trackMeta.name,
     trackMeta.color,
     trackMeta.groupState,
@@ -327,7 +349,7 @@ function formatTrackSlot(slot: number) {
     trackSlot.firedSlotIndex,
     trackSlot.arm,
     trackSlot.clipSlots.map((cs) => {
-      return [cs.hasClip ? 1 : 0, cs.hasStopButton ? 1 : 0, cs.name]
+      return [cs.hasClip ? 1 : 0, cs.hasStopButton ? 1 : 0, cs.name, cs.color]
     }),
   ]
 }
@@ -371,7 +393,7 @@ function fillSceneMetadata(sceneId: number) {
   }
   state.scenes[sceneId.toString()] = {
     name: state.utilObj.get('name').toString(),
-    color: colorToString(state.utilObj.get('color').toString()),
+    color: colorToString(state.utilObj.get('color')),
   }
 }
 
@@ -400,6 +422,26 @@ function handleScenes(args: IArguments) {
   updateDisplay()
 }
 
+function handleSelTrack(args: IArguments) {
+  // visible tracks have changed, so look for new items in the display list
+  const argsArr = arrayfromargs(args)
+  if (argsArr.shift() !== 'id') {
+    return
+  }
+  const selTrackId = +argsArr[0]
+  dedupOscOutput('/clips/selectedTrack', selTrackId)
+}
+
+function handleSelScene(args: IArguments) {
+  // visible tracks have changed, so look for new items in the display list
+  const argsArr = arrayfromargs(args)
+  if (argsArr.shift() !== 'id') {
+    return
+  }
+  const selSceneId = +argsArr[0]
+  dedupOscOutput('/clips/selectedSceneIdx', state.sceneIds.indexOf(selSceneId))
+}
+
 function init() {
   state.outputLast = {}
   state.obsVisibleTracks = null
@@ -415,6 +457,20 @@ function init() {
   if (!state.obsScenes) {
     state.obsScenes = new LiveAPI(handleScenes, 'live_set')
     state.obsScenes.property = 'scenes'
+  }
+  if (!state.obsSelTrack) {
+    state.obsSelTrack = new LiveAPI(
+      handleSelTrack,
+      'live_set view selected_track'
+    )
+    state.obsSelTrack.mode = 1
+  }
+  if (!state.obsSelScene) {
+    state.obsSelScene = new LiveAPI(
+      handleSelScene,
+      'live_set view selected_scene'
+    )
+    state.obsSelScene.mode = 1
   }
 }
 
