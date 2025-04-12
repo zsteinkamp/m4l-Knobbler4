@@ -215,6 +215,7 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
   state.trackSlots[slot].clipSlots = []
   for (const clipSlotId of clipSlotIdArr) {
     state.utilObj.id = clipSlotId
+    const hasStopButton = !!+state.utilObj.get('has_stop_button')
 
     let hasClip = false
     let name = ''
@@ -223,7 +224,7 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
     if (isGroup) {
       hasClip = !!+state.utilObj.get('controls_other_clips')
     } else {
-      const hasClip = !!+state.utilObj.get('has_clip')
+      hasClip = !!+state.utilObj.get('has_clip')
       if (hasClip) {
         const clipId = cleanArr(state.utilObj.get('clip'))[0]
         if (!clipId) {
@@ -236,7 +237,6 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
         color = colorToString(state.utilObj.get('color'))
       }
     }
-    const hasStopButton = !!+state.utilObj.get('has_stop_button')
     state.trackSlots[slot].clipSlots.push({
       hasClip,
       hasStopButton,

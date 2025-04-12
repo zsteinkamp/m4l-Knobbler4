@@ -144,6 +144,7 @@ function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
     for (var _i = 0, clipSlotIdArr_1 = clipSlotIdArr; _i < clipSlotIdArr_1.length; _i++) {
         var clipSlotId = clipSlotIdArr_1[_i];
         state.utilObj.id = clipSlotId;
+        var hasStopButton = !!+state.utilObj.get('has_stop_button');
         var hasClip = false;
         var name = '';
         var color = '';
@@ -151,8 +152,8 @@ function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
             hasClip = !!+state.utilObj.get('controls_other_clips');
         }
         else {
-            var hasClip_1 = !!+state.utilObj.get('has_clip');
-            if (hasClip_1) {
+            hasClip = !!+state.utilObj.get('has_clip');
+            if (hasClip) {
                 var clipId = (0, utils_1.cleanArr)(state.utilObj.get('clip'))[0];
                 if (!clipId) {
                     log('ERROR CLIPID SHOULD NOT BE ZERO');
@@ -164,7 +165,6 @@ function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
                 color = (0, utils_1.colorToString)(state.utilObj.get('color'));
             }
         }
-        var hasStopButton = !!+state.utilObj.get('has_stop_button');
         state.trackSlots[slot].clipSlots.push({
             hasClip: hasClip,
             hasStopButton: hasStopButton,
