@@ -99,6 +99,9 @@ function fire(slot: number, clipSlot: number) {
   state.utilObj.id = trackId
   state.utilObj.goto('clip_slots ' + clipSlot)
   state.utilObj.call('fire', null)
+  const slotId = state.utilObj.id
+  state.utilObj.goto('live_set view')
+  state.utilObj.set('highlighted_clip_slot', 'id ' + slotId)
 }
 function fireScene(sceneIdx: number) {
   const sceneId = state.sceneIds[sceneIdx]
@@ -153,7 +156,7 @@ function dedupOscOutput(key: string, val: string | number) {
   }
   state.outputLast[key] = val
   outlet(OUTLET_OSC, [key, val])
-  log('OSC OUTPUT', key, val)
+  //log('OSC OUTPUT', key, val)
 }
 
 function formatScenes() {

@@ -401,6 +401,12 @@ var ROUTER = [
         msg: 'bluhand',
     },
     {
+        outlet: OUTLET_PAGE,
+        prefix: '/page/clips',
+        handler: bareMsg,
+        msg: 'clips',
+    },
+    {
         outlet: OUTLET_BLUHAND,
         prefix: '/hideChains',
         handler: stdVal,

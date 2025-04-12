@@ -46,6 +46,9 @@ function fire(slot, clipSlot) {
     state.utilObj.id = trackId;
     state.utilObj.goto('clip_slots ' + clipSlot);
     state.utilObj.call('fire', null);
+    var slotId = state.utilObj.id;
+    state.utilObj.goto('live_set view');
+    state.utilObj.set('highlighted_clip_slot', 'id ' + slotId);
 }
 function fireScene(sceneIdx) {
     var sceneId = state.sceneIds[sceneIdx];
@@ -98,7 +101,7 @@ function dedupOscOutput(key, val) {
     }
     state.outputLast[key] = val;
     outlet(consts_1.OUTLET_OSC, [key, val]);
-    log('OSC OUTPUT', key, val);
+    //log('OSC OUTPUT', key, val)
 }
 function formatScenes() {
     var sceneRet = state.sceneIds.map(function (sceneId) {
