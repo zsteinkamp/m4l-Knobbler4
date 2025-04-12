@@ -16,6 +16,7 @@ setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 type ClipSlotType = {
   hasStopButton: boolean
   hasClip: boolean
+  isRecording: boolean
   name: string
   color: string
 }
@@ -98,7 +99,7 @@ const state: StateType = {
 
 // MESSAGE HANDLERS
 function fire(slot: number, clipSlot: number) {
-  log('FIRE', slot, clipSlot)
+  //log('FIRE', slot, clipSlot)
   const trackId = state.displayTrackIds[slot]
   if (!trackId) {
     log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot)
@@ -122,7 +123,7 @@ function stopAll() {
   state.utilObj.call('stop_all_clips', null)
 }
 function stop(slot: number) {
-  log('STOP', slot)
+  //log('STOP', slot)
   const trackId = state.displayTrackIds[slot]
   if (!trackId) {
     log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot)
@@ -132,11 +133,11 @@ function stop(slot: number) {
   state.utilObj.call('stop_all_clips', null)
 }
 function groupFold(slot: number) {
-  log('FOLD', slot)
+  //log('FOLD', slot)
   foldInternal(slot, 1)
 }
 function groupUnfold(slot: number) {
-  log('UNFOLD', slot)
+  //log('UNFOLD', slot)
   foldInternal(slot, 0)
 }
 
@@ -220,6 +221,7 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
     let hasClip = false
     let name = ''
     let color = ''
+    let isRecording = false
 
     if (isGroup) {
       hasClip = !!+state.utilObj.get('controls_other_clips')
@@ -232,12 +234,14 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
           state.utilObj.id = clipId
           name = state.utilObj.get('name').toString()
           color = colorToString(state.utilObj.get('color'))
+          isRecording = !!+state.utilObj.get('is_recording')
         }
       }
     }
     state.trackSlots[slot].clipSlots.push({
       hasClip,
       hasStopButton,
+      isRecording,
       name,
       color,
     })
@@ -356,7 +360,13 @@ function formatTrackSlot(slot: number) {
     trackSlot.firedSlotIndex,
     trackSlot.arm,
     trackSlot.clipSlots.map((cs) => {
-      return [cs.hasClip ? 1 : 0, cs.hasStopButton ? 1 : 0, cs.name, cs.color]
+      return [
+        cs.hasClip ? 1 : 0,
+        cs.hasStopButton ? 1 : 0,
+        cs.name,
+        cs.color,
+        cs.isRecording ? 1 : 0,
+      ]
     }),
   ]
 }

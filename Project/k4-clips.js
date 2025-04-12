@@ -34,7 +34,7 @@ var state = {
 };
 // MESSAGE HANDLERS
 function fire(slot, clipSlot) {
-    log('FIRE', slot, clipSlot);
+    //log('FIRE', slot, clipSlot)
     var trackId = state.displayTrackIds[slot];
     if (!trackId) {
         log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot);
@@ -58,7 +58,7 @@ function stopAll() {
     state.utilObj.call('stop_all_clips', null);
 }
 function stop(slot) {
-    log('STOP', slot);
+    //log('STOP', slot)
     var trackId = state.displayTrackIds[slot];
     if (!trackId) {
         log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot);
@@ -68,11 +68,11 @@ function stop(slot) {
     state.utilObj.call('stop_all_clips', null);
 }
 function groupFold(slot) {
-    log('FOLD', slot);
+    //log('FOLD', slot)
     foldInternal(slot, 1);
 }
 function groupUnfold(slot) {
-    log('UNFOLD', slot);
+    //log('UNFOLD', slot)
     foldInternal(slot, 0);
 }
 function foldInternal(slot, foldState) {
@@ -148,6 +148,7 @@ function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
         var hasClip = false;
         var name = '';
         var color = '';
+        var isRecording = false;
         if (isGroup) {
             hasClip = !!+state.utilObj.get('controls_other_clips');
         }
@@ -160,12 +161,14 @@ function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
                     state.utilObj.id = clipId;
                     name = state.utilObj.get('name').toString();
                     color = (0, utils_1.colorToString)(state.utilObj.get('color'));
+                    isRecording = !!+state.utilObj.get('is_recording');
                 }
             }
         }
         state.trackSlots[slot].clipSlots.push({
             hasClip: hasClip,
             hasStopButton: hasStopButton,
+            isRecording: isRecording,
             name: name,
             color: color,
         });
@@ -259,7 +262,13 @@ function formatTrackSlot(slot) {
         trackSlot.firedSlotIndex,
         trackSlot.arm,
         trackSlot.clipSlots.map(function (cs) {
-            return [cs.hasClip ? 1 : 0, cs.hasStopButton ? 1 : 0, cs.name, cs.color];
+            return [
+                cs.hasClip ? 1 : 0,
+                cs.hasStopButton ? 1 : 0,
+                cs.name,
+                cs.color,
+                cs.isRecording ? 1 : 0,
+            ];
         }),
     ];
 }

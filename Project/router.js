@@ -54,7 +54,7 @@ function stdSlot(router, msg) {
 // emits a message followed by a slot number followed by a value
 function stdSlotVal(router, msg, val) {
     var slot = getSlotNum(router, msg);
-    log("STDSLOTVAL: outlet=".concat(router.outlet, " msg=").concat([router.msg, slot, val]));
+    //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
     outlet(router.outlet, router.msg, slot, val);
 }
 var ROUTER = [

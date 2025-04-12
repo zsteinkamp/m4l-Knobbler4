@@ -66,7 +66,7 @@ function stdSlot(router: RouterItem, msg: string) {
 // emits a message followed by a slot number followed by a value
 function stdSlotVal(router: RouterItem, msg: string, val: number | string) {
   const slot = getSlotNum(router, msg)
-  log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
+  //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
   outlet(router.outlet, router.msg, slot, val)
 }
 
