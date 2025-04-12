@@ -161,7 +161,7 @@ function dedupOscOutput(key: string, val: string | number) {
   }
   state.outputLast[key] = val
   outlet(OUTLET_OSC, [key, val])
-  log('OSC OUTPUT', key, val)
+  //log('OSC OUTPUT', key, val)
 }
 
 function formatScenes() {
@@ -227,14 +227,12 @@ function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
       hasClip = !!+state.utilObj.get('has_clip')
       if (hasClip) {
         const clipId = cleanArr(state.utilObj.get('clip'))[0]
-        if (!clipId) {
-          log('ERROR CLIPID SHOULD NOT BE ZERO')
-          continue
+        if (clipId) {
+          //log('ID', state.utilObj.id, clipId)
+          state.utilObj.id = clipId
+          name = state.utilObj.get('name').toString()
+          color = colorToString(state.utilObj.get('color'))
         }
-        //log('ID', state.utilObj.id, clipId)
-        state.utilObj.id = clipId
-        name = state.utilObj.get('name').toString()
-        color = colorToString(state.utilObj.get('color'))
       }
     }
     state.trackSlots[slot].clipSlots.push({
