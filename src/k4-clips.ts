@@ -209,6 +209,43 @@ function fillTrackMetadata(trackId: number) {
   }
 }
 
+function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
+  const trackId = state.trackSlots[slot].obsTrackClipSlots.id
+  const isGroup = state.tracks[trackId].groupState >= 0
+  state.trackSlots[slot].clipSlots = []
+  for (const clipSlotId of clipSlotIdArr) {
+    state.utilObj.id = clipSlotId
+
+    let hasClip = false
+    let name = ''
+    let color = ''
+
+    if (isGroup) {
+      hasClip = !!+state.utilObj.get('controls_other_clips')
+    } else {
+      const hasClip = !!+state.utilObj.get('has_clip')
+      if (hasClip) {
+        const clipId = cleanArr(state.utilObj.get('clip'))[0]
+        if (!clipId) {
+          log('ERROR CLIPID SHOULD NOT BE ZERO')
+          continue
+        }
+        //log('ID', state.utilObj.id, clipId)
+        state.utilObj.id = clipId
+        name = state.utilObj.get('name').toString()
+        color = colorToString(state.utilObj.get('color'))
+      }
+    }
+    const hasStopButton = !!+state.utilObj.get('has_stop_button')
+    state.trackSlots[slot].clipSlots.push({
+      hasClip,
+      hasStopButton,
+      name,
+      color,
+    })
+  }
+}
+
 function handlePlayingSlotIndex(slot: number, args: IArguments) {
   const argsArr = arrayfromargs(args)
   if (argsArr.shift() !== 'playing_slot_index') {
@@ -242,34 +279,6 @@ function handleArm(slot: number, args: IArguments) {
   }
   state.trackSlots[slot].arm = argsArr.shift()
   updateDisplay()
-}
-
-function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
-  state.trackSlots[slot].clipSlots = []
-  for (const clipSlotId of clipSlotIdArr) {
-    state.utilObj.id = clipSlotId
-    const hasClip = !!+state.utilObj.get('has_clip')
-    const hasStopButton = !!+state.utilObj.get('has_stop_button')
-    let name = ''
-    let color = ''
-    if (hasClip) {
-      const clipId = cleanArr(state.utilObj.get('clip'))[0]
-      if (!clipId) {
-        log('ERROR CLIPID SHOULD NOT BE ZERO')
-        continue
-      }
-      //log('ID', state.utilObj.id, clipId)
-      state.utilObj.id = clipId
-      name = state.utilObj.get('name').toString()
-      color = colorToString(state.utilObj.get('color'))
-    }
-    state.trackSlots[slot].clipSlots.push({
-      hasClip,
-      hasStopButton,
-      name,
-      color,
-    })
-  }
 }
 
 function handleClipSlots(slot: number, args: IArguments) {

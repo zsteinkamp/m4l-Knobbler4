@@ -137,6 +137,42 @@ function fillTrackMetadata(trackId) {
         color: (0, utils_1.colorToString)(state.utilObj.get('color')),
     };
 }
+function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
+    var trackId = state.trackSlots[slot].obsTrackClipSlots.id;
+    var isGroup = state.tracks[trackId].groupState >= 0;
+    state.trackSlots[slot].clipSlots = [];
+    for (var _i = 0, clipSlotIdArr_1 = clipSlotIdArr; _i < clipSlotIdArr_1.length; _i++) {
+        var clipSlotId = clipSlotIdArr_1[_i];
+        state.utilObj.id = clipSlotId;
+        var hasClip = false;
+        var name = '';
+        var color = '';
+        if (isGroup) {
+            hasClip = !!+state.utilObj.get('controls_other_clips');
+        }
+        else {
+            var hasClip_1 = !!+state.utilObj.get('has_clip');
+            if (hasClip_1) {
+                var clipId = (0, utils_1.cleanArr)(state.utilObj.get('clip'))[0];
+                if (!clipId) {
+                    log('ERROR CLIPID SHOULD NOT BE ZERO');
+                    continue;
+                }
+                //log('ID', state.utilObj.id, clipId)
+                state.utilObj.id = clipId;
+                name = state.utilObj.get('name').toString();
+                color = (0, utils_1.colorToString)(state.utilObj.get('color'));
+            }
+        }
+        var hasStopButton = !!+state.utilObj.get('has_stop_button');
+        state.trackSlots[slot].clipSlots.push({
+            hasClip: hasClip,
+            hasStopButton: hasStopButton,
+            name: name,
+            color: color,
+        });
+    }
+}
 function handlePlayingSlotIndex(slot, args) {
     var argsArr = arrayfromargs(args);
     if (argsArr.shift() !== 'playing_slot_index') {
@@ -164,34 +200,6 @@ function handleArm(slot, args) {
     }
     state.trackSlots[slot].arm = argsArr.shift();
     updateDisplay();
-}
-function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
-    state.trackSlots[slot].clipSlots = [];
-    for (var _i = 0, clipSlotIdArr_1 = clipSlotIdArr; _i < clipSlotIdArr_1.length; _i++) {
-        var clipSlotId = clipSlotIdArr_1[_i];
-        state.utilObj.id = clipSlotId;
-        var hasClip = !!+state.utilObj.get('has_clip');
-        var hasStopButton = !!+state.utilObj.get('has_stop_button');
-        var name = '';
-        var color = '';
-        if (hasClip) {
-            var clipId = (0, utils_1.cleanArr)(state.utilObj.get('clip'))[0];
-            if (!clipId) {
-                log('ERROR CLIPID SHOULD NOT BE ZERO');
-                continue;
-            }
-            //log('ID', state.utilObj.id, clipId)
-            state.utilObj.id = clipId;
-            name = state.utilObj.get('name').toString();
-            color = (0, utils_1.colorToString)(state.utilObj.get('color'));
-        }
-        state.trackSlots[slot].clipSlots.push({
-            hasClip: hasClip,
-            hasStopButton: hasStopButton,
-            name: name,
-            color: color,
-        });
-    }
 }
 function handleClipSlots(slot, args) {
     var argsArr = arrayfromargs(args);
