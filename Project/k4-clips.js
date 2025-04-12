@@ -1,4 +1,13 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
@@ -10,17 +19,10 @@ var NUM_TRACKS = 8;
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 var state = {
-    trackOffset: 0,
-    sceneOffset: 0,
     obsVisibleTracks: null,
     obsScenes: null,
     obsSelScene: null,
     obsSelTrack: null,
-    obsSelTrackName: null,
-    obsSelTrackColor: null,
-    obsSelSceneName: null,
-    obsSelSceneColor: null,
-    obsHighlightedClipSlot: null,
     scenes: {},
     tracks: {},
     trackSlots: [],
@@ -31,6 +33,7 @@ var state = {
     updateDebounce: null,
     utilObj: null,
     outputLast: {},
+    groupStack: [],
 };
 // MESSAGE HANDLERS
 function fire(slot, clipSlot) {
@@ -95,7 +98,7 @@ function dedupOscOutput(key, val) {
     }
     state.outputLast[key] = val;
     outlet(consts_1.OUTLET_OSC, [key, val]);
-    //log('OSC OUTPUT', key, val)
+    log('OSC OUTPUT', key, val);
 }
 function formatScenes() {
     var sceneRet = state.sceneIds.map(function (sceneId) {
@@ -222,6 +225,7 @@ function configureTrackSlot(slot, trackId) {
             firedSlotIndex: -1,
             arm: 0,
             clipSlots: [],
+            groupParents: [],
         };
     }
     if (!state.trackSlots[slot].obsTrackClipSlots) {
@@ -239,6 +243,22 @@ function configureTrackSlot(slot, trackId) {
     }
     state.trackSlots[slot].obsFiredSlotIndex.id = trackId;
     state.trackSlots[slot].obsFiredSlotIndex.property = 'fired_slot_index';
+    var groupTrackId = (0, utils_1.cleanArr)(state.trackSlots[slot].obsFiredSlotIndex.get('group_track'))[0];
+    // initialize empty
+    state.trackSlots[slot].groupParents = [];
+    if (groupTrackId) {
+        // this track is a member of a group, so find that group track in the groupStack array
+        while (state.groupStack.length) {
+            if (state.groupStack[state.groupStack.length - 1][0] !== groupTrackId) {
+                state.groupStack.pop();
+            }
+            else {
+                // found our group, so take everything from there and up
+                state.trackSlots[slot].groupParents = __spreadArray([], state.groupStack, true);
+                break;
+            }
+        }
+    }
     // only observe arm in non-group tracks
     if (state.tracks[trackId].groupState === -1) {
         if (!state.trackSlots[slot].obsArm) {
@@ -247,6 +267,10 @@ function configureTrackSlot(slot, trackId) {
         //log('HERE', state.trackSlots[slot].obsArm.type)
         state.trackSlots[slot].obsArm.id = trackId;
         state.trackSlots[slot].obsArm.property = 'arm';
+    }
+    else {
+        // this is a group, so push its id and color onto state.groupStack
+        state.groupStack.push([trackId, state.tracks[trackId].color]);
     }
 }
 function formatTrackSlot(slot) {
@@ -270,6 +294,7 @@ function formatTrackSlot(slot) {
                 cs.isRecording ? 1 : 0,
             ];
         }),
+        trackSlot.groupParents,
     ];
 }
 function handleVisibleTracks(args) {
@@ -281,10 +306,8 @@ function handleVisibleTracks(args) {
     state.visibleTrackIds = (0, utils_1.cleanArr)(argsArr);
     state.tracks = {};
     state.trackSlots = [];
-    state.displayTrackIds = state.visibleTrackIds; /*.slice(
-      state.trackOffset,
-      Math.min(state.visibleTrackIds.length, state.trackOffset + NUM_TRACKS)
-    )*/
+    state.groupStack = [];
+    state.displayTrackIds = state.visibleTrackIds;
     //log('DISPLAY TRACK IDs', state.displayTrackIds)
     var slot = 0;
     for (var _i = 0, _a = state.displayTrackIds; _i < _a.length; _i++) {

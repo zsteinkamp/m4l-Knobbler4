@@ -34,6 +34,8 @@ type TrackMeta = {
   groupState: number
 }
 
+type GroupStack = [number, string][]
+
 type TrackSlotMeta = {
   obsPlayingSlotIndex: LiveAPI
   obsFiredSlotIndex: LiveAPI
@@ -43,6 +45,7 @@ type TrackSlotMeta = {
   firedSlotIndex: number
   arm: number
   clipSlots: ClipSlotType[]
+  groupParents: GroupStack
 }
 
 type TracksType = Record<string, TrackMeta>
@@ -50,17 +53,10 @@ type TracksType = Record<string, TrackMeta>
 type TrackSlotsType = TrackSlotMeta[]
 
 type StateType = {
-  trackOffset: number
-  sceneOffset: number
   obsVisibleTracks: LiveAPI
   obsScenes: LiveAPI
   obsSelScene: LiveAPI
-  obsSelTrackName: LiveAPI
   obsSelTrack: LiveAPI
-  obsSelTrackColor: LiveAPI
-  obsSelSceneName: LiveAPI
-  obsSelSceneColor: LiveAPI
-  obsHighlightedClipSlot: LiveAPI
   scenes: ScenesType
   tracks: TracksType
   trackSlots: TrackSlotsType
@@ -71,20 +67,14 @@ type StateType = {
   updateDebounce: Task
   utilObj: LiveAPI
   outputLast: Record<string, string | number>
+  groupStack: GroupStack
 }
 
 const state: StateType = {
-  trackOffset: 0,
-  sceneOffset: 0,
   obsVisibleTracks: null,
   obsScenes: null,
   obsSelScene: null,
   obsSelTrack: null,
-  obsSelTrackName: null,
-  obsSelTrackColor: null,
-  obsSelSceneName: null,
-  obsSelSceneColor: null,
-  obsHighlightedClipSlot: null,
   scenes: {},
   tracks: {},
   trackSlots: [],
@@ -95,6 +85,7 @@ const state: StateType = {
   updateDebounce: null,
   utilObj: null,
   outputLast: {},
+  groupStack: [],
 }
 
 // MESSAGE HANDLERS
@@ -162,7 +153,7 @@ function dedupOscOutput(key: string, val: string | number) {
   }
   state.outputLast[key] = val
   outlet(OUTLET_OSC, [key, val])
-  //log('OSC OUTPUT', key, val)
+  log('OSC OUTPUT', key, val)
 }
 
 function formatScenes() {
@@ -304,6 +295,7 @@ function configureTrackSlot(slot: number, trackId: number) {
       firedSlotIndex: -1,
       arm: 0,
       clipSlots: [],
+      groupParents: [],
     }
   }
   if (!state.trackSlots[slot].obsTrackClipSlots) {
@@ -333,6 +325,25 @@ function configureTrackSlot(slot: number, trackId: number) {
   state.trackSlots[slot].obsFiredSlotIndex.id = trackId
   state.trackSlots[slot].obsFiredSlotIndex.property = 'fired_slot_index'
 
+  const groupTrackId = cleanArr(
+    state.trackSlots[slot].obsFiredSlotIndex.get('group_track')
+  )[0]
+  // initialize empty
+  state.trackSlots[slot].groupParents = []
+
+  if (groupTrackId) {
+    // this track is a member of a group, so find that group track in the groupStack array
+    while (state.groupStack.length) {
+      if (state.groupStack[state.groupStack.length - 1][0] !== groupTrackId) {
+        state.groupStack.pop()
+      } else {
+        // found our group, so take everything from there and up
+        state.trackSlots[slot].groupParents = [...state.groupStack]
+        break
+      }
+    }
+  }
+
   // only observe arm in non-group tracks
   if (state.tracks[trackId].groupState === -1) {
     if (!state.trackSlots[slot].obsArm) {
@@ -344,6 +355,9 @@ function configureTrackSlot(slot: number, trackId: number) {
     //log('HERE', state.trackSlots[slot].obsArm.type)
     state.trackSlots[slot].obsArm.id = trackId
     state.trackSlots[slot].obsArm.property = 'arm'
+  } else {
+    // this is a group, so push its id and color onto state.groupStack
+    state.groupStack.push([trackId, state.tracks[trackId].color])
   }
 }
 
@@ -368,6 +382,7 @@ function formatTrackSlot(slot: number) {
         cs.isRecording ? 1 : 0,
       ]
     }),
+    trackSlot.groupParents,
   ]
 }
 
@@ -380,12 +395,9 @@ function handleVisibleTracks(args: IArguments) {
   state.visibleTrackIds = cleanArr(argsArr as IdObserverArg)
   state.tracks = {}
   state.trackSlots = []
+  state.groupStack = []
 
-  state.displayTrackIds = state.visibleTrackIds /*.slice(
-    state.trackOffset,
-    Math.min(state.visibleTrackIds.length, state.trackOffset + NUM_TRACKS)
-  )*/
-
+  state.displayTrackIds = state.visibleTrackIds
   //log('DISPLAY TRACK IDs', state.displayTrackIds)
 
   let slot = 0
