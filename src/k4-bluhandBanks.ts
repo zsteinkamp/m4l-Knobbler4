@@ -338,10 +338,10 @@ function gotoTrack(trackIdStr: string) {
 }
 
 function onVariationChange() {
-  const api = new LiveAPI(
-    noFn,
-    'live_set view selected_track view selected_device'
-  )
+  const api = getSelectedDeviceApi()
+  if (+api.id === 0) {
+    return
+  }
   if (!+api.get('can_have_chains')) {
     // only applies to racks
     return
@@ -392,11 +392,7 @@ function onParameterChange(args: IdObserverArg) {
     return
   }
   //log('OPC ' + JSON.stringify(args))
-  const api = new LiveAPI(
-    noFn,
-    'live_set view selected_track view selected_device'
-  )
-  //log('APIID=' + api.id + ' ' + typeof api.id)
+  const api = state.paramsWatcher
   if (+api.id === 0) {
     return
   }
@@ -468,10 +464,10 @@ function onParameterChange(args: IdObserverArg) {
 }
 
 function variationNew() {
-  const api = new LiveAPI(
-    noFn,
-    'live_set view selected_track view selected_device'
-  )
+  const api = getSelectedDeviceApi()
+  if (+api.id === 0) {
+    return
+  }
   if (!+api.get('can_have_chains')) {
     // only applies to racks
     return
@@ -479,10 +475,10 @@ function variationNew() {
   api.call('store_variation', null)
 }
 function variationDelete(idx: number) {
-  const api = new LiveAPI(
-    noFn,
-    'live_set view selected_track view selected_device'
-  )
+  const api = getSelectedDeviceApi()
+  if (+api.id === 0) {
+    return
+  }
   if (!+api.get('can_have_chains')) {
     // only applies to racks
     return
@@ -491,10 +487,10 @@ function variationDelete(idx: number) {
   api.call('delete_selected_variation', null)
 }
 function variationRecall(idx: number) {
-  const api = new LiveAPI(
-    noFn,
-    'live_set view selected_track view selected_device'
-  )
+  const api = getSelectedDeviceApi()
+  if (+api.id === 0) {
+    return
+  }
   if (!+api.get('can_have_chains')) {
     // only applies to racks
     return
@@ -504,10 +500,10 @@ function variationRecall(idx: number) {
   onVariationChange()
 }
 function randomMacros() {
-  const api = new LiveAPI(
-    noFn,
-    'live_set view selected_track view selected_device'
-  )
+  const api = getSelectedDeviceApi()
+  if (+api.id === 0) {
+    return
+  }
   if (!+api.get('can_have_chains')) {
     // only applies to racks
     return
@@ -541,6 +537,16 @@ function getUtilApi() {
     utilApi = new LiveAPI(noFn, 'live_set')
   }
   return utilApi
+}
+let selectedDeviceApi: LiveAPI = null
+function getSelectedDeviceApi() {
+  if (!selectedDeviceApi) {
+    selectedDeviceApi = new LiveAPI(
+      noFn,
+      'live_set view selected_track view selected_device'
+    )
+  }
+  return selectedDeviceApi
 }
 let liveSetViewApi: LiveAPI = null
 function getLiveSetViewApi() {
