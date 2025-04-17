@@ -112,6 +112,12 @@ function fireScene(sceneIdx: number) {
   state.utilObj.id = sceneId
   state.utilObj.call('fire', null)
 }
+function captureInsert() {
+  //log('CAPTURE INSERT')
+  state.utilObj.goto('live_set')
+  state.utilObj.call('capture_and_insert_scene', null)
+}
+
 function stopAll() {
   state.utilObj.goto('live_set')
   state.utilObj.call('stop_all_clips', null)

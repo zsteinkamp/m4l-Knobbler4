@@ -487,6 +487,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_CLIPS,
+    prefix: '/clips/captureInsert',
+    handler: bareMsg,
+    msg: 'captureInsert',
+  },
+  {
+    outlet: OUTLET_CLIPS,
     prefix: '/clips/init',
     handler: bareMsg,
     msg: 'init',
