@@ -301,14 +301,18 @@ function gotoTrack(trackIdStr) {
     api.set('selected_track', ['id', trackId]);
 }
 function onVariationChange() {
+    //log('VARIATIONSCHANGE')
     var api = getSelectedDeviceApi();
     if (+api.id === 0) {
         return;
     }
+    //log('VARIATIONSCHANGE2')
     if (!+api.get('can_have_chains')) {
         // only applies to racks
+        //log('VARIATIONSCHANGE2 -- NO', api.get('name').toString())
         return;
     }
+    //log('VARIATIONSCHANGE3')
     // send variation stuff
     outlet(consts_1.OUTLET_OSC, [
         '/blu/variations',
@@ -481,6 +485,7 @@ var selectedDeviceApi = null;
 function getSelectedDeviceApi() {
     if (!selectedDeviceApi) {
         selectedDeviceApi = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+        selectedDeviceApi.mode = 1;
     }
     return selectedDeviceApi;
 }
