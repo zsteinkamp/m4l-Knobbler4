@@ -89,6 +89,26 @@ const state: StateType = {
 }
 
 // MESSAGE HANDLERS
+function rename(slot: number, data: string) {
+  const [clipSlotIdx, name] = JSON.parse(data)
+  log('RENAME', { slot, clipSlotIdx, name })
+  const trackId = state.displayTrackIds[slot]
+  if (!trackId) {
+    log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot)
+    return
+  }
+  state.utilObj.id = trackId
+  state.utilObj.goto('clip_slots ' + clipSlotIdx + ' clip')
+  state.utilObj.set('name', name)
+
+  const clipSlotIdArr = cleanArr(
+    state.trackSlots[slot].obsTrackClipSlots.get('clip_slots')
+  )
+  refreshClipSlotsInSlot(slot, clipSlotIdArr)
+
+  updateDisplay()
+}
+
 function fire(slot: number, clipSlot: number) {
   //log('FIRE', slot, clipSlot)
   const trackId = state.displayTrackIds[slot]
@@ -103,6 +123,19 @@ function fire(slot: number, clipSlot: number) {
   state.utilObj.goto('live_set view')
   state.utilObj.set('highlighted_clip_slot', 'id ' + slotId)
 }
+
+function renameScene(sceneIdx: number, name: string) {
+  const sceneId = state.sceneIds[sceneIdx]
+  if (!sceneId) {
+    log('INVALUD SCENE ID')
+    return
+  }
+  state.utilObj.id = sceneId
+  state.utilObj.set('name', name)
+  fillSceneMetadata(sceneId)
+  updateDisplay()
+}
+
 function fireScene(sceneIdx: number) {
   const sceneId = state.sceneIds[sceneIdx]
   if (!sceneId) {

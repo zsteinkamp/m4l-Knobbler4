@@ -36,6 +36,21 @@ var state = {
     groupStack: [],
 };
 // MESSAGE HANDLERS
+function rename(slot, data) {
+    var _a = JSON.parse(data), clipSlotIdx = _a[0], name = _a[1];
+    log('RENAME', { slot: slot, clipSlotIdx: clipSlotIdx, name: name });
+    var trackId = state.displayTrackIds[slot];
+    if (!trackId) {
+        log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot);
+        return;
+    }
+    state.utilObj.id = trackId;
+    state.utilObj.goto('clip_slots ' + clipSlotIdx + ' clip');
+    state.utilObj.set('name', name);
+    var clipSlotIdArr = (0, utils_1.cleanArr)(state.trackSlots[slot].obsTrackClipSlots.get('clip_slots'));
+    refreshClipSlotsInSlot(slot, clipSlotIdArr);
+    updateDisplay();
+}
 function fire(slot, clipSlot) {
     //log('FIRE', slot, clipSlot)
     var trackId = state.displayTrackIds[slot];
@@ -49,6 +64,17 @@ function fire(slot, clipSlot) {
     var slotId = state.utilObj.id;
     state.utilObj.goto('live_set view');
     state.utilObj.set('highlighted_clip_slot', 'id ' + slotId);
+}
+function renameScene(sceneIdx, name) {
+    var sceneId = state.sceneIds[sceneIdx];
+    if (!sceneId) {
+        log('INVALUD SCENE ID');
+        return;
+    }
+    state.utilObj.id = sceneId;
+    state.utilObj.set('name', name);
+    fillSceneMetadata(sceneId);
+    updateDisplay();
 }
 function fireScene(sceneIdx) {
     var sceneId = state.sceneIds[sceneIdx];

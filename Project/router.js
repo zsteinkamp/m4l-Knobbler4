@@ -444,6 +444,18 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_CLIPS,
+        prefix: '/clips/rename/scene',
+        handler: stdSlotVal,
+        msg: 'renameScene',
+    },
+    {
+        outlet: OUTLET_CLIPS,
+        prefix: '/clips/rename/track',
+        handler: stdSlotVal,
+        msg: 'rename',
+    },
+    {
+        outlet: OUTLET_CLIPS,
         prefix: '/clips/fire/track',
         handler: stdSlotVal,
         msg: 'fire',
