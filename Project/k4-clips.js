@@ -38,7 +38,7 @@ var state = {
 // MESSAGE HANDLERS
 function rename(slot, data) {
     var _a = JSON.parse(data), clipSlotIdx = _a[0], name = _a[1];
-    log('RENAME', { slot: slot, clipSlotIdx: clipSlotIdx, name: name });
+    //log('RENAME', { slot, clipSlotIdx, name })
     var trackId = state.displayTrackIds[slot];
     if (!trackId) {
         log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot);

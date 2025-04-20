@@ -91,7 +91,7 @@ const state: StateType = {
 // MESSAGE HANDLERS
 function rename(slot: number, data: string) {
   const [clipSlotIdx, name] = JSON.parse(data)
-  log('RENAME', { slot, clipSlotIdx, name })
+  //log('RENAME', { slot, clipSlotIdx, name })
   const trackId = state.displayTrackIds[slot]
   if (!trackId) {
     log('WEIRD WE GOT A SLOT THAT HAS NO TRACK', slot)
