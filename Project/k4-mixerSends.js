@@ -51,10 +51,10 @@ function pauseUnpause(key) {
 var setSendWatcherIds = function (sendIds) {
     for (var i = 0; i < MAX_SENDS; i++) {
         if (sendIds[i] !== undefined) {
-            state.watchers[i].id = sendIds[i];
+            state.watchers[i] && (state.watchers[i].id = sendIds[i]);
         }
         else {
-            state.watchers[i].id = 0;
+            state.watchers[i] && (state.watchers[i].id = 0);
             outlet(consts_1.OUTLET_OSC, ['/mixer/send' + (i + 1), 0]);
         }
     }

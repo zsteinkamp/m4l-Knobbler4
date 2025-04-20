@@ -301,11 +301,18 @@ function gotoTrack(trackIdStr) {
     api.set('selected_track', ['id', trackId]);
 }
 function onVariationChange() {
-    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
-    if (!+api.get('can_have_chains')) {
-        // only applies to racks
+    //log('VARIATIONSCHANGE')
+    var api = getSelectedDeviceApi();
+    if (+api.id === 0) {
         return;
     }
+    //log('VARIATIONSCHANGE2')
+    if (!+api.get('can_have_chains')) {
+        // only applies to racks
+        //log('VARIATIONSCHANGE2 -- NO', api.get('name').toString())
+        return;
+    }
+    //log('VARIATIONSCHANGE3')
     // send variation stuff
     outlet(consts_1.OUTLET_OSC, [
         '/blu/variations',
@@ -341,8 +348,7 @@ function onParameterChange(args) {
         return;
     }
     //log('OPC ' + JSON.stringify(args))
-    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
-    //log('APIID=' + api.id + ' ' + typeof api.id)
+    var api = state.paramsWatcher;
     if (+api.id === 0) {
         return;
     }
@@ -403,7 +409,10 @@ function onParameterChange(args) {
     sendCurrBank();
 }
 function variationNew() {
-    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    var api = getSelectedDeviceApi();
+    if (+api.id === 0) {
+        return;
+    }
     if (!+api.get('can_have_chains')) {
         // only applies to racks
         return;
@@ -411,7 +420,10 @@ function variationNew() {
     api.call('store_variation', null);
 }
 function variationDelete(idx) {
-    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    var api = getSelectedDeviceApi();
+    if (+api.id === 0) {
+        return;
+    }
     if (!+api.get('can_have_chains')) {
         // only applies to racks
         return;
@@ -420,7 +432,10 @@ function variationDelete(idx) {
     api.call('delete_selected_variation', null);
 }
 function variationRecall(idx) {
-    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    var api = getSelectedDeviceApi();
+    if (+api.id === 0) {
+        return;
+    }
     if (!+api.get('can_have_chains')) {
         // only applies to racks
         return;
@@ -430,7 +445,10 @@ function variationRecall(idx) {
     onVariationChange();
 }
 function randomMacros() {
-    var api = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+    var api = getSelectedDeviceApi();
+    if (+api.id === 0) {
+        return;
+    }
     if (!+api.get('can_have_chains')) {
         // only applies to racks
         return;
@@ -462,6 +480,14 @@ function getUtilApi() {
         utilApi = new LiveAPI(consts_1.noFn, 'live_set');
     }
     return utilApi;
+}
+var selectedDeviceApi = null;
+function getSelectedDeviceApi() {
+    if (!selectedDeviceApi) {
+        selectedDeviceApi = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+        selectedDeviceApi.mode = 1;
+    }
+    return selectedDeviceApi;
 }
 var liveSetViewApi = null;
 function getLiveSetViewApi() {
