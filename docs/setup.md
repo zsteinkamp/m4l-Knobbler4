@@ -25,4 +25,4 @@ Next, check out all of Knobbler's [Features](./features.md).
 
 If you're having trouble, then check out [Troubleshooting](./troubleshooting.md).
 
-Perhaps you want to connect over [USB](./USB.md)?
+If you are somewhere without a WiFi network, here are some instructions to [create a private WiFi network on your Mac](wifi-adhoc.md).
