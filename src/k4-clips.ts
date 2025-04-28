@@ -1,6 +1,13 @@
 import { cleanArr, colorToString, isDeviceSupported, logFactory } from './utils'
 import config from './config'
-import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
+import {
+  noFn,
+  INLET_MSGS,
+  OUTLET_MSGS,
+  OUTLET_OSC,
+  MAX_TRACKS,
+  MAX_SCENES,
+} from './consts'
 
 autowatch = 1
 inlets = 1
@@ -244,6 +251,10 @@ function fillTrackMetadata(trackId: number) {
 }
 
 function refreshClipSlotsInSlot(slot: number, clipSlotIdArr: number[]) {
+  const exceededScenes = clipSlotIdArr.length > MAX_SCENES
+  if (exceededScenes) {
+    clipSlotIdArr = clipSlotIdArr.slice(0, MAX_SCENES)
+  }
   const trackId = state.trackSlots[slot].obsTrackClipSlots.id
   const isGroup = state.tracks[trackId].groupState >= 0
   state.trackSlots[slot].clipSlots = []
@@ -435,6 +446,12 @@ function handleVisibleTracks(args: IArguments) {
     return
   }
   state.visibleTrackIds = cleanArr(argsArr as IdObserverArg)
+  const exceededTracks = state.visibleTrackIds.length > MAX_TRACKS
+  outlet(OUTLET_OSC, '/clips/exceededTracks', [exceededTracks ? 1 : 0])
+  if (exceededTracks) {
+    state.visibleTrackIds = state.visibleTrackIds.slice(0, MAX_TRACKS)
+  }
+
   state.tracks = {}
   state.trackSlots = []
   state.groupStack = []
@@ -475,6 +492,12 @@ function handleScenes(args: IArguments) {
     return
   }
   state.sceneIds = cleanArr(argsArr as IdObserverArg)
+  const exceededScenes = state.sceneIds.length > MAX_SCENES
+  outlet(OUTLET_OSC, '/clips/exceededScenes', [exceededScenes ? 1 : 0])
+  if (exceededScenes) {
+    state.sceneIds = state.sceneIds.slice(0, MAX_SCENES)
+  }
+
   state.scenes = {}
 
   // temp do them all

@@ -175,6 +175,10 @@ function fillTrackMetadata(trackId) {
     };
 }
 function refreshClipSlotsInSlot(slot, clipSlotIdArr) {
+    var exceededScenes = clipSlotIdArr.length > consts_1.MAX_SCENES;
+    if (exceededScenes) {
+        clipSlotIdArr = clipSlotIdArr.slice(0, consts_1.MAX_SCENES);
+    }
     var trackId = state.trackSlots[slot].obsTrackClipSlots.id;
     var isGroup = state.tracks[trackId].groupState >= 0;
     state.trackSlots[slot].clipSlots = [];
@@ -338,6 +342,11 @@ function handleVisibleTracks(args) {
         return;
     }
     state.visibleTrackIds = (0, utils_1.cleanArr)(argsArr);
+    var exceededTracks = state.visibleTrackIds.length > consts_1.MAX_TRACKS;
+    outlet(consts_1.OUTLET_OSC, '/clips/exceededTracks', [exceededTracks ? 1 : 0]);
+    if (exceededTracks) {
+        state.visibleTrackIds = state.visibleTrackIds.slice(0, consts_1.MAX_TRACKS);
+    }
     state.tracks = {};
     state.trackSlots = [];
     state.groupStack = [];
@@ -374,6 +383,11 @@ function handleScenes(args) {
         return;
     }
     state.sceneIds = (0, utils_1.cleanArr)(argsArr);
+    var exceededScenes = state.sceneIds.length > consts_1.MAX_SCENES;
+    outlet(consts_1.OUTLET_OSC, '/clips/exceededScenes', [exceededScenes ? 1 : 0]);
+    if (exceededScenes) {
+        state.sceneIds = state.sceneIds.slice(0, consts_1.MAX_SCENES);
+    }
     state.scenes = {};
     // temp do them all
     state.displaySceneIds = state.sceneIds;

@@ -27,3 +27,6 @@ export const FIELD_ID = 1
 export const FIELD_NAME = 2
 export const FIELD_COLOR = 3
 export const FIELD_INDENT = 4
+
+export const MAX_TRACKS = 25
+export const MAX_SCENES = 25
