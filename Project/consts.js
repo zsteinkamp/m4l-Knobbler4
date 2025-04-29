@@ -25,5 +25,5 @@ exports.FIELD_ID = 1;
 exports.FIELD_NAME = 2;
 exports.FIELD_COLOR = 3;
 exports.FIELD_INDENT = 4;
-exports.MAX_TRACKS = 25;
-exports.MAX_SCENES = 25;
+exports.MAX_TRACKS = 30;
+exports.MAX_SCENES = 50;
