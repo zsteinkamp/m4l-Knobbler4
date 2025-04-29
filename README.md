@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-04-29 [v34](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v34/Knobbler4-v34.amxd) - Removed Clips view support. Reliability improvements.
 - 2025-04-20 [v33](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v33/Knobbler4-v33.amxd) - Clips view support (beta)
 - 2025-04-03 [v32](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v32/Knobbler4-v32.amxd) - Support for sending rack macro variations and rack macro randomize; Check for device version updates and alert with a "!!" icon.
 - 2025-03-16 [v31](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v31/Knobbler4-v31.amxd) - Make Knobbler resilient to "forgotten" devices such as CC Control. These devices do not adhere to Ableton's API standard and thus misbehave with Knobbler. I have contacted support@ableton about this.
