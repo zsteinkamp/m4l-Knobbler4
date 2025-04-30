@@ -6,6 +6,7 @@
 - [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
 
 [Download Knobbler for your iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+
 [Check out Knobbler in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
 
 [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
