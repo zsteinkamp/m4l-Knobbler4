@@ -6,6 +6,7 @@
 - [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
 
 [Download Knobbler for your iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+[Check out Knobbler in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
 
 [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
 
@@ -33,6 +34,8 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 Visit the Apple App Store on your iPad to purchase and install the Knobbler app. Just search for Knobbler or click this button.
 
 <a href="https://apps.apple.com/us/app/knobbler/id6740183923"><img src="images/app-store.png" style="max-width: 12em" /></a>
+
+For Android Tablet users, get Knobbler in the [Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative).
 
 Then download the latest Knobbler device for Ableton Live. Click the blue device download button below...
 
