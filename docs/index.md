@@ -25,7 +25,7 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 
 - Two pages of **16 assignable, auto-labeling, auto-coloring, high-resolution faders** that always show you exactly what is happening in your music.
 - A page dedicated to **all of the parameters** of the currently selected device. Parameter banks are labeled, and just a touch away.
-- Support for storing, recalling, and generating random Variations in racks.
+- Support for storing, recalling, and generating random **Variations** in Instrument, Audio Effect, and MIDI Racks.
 - Eight **device shortcut buttons** to jump directly to the most important devices in your Live Set.
 - An innovative **navigation system** that lets you dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
 - A **mixer channel strip** for the currently selected track, giving you control over volume, mute, solo, record, send levels, and even the crossfader.

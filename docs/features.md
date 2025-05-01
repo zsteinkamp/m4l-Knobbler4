@@ -73,7 +73,7 @@ If you tap the track name under the Knobbler slider, that will select that track
 
 Bluhand gives you a parameter-focused view of the currently selected device.
 
-Parameter banks are shown above the sliders.
+Parameter banks are shown above the sliders. In the case of racks, Variations controls are shown.
 
 The device can be toggled off and on with the orange button next to the device title.
 
@@ -82,6 +82,22 @@ The device can be toggled off and on with the orange button next to the device t
 #### Default Value
 
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
+
+#### Variations Support
+
+When a Rack is selected, the space normally used for Parameter Banks changes to show Variations controls.
+
+![Variations Controls](images/variations.png)
+
+Stored variations are shown with the numbered buttons. Unfortunately, Ableton Live does not provide apps like Knobbler access to the variation name.
+
+The selected variation is shown with a brighter button.
+
+Tap the Camera icon to store a new variation.
+
+Tap the Dice icon to randomize the Rack's Macro controls.
+
+
 
 #### Fast Mapping to Knobbler
 
