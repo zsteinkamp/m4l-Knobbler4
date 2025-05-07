@@ -477,6 +477,9 @@ function variationNew() {
     return
   }
   api.call('store_variation', null)
+  const numVariations = +api.get('variation_count') || 1
+  api.set('selected_variation_index', numVariations - 1)
+  onVariationChange()
 }
 function variationDelete(idx: number) {
   const api = getSelectedDeviceApi()

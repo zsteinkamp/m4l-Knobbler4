@@ -418,6 +418,9 @@ function variationNew() {
         return;
     }
     api.call('store_variation', null);
+    var numVariations = +api.get('variation_count') || 1;
+    api.set('selected_variation_index', numVariations - 1);
+    onVariationChange();
 }
 function variationDelete(idx) {
     var api = getSelectedDeviceApi();
