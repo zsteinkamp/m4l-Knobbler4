@@ -31,6 +31,8 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 - A **mixer channel strip** for the currently selected track, giving you control over volume, mute, solo, record, send levels, and even the crossfader.
 - **Direct access** to familiar buttons from Live's toolbar, such as tap tempo, capture MIDI, and of course, transport controls.
 
+Note that Knobbler is currently designed as a single-instance device, so it will only work with a single tablet.
+
 ### Download
 
 Visit the Apple App Store on your iPad to purchase and install the Knobbler app. Just search for Knobbler or click this button.

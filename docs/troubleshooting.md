@@ -87,6 +87,10 @@ You may need to use the IP address of your computer rather than browsing for it.
 
 If you want to have the Live UI follow what you are seeing in Knobbler's navigation panel, you will need to configure a Control Surface in Live'a MIDI settings. Choose the "ADVANCE" control surface from the dropdown, and nested devices will be displayed as you navigate.
 
+#### I cannot get more than one tablet/instance to work properly.
+
+Knobbler is currently designed as a single-instance device, meaning one Live Set can only have one instance of the Knobbler device communicating with a single tablet.
+
 #### The ports in the device and in the app are different. What gives?
 
 This is by design.
