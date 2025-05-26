@@ -746,7 +746,7 @@
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 1019.0, 595.0, 67.0, 22.0 ],
+					"patching_rect" : [ 1028.5, 511.0, 67.0, 22.0 ],
 					"text" : "r #0---color"
 				}
 
@@ -783,7 +783,7 @@
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 774.0, 595.0, 71.0, 22.0 ],
+					"patching_rect" : [ 778.5, 511.0, 71.0, 22.0 ],
 					"text" : "r #0---name"
 				}
 
@@ -843,7 +843,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 1109.0, 695.0, 35.0, 22.0 ],
+					"patching_rect" : [ 1109.0, 685.0, 35.0, 22.0 ],
 					"text" : "out 1"
 				}
 
@@ -868,7 +868,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 1109.0, 595.0, 41.0, 22.0 ],
+					"patching_rect" : [ 1109.0, 590.0, 41.0, 22.0 ],
 					"text" : "set $1"
 				}
 
@@ -892,8 +892,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 1109.0, 632.0, 53.0, 22.0 ],
-					"text" : "prepend"
+					"patching_rect" : [ 1109.0, 640.0, 105.0, 22.0 ],
+					"text" : "prepend /fooColor"
 				}
 
 			}
@@ -953,7 +953,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 861.0, 595.0, 41.0, 22.0 ],
+					"patching_rect" : [ 861.0, 590.0, 41.0, 22.0 ],
 					"text" : "set $1"
 				}
 
@@ -977,8 +977,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 861.0, 674.0, 53.0, 22.0 ],
-					"text" : "prepend"
+					"patching_rect" : [ 861.0, 639.0, 108.0, 22.0 ],
+					"text" : "prepend /fooName"
 				}
 
 			}
@@ -1147,7 +1147,7 @@
 						"valueof" : 						{
 							"parameter_invisible" : 1,
 							"parameter_linknames" : 1,
-							"parameter_longname" : "shortcutPath",
+							"parameter_longname" : "0_shortcutPath",
 							"parameter_modmode" : 0,
 							"parameter_shortname" : "shortcutPath",
 							"parameter_type" : 3
@@ -1155,7 +1155,7 @@
 
 					}
 ,
-					"varname" : "shortcutPath"
+					"varname" : "0_shortcutPath"
 				}
 
 			}
@@ -1250,7 +1250,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 861.0, 720.0, 35.0, 22.0 ],
+					"patching_rect" : [ 861.0, 685.0, 35.0, 22.0 ],
 					"saved_object_attributes" : 					{
 						"attr_comment" : ""
 					}
@@ -1885,7 +1885,7 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-15" : [ "shortcutPath", "shortcutPath", 0 ],
+			"obj-15" : [ "0_shortcutPath", "shortcutPath", 0 ],
 			"parameterbanks" : 			{
 				"0" : 				{
 					"index" : 0,
