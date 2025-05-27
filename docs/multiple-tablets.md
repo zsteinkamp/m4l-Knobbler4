@@ -1,10 +1,10 @@
-### Using Multiple Tablets with Knobbler
+## Using Multiple Tablets with Knobbler
 
 It is possible to use more than one tablet by using more than one instance of Knobbler.
 
 ![Dual Tablets](./images/dual_tablets-export.jpg)
 
-#### Tablet #1
+### Tablet #1
 
 1. Open the Knobbler app on Tablet #1.
 1. Add the Knobbler device to a track in your Live Set.
@@ -12,7 +12,7 @@ It is possible to use more than one tablet by using more than one instance of Kn
 1. Select Tablet #1 from the tablet drop-down.
 1. On Tablet #1, go to the Setup screen and refresh the list. Select the Knobbler device with port `2345`. If one does not appear, then just enter the port number manually above.
 
-##### Tablet #2
+### Tablet #2
 
 5. Open the Knobbler app on Tablet #2
 6. Add another instance of the Knobbler device
