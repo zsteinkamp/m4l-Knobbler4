@@ -11,15 +11,17 @@
   > - If it's the first time, make sure to allow Knobbler to find devices on your network. This is how it will find its companion device in your Ableton Live set.
   >   ![Allow Permissions](images/ipad_allow_network.jpg)
 - Click "Rescan Net" in the Knobbler device in Ableton Live.
-  ![Click Rescan Net](images/device-rescan.png)
+  ![Click Rescan Net](images/discover-rescan.png)
 - Choose your iPad from the drop-down list.
-  ![Click Rescan Net](images/device-dropdown.png)
+  ![Click Rescan Net](images/discover-dropdown.png)
 - Back on the iPad, select your computer from the list. "air.local" in the screenshot below.
   ![Setup Page](images/ipad-setup-page.png)
   > - If you are seeing the "Nobody Home" message, pull down on the message to refresh. Your computer should show up after that.
   >   ![Setup Page](images/ipad-setup-nobody.png)
 - You should see a "Connection Success" message. From there, it's time to get to Knobblin'!
   ![Setup Success](images/ipad-setup-success.png)
+
+If you want to use more than one tablet, then follow these instructions here: [Multiple Tablets](./multiple-tablets.md).
 
 Next, check out all of Knobbler's [Features](./features.md).
 

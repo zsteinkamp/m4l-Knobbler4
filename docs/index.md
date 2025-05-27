@@ -30,8 +30,7 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 - An innovative **navigation system** that lets you dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
 - A **mixer channel strip** for the currently selected track, giving you control over volume, mute, solo, record, send levels, and even the crossfader.
 - **Direct access** to familiar buttons from Live's toolbar, such as tap tempo, capture MIDI, and of course, transport controls.
-
-Note that Knobbler is currently designed as a single-instance device, so it will only work with a single tablet.
+- Support for **multiple tablets** with multiple Knobbler device instances.
 
 ### Download
 
