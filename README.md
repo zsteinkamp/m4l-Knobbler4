@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-05-26 [v35](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v35/Knobbler4-v35.amxd) - Support multiple tablets by allowing for multiple Knobbler device instances with their own unique receive ports; Fix some initialization bugs that may have crashed the Android app.
 - 2025-04-29 [v34](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v34/Knobbler4-v34.amxd) - Removed Clips view support. Reliability improvements.
 - 2025-04-20 [v33](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v33/Knobbler4-v33.amxd) - Clips view support (beta)
 - 2025-04-03 [v32](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v32/Knobbler4-v32.amxd) - Support for sending rack macro variations and rack macro randomize; Check for device version updates and alert with a "!!" icon.
