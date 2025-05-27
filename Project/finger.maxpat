@@ -40,14 +40,45 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
-					"format" : 6,
-					"id" : "obj-144",
-					"maxclass" : "flonum",
-					"numinlets" : 1,
+					"id" : "obj-145",
+					"maxclass" : "newobj",
+					"numinlets" : 2,
 					"numoutlets" : 2,
-					"outlettype" : [ "", "bang" ],
-					"parameter_enable" : 0,
-					"patching_rect" : [ 1293.0, 718.0, 50.0, 22.0 ]
+					"outlettype" : [ "", "" ],
+					"patching_rect" : [ 484.0, 633.0, 45.0, 22.0 ],
+					"text" : "route s"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-133",
+					"linecount" : 5,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 73.0, 1132.0, 99.0, 74.0 ],
+					"saved_attribute_attributes" : 					{
+						"textcolor" : 						{
+							"expression" : "themecolor.live_value_arc"
+						}
+
+					}
+,
+					"text" : "While initializing this will just emit \"s s\", so that needs to get filtered out.",
+					"textcolor" : [ 0.011764705882353, 0.764705882352941, 0.835294117647059, 1.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-144",
+					"maxclass" : "newobj",
+					"numinlets" : 2,
+					"numoutlets" : 2,
+					"outlettype" : [ "", "" ],
+					"patching_rect" : [ 172.0, 1149.0, 45.0, 22.0 ],
+					"text" : "route s"
 				}
 
 			}
@@ -389,7 +420,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1795.0, 468.0, 83.0, 22.0 ],
-					"text" : "/bparam0auto"
+					"text" : "/bparam1auto"
 				}
 
 			}
@@ -994,7 +1025,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1253.0, 593.0, 45.0, 22.0 ],
-					"text" : "/bval0"
+					"text" : "/bval1"
 				}
 
 			}
@@ -1068,7 +1099,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1753.0, 302.0, 67.0, 22.0 ],
-					"text" : "/bvalStr0"
+					"text" : "/bvalStr1"
 				}
 
 			}
@@ -1129,7 +1160,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1577.0, 397.0, 69.0, 22.0 ],
-					"text" : "/bparam0"
+					"text" : "/bparam1"
 				}
 
 			}
@@ -1153,7 +1184,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1392.0, 492.0, 81.0, 22.0 ],
-					"text" : "/bval0color"
+					"text" : "/bval1color"
 				}
 
 			}
@@ -1368,7 +1399,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 1018.0, 296.0, 109.0, 22.0 ],
+					"patching_rect" : [ 1018.0, 296.0, 122.0, 22.0 ],
 					"text" : "send #0-VALGATE"
 				}
 
@@ -1486,7 +1517,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 148.0, 1050.5, 82.0, 22.0 ],
-					"text" : "/bval0color"
+					"text" : "/bval1color"
 				}
 
 			}
@@ -1510,7 +1541,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 244.0, 1050.5, 50.0, 22.0 ],
-					"text" : "ff39d4ff"
+					"text" : "ffffffff"
 				}
 
 			}
@@ -1654,7 +1685,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 484.0, 624.0, 39.0, 22.0 ],
+					"patching_rect" : [ 510.0, 672.0, 39.0, 22.0 ],
 					"text" : "$2 $1"
 				}
 
@@ -1815,7 +1846,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 735.0, 306.0, 57.0, 22.0 ],
-					"text" : "id 2"
+					"text" : "id 149"
 				}
 
 			}
@@ -2226,6 +2257,20 @@
 				"patchline" : 				{
 					"destination" : [ "obj-29", 0 ],
 					"source" : [ "obj-143", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 1 ],
+					"source" : [ "obj-144", 1 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-54", 0 ],
+					"source" : [ "obj-145", 1 ]
 				}
 
 			}
@@ -2693,7 +2738,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-54", 0 ],
+					"destination" : [ "obj-145", 0 ],
 					"source" : [ "obj-53", 0 ]
 				}
 
@@ -2770,7 +2815,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-1", 1 ],
+					"destination" : [ "obj-144", 0 ],
 					"source" : [ "obj-63", 0 ]
 				}
 
@@ -2993,8 +3038,13 @@
 
 			}
  ],
-		"dependency_cache" : [  ],
-		"autosave" : 0
+		"saved_attribute_attributes" : 		{
+			"default_plcolor" : 			{
+				"expression" : ""
+			}
+
+		}
+
 	}
 
 }
