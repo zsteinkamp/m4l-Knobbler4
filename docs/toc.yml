@@ -6,6 +6,8 @@
   title: Setup
 - fname: troubleshooting.md
   title: Troubleshooting
+- fname: multiple-tablets.md
+  title: Multiple Tablet Setup
 - fname: updating.md
   title: Updating the Max for Live Device
 - fname: __sep__
