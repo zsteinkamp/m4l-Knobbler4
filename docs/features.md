@@ -97,8 +97,6 @@ Tap the Camera icon to store a new variation.
 
 Tap the Dice icon to randomize the Rack's Macro controls.
 
-
-
 #### Fast Mapping to Knobbler
 
 Tap a parameter name on a Bluhand slider to enter Knobbler mapping mode. The slider above that parameter name will get a bright green border. Then if you visit the Knobbler 1 or Knobbler 2 page, every slider there will have the same green border. Tap one of those sliders to map that parameter to that Knobbler fader. Fast!
@@ -138,6 +136,13 @@ Tap the Unmap button again to exit Unmapping mode.
 #### Using the Shortcut Buttons
 
 Regardless of whether you are on a Bluhand or Knobbler page, tapping a shortcut button will take you to the Bluhand page with that device selected.
+
+### External Hardware
+
+You can use Knobbler with external hardware in conjunction with a device like the `CC Control` device that comes with Live 12. Note that as of what is shipped in Live 12.1, `CC Control` has a defective API implementation and does not work properly with Knobbler. Until that device is fixed, you can download and use my free device called [MIDI CC Bridge](https://plugins.steinkamp.us/m4l-MIDI-CC-Bridge).
+
+![MIDI CC Bridge](https://plugins.steinkamp.us/cache/m4l-MIDI-CC-Bridge/images/device-menu.png)
+
 
 ### Navigation
 
