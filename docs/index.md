@@ -48,5 +48,6 @@ Then download the latest Knobbler device for Ableton Live. Click the blue device
 - Drag the Knobbler-vXX.amxd file (where XX is the most recent version) to the User Library in Ableton Live
 - Now you can add the device to any of your Live Sets
   - The device is required to communicate with the iPad app
+  - The Main track is a good place for it.
 
 Next, visit [Setup](./setup.md) or explore Knobbler's [Features](./features.md).

@@ -3,9 +3,8 @@
 - Download the latest version of the Knobbler device for Ableton Live (download button above).
 - Get the [Knobbler app for your iPad](https://apps.apple.com/us/app/knobbler/id6740183923)
 - Open Ableton Live
-- Add the Knobbler device to a MIDI track
+- Add the Knobbler device to a track, perhaps the Main or Master track.
   ![Add Knobbler](images/setup_add_knobbler.png)
-  - (I like to dedicate a track to it and keep it out of the way)
 - Open the Knobbler app on your iPad
   ![Start the app](images/knobbler-icon-finger.jpg)
   > - If it's the first time, make sure to allow Knobbler to find devices on your network. This is how it will find its companion device in your Ableton Live set.
