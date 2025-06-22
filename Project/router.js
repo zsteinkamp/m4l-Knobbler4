@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 9;
+outlets = 10;
 var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
@@ -14,7 +14,8 @@ var OUTLET_REFRESH = 4;
 var OUTLET_ACK = 5;
 var OUTLET_MIXER = 6;
 var OUTLET_PAGE = 7;
-var OUTLET_UNKNOWN = 8;
+var OUTLET_CURRPARAM = 8;
+var OUTLET_UNKNOWN = 9;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -24,6 +25,7 @@ setoutletassist(OUTLET_REFRESH, 'Messages for Refresh');
 setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn');
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer');
 setoutletassist(OUTLET_PAGE, 'Messages for Page');
+setoutletassist(OUTLET_CURRPARAM, 'Messages for Current Param');
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
@@ -427,6 +429,18 @@ var ROUTER = [
         prefix: '/blu/variation/select',
         handler: stdVal,
         msg: 'variationRecall',
+    },
+    {
+        outlet: OUTLET_CURRPARAM,
+        prefix: '/currentParam/val',
+        handler: stdVal,
+        msg: 'currentParamVal',
+    },
+    {
+        outlet: OUTLET_CURRPARAM,
+        prefix: '/currentParam/default',
+        handler: bareMsg,
+        msg: 'currentParamDefault',
     },
 ];
 ROUTER.sort(function (a, b) {

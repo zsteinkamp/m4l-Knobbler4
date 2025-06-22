@@ -3,7 +3,7 @@ import { logFactory } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 9
+outlets = 10
 
 const log = logFactory(config)
 
@@ -16,7 +16,8 @@ const OUTLET_REFRESH = 4
 const OUTLET_ACK = 5
 const OUTLET_MIXER = 6
 const OUTLET_PAGE = 7
-const OUTLET_UNKNOWN = 8
+const OUTLET_CURRPARAM = 8
+const OUTLET_UNKNOWN = 9
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -27,6 +28,7 @@ setoutletassist(OUTLET_REFRESH, 'Messages for Refresh')
 setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn')
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer')
 setoutletassist(OUTLET_PAGE, 'Messages for Page')
+setoutletassist(OUTLET_CURRPARAM, 'Messages for Current Param')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 
 type RouterItem = {
@@ -440,6 +442,18 @@ const ROUTER: RouterItem[] = [
     prefix: '/blu/variation/select',
     handler: stdVal,
     msg: 'variationRecall',
+  },
+  {
+    outlet: OUTLET_CURRPARAM,
+    prefix: '/currentParam/val',
+    handler: stdVal,
+    msg: 'currentParamVal',
+  },
+  {
+    outlet: OUTLET_CURRPARAM,
+    prefix: '/currentParam/default',
+    handler: bareMsg,
+    msg: 'currentParamDefault',
   },
 ]
 ROUTER.sort((a, b) => {
