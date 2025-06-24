@@ -396,6 +396,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_PAGE,
+        prefix: '/page/nav',
+        handler: bareMsg,
+        msg: 'nav',
+    },
+    {
+        outlet: OUTLET_PAGE,
         prefix: '/page/bluhand',
         handler: bareMsg,
         msg: 'bluhand',
