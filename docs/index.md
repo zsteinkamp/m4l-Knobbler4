@@ -5,13 +5,13 @@
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
 - [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
 
-[Download Knobbler for your iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+[Download Knobbler for your iPhone or iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
 
 [Check out Knobbler in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
 
 [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
 
-Knobbler is an iPad app that communicates with a Max device that you add to your Live Set. It requires an iPad and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a network.
+Knobbler is an iOS and Android app that communicates with a Max device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a network.
 
 ![Big Picture Diagram](images/overview-app-device.png)
 
@@ -34,11 +34,11 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 
 ### Download
 
-Visit the Apple App Store on your iPad to purchase and install the Knobbler app. Just search for Knobbler or click this button.
+Visit the Apple App Store on your iPhone or iPad to purchase and install the Knobbler app. Just search for Knobbler or click this button.
 
 <a href="https://apps.apple.com/us/app/knobbler/id6740183923"><img src="images/app-store.png" style="max-width: 12em" /></a>
 
-For Android Tablet users, get Knobbler in the [Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative).
+For Android users, get Knobbler in the [Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative).
 
 Then download the latest Knobbler device for Ableton Live. Click the blue device download button below...
 
@@ -47,7 +47,7 @@ Then download the latest Knobbler device for Ableton Live. Click the blue device
 - Unzip the downloaded device file
 - Drag the Knobbler-vXX.amxd file (where XX is the most recent version) to the User Library in Ableton Live
 - Now you can add the device to any of your Live Sets
-  - The device is required to communicate with the iPad app
+  - The device is required to communicate with the mobile app
   - The Main track is a good place for it.
 
 Next, visit [Setup](./setup.md) or explore Knobbler's [Features](./features.md).

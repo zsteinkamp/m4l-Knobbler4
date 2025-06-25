@@ -1,6 +1,6 @@
 # Knobbler4
 
-Knobbler4 turns your iPad or Android tablet into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live. Add the Knobbler4 device to the Main track in your Live Set and use your tablet to control devices and parameters.
+Knobbler4 turns your phone or tablet into an auto-labeling, auto-coloring, multitouch parameter control surface for Ableton Live. Add the Knobbler4 device to the Main track in your Live Set and use your tablet or mobile device to control devices and parameters.
 
 ![Knobbler4 in Action](docs/images/overall.jpg)
 
@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-06-25 [v36](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v36/Knobbler4-v36.amxd) - Knobbler is now an Audio Device! Add to your Main / Master track. This release also adds CurrentParamKnob functionality to support forthcoming tablet + phone app update.
 - 2025-05-26 [v35](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v35/Knobbler4-v35.amxd) - Support multiple tablets by allowing for multiple Knobbler device instances with their own unique receive ports; Fix some initialization bugs that may have crashed the Android app.
 - 2025-04-29 [v34](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v34/Knobbler4-v34.amxd) - Removed Clips view support. Reliability improvements.
 - 2025-04-20 [v33](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v33/Knobbler4-v33.amxd) - Clips view support (beta)

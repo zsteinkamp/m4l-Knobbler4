@@ -1,11 +1,11 @@
 ### Setup
 
 - Download the latest version of the Knobbler device for Ableton Live (download button above).
-- Get the [Knobbler app for your iPad](https://apps.apple.com/us/app/knobbler/id6740183923)
+- Get the [Knobbler app for your iPhone or iPad](https://apps.apple.com/us/app/knobbler/id6740183923) or [Android Device](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
 - Open Ableton Live
 - Add the Knobbler device to a track, perhaps the Main or Master track.
   ![Add Knobbler](images/setup_add_knobbler.png)
-- Open the Knobbler app on your iPad
+- Open the Knobbler app on your iPhone, iPad, or Android device
   ![Start the app](images/knobbler-icon-finger.jpg)
   > - If it's the first time, make sure to allow Knobbler to find devices on your network. This is how it will find its companion device in your Ableton Live set.
   >   ![Allow Permissions](images/ipad_allow_network.jpg)
@@ -20,7 +20,7 @@
 - You should see a "Connection Success" message. From there, it's time to get to Knobblin'!
   ![Setup Success](images/ipad-setup-success.png)
 
-If you want to use more than one tablet, then follow these instructions here: [Multiple Tablets](./multiple-tablets.md).
+If you want to use more than one device, then follow these instructions here: [Multiple Devices](./multiple-tablets.md).
 
 Next, check out all of Knobbler's [Features](./features.md).
 
