@@ -1,5 +1,16 @@
 ## Troubleshooting
 
+#### I have already purchased Knobbler for iPad and when I go to install it on my phone, it seems I have to pay again. What's up?
+
+You will not have to pay twice. Just make sure you are logged in to the App Store on both devices with the same ID.
+
+This seems to be a bug/problem in the Apple App Store for apps that started out as iPad-only and then opened up to iPhones as well. Just continue through the purchase process. After double-tapping the side button, you will see this popup:
+
+![Zero Cost Message](images/zero-cost-popup.png)
+
+After tapping "OK" you will be returned to the product page with the app installed. You will not be charged.
+
+
 #### I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
 
 Simply download the latest version of the device and install it as you normally would, by dragging it to the User Library in Ableton Live.
