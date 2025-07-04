@@ -100,7 +100,7 @@ If you want to have the Live UI follow what you are seeing in Knobbler's navigat
 
 #### I cannot get more than one tablet/instance to work properly.
 
-Knobbler is currently designed as a single-instance device, meaning one Live Set can only have one instance of the Knobbler device communicating with a single tablet.
+Starting with v36, Knobbler may be used with multiple devices. You must add as many instance of Knobbler as you have devices you want to use with it. Ensure the "Device Port" setting is unique across all instances.
 
 #### The ports in the device and in the app are different. What gives?
 
