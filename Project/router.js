@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 10;
+outlets = 11;
 var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
@@ -15,7 +15,8 @@ var OUTLET_ACK = 5;
 var OUTLET_MIXER = 6;
 var OUTLET_PAGE = 7;
 var OUTLET_CURRPARAM = 8;
-var OUTLET_UNKNOWN = 9;
+var OUTLET_OSC = 9;
+var OUTLET_UNKNOWN = 10;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -393,6 +394,12 @@ var ROUTER = [
         prefix: '/page/knobbler2',
         handler: bareMsg,
         msg: 'knobbler2',
+    },
+    {
+        outlet: OUTLET_OSC,
+        prefix: '/ping',
+        handler: bareMsg,
+        msg: '/pong',
     },
     {
         outlet: OUTLET_PAGE,

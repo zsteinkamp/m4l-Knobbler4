@@ -3,7 +3,7 @@ import { logFactory } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 10
+outlets = 11
 
 const log = logFactory(config)
 
@@ -17,7 +17,8 @@ const OUTLET_ACK = 5
 const OUTLET_MIXER = 6
 const OUTLET_PAGE = 7
 const OUTLET_CURRPARAM = 8
-const OUTLET_UNKNOWN = 9
+const OUTLET_OSC = 9
+const OUTLET_UNKNOWN = 10
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -406,6 +407,12 @@ const ROUTER: RouterItem[] = [
     prefix: '/page/knobbler2',
     handler: bareMsg,
     msg: 'knobbler2',
+  },
+  {
+    outlet: OUTLET_OSC,
+    prefix: '/ping',
+    handler: bareMsg,
+    msg: '/pong',
   },
   {
     outlet: OUTLET_PAGE,
