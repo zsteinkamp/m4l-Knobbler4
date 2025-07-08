@@ -291,11 +291,19 @@ Sent when one of the tabs in the Max for Live device is clicked. `X` can be:
 - knobbler2
 - bluhand
 
+#### /pong
+
+Response to a `/ping` message to keep the network connection "warmed up".
+
 #### /toggleInput {0, 1}
 
 Update the "active" state of the Toggle Input interface button.
 
 ### Tablet to Knobbler4
+
+#### /ping
+
+Sent every 5 seconds when a connection is configured. Intended to keep the network connection "warm".
 
 #### /toggleInput {0,1}
 
