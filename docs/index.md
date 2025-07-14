@@ -51,3 +51,5 @@ Then download the latest Knobbler device for Ableton Live. Click the blue device
   - The Main track is a good place for it.
 
 Next, visit [Setup](./setup.md) or explore Knobbler's [Features](./features.md).
+
+View the complete release changelog and download old versions on the [GitHub Releases page](https://github.com/zsteinkamp/m4l-Knobbler4/releases).

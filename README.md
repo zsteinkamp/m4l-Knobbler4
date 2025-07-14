@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-07-14 [v38](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v38/Knobbler4-v38.amxd) - Rework the app discovery UX to be more reliable and intuitive.
 - 2025-07-08 [v37](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v37/Knobbler4-v37.amxd) - Supports ping/pong from forthcoming app update to keep the network channels warmed up, hopefully bringing more reliability. Fixes a bug where an old color was sent just prior to a new color on the Bluhand page.
 - 2025-06-25 [v36](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v36/Knobbler4-v36.amxd) - Knobbler is now an Audio Device! Add to your Main / Master track. This release also adds CurrentParamKnob functionality to support forthcoming tablet + phone app update.
 - 2025-05-26 [v35](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v35/Knobbler4-v35.amxd) - Support multiple tablets by allowing for multiple Knobbler device instances with their own unique receive ports; Fix some initialization bugs that may have crashed the Android app.
