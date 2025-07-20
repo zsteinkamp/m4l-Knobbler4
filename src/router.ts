@@ -212,6 +212,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/toggleGroup',
+    handler: stdVal,
+    msg: 'toggleGroup',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/gotoTrack',
     handler: stdVal,
     msg: 'gotoTrack',

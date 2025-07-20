@@ -329,6 +329,23 @@ function gotoChain(chainIdStr: string) {
   }
 }
 
+// Toggle Group Fold State
+// Long press on group item in nav calls this.
+function toggleGroup(groupId: number) {
+  const util = getUtilApi()
+  util.id = groupId
+  if (util.id === 0) {
+    log('ERROR: Invalid id ' + groupId)
+  }
+  const isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'))
+  if (!isFoldable) {
+    log('ERROR: Not foldable ' + groupId)
+  }
+
+  const foldState = parseInt(util.get('fold_state'))
+  util.set('fold_state', foldState ? 0 : 1)
+}
+
 function gotoTrack(trackIdStr: string) {
   //log('gotoTrack ' + trackIdStr)
   const trackId = parseInt(trackIdStr)

@@ -293,6 +293,21 @@ function gotoChain(chainIdStr) {
         return;
     }
 }
+// Toggle Group Fold State
+// Long press on group item in nav calls this.
+function toggleGroup(groupId) {
+    var util = getUtilApi();
+    util.id = groupId;
+    if (util.id === 0) {
+        log('ERROR: Invalid id ' + groupId);
+    }
+    var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
+    if (!isFoldable) {
+        log('ERROR: Not foldable ' + groupId);
+    }
+    var foldState = parseInt(util.get('fold_state'));
+    util.set('fold_state', foldState ? 0 : 1);
+}
 function gotoTrack(trackIdStr) {
     //log('gotoTrack ' + trackIdStr)
     var trackId = parseInt(trackIdStr);

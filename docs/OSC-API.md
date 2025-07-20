@@ -160,9 +160,27 @@ JSON-stringified array of device objects. See the source file `src/consts.ts` to
 ]
 ```
 
+### Tablet to Knobbler4
+
+#### /gotoChain {chainID}
+
+Navigate to the given chain by ID in the Live UI.
+
+#### /gotoDevice {deviceID}
+
+Navigate to the given device by ID in the Live UI.
+
+#### /gotoTrack {trackID}
+
+Navigate to the given track by ID in the Live UI.
+
 #### /hideChains {deviceID}
 
 If collapsing a rack, this message is sent to Live so that it can hide the chain devices display in that rack. Otherwise every rack will eventually be fully expanded and that gets overwhelming / messy.
+
+#### /toggleGroup {deviceID}
+
+Toggles the fold state (expand / collapse) of a group.
 
 ## Mixer / Channel Strip
 
