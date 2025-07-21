@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-07-20 [v40](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v40/Knobbler4-v40.amxd) - Properly display chain color if appropriate on Bluhand and Current Param Slider. Previously, it was using only the track color.
 - 2025-07-20 [v39](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v39/Knobbler4-v39.amxd) - Support `/toggleGroup {id}` message to handle forthcoming long-press-to-toggle-group-folding feature in the app; Improve tooltips and help info for Rescan / Refresh.
 - 2025-07-14 [v38](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v38/Knobbler4-v38.amxd) - Rework the app discovery UX to be more reliable and intuitive.
 - 2025-07-08 [v37](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v37/Knobbler4-v37.amxd) - Supports ping/pong from forthcoming app update to keep the network channels warmed up, hopefully bringing more reliability. Fixes a bug where an old color was sent just prior to a new color on the Bluhand page.
