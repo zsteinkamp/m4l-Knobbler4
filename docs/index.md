@@ -1,5 +1,9 @@
 ## Knobbler4 - The Best Parameter Control Surface For Ableton Live
 
+
+> NOTE: The latest version of the Knobbler app in the Apple App Store contains a bug that shows a Trial prompt to customers that have already paid for Knobbler. This is a bug, and you are not expected to pay again. I have submitted a fixed version to Apple, which is currently waiting to be reviewed and released. I expect that to happen on Friday Aug 22. Please email me at [zack@steinkamp.us](mailto:zack@steinkamp.us) if you have any questions. Thanks!
+
+
 <iframe width="100%" style="border: 20px solid black; aspect-ratio: 16 / 9" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
