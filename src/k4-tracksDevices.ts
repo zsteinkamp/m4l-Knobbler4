@@ -94,16 +94,19 @@ const makeTrackTree = (type: ObjType, typeNum: number, trackIds: IdArr) => {
     const isTrack = trackInfo.indexOf('type Track') > -1
     const isFoldable = isTrack && parseInt(state.api.get('is_foldable'))
 
+    const parentId = cleanArr(state.api.get('group_track'))[0]
+    const parentIdStr = parentId.toString()
+
     tree[trackIdStr].obj = [
       /* TYPE   */ isFoldable ? TYPE_GROUP : typeNum,
       /* ID     */ trackId,
       /* NAME   */ truncate(state.api.get('name').toString(), MAX_NAME_LEN),
       /* COLOR  */ colorToString(state.api.get('color').toString()),
       /* INDENT */ 0, // temporary indent
+      /* USE INDENT */ 0, // temporary indent
+      /* PARENT */ parentId,
     ] as MaxObjRecord
 
-    const parentId = cleanArr(state.api.get('group_track'))[0]
-    const parentIdStr = parentId.toString()
     //log('PARENT ID ' + parentId)
     tree[trackIdStr].parent = parentId
     //log('THREE ' + trackId + ' ' + JSON.stringify(tree[trackIdStr]))
@@ -239,6 +242,8 @@ function updateDeviceNav() {
         : '? Unsupported',
       /* COLOR  */ colorToString(parentObj.get('color').toString()),
       /* INDENT */ 0, // temporary indent
+      /* USE INDENT */ 0, // temporary indent
+      /* PARENT */ parentObj.id,
     ])
     if (childDeviceId === state.currDeviceId) {
       // add child chains below the current item
@@ -252,6 +257,8 @@ function updateDeviceNav() {
             /* NAME   */ truncate(utilObj.get('name').toString(), MAX_NAME_LEN),
             /* COLOR  */ colorToString(utilObj.get('color').toString()),
             /* INDENT */ 1, // temporary indent
+            /* USE INDENT */ 1, // temporary indent
+            /* PARENT */ parentObj.id,
           ])
         }
 
@@ -269,6 +276,8 @@ function updateDeviceNav() {
               ),
               /* COLOR  */ colorToString(utilObj.get('color').toString()),
               /* INDENT */ 1, // temporary indent
+              /* USE INDENT */ 1, // temporary indent
+              /* PARENT */ parentObj.id,
             ])
           }
         }
@@ -290,16 +299,21 @@ function updateDeviceNav() {
       grandparentObj.id = grandparentId
       color = colorToString(grandparentObj.get('color').toString())
     }
+
+    const parentObjParentId = cleanArr(parentObj.get('canonical_parent'))[0]
+
     ret.unshift([
       /* TYPE   */ isChain ? TYPE_CHAIN : TYPE_RACK,
       /* ID     */ parentObj.id,
       /* NAME   */ truncate(parentObj.get('name').toString(), MAX_NAME_LEN),
       /* COLOR  */ color,
       /* INDENT */ --indent, // temporary indent
+      /* USEINDENT */ --indent, // temporary indent
+      /* PARENT */ parseInt(parentObjParentId.toString()),
     ])
-    const parentObjParentId = cleanArr(parentObj.get('canonical_parent'))[0]
-    //log('CP=' + parentObjParentId)
+    // needs to be after
     parentObj.id = parentObjParentId
+    //log('CP=' + parentObjParentId)
     //log('NEWTYPE=' + parentObj.type)
     watchdog++
   }

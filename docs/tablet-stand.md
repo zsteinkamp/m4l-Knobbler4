@@ -4,7 +4,7 @@ Everyone is going to have a different way they prefer to keep their tablet when 
 
 ![Overall Image](images/tablet-stand/overall1.jpg)
 
-I like to keep my iPad right in front of my keyboard, propped up at a 45 degree angle. I made a wedge from some old IKEA furniture to do this.
+I like to keep my iPad right in front of my keyboard, propped up at a 45 degree angle.
 
 ![Overall Image 2](images/tablet-stand/overall2.jpg)
 

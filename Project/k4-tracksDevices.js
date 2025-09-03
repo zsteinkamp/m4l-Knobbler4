@@ -65,15 +65,17 @@ var makeTrackTree = function (type, typeNum, trackIds) {
         var trackInfo = state.api.info.toString();
         var isTrack = trackInfo.indexOf('type Track') > -1;
         var isFoldable = isTrack && parseInt(state.api.get('is_foldable'));
+        var parentId = (0, utils_1.cleanArr)(state.api.get('group_track'))[0];
+        var parentIdStr = parentId.toString();
         tree[trackIdStr].obj = [
             /* TYPE   */ isFoldable ? consts_1.TYPE_GROUP : typeNum,
             /* ID     */ trackId,
             /* NAME   */ (0, utils_1.truncate)(state.api.get('name').toString(), consts_1.MAX_NAME_LEN),
             /* COLOR  */ (0, utils_1.colorToString)(state.api.get('color').toString()),
-            /* INDENT */ 0, // temporary indent
+            /* INDENT */ 0,
+            /* USE INDENT */ 0,
+            /* PARENT */ parentId,
         ];
-        var parentId = (0, utils_1.cleanArr)(state.api.get('group_track'))[0];
-        var parentIdStr = parentId.toString();
         //log('PARENT ID ' + parentId)
         tree[trackIdStr].parent = parentId;
         //log('THREE ' + trackId + ' ' + JSON.stringify(tree[trackIdStr]))
@@ -194,7 +196,9 @@ function updateDeviceNav() {
                 ? (0, utils_1.truncate)(utilObj.get('name').toString(), consts_1.MAX_NAME_LEN)
                 : '? Unsupported',
             /* COLOR  */ (0, utils_1.colorToString)(parentObj.get('color').toString()),
-            /* INDENT */ 0, // temporary indent
+            /* INDENT */ 0,
+            /* USE INDENT */ 0,
+            /* PARENT */ parentObj.id,
         ]);
         if (childDeviceId === state.currDeviceId) {
             // add child chains below the current item
@@ -208,7 +212,9 @@ function updateDeviceNav() {
                         /* ID     */ chainId,
                         /* NAME   */ (0, utils_1.truncate)(utilObj.get('name').toString(), consts_1.MAX_NAME_LEN),
                         /* COLOR  */ (0, utils_1.colorToString)(utilObj.get('color').toString()),
-                        /* INDENT */ 1, // temporary indent
+                        /* INDENT */ 1,
+                        /* USE INDENT */ 1,
+                        /* PARENT */ parentObj.id,
                     ]);
                 }
                 if (currDeviceObj.info.toString().match('return_chains')) {
@@ -222,7 +228,9 @@ function updateDeviceNav() {
                             /* ID     */ chainId,
                             /* NAME   */ (0, utils_1.truncate)(utilObj.get('name').toString(), consts_1.MAX_NAME_LEN),
                             /* COLOR  */ (0, utils_1.colorToString)(utilObj.get('color').toString()),
-                            /* INDENT */ 1, // temporary indent
+                            /* INDENT */ 1,
+                            /* USE INDENT */ 1,
+                            /* PARENT */ parentObj.id,
                         ]);
                     }
                 }
@@ -244,16 +252,19 @@ function updateDeviceNav() {
             grandparentObj.id = grandparentId;
             color = (0, utils_1.colorToString)(grandparentObj.get('color').toString());
         }
+        var parentObjParentId = (0, utils_1.cleanArr)(parentObj.get('canonical_parent'))[0];
         ret.unshift([
             /* TYPE   */ isChain ? consts_1.TYPE_CHAIN : consts_1.TYPE_RACK,
             /* ID     */ parentObj.id,
             /* NAME   */ (0, utils_1.truncate)(parentObj.get('name').toString(), consts_1.MAX_NAME_LEN),
             /* COLOR  */ color,
-            /* INDENT */ --indent, // temporary indent
+            /* INDENT */ --indent,
+            /* USEINDENT */ --indent,
+            /* PARENT */ parseInt(parentObjParentId.toString()),
         ]);
-        var parentObjParentId = (0, utils_1.cleanArr)(parentObj.get('canonical_parent'))[0];
-        //log('CP=' + parentObjParentId)
+        // needs to be after
         parentObj.id = parentObjParentId;
+        //log('CP=' + parentObjParentId)
         //log('NEWTYPE=' + parentObj.type)
         watchdog++;
     }

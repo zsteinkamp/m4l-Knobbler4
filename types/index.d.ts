@@ -26,8 +26,8 @@ type BluhandBank = {
   paramIdxArr: number[]
 }
 
-//                   type,   id,     name    color, indent
-type MaxObjRecord = [number, number, string, string, number]
+//                   type,   id,     name    color, indent, use indent, parent
+type MaxObjRecord = [number, number, string, string, number, number, number]
 
 type IdObserverArg = [
   'id' | 'devices' | 'tracks' | 'return_tracks' | 'value',
