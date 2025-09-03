@@ -92,6 +92,9 @@ function getBasicParamArr(paramIds) {
     if (currRow) {
         ret.push(currRow);
     }
+    else {
+        ret.push(blankRow());
+    }
     //log('RET ' + JSON.stringify(ret))
     return ret;
 }
@@ -113,6 +116,7 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         //log('BASIC RETURN ' + JSON.stringify(paramArr))
         return paramArr;
     }
+    //log('OUT HERE')
     var ret = [];
     // cache id to name mapping because it is super slow with giant devices like
     // Operator and honestly it should just be a compile-time step of the data
@@ -185,6 +189,14 @@ function sendBankNames() {
     });
     //log('BANKS: ' + JSON.stringify(banks))
     outlet(consts_1.OUTLET_OSC, ['/bBanks', JSON.stringify(banks)]);
+}
+var sendCurrBankTask = null;
+function debounceSendCurrBank() {
+    if (sendCurrBankTask) {
+        sendCurrBankTask.cancel();
+    }
+    sendCurrBankTask = new Task(sendCurrBank);
+    sendCurrBankTask.schedule(20);
 }
 function sendCurrBank() {
     //log('SEND CURR BANK ' + JSON.stringify(state))
@@ -338,7 +350,7 @@ function onVariationChange() {
     ]);
 }
 function init() {
-    state.paramsWatcher = new LiveAPI(onParameterChange, 'live_set view selected_track view selected_device');
+    state.paramsWatcher = new LiveAPI(debouncedParameterChange, 'live_set view selected_track view selected_device');
     state.paramsWatcher.mode = 1;
     state.paramsWatcher.property = 'parameters';
     state.variationsWatcher = new LiveAPI(onVariationChange, 'live_set view selected_track view selected_device');
@@ -358,18 +370,36 @@ function updateDeviceOnOff(iargs) {
         outlet(consts_1.OUTLET_OSC, ['/bOnOff', parseInt(args[1])]);
     }
 }
-function onParameterChange(args) {
+var pcDebounce = null;
+function debouncedParameterChange(args) {
     if (args[0].toString() !== 'parameters') {
         return;
     }
+    if (pcDebounce) {
+        pcDebounce.cancel();
+    }
+    pcDebounce = new Task(function () {
+        onParameterChange(args);
+    });
+    pcDebounce.schedule(20);
+    //log('DEBOUNCE IT')
+}
+function onParameterChange(args) {
     //log('OPC ' + JSON.stringify(args))
     var api = state.paramsWatcher;
     if (+api.id === 0) {
         return;
     }
+    //log(api.info)
     var isSupported = (0, utils_1.isDeviceSupported)(api);
     var deviceType = isSupported ? api.get('class_name').toString() : api.type;
     var paramIds = isSupported ? (0, utils_1.cleanArr)(api.get('parameters')) : [];
+    //log('DT', { deviceType })
+    if (deviceType === 'PluginDevice') {
+        //log('POOPP', { paramIds })
+        paramIds.pop();
+        //log('POOPP2', { paramIds })
+    }
     if (paramIds.length === 0) {
         //log('ZERO LEN PARAMIDS')
         state.onOffWatcher && (state.onOffWatcher.id = 0);
@@ -416,12 +446,13 @@ function onParameterChange(args) {
         outlet(consts_1.OUTLET_OSC, ['/blu/variations', '']);
     }
     state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
+    //log('BANK PARAM ARR', { bpa: state.bankParamArr })
     state.numBanks = state.bankParamArr.length;
     if (state.currBank > state.numBanks) {
         state.currBank = state.numBanks;
     }
     //log('STATE CHECK ' + JSON.stringify(state))
-    sendCurrBank();
+    debounceSendCurrBank();
 }
 function variationNew() {
     var api = getSelectedDeviceApi();

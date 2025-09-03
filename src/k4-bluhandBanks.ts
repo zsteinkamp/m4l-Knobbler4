@@ -102,6 +102,8 @@ function getBasicParamArr(paramIds: number[]) {
   })
   if (currRow) {
     ret.push(currRow)
+  } else {
+    ret.push(blankRow())
   }
 
   //log('RET ' + JSON.stringify(ret))
@@ -134,6 +136,7 @@ function getBankParamArr(
     //log('BASIC RETURN ' + JSON.stringify(paramArr))
     return paramArr
   }
+  //log('OUT HERE')
 
   const ret: BluhandBank[] = []
   // cache id to name mapping because it is super slow with giant devices like
@@ -211,6 +214,15 @@ function sendBankNames() {
   })
   //log('BANKS: ' + JSON.stringify(banks))
   outlet(OUTLET_OSC, ['/bBanks', JSON.stringify(banks)])
+}
+
+let sendCurrBankTask = null as Task
+function debounceSendCurrBank() {
+  if (sendCurrBankTask) {
+    sendCurrBankTask.cancel()
+  }
+  sendCurrBankTask = new Task(sendCurrBank)
+  sendCurrBankTask.schedule(20)
 }
 
 function sendCurrBank() {
@@ -379,7 +391,7 @@ function onVariationChange() {
 
 function init() {
   state.paramsWatcher = new LiveAPI(
-    onParameterChange,
+    debouncedParameterChange,
     'live_set view selected_track view selected_device'
   )
   state.paramsWatcher.mode = 1
@@ -408,18 +420,39 @@ function updateDeviceOnOff(iargs: IArguments) {
   }
 }
 
-function onParameterChange(args: IdObserverArg) {
+let pcDebounce = null as Task
+function debouncedParameterChange(args: IdObserverArg) {
   if (args[0].toString() !== 'parameters') {
     return
   }
+  if (pcDebounce) {
+    pcDebounce.cancel()
+  }
+  pcDebounce = new Task(() => {
+    onParameterChange(args)
+  })
+  pcDebounce.schedule(20)
+  //log('DEBOUNCE IT')
+}
+
+function onParameterChange(args: IdObserverArg) {
   //log('OPC ' + JSON.stringify(args))
   const api = state.paramsWatcher
   if (+api.id === 0) {
     return
   }
+  //log(api.info)
   const isSupported = isDeviceSupported(api)
   const deviceType = isSupported ? api.get('class_name').toString() : api.type
   let paramIds = isSupported ? cleanArr(api.get('parameters')) : []
+
+  //log('DT', { deviceType })
+  if (deviceType === 'PluginDevice') {
+    //log('POOPP', { paramIds })
+    paramIds.pop()
+    //log('POOPP2', { paramIds })
+  }
+
   if (paramIds.length === 0) {
     //log('ZERO LEN PARAMIDS')
     state.onOffWatcher && (state.onOffWatcher.id = 0)
@@ -474,6 +507,7 @@ function onParameterChange(args: IdObserverArg) {
     outlet(OUTLET_OSC, ['/blu/variations', ''])
   }
   state.bankParamArr = getBankParamArr(paramIds, deviceType, api)
+  //log('BANK PARAM ARR', { bpa: state.bankParamArr })
   state.numBanks = state.bankParamArr.length
 
   if (state.currBank > state.numBanks) {
@@ -481,7 +515,7 @@ function onParameterChange(args: IdObserverArg) {
   }
 
   //log('STATE CHECK ' + JSON.stringify(state))
-  sendCurrBank()
+  debounceSendCurrBank()
 }
 
 function variationNew() {
