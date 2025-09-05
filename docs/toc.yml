@@ -14,6 +14,8 @@
   title: Tablet Stand
 - fname: __sep__
   title: ----------------Separator
+- fname: deletion.md
+  title: Data Deletion
 - fname: credits.md
   title: Credits
 - fname: OSC-API.md
