@@ -55,3 +55,7 @@ View the complete release changelog and download old versions on the [GitHub Rel
   - The Main track is a good place for it.
 
 Next, visit [Setup](./setup.md) or explore Knobbler's [Features](./features.md).
+
+### Content Creators
+
+If you're a content creator and want to use or feature Knobbler in a video or post, please get in touch with me. I'm happy to send you a Promo Code so that you can use/get Knobbler for free. Email me at zack@steinkamp.us. Cheers!
