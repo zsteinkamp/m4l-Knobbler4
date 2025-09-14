@@ -10,7 +10,6 @@ This seems to be a bug/problem in the Apple App Store for apps that started out 
 
 After tapping "OK" you will be returned to the product page with the app installed. You will not be charged.
 
-
 #### I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
 
 Simply download the latest version of the device and install it as you normally would, by dragging it to the User Library in Ableton Live.
@@ -108,9 +107,7 @@ This is by design.
 
 ![Ports](images/network-ports.png)
 
-The Knobbler Max for Live device listens on UDP port 2346. The Knobbler app on your tablet listens on UDP port 2347. This is intentional, since while developing Knobbler I will run both on one computer (the app in a simulator), and you cannot have two things using the same port.
-
-So, the Max for Live device should have "2346" in its port box, the app should have "2347" in its port box.
+The Knobbler Max for Live device listens on UDP port 2346. The Knobbler app on your tablet listens on UDP port 2347. On a phone, the listen port is 2349. This is intentional, since while developing Knobbler I will run all on one computer (the apps in simulators), and you cannot have two things using the same port.
 
 #### Some devices show up in the Navigation with the title "? Unsupported". What gives?
 
