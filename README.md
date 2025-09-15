@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-09-15 [v44](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v44/Knobbler4-v44.amxd) - Revert change in v42 that inadvertently removed the last param in VSTs. Thanks Peter B for the bug report!
 - 2025-09-04 [v43](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v43/Knobbler4-v43.amxd) - Observe the record button status in tracks and report to the mixer panel. Leaving it out was an oversight.
 - 2025-09-03 [v42](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v42/Knobbler4-v42.amxd) - Better UX when selecting chains (with forthcoming app update); Fix performance bug when changing presets in VST effects (thanks u/Ahfekz for the report)
 - 2025-08-01 [v41](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v41/Knobbler4-v41.amxd) - Make automating page changes optional. Thanks to Jamie Lidell for the suggestion!
