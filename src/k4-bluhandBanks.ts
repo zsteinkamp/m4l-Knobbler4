@@ -447,11 +447,11 @@ function onParameterChange(args: IdObserverArg) {
   let paramIds = isSupported ? cleanArr(api.get('parameters')) : []
 
   //log('DT', { deviceType })
-  if (deviceType === 'PluginDevice') {
-    //log('POOPP', { paramIds })
-    paramIds.pop()
-    //log('POOPP2', { paramIds })
-  }
+  //if (deviceType === 'PluginDevice') {
+  //  //log('POOPP', { paramIds })
+  //  paramIds.pop()
+  //  //log('POOPP2', { paramIds })
+  //}
 
   if (paramIds.length === 0) {
     //log('ZERO LEN PARAMIDS')

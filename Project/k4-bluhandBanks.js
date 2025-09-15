@@ -395,11 +395,11 @@ function onParameterChange(args) {
     var deviceType = isSupported ? api.get('class_name').toString() : api.type;
     var paramIds = isSupported ? (0, utils_1.cleanArr)(api.get('parameters')) : [];
     //log('DT', { deviceType })
-    if (deviceType === 'PluginDevice') {
-        //log('POOPP', { paramIds })
-        paramIds.pop();
-        //log('POOPP2', { paramIds })
-    }
+    //if (deviceType === 'PluginDevice') {
+    //  //log('POOPP', { paramIds })
+    //  paramIds.pop()
+    //  //log('POOPP2', { paramIds })
+    //}
     if (paramIds.length === 0) {
         //log('ZERO LEN PARAMIDS')
         state.onOffWatcher && (state.onOffWatcher.id = 0);
