@@ -3,6 +3,7 @@ type ParamType = {
   val: number
   min: number
   max: number
+  quant: number
   id?: number
   path?: string
   customName?: string

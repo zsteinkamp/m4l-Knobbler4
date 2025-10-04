@@ -80,6 +80,7 @@ function init(slot) {
         val: 0,
         min: 0,
         max: 100,
+        quant: 0,
         allowParamValueUpdates: true,
     };
     if (deviceCheckerTask[slot]) {
@@ -271,6 +272,10 @@ function setPath(slot, paramPath) {
     param[slot].min = parseFloat(paramObj[slot].get('min')) || 0;
     param[slot].max = parseFloat(paramObj[slot].get('max')) || 1;
     param[slot].name = paramObj[slot].get('name')[0];
+    param[slot].quant =
+        parseInt(paramObj[slot].get('is_quantized')) > 0
+            ? paramObj[slot].get('value_items').length
+            : 0;
     deviceObj[slot] = new LiveAPI(function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'));
     var devicePath = deviceObj[slot].unquotedpath;
     // poll to see if the mapped device is still present
@@ -339,6 +344,11 @@ function sendNames(slot) {
     sendDeviceName(slot);
     sendTrackName(slot);
     sendColor(slot);
+    sendQuant(slot);
+}
+function sendQuant(slot) {
+    initSlotIfNecessary(slot);
+    outlet(consts_1.OUTLET_OSC, ['/quant' + slot, param[slot].quant]);
 }
 function sendParamName(slot) {
     //log(`SEND PARAM NAME ${slot}`)

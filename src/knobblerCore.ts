@@ -88,6 +88,7 @@ function init(slot: number) {
     val: 0,
     min: 0,
     max: 100,
+    quant: 0,
     allowParamValueUpdates: true,
   }
   if (deviceCheckerTask[slot]) {
@@ -303,6 +304,10 @@ function setPath(slot: number, paramPath: string) {
   param[slot].min = parseFloat(paramObj[slot].get('min')) || 0
   param[slot].max = parseFloat(paramObj[slot].get('max')) || 1
   param[slot].name = paramObj[slot].get('name')[0]
+  param[slot].quant =
+    parseInt(paramObj[slot].get('is_quantized')) > 0
+      ? paramObj[slot].get('value_items').length
+      : 0
 
   deviceObj[slot] = new LiveAPI(
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
@@ -394,6 +399,12 @@ function sendNames(slot: number) {
   sendDeviceName(slot)
   sendTrackName(slot)
   sendColor(slot)
+  sendQuant(slot)
+}
+
+function sendQuant(slot: number) {
+  initSlotIfNecessary(slot)
+  outlet(OUTLET_OSC, ['/quant' + slot, param[slot].quant])
 }
 
 function sendParamName(slot: number) {

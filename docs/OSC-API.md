@@ -36,6 +36,10 @@ Updates the parameter name for Slot N.
 
 The automation state for the parameter in Slot N.
 
+#### /quantN {integer}
+
+The number of quantization steps for the parameter in Slot N. Continuous (non-quantized) parameters will have a value of zero. On/off buttons will have a value of 2.
+
 #### /track {string}
 
 Updates the track name for Slot N.
@@ -101,6 +105,10 @@ Updates the parameter name for Slot N.
 #### /bparamNauto {integer}
 
 The automation state for the parameter in Slot N.
+
+#### /bquantN {integer}
+
+The number of quantization steps for the parameter in Slot N. Continuous (non-quantized) parameters will have a value of zero. On/off buttons will have a value of 2.
 
 #### /bvalN {float}
 
