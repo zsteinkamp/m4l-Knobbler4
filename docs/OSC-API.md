@@ -40,6 +40,10 @@ The automation state for the parameter in Slot N.
 
 The number of quantization steps for the parameter in Slot N. Continuous (non-quantized) parameters will have a value of zero. On/off buttons will have a value of 2.
 
+#### /quantItemsN {JSON string}
+
+A JSON-encoded array of individual item names for each quantized step. The array is empty if a parameter is not quantized.
+
 #### /track {string}
 
 Updates the track name for Slot N.
@@ -109,6 +113,10 @@ The automation state for the parameter in Slot N.
 #### /bquantN {integer}
 
 The number of quantization steps for the parameter in Slot N. Continuous (non-quantized) parameters will have a value of zero. On/off buttons will have a value of 2.
+
+#### /bquantItemsN {JSON string}
+
+A JSON-encoded array of individual item names for each quantized step. The array is empty if a parameter is not quantized.
 
 #### /bvalN {float}
 
