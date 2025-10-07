@@ -11,6 +11,8 @@
 
 [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
 
+[History of Knobbler](https://steinkamp.us/posts/2025-03-01-knobbler)
+
 Knobbler is an iOS and Android app that communicates with a Max device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a network.
 
 ![Big Picture Diagram](images/overview-app-device.png)
