@@ -4,6 +4,7 @@ type ParamType = {
   min: number
   max: number
   quant: number
+  quantItems: string[]
   id?: number
   path?: string
   customName?: string
