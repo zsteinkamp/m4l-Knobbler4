@@ -34,6 +34,8 @@ const state = {
   numBanks: 1,
   bankParamArr: [] as BluhandBank[],
   nameLookupCache: {} as Record<number, RecordNameToIdx>,
+  cuePointsWatcher: null as LiveAPI,
+  cuePoints: [] as LiveAPI[],
 }
 
 function getMaxBanksParamArr(bankCount: number, deviceObj: LiveAPI) {
@@ -389,6 +391,47 @@ function onVariationChange() {
   ])
 }
 
+function sendCuePoints() {
+  const result = []
+  for (const cuePoint of state.cuePoints) {
+    result.push(cuePoint.get('name').toString())
+  }
+  log('CUE POINTS', result)
+  outlet(OUTLET_OSC, ['/cuePoints', JSON.stringify(result)])
+}
+
+let sendCuePointsTask = null as Task
+function debounceSendCuePoints() {
+  if (sendCuePointsTask) {
+    sendCuePointsTask.cancel()
+  }
+  sendCuePointsTask = new Task(sendCuePoints)
+  sendCuePointsTask.schedule(20)
+}
+
+function onCuePointNameChange(args: IArguments) {
+  if (args[0] !== 'name') {
+    return
+  }
+  debounceSendCuePoints()
+}
+
+function cuePointsChange(args: IArguments) {
+  if (args[0] !== 'cue_points') {
+    return
+  }
+  const cuePointIds = cleanArr(arrayfromargs(args) as IdObserverArg)
+  log('cuePointIds', cuePointIds)
+
+  state.cuePoints = []
+  for (const cuePointId of cuePointIds) {
+    const api = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId)
+    api.property = 'name'
+    state.cuePoints.push(api)
+  }
+  debounceSendCuePoints()
+}
+
 function init() {
   state.paramsWatcher = new LiveAPI(
     debouncedParameterChange,
@@ -403,6 +446,9 @@ function init() {
   )
   state.variationsWatcher.mode = 1
   state.variationsWatcher.property = 'variation_count'
+
+  state.cuePointsWatcher = new LiveAPI(cuePointsChange, 'live_set')
+  state.cuePointsWatcher.property = 'cue_points'
 }
 
 function toggleOnOff() {

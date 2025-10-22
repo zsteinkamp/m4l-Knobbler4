@@ -32,6 +32,8 @@ var state = {
     numBanks: 1,
     bankParamArr: [],
     nameLookupCache: {},
+    cuePointsWatcher: null,
+    cuePoints: [],
 };
 function getMaxBanksParamArr(bankCount, deviceObj) {
     var rawBanks = [];
@@ -349,6 +351,44 @@ function onVariationChange() {
         }),
     ]);
 }
+function sendCuePoints() {
+    var result = [];
+    for (var _i = 0, _a = state.cuePoints; _i < _a.length; _i++) {
+        var cuePoint = _a[_i];
+        result.push(cuePoint.get('name').toString());
+    }
+    log('CUE POINTS', result);
+    outlet(consts_1.OUTLET_OSC, ['/cuePoints', JSON.stringify(result)]);
+}
+var sendCuePointsTask = null;
+function debounceSendCuePoints() {
+    if (sendCuePointsTask) {
+        sendCuePointsTask.cancel();
+    }
+    sendCuePointsTask = new Task(sendCuePoints);
+    sendCuePointsTask.schedule(20);
+}
+function onCuePointNameChange(args) {
+    if (args[0] !== 'name') {
+        return;
+    }
+    debounceSendCuePoints();
+}
+function cuePointsChange(args) {
+    if (args[0] !== 'cue_points') {
+        return;
+    }
+    var cuePointIds = (0, utils_1.cleanArr)(arrayfromargs(args));
+    log('cuePointIds', cuePointIds);
+    state.cuePoints = [];
+    for (var _i = 0, cuePointIds_1 = cuePointIds; _i < cuePointIds_1.length; _i++) {
+        var cuePointId = cuePointIds_1[_i];
+        var api = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId);
+        api.property = 'name';
+        state.cuePoints.push(api);
+    }
+    debounceSendCuePoints();
+}
 function init() {
     state.paramsWatcher = new LiveAPI(debouncedParameterChange, 'live_set view selected_track view selected_device');
     state.paramsWatcher.mode = 1;
@@ -356,6 +396,8 @@ function init() {
     state.variationsWatcher = new LiveAPI(onVariationChange, 'live_set view selected_track view selected_device');
     state.variationsWatcher.mode = 1;
     state.variationsWatcher.property = 'variation_count';
+    state.cuePointsWatcher = new LiveAPI(cuePointsChange, 'live_set');
+    state.cuePointsWatcher.property = 'cue_points';
 }
 function toggleOnOff() {
     if (!state.onOffWatcher) {
