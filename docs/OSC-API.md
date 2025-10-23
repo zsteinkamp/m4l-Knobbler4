@@ -279,11 +279,24 @@ Indicates whether the currently selected track is frozen.
 
 ## Toolbar
 
-### Knobbler4 to Tablet
-
 #### /arrangementOverdub { 0 | 1 }
 
 Indicates if the arrangement overdub button is engaged.
+
+#### /cuePoints { cuePoint List }
+
+JSON-encoded array of cue point objects.
+
+```
+[
+  { 
+    "name": {string},
+    "idx": {number},
+    "time": {number},
+  },
+  ...
+}
+```
 
 #### /sessionRecord { 0 | 1 }
 
@@ -308,6 +321,18 @@ Indicates if Live is recording.
 #### /tempo {float}
 
 The current tempo value.
+
+#### /gotoCuePoint {idx}
+
+Jumps to the cue point at `live_set cue_points {idx}`.
+
+#### /btnSkipPrev
+
+Jumps to the previous cue point.
+
+#### /btnSkipNext
+
+Jumps to the next cue point.
 
 ## Misc
 

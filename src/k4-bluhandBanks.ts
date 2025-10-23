@@ -35,7 +35,8 @@ const state = {
   bankParamArr: [] as BluhandBank[],
   nameLookupCache: {} as Record<number, RecordNameToIdx>,
   cuePointsWatcher: null as LiveAPI,
-  cuePoints: [] as LiveAPI[],
+  cuePointNames: [] as LiveAPI[],
+  cuePointTimes: [] as LiveAPI[],
 }
 
 function getMaxBanksParamArr(bankCount: number, deviceObj: LiveAPI) {
@@ -392,11 +393,14 @@ function onVariationChange() {
 }
 
 function sendCuePoints() {
-  const result = []
-  for (const cuePoint of state.cuePoints) {
-    result.push(cuePoint.get('name').toString())
-  }
-  log('CUE POINTS', result)
+  const result = state.cuePointNames.map((cuePoint, idx) => {
+    return {
+      idx: idx,
+      name: cuePoint.get('name').toString(),
+      time: parseFloat(cuePoint.get('time')),
+    }
+  })
+  //log('CUE POINTS', result)
   outlet(OUTLET_OSC, ['/cuePoints', JSON.stringify(result)])
 }
 
@@ -415,19 +419,32 @@ function onCuePointNameChange(args: IArguments) {
   }
   debounceSendCuePoints()
 }
+function onCuePointTimeChange(args: IArguments) {
+  if (args[0] !== 'time') {
+    return
+  }
+  debounceSendCuePoints()
+}
 
 function cuePointsChange(args: IArguments) {
   if (args[0] !== 'cue_points') {
     return
   }
   const cuePointIds = cleanArr(arrayfromargs(args) as IdObserverArg)
-  log('cuePointIds', cuePointIds)
+  //log('cuePointIds', cuePointIds)
 
-  state.cuePoints = []
+  state.cuePointNames = []
+  state.cuePointTimes = []
   for (const cuePointId of cuePointIds) {
-    const api = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId)
-    api.property = 'name'
-    state.cuePoints.push(api)
+    // name watcher
+    const nameApi = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId)
+    nameApi.property = 'name'
+    state.cuePointNames.push(nameApi)
+
+    // time watcher
+    const timeApi = new LiveAPI(onCuePointTimeChange, 'id ' + cuePointId)
+    timeApi.property = 'time'
+    state.cuePointTimes.push(timeApi)
   }
   debounceSendCuePoints()
 }
@@ -682,6 +699,14 @@ function setTempo(val: number) {
   api.set('tempo', val)
 }
 
+function gotoCuePoint(val: number) {
+  const api = new LiveAPI(null, 'live_set cue_points ' + val)
+  //log('GOTO CUE POINT ' + val + ' ' + api.id)
+  if (api.id) {
+    //log('JUMP ' + val + ' ' + api.id)
+    api.call('jump', null)
+  }
+}
 function btnSkipPrev() {
   const ctlApi = getLiveSetApi()
   ctlApi.call('jump_to_prev_cue', null)

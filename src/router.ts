@@ -128,21 +128,27 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/gotoCuePoint',
+    handler: stdVal,
+    msg: 'gotoCuePoint',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/btnSkipPrev',
     handler: bareMsg,
     msg: 'btnSkipPrev',
   },
   {
     outlet: OUTLET_BLUHAND,
-    prefix: '/toggleOnOff',
-    handler: bareMsg,
-    msg: 'toggleOnOff',
-  },
-  {
-    outlet: OUTLET_BLUHAND,
     prefix: '/btnSkipNext',
     handler: bareMsg,
     msg: 'btnSkipNext',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/toggleOnOff',
+    handler: bareMsg,
+    msg: 'toggleOnOff',
   },
   {
     outlet: OUTLET_BLUHAND,

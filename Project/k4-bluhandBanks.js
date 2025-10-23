@@ -33,7 +33,8 @@ var state = {
     bankParamArr: [],
     nameLookupCache: {},
     cuePointsWatcher: null,
-    cuePoints: [],
+    cuePointNames: [],
+    cuePointTimes: [],
 };
 function getMaxBanksParamArr(bankCount, deviceObj) {
     var rawBanks = [];
@@ -352,12 +353,14 @@ function onVariationChange() {
     ]);
 }
 function sendCuePoints() {
-    var result = [];
-    for (var _i = 0, _a = state.cuePoints; _i < _a.length; _i++) {
-        var cuePoint = _a[_i];
-        result.push(cuePoint.get('name').toString());
-    }
-    log('CUE POINTS', result);
+    var result = state.cuePointNames.map(function (cuePoint, idx) {
+        return {
+            idx: idx,
+            name: cuePoint.get('name').toString(),
+            time: parseFloat(cuePoint.get('time')),
+        };
+    });
+    //log('CUE POINTS', result)
     outlet(consts_1.OUTLET_OSC, ['/cuePoints', JSON.stringify(result)]);
 }
 var sendCuePointsTask = null;
@@ -374,18 +377,30 @@ function onCuePointNameChange(args) {
     }
     debounceSendCuePoints();
 }
+function onCuePointTimeChange(args) {
+    if (args[0] !== 'time') {
+        return;
+    }
+    debounceSendCuePoints();
+}
 function cuePointsChange(args) {
     if (args[0] !== 'cue_points') {
         return;
     }
     var cuePointIds = (0, utils_1.cleanArr)(arrayfromargs(args));
-    log('cuePointIds', cuePointIds);
-    state.cuePoints = [];
+    //log('cuePointIds', cuePointIds)
+    state.cuePointNames = [];
+    state.cuePointTimes = [];
     for (var _i = 0, cuePointIds_1 = cuePointIds; _i < cuePointIds_1.length; _i++) {
         var cuePointId = cuePointIds_1[_i];
-        var api = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId);
-        api.property = 'name';
-        state.cuePoints.push(api);
+        // name watcher
+        var nameApi = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId);
+        nameApi.property = 'name';
+        state.cuePointNames.push(nameApi);
+        // time watcher
+        var timeApi = new LiveAPI(onCuePointTimeChange, 'id ' + cuePointId);
+        timeApi.property = 'time';
+        state.cuePointTimes.push(timeApi);
     }
     debounceSendCuePoints();
 }
@@ -606,6 +621,14 @@ function tapTempo() {
 function setTempo(val) {
     var api = getLiveSetApi();
     api.set('tempo', val);
+}
+function gotoCuePoint(val) {
+    var api = new LiveAPI(null, 'live_set cue_points ' + val);
+    //log('GOTO CUE POINT ' + val + ' ' + api.id)
+    if (api.id) {
+        //log('JUMP ' + val + ' ' + api.id)
+        api.call('jump', null);
+    }
 }
 function btnSkipPrev() {
     var ctlApi = getLiveSetApi();

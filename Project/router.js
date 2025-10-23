@@ -115,6 +115,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_BLUHAND,
+        prefix: '/gotoCuePoint',
+        handler: stdVal,
+        msg: 'gotoCuePoint',
+    },
+    {
+        outlet: OUTLET_BLUHAND,
         prefix: '/btnSkipPrev',
         handler: bareMsg,
         msg: 'btnSkipPrev',
