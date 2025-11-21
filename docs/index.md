@@ -1,5 +1,10 @@
 ## Knobbler4 - The Best Parameter Control Surface For Ableton Live
 
+### Knobbler for iOS is Half Off until 2026!
+
+Get your Knobbler on for $19.99 USD for a Lifetime license, $9.99 for an annual subscription.
+
+
 <iframe width="100%" style="border: 20px solid black; aspect-ratio: 16 / 9" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
