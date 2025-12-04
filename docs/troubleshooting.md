@@ -24,11 +24,37 @@ The Knobbler app and device are constantly being improved. By virtue of being an
 
 When the Knobbler device first communicates with the iPad, it sends a version number. The iPad app has a minimum device version coded into it, and it will prompt you if it is communicating with a device that is too old.
 
+#### I am a Windows user and am not able to discover the app on my phone/tablet from the Knobbler4 device, and see the "Nobody Home :(" error on the Knobbler app.
+
+The Bonjour service required to be running on Windows in order for the network discovery functionality to work.
+
+To ensure that Bonjour Service is running:
+
+* Windows key and type 'services' + Enter to open the services list
+* Find Bonjour Service (screenshot 1)
+
+![Bonjour service in services list](images/bonjour1.png)
+
+* If the service is already running, stop here
+* If not running
+   * right click and select Start from the menu
+   * once started, right click again and select Properties
+   * in the properties pane, click on the Startup type and select Automatic to ensure the service starts on reboot
+
+![Bonjour service detail](images/bonjour2.png)
+
+> Thank you Dave Horsey ([RFK-23 on Soundcloud](https://soundcloud.com/user-106233343)) for the information and screenshots!
+
+If Bonjour is running, ensure that the Windows Firewall is configured to allow traffic to and from Ableton Live and that the Knobbler app on your device has Local Network permissions. On iOS (iPhone, iPad) that can be found in Settings > Privacy & Security > Local Network and make sure that Knobbler is enabled.
+
 #### I am going to be somewhere without WiFi. What can I do?
+
+The simplest and most reliable option is to get a cheap WiFi access point and bring it with you. [Here is one for $30 on Amazon.](https://www.amazon.com/TP-Link-AC1200-Router-Archer-A54/dp/B09G5Y1HWZ)
 
 If you have a Mac, check out the [instructions to set up an ad-hoc WiFi network](wifi-adhoc.md) on your computer that your iPad can join.
 
-If you are on Windows and you know how to do this, could you please send me steps/info/screenshots so I can add it? [zack@steinkamp.us](mailto:zack@steinkamp.us)
+If you are on Windows, [these instructions](https://support.structure.io/article/354-how-to-create-an-ad-hoc-connection-with-windows) may help.
+
 
 #### I am unable to successfully browse my network for my computer / tablet.
 
