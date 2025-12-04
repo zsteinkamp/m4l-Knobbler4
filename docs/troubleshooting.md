@@ -31,7 +31,7 @@ The Bonjour service required to be running on Windows in order for the network d
 To ensure that Bonjour Service is running:
 
 * Windows key and type 'services' + Enter to open the services list
-* Find Bonjour Service (screenshot 1)
+* Find Bonjour Service
 
 ![Bonjour service in services list](images/bonjour1.png)
 
