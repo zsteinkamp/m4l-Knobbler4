@@ -10,9 +10,9 @@ Get your Knobbler on for $19.99 USD for a Lifetime license, $9.99 for an annual 
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
 - [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
 
-[Download Knobbler for your iPhone or iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+[Download Knobbler for iPhone and iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
 
-[Check out Knobbler in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
+[Check out Knobbler for Android in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
 
 [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
 
