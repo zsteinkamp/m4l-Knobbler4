@@ -18,7 +18,7 @@ Get your Knobbler on for $19.99 USD for a Lifetime license, $9.99 for an annual 
 
 [History of Knobbler](https://steinkamp.us/posts/2025-03-01-knobbler)
 
-Knobbler is an iOS and Android app that communicates with a Max device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a network.
+Knobbler is an iOS and Android app that communicates with a Max for Live device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a wifi network or ethernet network.
 
 ![Big Picture Diagram](images/overview-app-device.png)
 
@@ -41,13 +41,13 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 
 ### Download
 
-Visit the Apple App Store on your iPhone or iPad to purchase and install the Knobbler app. Just search for Knobbler or click this button.
+Visit the Apple App Store on your iPhone or iPad to get the free Knobbler app. Just search for Knobbler or click this button. Knobbler has a 30 day free trial period with no limitations. Decide if Knobbler is the game changer I think it is before you spend your money.
 
 <a href="https://apps.apple.com/us/app/knobbler/id6740183923"><img src="images/app-store.png" style="max-width: 12em" /></a>
 
-For Android users, get Knobbler in the [Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative).
+For Android users, get Knobbler in the [Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative). Unfortunately I am unable to offer a 30 day trial on Android. I would love to! But the platform has a shortcoming that I'd be happy to explain to you one day if you needed to hear a sad story.
 
-Then download the latest Knobbler device for Ableton Live. Click the blue device download button below...
+Then download the latest Knobbler device for Ableton Live. Click the blue device download button at the top or bottom of the page.
 
 ### Release Notes / Changelog
 
@@ -55,10 +55,9 @@ View the complete release changelog and download old versions on the [GitHub Rel
 
 ### Installation
 
-- Unzip the downloaded device file
 - Drag the Knobbler-vXX.amxd file (where XX is the most recent version) to the User Library in Ableton Live
 - Now you can add the device to any of your Live Sets
-  - The device is required to communicate with the mobile app
+  - The device is required to communicate with the iOS / Android app
   - The Main track is a good place for it.
 
 Next, visit [Setup](./setup.md) or explore Knobbler's [Features](./features.md).
