@@ -353,11 +353,31 @@ function onVariationChange() {
     ]);
 }
 function sendCuePoints() {
+    var api = getUtilApi();
+    api.goto('live_set');
+    var numerator = parseFloat(api.get('signature_numerator').toString());
+    if (typeof numerator !== 'number' || numerator <= 0) {
+        // Fallback default if something goes wrong with the API call
+        numerator = 4;
+        // Optional: print warning to Max console
+        log('Warning: Could not retrieve time signature. Defaulting to 4/4.');
+    }
     var result = state.cuePointNames.map(function (cuePoint, idx) {
+        var cuePointTime = parseFloat(cuePoint.get('time'));
+        var rawBarIndex = Math.floor(cuePointTime / numerator);
+        // Calculate remaining beats into the current bar (0-indexed)
+        var rawBeatIndex = cuePointTime % numerator;
+        var displayBar = rawBarIndex + 1;
+        var displayBeat = rawBeatIndex + 1;
+        displayBeat = Math.floor(displayBeat);
+        var displayTicks = Math.floor((cuePointTime % 1.0) * 480);
+        var disp = displayBar + ':' + displayBeat + ':' + displayTicks;
+        //log(cuePointTime, displayTicks, displayBeat, disp)
         return {
             idx: idx,
             name: cuePoint.get('name').toString(),
-            time: parseFloat(cuePoint.get('time')),
+            time: cuePointTime,
+            disp: disp,
         };
     });
     //log('CUE POINTS', result)
