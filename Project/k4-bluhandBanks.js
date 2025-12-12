@@ -370,8 +370,8 @@ function sendCuePoints() {
         var displayBar = rawBarIndex + 1;
         var displayBeat = rawBeatIndex + 1;
         displayBeat = Math.floor(displayBeat);
-        var displayTicks = Math.floor((cuePointTime % 1.0) * 480);
-        var disp = displayBar + ':' + displayBeat + ':' + displayTicks;
+        var displaySixteenths = Math.floor((cuePointTime % 1.0) * 4) + 1;
+        var disp = displayBar + '.' + displayBeat + '.' + displaySixteenths;
         //log(cuePointTime, displayTicks, displayBeat, disp)
         return {
             idx: idx,

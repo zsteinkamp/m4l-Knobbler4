@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2025-12-12 [v48](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v48/Knobbler4-v48.amxd) - Send Cue Point display bars:beats:ticks string.
 - 2025-10-22 [v47](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v47/Knobbler4-v47.amxd) - Send Cue Points (Locators) as OSC messages to support forthcoming app feature.
 - 2025-10-07 [v46](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v46/Knobbler4-v46.amxd) - Send quantized values in a JSON-encoded string to support forthcoming Multi Button app UI enhancement.
 - 2025-10-04 [v45](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v45/Knobbler4-v45.amxd) - Support toggle buttons in the app UI for controls that have two possible states, e.g. on/off buttons.

@@ -413,8 +413,8 @@ function sendCuePoints() {
     const displayBar = rawBarIndex + 1
     let displayBeat = rawBeatIndex + 1
     displayBeat = Math.floor(displayBeat)
-    const displayTicks = Math.floor((cuePointTime % 1.0) * 480)
-    const disp = displayBar + ':' + displayBeat + ':' + displayTicks
+    const displaySixteenths = Math.floor((cuePointTime % 1.0) * 4) + 1
+    const disp = displayBar + '.' + displayBeat + '.' + displaySixteenths
     //log(cuePointTime, displayTicks, displayBeat, disp)
 
     return {
