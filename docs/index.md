@@ -1,22 +1,9 @@
 ## Knobbler4 - The Best Parameter Control Surface For Ableton Live
 
-### ** Knobbler for iOS is Half Off until 2026! **
-
-Get your Knobbler on for $19.99 USD for a Lifetime license, $9.99 for an annual subscription.
-
-
 <iframe width="100%" style="border: 20px solid black; aspect-ratio: 16 / 9" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
 - [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
-
-[Download Knobbler for iPhone and iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
-
-[Check out Knobbler for Android in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
-
-[Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
-
-[History of Knobbler](https://steinkamp.us/posts/2025-03-01-knobbler)
 
 Knobbler is an iOS and Android app that communicates with a Max for Live device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a wifi network or ethernet network.
 
@@ -28,6 +15,25 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 
 ![Knobbler Screenshot](images/ipad-knobbler.png)
 
+### App Download and Pricing
+
+[Download Knobbler for iPhone and iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+
+* Knobbler on iOS (iPhone and iPad) is a free download with a 30 day unlimited functionality trial. At that point, you choose monthly ($0.99 USD), annual ($9.99 USD), or one-time Lifetime payment ($19.99 USD) to continue using it.
+
+[Check out Knobbler for Android in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
+
+* Knobbler on Android (phones and tablets) is a one-time $14.99 USD purchase. Due to a technical limitation in the Google Play system, I cannot offer a trial period on Android.
+
+After getting the app, download the latest Knobbler4 device for Ableton Live. Click the blue device download button at the top or bottom of the page.
+
+
+### Resources
+
+* [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
+* [Knobbler Discord](https://discord.com/channels/1340693019552387072/1433825749055569980)
+* [History of Knobbler](https://steinkamp.us/posts/2025-03-01-knobbler)
+
 ### Main Features
 
 - Two pages of **16 assignable, auto-labeling, auto-coloring, high-resolution faders** that always show you exactly what is happening in your music.
@@ -38,16 +44,6 @@ It's an auto-labeling, auto-coloring, bidirectional control surface that you can
 - A **mixer channel strip** for the currently selected track, giving you control over volume, mute, solo, record, send levels, and even the crossfader.
 - **Direct access** to familiar buttons from Live's toolbar, such as tap tempo, capture MIDI, and of course, transport controls.
 - Support for **multiple tablets** with multiple Knobbler device instances.
-
-### Download
-
-Visit the Apple App Store on your iPhone or iPad to get the free Knobbler app. Just search for Knobbler or click this button. Knobbler has a 30 day free trial period with no limitations. Decide if Knobbler is the game changer I think it is before you spend your money.
-
-<a href="https://apps.apple.com/us/app/knobbler/id6740183923"><img src="images/app-store.png" style="max-width: 12em" /></a>
-
-For Android users, get Knobbler in the [Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative). Unfortunately I am unable to offer a 30 day trial on Android. I would love to! But the platform has a shortcoming that I'd be happy to explain to you one day if you needed to hear a sad story.
-
-Then download the latest Knobbler device for Ableton Live. Click the blue device download button at the top or bottom of the page.
 
 ### Release Notes / Changelog
 
