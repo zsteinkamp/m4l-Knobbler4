@@ -5,15 +5,15 @@
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
 - [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
 
-Knobbler is an iOS and Android app that communicates with a Max for Live device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a wifi network or ethernet network.
-
-![Big Picture Diagram](images/overview-app-device.png)
-
 Knobbler keeps you in the creative moment in your musicmaking by giving you fingertip access to the tracks, devices, and parameters in your Live Sets that matter the most.
 
 It's an auto-labeling, auto-coloring, bidirectional control surface that you can customize for each song. Pick back up right where you left off with perfect recall, so you can work on several songs at once, each with their own ideal layout, saved inside the song file itself.
 
 ![Knobbler Screenshot](images/ipad-knobbler.png)
+
+Knobbler is an iOS and Android app that communicates with a Max for Live device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a wifi network or ethernet network.
+
+![Big Picture Diagram](images/overview-app-device.png)
 
 ### App Download and Pricing
 
