@@ -3,7 +3,7 @@
 <iframe width="100%" style="border: 20px solid black; aspect-ratio: 16 / 9" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
-- [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
+- [Setup and Feature Walkthrough Video (15 min)](https://www.youtube.com/watch?v=m3h8QtVeWb8)
 
 Knobbler keeps you in the creative moment in your musicmaking by giving you fingertip access to the tracks, devices, and parameters in your Live Sets that matter the most.
 
