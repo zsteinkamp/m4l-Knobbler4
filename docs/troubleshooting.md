@@ -141,6 +141,11 @@ Ableton seems to have "forgotten" about some old devices like CC Control. These 
 
 I have filed a support ticket with Ableton about this, and for now unfortunately things do not work properly in Knobbler with those devices. Their parameters will show up on the Bluhand page, but mapping to Knobbler page sliders does not work properly, and the device title on the Bluhand page does not update.
 
+#### Changing tracks on Windows with Live 12.3 causes a CPU overload.
+
+Try turning off GPU rendering in Live's settings. There appears to be a bug related to that in the latest versions of Ableton Live.
+
+
 #### HALP! Nothing above covers what I'm experiencing!
 
 Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, screenshots (there are never too many screenshots), events from your childhood that relate, etc. zack@steinkamp.us
