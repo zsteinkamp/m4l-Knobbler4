@@ -5,9 +5,9 @@
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
 - [Setup and Feature Walkthrough Video (15 min)](https://www.youtube.com/watch?v=m3h8QtVeWb8)
 
-Knobbler keeps you in the creative moment in your musicmaking by giving you fingertip access to the tracks, devices, and parameters in your Live Sets that matter the most.
+Knobbler keeps you in the creative moment in your musicmaking by giving you fingertip access to what matters most in your music.
 
-It's an auto-labeling, auto-coloring, bidirectional control surface that you can customize for each song. Pick back up right where you left off with perfect recall, so you can work on several songs at once, each with their own ideal layout, saved inside the song file itself.
+It's an auto-labeling, auto-coloring, bidirectional parameter and navigation control surface that you can customize for each song. Pick back up right where you left off with perfect recall, so you can work on several songs at once, each with their own ideal layout, saved inside the song file itself.
 
 ![Knobbler Screenshot](images/ipad-knobbler.png)
 
