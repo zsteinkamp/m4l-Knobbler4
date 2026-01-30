@@ -40,6 +40,7 @@ To ensure that Bonjour Service is running:
    * right click and select Start from the menu
    * once started, right click again and select Properties
    * in the properties pane, click on the Startup type and select Automatic to ensure the service starts on reboot
+* If not installed, then [follow these instructions](https://support.apple.com/en-us/106380) to download and install it.
 
 ![Bonjour service detail](images/bonjour2.png)
 
