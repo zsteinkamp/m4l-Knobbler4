@@ -723,6 +723,20 @@ function setTempo(val: number) {
   api.set('tempo', val)
 }
 
+function playCuePoint(val: number) {
+  const api = new LiveAPI(null, 'live_set cue_points ' + val)
+  //log('PLAY CUE POINT ' + val + ' ' + api.id)
+  if (api.id) {
+    //log('JUMP ' + val + ' ' + api.id)
+    api.call('jump', null)
+    const ctlApi = getLiveSetApi()
+    const isPlaying = parseInt(ctlApi.get('is_playing'))
+    //log('PLAY ' + isPlaying)
+    if (!isPlaying) {
+      ctlApi.call('start_playing', null)
+    }
+  }
+}
 function gotoCuePoint(val: number) {
   const api = new LiveAPI(null, 'live_set cue_points ' + val)
   //log('GOTO CUE POINT ' + val + ' ' + api.id)

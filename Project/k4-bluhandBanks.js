@@ -642,6 +642,20 @@ function setTempo(val) {
     var api = getLiveSetApi();
     api.set('tempo', val);
 }
+function playCuePoint(val) {
+    var api = new LiveAPI(null, 'live_set cue_points ' + val);
+    //log('PLAY CUE POINT ' + val + ' ' + api.id)
+    if (api.id) {
+        //log('JUMP ' + val + ' ' + api.id)
+        api.call('jump', null);
+        var ctlApi = getLiveSetApi();
+        var isPlaying = parseInt(ctlApi.get('is_playing'));
+        //log('PLAY ' + isPlaying)
+        if (!isPlaying) {
+            ctlApi.call('start_playing', null);
+        }
+    }
+}
 function gotoCuePoint(val) {
     var api = new LiveAPI(null, 'live_set cue_points ' + val);
     //log('GOTO CUE POINT ' + val + ' ' + api.id)

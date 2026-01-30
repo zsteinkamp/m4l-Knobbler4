@@ -121,6 +121,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_BLUHAND,
+        prefix: '/playCuePoint',
+        handler: stdVal,
+        msg: 'playCuePoint',
+    },
+    {
+        outlet: OUTLET_BLUHAND,
         prefix: '/btnSkipPrev',
         handler: bareMsg,
         msg: 'btnSkipPrev',
