@@ -726,6 +726,14 @@ function ctlStop() {
     var ctlApi = getLiveSetApi();
     ctlApi.call('stop_playing', null);
 }
+function undo() {
+    var api = getLiveSetApi();
+    api.call('undo', null);
+}
+function redo() {
+    var api = getLiveSetApi();
+    api.call('redo', null);
+}
 log('reloaded k4-bluhandBanks');
 // NOTE: This section must appear in any .ts file that is directuly used by a
 // [js] or [jsui] object so that tsc generates valid JS for Max.

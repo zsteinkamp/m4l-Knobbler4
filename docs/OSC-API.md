@@ -84,6 +84,14 @@ If not looking at the first bank, has the effect of switching the Tablet to the 
 
 If more banks of parameters are available, then switch the Tablet to the next bank of parameters. Causes a full update of slot names and values.
 
+#### /undo
+
+Triggers an undo action in the Live set, reverting the last change.
+
+#### /redo
+
+Triggers a redo action in the Live set, reapplying the last undone change.
+
 #### /shortcutNMap
 
 For shortcut button N, will map the button if it is not yet mapped. If mapped already, it will focus the Live UI on the mapped device.

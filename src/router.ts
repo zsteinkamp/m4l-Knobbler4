@@ -284,6 +284,18 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_BLUHAND,
+    prefix: '/undo',
+    handler: bareMsg,
+    msg: 'undo',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
+    prefix: '/redo',
+    handler: bareMsg,
+    msg: 'redo',
+  },
+  {
+    outlet: OUTLET_BLUHAND,
     prefix: '/bBank',
     handler: stdSlot,
     msg: 'gotoBank',

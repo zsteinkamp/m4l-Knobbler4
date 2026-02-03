@@ -810,6 +810,16 @@ function ctlStop() {
   ctlApi.call('stop_playing', null)
 }
 
+function undo() {
+  const api = getLiveSetApi()
+  api.call('undo', null)
+}
+
+function redo() {
+  const api = getLiveSetApi()
+  api.call('redo', null)
+}
+
 log('reloaded k4-bluhandBanks')
 
 // NOTE: This section must appear in any .ts file that is directuly used by a

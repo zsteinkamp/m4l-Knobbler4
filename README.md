@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2026-02-03 [v50](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v50/Knobbler4-v50.amxd) - Add /undo and /redo OSC commands to trigger undo/redo actions in Live.
 - 2026-01-30 [v49](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v49/Knobbler4-v49.amxd) - Handle /playCuePoint message from forthcoming app release to move to a cue point and start playing.
 - 2025-12-12 [v48](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v48/Knobbler4-v48.amxd) - Send Cue Point display bars:beats:ticks string.
 - 2025-10-22 [v47](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v47/Knobbler4-v47.amxd) - Send Cue Points (Locators) as OSC messages to support forthcoming app feature.
