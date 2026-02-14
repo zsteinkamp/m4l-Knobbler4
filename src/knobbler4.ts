@@ -55,6 +55,13 @@ function setDefault(slot: number) {
 function gotoTrackFor(slot: number) {
   KnobblerCore.gotoTrackFor(slot)
 }
+function xyJoin(slot: number) {
+  //log('JOIN SLOT', slot)
+  KnobblerCore.xyJoin(slot)
+}
+function xySplit(slot: number) {
+  KnobblerCore.xySplit(slot)
+}
 
 log('reloaded knobbler4')
 

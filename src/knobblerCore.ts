@@ -3,7 +3,9 @@ import {
   debouncedTask,
   dequote,
   isValidPath,
+  loadSetting,
   logFactory,
+  saveSetting,
 } from './utils'
 import {
   DEFAULT_COLOR_FF,
@@ -34,8 +36,72 @@ const deviceCheckerTask: MaxTask[] = []
 const allowMapping: boolean[] = []
 const allowUpdateFromOsc: boolean[] = []
 
+// XY pad pairs - stores left indices of active pairs
+let xyPairs: number[] = []
+const XY_PAIRS_KEY = 'xyPairs'
+
+function isSlotInPair(slot: number): number | null {
+  for (let i = 0; i < xyPairs.length; i++) {
+    if (xyPairs[i] === slot || xyPairs[i] + 1 === slot) {
+      return xyPairs[i]
+    }
+  }
+  return null
+}
+
+function saveXYPairs() {
+  saveSetting(XY_PAIRS_KEY, xyPairs)
+}
+
+function loadXYPairs() {
+  const val = loadSetting(XY_PAIRS_KEY)
+  if (val && typeof val === 'object') {
+    xyPairs = (val as number[]).filter(function (n) {
+      return typeof n === 'number' && !isNaN(n)
+    })
+  } else {
+    xyPairs = []
+  }
+}
+
+function sendXYPairs() {
+  //log('SEND XY PAIRS', JSON.stringify(xyPairs))
+  outlet(OUTLET_OSC, ['/xyPairs', JSON.stringify(xyPairs)])
+}
+
+function xyJoin(leftIdx: number) {
+  //log('xyJOIN', leftIdx)
+  if (leftIdx < 1 || leftIdx >= MAX_SLOTS) {
+    return
+  }
+  // check no overlap with existing pairs
+  if (isSlotInPair(leftIdx) !== null || isSlotInPair(leftIdx + 1) !== null) {
+    return
+  }
+  xyPairs.push(leftIdx)
+  //log('JOIN', leftIdx, leftIdx + 1)
+  saveXYPairs()
+  sendXYPairs()
+}
+
+function xySplit(leftIdx: number) {
+  const idx = xyPairs.indexOf(leftIdx)
+  if (idx === -1) {
+    return
+  }
+  xyPairs.splice(idx, 1)
+  saveXYPairs()
+  sendXYPairs()
+}
+
+
 function unmap(slot: number) {
   //log(`UNMAP ${slot}`)
+  // if slot is part of a pair, remove that pair
+  const pairLeft = isSlotInPair(slot)
+  if (pairLeft !== null) {
+    xySplit(pairLeft)
+  }
   init(slot)
   refreshSlotUI(slot)
 }
@@ -390,6 +456,8 @@ function refresh() {
   for (let i = 1; i <= MAX_SLOTS; i++) {
     refreshSlotUI(i)
   }
+  loadXYPairs()
+  sendXYPairs()
 }
 
 function refreshSlotUI(slot: number) {
@@ -603,4 +671,6 @@ export {
   setPath,
   unmap,
   val,
+  xyJoin,
+  xySplit,
 }

@@ -22,6 +22,14 @@ Sets the value of the parameter mapped to Slot N to its default value. Does so i
 
 Switch the Live display to the track corresponding to Slot N.
 
+#### /xyJoinN
+
+Join Slot N and Slot N+1 into an X-Y pad pair. N must be between 1 and 31. Both slots must not already be part of a pair. Triggers an `/xyPairs` response. Knobbler pairs persist with the Live set.
+
+#### /xySplitN
+
+Split a previously joined X-Y pad pair where N is the left slot index. Triggers an `/xyPairs` response.
+
 ### Knobbler4 to Tablet
 
 #### /deviceN {string}
@@ -59,6 +67,10 @@ Updates the color of the slider for Slot N to the one given. Must be a hexidecim
 #### /valStrN {string}
 
 Updates the string representation of Slot N's mapped parameter value, e.g. (-6db or 2.5KHz).
+
+#### /xyPairs {JSON string}
+
+A JSON-encoded array of left slot indices for active X-Y pad pairs. e.g. `[3, 7]` means slots 3+4 and 7+8 are joined. Sent on refresh, page load, join, split, and Live set load.
 
 ## Bluhand
 

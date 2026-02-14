@@ -9,7 +9,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
+exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
 var config_1 = require("./config");
@@ -29,8 +29,67 @@ var deviceCheckerTask = [];
 // other vars
 var allowMapping = [];
 var allowUpdateFromOsc = [];
+// XY pad pairs - stores left indices of active pairs
+var xyPairs = [];
+var XY_PAIRS_KEY = 'xyPairs';
+function isSlotInPair(slot) {
+    for (var i = 0; i < xyPairs.length; i++) {
+        if (xyPairs[i] === slot || xyPairs[i] + 1 === slot) {
+            return xyPairs[i];
+        }
+    }
+    return null;
+}
+function saveXYPairs() {
+    (0, utils_1.saveSetting)(XY_PAIRS_KEY, xyPairs);
+}
+function loadXYPairs() {
+    var val = (0, utils_1.loadSetting)(XY_PAIRS_KEY);
+    if (val && typeof val === 'object') {
+        xyPairs = val.filter(function (n) {
+            return typeof n === 'number' && !isNaN(n);
+        });
+    }
+    else {
+        xyPairs = [];
+    }
+}
+function sendXYPairs() {
+    //log('SEND XY PAIRS', JSON.stringify(xyPairs))
+    outlet(consts_1.OUTLET_OSC, ['/xyPairs', JSON.stringify(xyPairs)]);
+}
+function xyJoin(leftIdx) {
+    //log('xyJOIN', leftIdx)
+    if (leftIdx < 1 || leftIdx >= consts_1.MAX_SLOTS) {
+        return;
+    }
+    // check no overlap with existing pairs
+    if (isSlotInPair(leftIdx) !== null || isSlotInPair(leftIdx + 1) !== null) {
+        return;
+    }
+    xyPairs.push(leftIdx);
+    //log('JOIN', leftIdx, leftIdx + 1)
+    saveXYPairs();
+    sendXYPairs();
+}
+exports.xyJoin = xyJoin;
+function xySplit(leftIdx) {
+    var idx = xyPairs.indexOf(leftIdx);
+    if (idx === -1) {
+        return;
+    }
+    xyPairs.splice(idx, 1);
+    saveXYPairs();
+    sendXYPairs();
+}
+exports.xySplit = xySplit;
 function unmap(slot) {
     //log(`UNMAP ${slot}`)
+    // if slot is part of a pair, remove that pair
+    var pairLeft = isSlotInPair(slot);
+    if (pairLeft !== null) {
+        xySplit(pairLeft);
+    }
     init(slot);
     refreshSlotUI(slot);
 }
@@ -336,6 +395,8 @@ function refresh() {
     for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         refreshSlotUI(i);
     }
+    loadXYPairs();
+    sendXYPairs();
 }
 exports.refresh = refresh;
 function refreshSlotUI(slot) {

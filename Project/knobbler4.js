@@ -49,6 +49,13 @@ function setDefault(slot) {
 function gotoTrackFor(slot) {
     KnobblerCore.gotoTrackFor(slot);
 }
+function xyJoin(slot) {
+    //log('JOIN SLOT', slot)
+    KnobblerCore.xyJoin(slot);
+}
+function xySplit(slot) {
+    KnobblerCore.xySplit(slot);
+}
 log('reloaded knobbler4');
 // NOTE: This section must appear in any .ts file that is directuly used by a
 // [js] or [jsui] object so that tsc generates valid JS for Max.

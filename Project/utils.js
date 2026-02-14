@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.cleanArr = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
@@ -68,6 +68,17 @@ function debouncedTask(key, slot, task, delayMs) {
     tasks[key][slot].schedule(delayMs);
 }
 exports.debouncedTask = debouncedTask;
+var SETTINGS_DICT_NAME = 'settingsDict';
+function saveSetting(key, value) {
+    var d = new Dict(SETTINGS_DICT_NAME);
+    d.set(key, value);
+}
+exports.saveSetting = saveSetting;
+function loadSetting(key) {
+    var d = new Dict(SETTINGS_DICT_NAME);
+    return d.get(key);
+}
+exports.loadSetting = loadSetting;
 function cleanArr(arr) {
     if (!arr) {
         return [];

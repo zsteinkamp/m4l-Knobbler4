@@ -70,6 +70,18 @@ export function debouncedTask(
   tasks[key][slot].schedule(delayMs)
 }
 
+const SETTINGS_DICT_NAME = 'settingsDict'
+
+export function saveSetting(key: string, value: any) {
+  const d = new Dict(SETTINGS_DICT_NAME)
+  d.set(key, value)
+}
+
+export function loadSetting(key: string): any {
+  const d = new Dict(SETTINGS_DICT_NAME)
+  return d.get(key)
+}
+
 export function cleanArr(arr: IdObserverArg) {
   if (!arr) {
     return []

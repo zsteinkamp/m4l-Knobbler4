@@ -98,6 +98,18 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_KNOBBLER,
+    prefix: '/xyJoin',
+    handler: stdVal,
+    msg: 'xyJoin',
+  },
+  {
+    outlet: OUTLET_KNOBBLER,
+    prefix: '/xySplit',
+    handler: stdVal,
+    msg: 'xySplit',
+  },
+  {
+    outlet: OUTLET_KNOBBLER,
     prefix: '/defaultval',
     handler: stdSlot,
     msg: 'setDefault',
