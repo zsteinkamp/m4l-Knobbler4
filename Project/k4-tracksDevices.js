@@ -7,34 +7,16 @@ var config_1 = require("./config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(config_1.default);
 var CHUNK_MAX_BYTES = 1024;
-var MIN_CHUNKED_VERSION = '2026.2.14';
-function parseVersion(ver) {
-    return ver.split('.').map(function (s) {
-        return parseInt(s) || 0;
-    });
-}
-function versionAtLeast(ver, min) {
-    var parts = parseVersion(ver);
-    var minParts = parseVersion(min);
-    for (var i = 0; i < minParts.length; i++) {
-        var a = parts[i] || 0;
-        var b = minParts[i];
-        if (a > b)
-            return true;
-        if (a < b)
-            return false;
-    }
-    return true;
-}
-function clientSupportsChunked() {
-    var ver = (0, utils_1.loadSetting)('clientVersion');
-    if (!ver) {
+function clientHasCapability(cap) {
+    var caps = (0, utils_1.loadSetting)('clientCapabilities');
+    if (!caps) {
         return false;
     }
-    return versionAtLeast(ver.toString(), MIN_CHUNKED_VERSION);
+    return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1;
 }
 function sendNavData(prefix, items) {
-    if (clientSupportsChunked()) {
+    var chunked = clientHasCapability('cNav');
+    if (chunked) {
         // chunked protocol: start, chunk(s), end
         outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
         var chunk = [];
@@ -55,12 +37,9 @@ function sendNavData(prefix, items) {
         }
         outlet(consts_1.OUTLET_OSC, [prefix + '/end']);
     }
-    else {
-        // legacy: send full payload for old clients, skip if too large
-        var fullJson = JSON.stringify(items);
-        if (fullJson.length <= 1400) {
-            outlet(consts_1.OUTLET_OSC, [prefix, fullJson]);
-        }
+    // legacy: send full payload for old/unknown clients (may truncate on large sets)
+    if (!chunked) {
+        outlet(consts_1.OUTLET_OSC, [prefix, JSON.stringify(items)]);
     }
 }
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
@@ -538,6 +517,7 @@ function onCurrTrackNameChange(args) {
 function init() {
     //log('TRACKS DEVICES INIT')
     (0, utils_1.saveSetting)('clientVersion', '');
+    (0, utils_1.saveSetting)('clientCapabilities', '');
     state.track = { watch: null, tree: {}, last: null };
     state.return = { watch: null, tree: {}, last: null };
     state.main = { watch: null, tree: {}, last: null };

@@ -32,36 +32,17 @@ import {
 const log = logFactory(config)
 
 const CHUNK_MAX_BYTES = 1024
-const MIN_CHUNKED_VERSION = '2026.2.14'
-
-function parseVersion(ver: string): number[] {
-  return ver.split('.').map(function (s) {
-    return parseInt(s) || 0
-  })
-}
-
-function versionAtLeast(ver: string, min: string): boolean {
-  const parts = parseVersion(ver)
-  const minParts = parseVersion(min)
-  for (let i = 0; i < minParts.length; i++) {
-    const a = parts[i] || 0
-    const b = minParts[i]
-    if (a > b) return true
-    if (a < b) return false
-  }
-  return true
-}
-
-function clientSupportsChunked(): boolean {
-  const ver = loadSetting('clientVersion')
-  if (!ver) {
+function clientHasCapability(cap: string): boolean {
+  const caps = loadSetting('clientCapabilities')
+  if (!caps) {
     return false
   }
-  return versionAtLeast(ver.toString(), MIN_CHUNKED_VERSION)
+  return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1
 }
 
 function sendNavData(prefix: string, items: MaxObjRecord[]) {
-  if (clientSupportsChunked()) {
+  const chunked = clientHasCapability('cNav')
+  if (chunked) {
     // chunked protocol: start, chunk(s), end
     outlet(OUTLET_OSC, [prefix + '/start', items.length])
 
@@ -83,12 +64,10 @@ function sendNavData(prefix: string, items: MaxObjRecord[]) {
     }
 
     outlet(OUTLET_OSC, [prefix + '/end'])
-  } else {
-    // legacy: send full payload for old clients, skip if too large
-    const fullJson = JSON.stringify(items)
-    if (fullJson.length <= 1400) {
-      outlet(OUTLET_OSC, [prefix, fullJson])
-    }
+  }
+  // legacy: send full payload for old/unknown clients (may truncate on large sets)
+  if (!chunked) {
+    outlet(OUTLET_OSC, [prefix, JSON.stringify(items)])
   }
 }
 
@@ -615,6 +594,7 @@ function onCurrTrackNameChange(args: IArguments) {
 function init() {
   //log('TRACKS DEVICES INIT')
   saveSetting('clientVersion', '')
+  saveSetting('clientCapabilities', '')
   state.track = { watch: null, tree: {}, last: null }
   state.return = { watch: null, tree: {}, last: null }
   state.main = { watch: null, tree: {}, last: null }

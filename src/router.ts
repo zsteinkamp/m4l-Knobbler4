@@ -50,7 +50,9 @@ function getSlotNum(router: RouterItem, msg: string): number {
 // HANDLERS
 function synHandler(router: RouterItem, _: string, val: string | number) {
   if (val) {
-    saveSetting('clientVersion', val.toString())
+    const parts = val.toString().split(' ')
+    saveSetting('clientVersion', parts[0])
+    saveSetting('clientCapabilities', parts.slice(1).join(' '))
   }
   outlet(router.outlet, router.msg)
 }
@@ -459,7 +461,7 @@ const ROUTER: RouterItem[] = [
   {
     outlet: OUTLET_OSC,
     prefix: '/ping',
-    handler: bareMsg,
+    handler: synHandler,
     msg: '/pong',
   },
   {
