@@ -6,6 +6,63 @@ var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(config_1.default);
+var CHUNK_MAX_BYTES = 1024;
+var MIN_CHUNKED_VERSION = '2026.2.14';
+function parseVersion(ver) {
+    return ver.split('.').map(function (s) {
+        return parseInt(s) || 0;
+    });
+}
+function versionAtLeast(ver, min) {
+    var parts = parseVersion(ver);
+    var minParts = parseVersion(min);
+    for (var i = 0; i < minParts.length; i++) {
+        var a = parts[i] || 0;
+        var b = minParts[i];
+        if (a > b)
+            return true;
+        if (a < b)
+            return false;
+    }
+    return true;
+}
+function clientSupportsChunked() {
+    var ver = (0, utils_1.loadSetting)('clientVersion');
+    if (!ver) {
+        return false;
+    }
+    return versionAtLeast(ver.toString(), MIN_CHUNKED_VERSION);
+}
+function sendNavData(prefix, items) {
+    if (clientSupportsChunked()) {
+        // chunked protocol: start, chunk(s), end
+        outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
+        var chunk = [];
+        var chunkSize = 2; // for the surrounding []
+        for (var i = 0; i < items.length; i++) {
+            var itemJson = JSON.stringify(items[i]);
+            var added = (chunk.length > 0 ? 1 : 0) + itemJson.length; // comma + item
+            if (chunk.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)]);
+                chunk = [];
+                chunkSize = 2;
+            }
+            chunk.push(items[i]);
+            chunkSize += added;
+        }
+        if (chunk.length > 0) {
+            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)]);
+        }
+        outlet(consts_1.OUTLET_OSC, [prefix + '/end']);
+    }
+    else {
+        // legacy: send full payload for old clients, skip if too large
+        var fullJson = JSON.stringify(items);
+        if (fullJson.length <= 1400) {
+            outlet(consts_1.OUTLET_OSC, [prefix, fullJson]);
+        }
+    }
+}
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setoutletassist(consts_1.OUTLET_MSGS, 'Messages');
@@ -168,7 +225,7 @@ function updateDeviceNav() {
         // if no device is selected, null out the devices list
         outlet(consts_1.OUTLET_OSC, ['/nav/currDeviceId', -1]);
         //log('/nav/devices=' + JSON.stringify([]))
-        outlet(consts_1.OUTLET_OSC, ['/nav/devices', JSON.stringify([])]);
+        sendNavData('/nav/devices', []);
         return;
     }
     //log('NEW CURR DEVICE ID=' + state.currDeviceId)
@@ -278,7 +335,7 @@ function updateDeviceNav() {
         }
     }
     //log('/nav/devices=' + JSON.stringify(ret))
-    outlet(consts_1.OUTLET_OSC, ['/nav/devices', JSON.stringify(ret)]);
+    sendNavData('/nav/devices', ret);
 }
 function onCurrTrackChange(val) {
     if (val[0] !== 'id' && val[1].toString() !== 'id') {
@@ -437,7 +494,7 @@ function updateTrackNav() {
     var mainId = mainTree['0'].children[0];
     ret.push(mainTree[mainId.toString()].obj);
     //log('/nav/tracks=' + JSON.stringify(ret))
-    outlet(consts_1.OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)]);
+    sendNavData('/nav/tracks', ret);
     //log('NEW CURR TRACK ID =' + state.currTrackId)
     outlet(consts_1.OUTLET_OSC, ['/nav/currTrackId', state.currTrackId]);
     // ensure a device is selected if one exists
@@ -480,6 +537,7 @@ function onCurrTrackNameChange(args) {
 }
 function init() {
     //log('TRACKS DEVICES INIT')
+    (0, utils_1.saveSetting)('clientVersion', '');
     state.track = { watch: null, tree: {}, last: null };
     state.return = { watch: null, tree: {}, last: null };
     state.main = { watch: null, tree: {}, last: null };

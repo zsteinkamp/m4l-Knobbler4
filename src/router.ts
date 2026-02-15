@@ -1,5 +1,5 @@
 import config from './config'
-import { logFactory } from './utils'
+import { logFactory, saveSetting } from './utils'
 
 autowatch = 1
 inlets = 1
@@ -48,6 +48,12 @@ function getSlotNum(router: RouterItem, msg: string): number {
 }
 
 // HANDLERS
+function synHandler(router: RouterItem, _: string, val: string | number) {
+  if (val) {
+    saveSetting('clientVersion', val.toString())
+  }
+  outlet(router.outlet, router.msg)
+}
 function bareMsg(router: RouterItem) {
   outlet(router.outlet, router.msg)
 }
@@ -75,7 +81,7 @@ const ROUTER: RouterItem[] = [
   {
     outlet: OUTLET_ACK,
     prefix: '/syn',
-    handler: bareMsg,
+    handler: synHandler,
     msg: 'ack',
   },
   {

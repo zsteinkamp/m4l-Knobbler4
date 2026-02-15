@@ -36,6 +36,12 @@ function getSlotNum(router, msg) {
     return null;
 }
 // HANDLERS
+function synHandler(router, _, val) {
+    if (val) {
+        (0, utils_1.saveSetting)('clientVersion', val.toString());
+    }
+    outlet(router.outlet, router.msg);
+}
 function bareMsg(router) {
     outlet(router.outlet, router.msg);
 }
@@ -62,7 +68,7 @@ var ROUTER = [
     {
         outlet: OUTLET_ACK,
         prefix: '/syn',
-        handler: bareMsg,
+        handler: synHandler,
         msg: 'ack',
     },
     {

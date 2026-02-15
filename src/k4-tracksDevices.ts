@@ -6,7 +6,9 @@ import {
   cleanArr,
   colorToString,
   isDeviceSupported,
+  loadSetting,
   logFactory,
+  saveSetting,
   truncate,
 } from './utils'
 import config from './config'
@@ -28,6 +30,67 @@ import {
 } from './consts'
 
 const log = logFactory(config)
+
+const CHUNK_MAX_BYTES = 1024
+const MIN_CHUNKED_VERSION = '2026.2.14'
+
+function parseVersion(ver: string): number[] {
+  return ver.split('.').map(function (s) {
+    return parseInt(s) || 0
+  })
+}
+
+function versionAtLeast(ver: string, min: string): boolean {
+  const parts = parseVersion(ver)
+  const minParts = parseVersion(min)
+  for (let i = 0; i < minParts.length; i++) {
+    const a = parts[i] || 0
+    const b = minParts[i]
+    if (a > b) return true
+    if (a < b) return false
+  }
+  return true
+}
+
+function clientSupportsChunked(): boolean {
+  const ver = loadSetting('clientVersion')
+  if (!ver) {
+    return false
+  }
+  return versionAtLeast(ver.toString(), MIN_CHUNKED_VERSION)
+}
+
+function sendNavData(prefix: string, items: MaxObjRecord[]) {
+  if (clientSupportsChunked()) {
+    // chunked protocol: start, chunk(s), end
+    outlet(OUTLET_OSC, [prefix + '/start', items.length])
+
+    let chunk: MaxObjRecord[] = []
+    let chunkSize = 2 // for the surrounding []
+    for (let i = 0; i < items.length; i++) {
+      const itemJson = JSON.stringify(items[i])
+      const added = (chunk.length > 0 ? 1 : 0) + itemJson.length // comma + item
+      if (chunk.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+        outlet(OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)])
+        chunk = []
+        chunkSize = 2
+      }
+      chunk.push(items[i])
+      chunkSize += added
+    }
+    if (chunk.length > 0) {
+      outlet(OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)])
+    }
+
+    outlet(OUTLET_OSC, [prefix + '/end'])
+  } else {
+    // legacy: send full payload for old clients, skip if too large
+    const fullJson = JSON.stringify(items)
+    if (fullJson.length <= 1400) {
+      outlet(OUTLET_OSC, [prefix, fullJson])
+    }
+  }
+}
 
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
@@ -207,7 +270,7 @@ function updateDeviceNav() {
     // if no device is selected, null out the devices list
     outlet(OUTLET_OSC, ['/nav/currDeviceId', -1])
     //log('/nav/devices=' + JSON.stringify([]))
-    outlet(OUTLET_OSC, ['/nav/devices', JSON.stringify([])])
+    sendNavData('/nav/devices', [])
     return
   }
 
@@ -328,7 +391,7 @@ function updateDeviceNav() {
   }
 
   //log('/nav/devices=' + JSON.stringify(ret))
-  outlet(OUTLET_OSC, ['/nav/devices', JSON.stringify(ret)])
+  sendNavData('/nav/devices', ret)
 }
 
 function onCurrTrackChange(val: IdObserverArg) {
@@ -504,7 +567,7 @@ function updateTrackNav() {
   ret.push(mainTree[mainId.toString()].obj)
 
   //log('/nav/tracks=' + JSON.stringify(ret))
-  outlet(OUTLET_OSC, ['/nav/tracks', JSON.stringify(ret)])
+  sendNavData('/nav/tracks', ret)
   //log('NEW CURR TRACK ID =' + state.currTrackId)
   outlet(OUTLET_OSC, ['/nav/currTrackId', state.currTrackId])
 
@@ -551,6 +614,7 @@ function onCurrTrackNameChange(args: IArguments) {
 
 function init() {
   //log('TRACKS DEVICES INIT')
+  saveSetting('clientVersion', '')
   state.track = { watch: null, tree: {}, last: null }
   state.return = { watch: null, tree: {}, last: null }
   state.main = { watch: null, tree: {}, last: null }
