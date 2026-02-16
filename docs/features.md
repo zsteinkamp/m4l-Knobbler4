@@ -2,7 +2,7 @@
 
 Read all about Knobbler's features in detail here. You can use the navigation on the right to jump to different parts of this long document.
 
-* [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
+- [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
 
 ### Knobbler Knobs
 
@@ -14,10 +14,10 @@ Knobbler's knobs are pretty self-explanatory. They're very high-resolution (500 
 
 Knobbler knobs indicate their state with a dot in the upper left corner, similar to how it is presented in Ableton Live.
 
-* Green Dot = The parameter is controlled by another device, or is mapped to a macro knob. The slider will also be greyed out.
-* Red Dot = Automation has been recorded for this parameter.
-* Grey Dot = Automation has been overridden for this parameter (i.e. automation was recorded, but the parameter was changed manually.) Tap the Re-Enable Automation button in the toolbar to re-enable the automation.
-    ![Re-enable automation](images/ipad-toolbar-reenable.png)
+- Green Dot = The parameter is controlled by another device, or is mapped to a macro knob. The slider will also be greyed out.
+- Red Dot = Automation has been recorded for this parameter.
+- Grey Dot = Automation has been overridden for this parameter (i.e. automation was recorded, but the parameter was changed manually.) Tap the Re-Enable Automation button in the toolbar to re-enable the automation.
+  ![Re-enable automation](images/ipad-toolbar-reenable.png)
 
 ### Knobbler Pages
 
@@ -65,7 +65,11 @@ All sliders in Knobbler respond to a double-tap by resetting the parameter to it
 
 #### X-Y Pads
 
-Two adjacent Knobbler sliders can be joined into an X-Y pad, giving you two-dimensional control over a pair of parameters with a single finger.
+Two adjacent Knobbler sliders can be linked into an X-Y pad, giving you two-dimensional control over a pair of parameters with a single finger.
+
+![Link Button](images/link_mode_xy_start.jpg)
+![Link Mode](images/link_mode_xy_link.jpg)
+![X-Y Created](images/link_mode_xy_end.jpg)
 
 To create an X-Y pad, tap the Link button in the toolbar, then tap between two adjacent sliders to combine them. The two sliders will be replaced with an X-Y pad. The left slider controls the X axis and the right slider controls the Y axis.
 
@@ -152,7 +156,6 @@ Regardless of whether you are on a Bluhand or Knobbler page, tapping a shortcut 
 You can use Knobbler with external hardware in conjunction with a device like the `CC Control` device that comes with Live 12. Note that as of what is shipped in Live 12.1, `CC Control` has a defective API implementation and does not work properly with Knobbler. Until that device is fixed, you can download and use my free device called [MIDI CC Bridge](https://plugins.steinkamp.us/m4l-MIDI-CC-Bridge).
 
 ![MIDI CC Bridge](https://plugins.steinkamp.us/cache/m4l-MIDI-CC-Bridge/images/device-menu.png)
-
 
 ### Navigation
 
