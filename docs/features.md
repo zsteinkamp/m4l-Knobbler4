@@ -63,6 +63,16 @@ To unmap a Knobbler slider, tap the Unmap button in the [Toolbar](#toolbar). All
 
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
 
+#### X-Y Pads
+
+Two adjacent Knobbler sliders can be joined into an X-Y pad, giving you two-dimensional control over a pair of parameters with a single finger.
+
+To create an X-Y pad, tap the Link button in the toolbar, then tap between two adjacent sliders to combine them. The two sliders will be replaced with an X-Y pad. The left slider controls the X axis and the right slider controls the Y axis.
+
+To split an X-Y pad back into two individual sliders, tap the Link button in the toolbar, then tap the X-Y pad you want to split.
+
+X-Y pad assignments are saved per page and persist with your Live Set.
+
 #### Select Track
 
 If you tap the track name under the Knobbler slider, that will select that track in Live, which will update the channel strip on the left side of the screen. This is a convenient way to access the mixer controls for a parameter you have mapped.
