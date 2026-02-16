@@ -67,9 +67,7 @@ All sliders in Knobbler respond to a double-tap by resetting the parameter to it
 
 Two adjacent Knobbler sliders can be linked into an X-Y pad, giving you two-dimensional control over a pair of parameters with a single finger.
 
-![Link Button](images/link_mode_xy_start.jpg)
-![Link Mode](images/link_mode_xy_link.jpg)
-![X-Y Created](images/link_mode_xy_end.jpg)
+<img alt="Link Button" src="images/link_mode_xy_start.jpg" width="32%"/> <img alt="Link Mode" src="images/link_mode_xy_link.jpg" width="32%"/> <img alt="X-Y Created" src="images/link_mode_xy_end.jpg" width="32%"/>
 
 To create an X-Y pad, tap the Link button in the toolbar, then tap between two adjacent sliders to combine them. The two sliders will be replaced with an X-Y pad. The left slider controls the X axis and the right slider controls the Y axis.
 

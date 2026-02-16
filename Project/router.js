@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 11;
+outlets = 12;
 var log = (0, utils_1.logFactory)(config_1.default);
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
@@ -17,6 +17,7 @@ var OUTLET_PAGE = 7;
 var OUTLET_CURRPARAM = 8;
 var OUTLET_OSC = 9;
 var OUTLET_UNKNOWN = 10;
+var OUTLET_MULTI_MIXER = 11;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -28,6 +29,7 @@ setoutletassist(OUTLET_MIXER, 'Messages for Mixer');
 setoutletassist(OUTLET_PAGE, 'Messages for Page');
 setoutletassist(OUTLET_CURRPARAM, 'Messages for Current Param');
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact');
+setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
     if (matches) {
@@ -65,6 +67,13 @@ function stdSlotVal(router, msg, val) {
     var slot = getSlotNum(router, msg);
     //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
     outlet(router.outlet, router.msg, slot, val);
+}
+// parses /mixer/{n}/{subCmd} and emits (subCmd, stripIdx, val)
+function multiMixerHandler(router, msg, val) {
+    var parts = msg.split('/'); // ['', 'mixer', '2', 'vol']
+    var stripIdx = parseInt(parts[2]);
+    var subCmd = parts[3];
+    outlet(router.outlet, subCmd, stripIdx, val);
 }
 var ROUTER = [
     {
@@ -346,7 +355,7 @@ var ROUTER = [
     {
         outlet: OUTLET_MIXER,
         prefix: '/mixer/volDefault',
-        handler: bareMsg,
+        handler: stdVal,
         msg: 'handleVolDefault',
     },
     {
@@ -504,6 +513,18 @@ var ROUTER = [
         prefix: '/currentParam/default',
         handler: bareMsg,
         msg: 'currentParamDefault',
+    },
+    {
+        outlet: OUTLET_MULTI_MIXER,
+        prefix: '/mixerView',
+        handler: stdVal,
+        msg: 'mixerView',
+    },
+    {
+        outlet: OUTLET_MULTI_MIXER,
+        prefix: '/mixer/',
+        handler: multiMixerHandler,
+        msg: '',
     },
 ];
 ROUTER.sort(function (a, b) {

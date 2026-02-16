@@ -3,7 +3,7 @@ import { logFactory, saveSetting } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 11
+outlets = 12
 
 const log = logFactory(config)
 
@@ -19,6 +19,7 @@ const OUTLET_PAGE = 7
 const OUTLET_CURRPARAM = 8
 const OUTLET_OSC = 9
 const OUTLET_UNKNOWN = 10
+const OUTLET_MULTI_MIXER = 11
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -31,6 +32,7 @@ setoutletassist(OUTLET_MIXER, 'Messages for Mixer')
 setoutletassist(OUTLET_PAGE, 'Messages for Page')
 setoutletassist(OUTLET_CURRPARAM, 'Messages for Current Param')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
+setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer')
 
 type RouterItem = {
   outlet: number
@@ -77,6 +79,17 @@ function stdSlotVal(router: RouterItem, msg: string, val: number | string) {
   const slot = getSlotNum(router, msg)
   //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
   outlet(router.outlet, router.msg, slot, val)
+}
+// parses /mixer/{n}/{subCmd} and emits (subCmd, stripIdx, val)
+function multiMixerHandler(
+  router: RouterItem,
+  msg: string,
+  val: string | number
+) {
+  const parts = msg.split('/') // ['', 'mixer', '2', 'vol']
+  const stripIdx = parseInt(parts[2])
+  const subCmd = parts[3]
+  outlet(router.outlet, subCmd, stripIdx, val)
 }
 
 const ROUTER: RouterItem[] = [
@@ -359,7 +372,7 @@ const ROUTER: RouterItem[] = [
   {
     outlet: OUTLET_MIXER,
     prefix: '/mixer/volDefault',
-    handler: bareMsg,
+    handler: stdVal,
     msg: 'handleVolDefault',
   },
   {
@@ -517,6 +530,18 @@ const ROUTER: RouterItem[] = [
     prefix: '/currentParam/default',
     handler: bareMsg,
     msg: 'currentParamDefault',
+  },
+  {
+    outlet: OUTLET_MULTI_MIXER,
+    prefix: '/mixerView',
+    handler: stdVal,
+    msg: 'mixerView',
+  },
+  {
+    outlet: OUTLET_MULTI_MIXER,
+    prefix: '/mixer/',
+    handler: multiMixerHandler,
+    msg: '',
   },
 ]
 ROUTER.sort((a, b) => {
