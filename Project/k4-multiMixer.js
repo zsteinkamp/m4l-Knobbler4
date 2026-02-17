@@ -26,6 +26,7 @@ var visibleCount = 0;
 var observersByTrackId = {};
 // Window slots: maps position index -> track ID currently at that position
 var windowSlots = [];
+var metersEnabled = false;
 // Track list watchers
 var visibleTracksWatcher = null;
 var returnTracksWatcher = null;
@@ -159,6 +160,52 @@ function onReturnTracksChange(args) {
     applyWindow();
 }
 // ---------------------------------------------------------------------------
+// Meter Observers
+// ---------------------------------------------------------------------------
+function createMeterObservers(strip, trackPath) {
+    strip.meterLeftApi = new LiveAPI(function (args) {
+        if (args[0] === 'output_meter_left') {
+            outlet(consts_1.OUTLET_OSC, [
+                '/mixer/' + strip.stripIndex + '/meterLeft',
+                parseFloat(args[1]) || 0,
+            ]);
+        }
+    }, trackPath);
+    strip.meterLeftApi.property = 'output_meter_left';
+    strip.meterRightApi = new LiveAPI(function (args) {
+        if (args[0] === 'output_meter_right') {
+            outlet(consts_1.OUTLET_OSC, [
+                '/mixer/' + strip.stripIndex + '/meterRight',
+                parseFloat(args[1]) || 0,
+            ]);
+        }
+    }, trackPath);
+    strip.meterRightApi.property = 'output_meter_right';
+    strip.meterLevelApi = new LiveAPI(function (args) {
+        if (args[0] === 'output_meter_level') {
+            outlet(consts_1.OUTLET_OSC, [
+                '/mixer/' + strip.stripIndex + '/meterLevel',
+                parseFloat(args[1]) || 0,
+            ]);
+        }
+    }, trackPath);
+    strip.meterLevelApi.property = 'output_meter_level';
+}
+function teardownMeterObservers(strip) {
+    if (strip.meterLeftApi) {
+        strip.meterLeftApi.id = 0;
+        strip.meterLeftApi = null;
+    }
+    if (strip.meterRightApi) {
+        strip.meterRightApi.id = 0;
+        strip.meterRightApi = null;
+    }
+    if (strip.meterLevelApi) {
+        strip.meterLevelApi.id = 0;
+        strip.meterLevelApi = null;
+    }
+}
+// ---------------------------------------------------------------------------
 // Observer Creation / Teardown
 // ---------------------------------------------------------------------------
 function createStripObservers(trackId, stripIdx) {
@@ -169,6 +216,9 @@ function createStripObservers(trackId, stripIdx) {
         muteApi: null,
         soloApi: null,
         armApi: null,
+        meterLeftApi: null,
+        meterRightApi: null,
+        meterLevelApi: null,
         mixerApi: null,
         volApi: null,
         panApi: null,
@@ -234,6 +284,10 @@ function createStripObservers(trackId, stripIdx) {
         trackInfo.indexOf('has_audio_output') > -1
             ? !!parseInt(strip.trackApi.get('has_audio_output').toString())
             : false;
+    // Output level meters (only if enabled and track has audio output)
+    if (metersEnabled && strip.hasOutput) {
+        createMeterObservers(strip, trackPath);
+    }
     // Mixer API — observe crossfade_assign (master track lacks this)
     strip.mixerApi = new LiveAPI(function (args) {
         //log('OMG', args)
@@ -322,6 +376,7 @@ function teardownStripObservers(strip) {
     if (strip.armApi) {
         strip.armApi.id = 0;
     }
+    teardownMeterObservers(strip);
     if (strip.mixerApi) {
         strip.mixerApi.id = 0;
     }
@@ -539,6 +594,26 @@ function mixerView() {
         return;
     }
     setupWindow(left, count);
+}
+function mixerMeters(val) {
+    var enabled = !!parseInt(val.toString());
+    //log('MIXERMETERSz ' + enabled + ' me=' + metersEnabled)
+    if (enabled === metersEnabled)
+        return;
+    //log('GOT HERE')
+    metersEnabled = enabled;
+    outlet(consts_1.OUTLET_OSC, ['/mixerMeters', metersEnabled ? 1 : 0]);
+    //log('MIXERMETERS AFTER ' + metersEnabled ? 1 : 0)
+    for (var trackIdStr in observersByTrackId) {
+        var strip = observersByTrackId[trackIdStr];
+        if (metersEnabled && strip.hasOutput) {
+            var trackPath = strip.trackApi.unquotedpath;
+            createMeterObservers(strip, trackPath);
+        }
+        else {
+            teardownMeterObservers(strip);
+        }
+    }
 }
 function init() {
     setupWindow(0, DEFAULT_VISIBLE_COUNT);

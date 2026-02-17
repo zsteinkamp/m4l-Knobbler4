@@ -50,6 +50,9 @@ type StripObservers = {
   muteApi: LiveAPI
   soloApi: LiveAPI
   armApi: LiveAPI
+  meterLeftApi: LiveAPI
+  meterRightApi: LiveAPI
+  meterLevelApi: LiveAPI
   mixerApi: LiveAPI
   volApi: LiveAPI
   panApi: LiveAPI
@@ -83,6 +86,8 @@ let observersByTrackId: Record<number, StripObservers> = {}
 
 // Window slots: maps position index -> track ID currently at that position
 let windowSlots: number[] = []
+
+let metersEnabled = false
 
 // Track list watchers
 let visibleTracksWatcher: LiveAPI = null
@@ -230,6 +235,57 @@ function onReturnTracksChange(args: any[]) {
 }
 
 // ---------------------------------------------------------------------------
+// Meter Observers
+// ---------------------------------------------------------------------------
+
+function createMeterObservers(strip: StripObservers, trackPath: string) {
+  strip.meterLeftApi = new LiveAPI(function (args: any[]) {
+    if (args[0] === 'output_meter_left') {
+      outlet(OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/meterLeft',
+        parseFloat(args[1]) || 0,
+      ])
+    }
+  }, trackPath)
+  strip.meterLeftApi.property = 'output_meter_left'
+
+  strip.meterRightApi = new LiveAPI(function (args: any[]) {
+    if (args[0] === 'output_meter_right') {
+      outlet(OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/meterRight',
+        parseFloat(args[1]) || 0,
+      ])
+    }
+  }, trackPath)
+  strip.meterRightApi.property = 'output_meter_right'
+
+  strip.meterLevelApi = new LiveAPI(function (args: any[]) {
+    if (args[0] === 'output_meter_level') {
+      outlet(OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/meterLevel',
+        parseFloat(args[1]) || 0,
+      ])
+    }
+  }, trackPath)
+  strip.meterLevelApi.property = 'output_meter_level'
+}
+
+function teardownMeterObservers(strip: StripObservers) {
+  if (strip.meterLeftApi) {
+    strip.meterLeftApi.id = 0
+    strip.meterLeftApi = null
+  }
+  if (strip.meterRightApi) {
+    strip.meterRightApi.id = 0
+    strip.meterRightApi = null
+  }
+  if (strip.meterLevelApi) {
+    strip.meterLevelApi.id = 0
+    strip.meterLevelApi = null
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Observer Creation / Teardown
 // ---------------------------------------------------------------------------
 
@@ -244,6 +300,9 @@ function createStripObservers(
     muteApi: null,
     soloApi: null,
     armApi: null,
+    meterLeftApi: null,
+    meterRightApi: null,
+    meterLevelApi: null,
     mixerApi: null,
     volApi: null,
     panApi: null,
@@ -316,6 +375,11 @@ function createStripObservers(
     trackInfo.indexOf('has_audio_output') > -1
       ? !!parseInt(strip.trackApi.get('has_audio_output').toString())
       : false
+
+  // Output level meters (only if enabled and track has audio output)
+  if (metersEnabled && strip.hasOutput) {
+    createMeterObservers(strip, trackPath)
+  }
 
   // Mixer API — observe crossfade_assign (master track lacks this)
   strip.mixerApi = new LiveAPI(function (args: any[]) {
@@ -405,6 +469,7 @@ function teardownStripObservers(strip: StripObservers) {
   if (strip.armApi) {
     strip.armApi.id = 0
   }
+  teardownMeterObservers(strip)
   if (strip.mixerApi) {
     strip.mixerApi.id = 0
   }
@@ -659,6 +724,26 @@ function mixerView() {
   }
 
   setupWindow(left, count)
+}
+
+function mixerMeters(val: number) {
+  const enabled = !!parseInt(val.toString())
+  //log('MIXERMETERSz ' + enabled + ' me=' + metersEnabled)
+  if (enabled === metersEnabled) return
+  //log('GOT HERE')
+  metersEnabled = enabled
+  outlet(OUTLET_OSC, ['/mixerMeters', metersEnabled ? 1 : 0])
+  //log('MIXERMETERS AFTER ' + metersEnabled ? 1 : 0)
+
+  for (const trackIdStr in observersByTrackId) {
+    const strip = observersByTrackId[trackIdStr]
+    if (metersEnabled && strip.hasOutput) {
+      const trackPath = strip.trackApi.unquotedpath
+      createMeterObservers(strip, trackPath)
+    } else {
+      teardownMeterObservers(strip)
+    }
+  }
 }
 
 function init() {

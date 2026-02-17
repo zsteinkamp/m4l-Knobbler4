@@ -522,6 +522,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_MULTI_MIXER,
+        prefix: '/mixerMeters',
+        handler: stdVal,
+        msg: 'mixerMeters',
+    },
+    {
+        outlet: OUTLET_MULTI_MIXER,
         prefix: '/mixer/',
         handler: multiMixerHandler,
         msg: '',
