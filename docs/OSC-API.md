@@ -297,6 +297,158 @@ String value of the current track volume level. Displayed above the volume slide
 
 Indicates whether the currently selected track is frozen.
 
+## Multi-Track Mixer
+
+The multi-track mixer provides a full-screen, horizontally scrollable mixer with per-strip observers. The device uses a windowed approach — observers are only active for visible strips. Strip indices are absolute (matching the position in `/visibleTracks`).
+
+### Tablet to Knobbler4
+
+#### /mixerView {JSON array}
+
+Sets the visible window for the multi-track mixer. The value is a JSON array `[leftIndex, visibleCount]`. The device will set up observers for strips from `leftIndex` to `leftIndex + visibleCount - 1`. Sending `[0, 0]` tears down all observers and deactivates the mixer.
+
+#### /mixerMeters { 0 | 1 }
+
+Enables or disables output level meter observers for all visible strips. Meters are off by default. Only tracks with audio output will have meter observers.
+
+#### /mixer/{N}/vol {float}
+
+Sets the volume for strip N.
+
+#### /mixer/{N}/pan {float}
+
+Sets the pan for strip N.
+
+#### /mixer/{N}/volDefault
+
+Resets volume for strip N to its default value.
+
+#### /mixer/{N}/panDefault
+
+Resets pan for strip N to its default value.
+
+#### /mixer/{N}/send1 - /mixer/{N}/send12 {float}
+
+Sets the send level for strip N to the given return track.
+
+#### /mixer/{N}/sendDefault1 - /mixer/{N}/sendDefault12
+
+Resets the send level for strip N to the given return track's default value.
+
+#### /mixer/{N}/toggleMute
+
+Toggles the mute state for strip N.
+
+#### /mixer/{N}/toggleSolo
+
+Toggles the solo state for strip N.
+
+#### /mixer/{N}/enableRecord
+
+Arms strip N for recording.
+
+#### /mixer/{N}/disableRecord
+
+Disarms strip N.
+
+#### /mixer/{N}/disableInput
+
+Disables input routing for strip N.
+
+#### /mixer/{N}/toggleXFadeA
+
+Toggles crossfader assignment A for strip N.
+
+#### /mixer/{N}/toggleXFadeB
+
+Toggles crossfader assignment B for strip N.
+
+### Knobbler4 to Tablet
+
+#### /visibleTracks {JSON}
+
+Sent as chunked data (`/visibleTracks/chunk`). Each entry is `[type, id, name, color, null, null, parentId]`. Type values are defined in `src/consts.ts`. `parentId` is the group track ID (0 if not in a group). Sent on mixer open, track list changes, and color changes.
+
+#### /mixer/{N}/name {string}
+
+The track name for strip N.
+
+#### /mixer/{N}/color {string}
+
+The track color for strip N (hex string).
+
+#### /mixer/{N}/type {integer}
+
+The track type for strip N (see `src/consts.ts`).
+
+#### /mixer/{N}/vol {float}
+
+The volume level for strip N.
+
+#### /mixer/{N}/volStr {string}
+
+String representation of strip N's volume (e.g. "-6.0 dB").
+
+#### /mixer/{N}/pan {float}
+
+The pan position for strip N.
+
+#### /mixer/{N}/panStr {string}
+
+String representation of strip N's pan (e.g. "20L").
+
+#### /mixer/{N}/mute { 0 | 1 }
+
+The mute state for strip N.
+
+#### /mixer/{N}/solo { 0 | 1 }
+
+The solo state for strip N.
+
+#### /mixer/{N}/recordArm { 0 | 1 }
+
+Whether strip N is armed for recording.
+
+#### /mixer/{N}/inputEnabled { 0 | 1 }
+
+Whether input is enabled for strip N.
+
+#### /mixer/{N}/hasOutput { 0 | 1 }
+
+Whether strip N has audio output.
+
+#### /mixer/{N}/xFadeA { 0 | 1 }
+
+Whether crossfader A is assigned for strip N.
+
+#### /mixer/{N}/xFadeB { 0 | 1 }
+
+Whether crossfader B is assigned for strip N.
+
+#### /mixer/{N}/send1 - /mixer/{N}/send12 {float}
+
+Send levels for strip N.
+
+#### /mixer/{N}/meterLeft {float}
+
+Left channel output meter level for strip N (0.0-1.0). Only sent when meters are enabled.
+
+#### /mixer/{N}/meterRight {float}
+
+Right channel output meter level for strip N (0.0-1.0). Only sent when meters are enabled.
+
+#### /mixer/{N}/meterLevel {float}
+
+Combined output meter level for strip N (0.0-1.0). Only sent when meters are enabled.
+
+#### /mixerMeters { 0 | 1 }
+
+Confirms the current meters enabled/disabled state.
+
+#### /mixer/numSends {0-12}
+
+The number of return tracks (same for all strips).
+
 ## Toolbar
 
 #### /arrangementOverdub { 0 | 1 }
