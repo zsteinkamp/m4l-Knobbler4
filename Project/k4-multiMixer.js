@@ -91,11 +91,13 @@ function buildTrackList() {
         var id = trackIds_1[_i];
         api.id = id;
         var isFoldable = parseInt(api.get('is_foldable').toString());
+        var parentId = (0, utils_1.cleanArr)(api.get('group_track'))[0] || 0;
         ret.push({
             id: id,
             type: isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_TRACK,
             name: (0, utils_1.truncate)(api.get('name').toString(), consts_1.MAX_NAME_LEN),
             color: (0, utils_1.colorToString)(api.get('color').toString()),
+            parentId: parentId,
         });
     }
     // return tracks (always visible)
@@ -109,6 +111,7 @@ function buildTrackList() {
             type: consts_1.TYPE_RETURN,
             name: (0, utils_1.truncate)(api.get('name').toString(), consts_1.MAX_NAME_LEN),
             color: (0, utils_1.colorToString)(api.get('color').toString()),
+            parentId: 0,
         });
     }
     // master track
@@ -120,12 +123,13 @@ function buildTrackList() {
         type: consts_1.TYPE_MAIN,
         name: (0, utils_1.truncate)(api.get('name').toString(), consts_1.MAX_NAME_LEN),
         color: (0, utils_1.colorToString)(api.get('color').toString()),
+        parentId: 0,
     });
     return ret;
 }
 function sendVisibleTracks() {
     var items = trackList.map(function (t) {
-        return [t.type, t.id, t.name, t.color];
+        return [t.type, t.id, t.name, t.color, null, null, t.parentId];
     });
     sendChunkedData('/visibleTracks', items);
 }
@@ -161,6 +165,10 @@ function createStripObservers(trackId, stripIdx) {
     var strip = {
         trackId: trackId,
         trackApi: null,
+        colorApi: null,
+        muteApi: null,
+        soloApi: null,
+        armApi: null,
         mixerApi: null,
         volApi: null,
         panApi: null,
@@ -176,35 +184,49 @@ function createStripObservers(trackId, stripIdx) {
     var trackPath = pathLookup.unquotedpath;
     var mixerPath = trackPath + ' mixer_device';
     strip.isMain = trackPath.indexOf('master_track') > -1;
-    // Track API — observe mute, solo, arm (master track lacks these)
-    strip.trackApi = new LiveAPI(function (args) {
-        var prop = args[0];
-        if (prop === 'mute') {
-            outlet(consts_1.OUTLET_OSC, [
-                '/mixer/' + strip.stripIndex + '/mute',
-                parseInt(args[1].toString()),
-            ]);
-        }
-        else if (prop === 'solo') {
-            outlet(consts_1.OUTLET_OSC, [
-                '/mixer/' + strip.stripIndex + '/solo',
-                parseInt(args[1].toString()),
-            ]);
-        }
-        else if (prop === 'arm') {
-            outlet(consts_1.OUTLET_OSC, [
-                '/mixer/' + strip.stripIndex + '/recordArm',
-                parseInt(args[1].toString()),
-            ]);
+    // Color API — separate observer for track color changes
+    strip.colorApi = new LiveAPI(function (args) {
+        if (args[0] === 'color') {
+            trackList = buildTrackList();
+            sendVisibleTracks();
         }
     }, trackPath);
+    strip.colorApi.property = 'color';
+    // Track API — used for querying properties (no observer)
+    strip.trackApi = new LiveAPI(consts_1.noFn, trackPath);
+    // Mute, solo, arm — separate observers (master track lacks these)
     if (!strip.isMain) {
-        strip.trackApi.property = 'mute';
-        strip.trackApi.property = 'solo';
+        strip.muteApi = new LiveAPI(function (args) {
+            if (args[0] === 'mute') {
+                outlet(consts_1.OUTLET_OSC, [
+                    '/mixer/' + strip.stripIndex + '/mute',
+                    parseInt(args[1].toString()),
+                ]);
+            }
+        }, trackPath);
+        strip.muteApi.property = 'mute';
+        strip.soloApi = new LiveAPI(function (args) {
+            if (args[0] === 'solo') {
+                outlet(consts_1.OUTLET_OSC, [
+                    '/mixer/' + strip.stripIndex + '/solo',
+                    parseInt(args[1].toString()),
+                ]);
+            }
+        }, trackPath);
+        strip.soloApi.property = 'solo';
     }
-    strip.canBeArmed = !strip.isMain && !!parseInt(strip.trackApi.get('can_be_armed').toString());
+    strip.canBeArmed =
+        !strip.isMain && !!parseInt(strip.trackApi.get('can_be_armed').toString());
     if (strip.canBeArmed) {
-        strip.trackApi.property = 'arm';
+        strip.armApi = new LiveAPI(function (args) {
+            if (args[0] === 'arm') {
+                outlet(consts_1.OUTLET_OSC, [
+                    '/mixer/' + strip.stripIndex + '/recordArm',
+                    parseInt(args[1].toString()),
+                ]);
+            }
+        }, trackPath);
+        strip.armApi.property = 'arm';
     }
     // Check has_audio_output
     var trackInfo = strip.trackApi.info.toString();
@@ -214,10 +236,15 @@ function createStripObservers(trackId, stripIdx) {
             : false;
     // Mixer API — observe crossfade_assign (master track lacks this)
     strip.mixerApi = new LiveAPI(function (args) {
+        //log('OMG', args)
         if (args[0] === 'crossfade_assign') {
             outlet(consts_1.OUTLET_OSC, [
-                '/mixer/' + strip.stripIndex + '/xFadeAssign',
-                parseInt(args[1].toString()),
+                '/mixer/' + strip.stripIndex + '/xFadeA',
+                parseInt(args[1].toString()) === 0 ? 1 : 0,
+            ]);
+            outlet(consts_1.OUTLET_OSC, [
+                '/mixer/' + strip.stripIndex + '/xFadeB',
+                parseInt(args[1].toString()) === 2 ? 1 : 0,
             ]);
         }
     }, mixerPath);
@@ -225,11 +252,18 @@ function createStripObservers(trackId, stripIdx) {
         strip.mixerApi.property = 'crossfade_assign';
     }
     // Volume observer
+    //log('vol observer path: ' + mixerPath + ' volume' + ' isMain=' + strip.isMain)
     strip.volApi = new LiveAPI(function (args) {
         if (args[0] !== 'value')
             return;
         if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
-            outlet(consts_1.OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', args[1] || 0]);
+            var fVal = parseFloat(args[1]) || 0;
+            outlet(consts_1.OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', fVal]);
+            var str = strip.volApi.call('str_for_value', fVal);
+            outlet(consts_1.OUTLET_OSC, [
+                '/mixer/' + strip.stripIndex + '/volStr',
+                str ? str.toString() : '',
+            ]);
         }
     }, mixerPath + ' volume');
     strip.volApi.property = 'value';
@@ -238,7 +272,13 @@ function createStripObservers(trackId, stripIdx) {
         if (args[0] !== 'value')
             return;
         if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
-            outlet(consts_1.OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/pan', args[1] || 0]);
+            var fVal = parseFloat(args[1]) || 0;
+            outlet(consts_1.OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/pan', fVal]);
+            var str = strip.panApi.call('str_for_value', fVal);
+            outlet(consts_1.OUTLET_OSC, [
+                '/mixer/' + strip.stripIndex + '/panStr',
+                str ? str.toString() : '',
+            ]);
         }
     }, mixerPath + ' panning');
     strip.panApi.property = 'value';
@@ -269,6 +309,18 @@ function createStripObservers(trackId, stripIdx) {
 function teardownStripObservers(strip) {
     if (strip.trackApi) {
         strip.trackApi.id = 0;
+    }
+    if (strip.colorApi) {
+        strip.colorApi.id = 0;
+    }
+    if (strip.muteApi) {
+        strip.muteApi.id = 0;
+    }
+    if (strip.soloApi) {
+        strip.soloApi.id = 0;
+    }
+    if (strip.armApi) {
+        strip.armApi.id = 0;
     }
     if (strip.mixerApi) {
         strip.mixerApi.id = 0;
@@ -322,7 +374,10 @@ function sendStripState(n, strip) {
         parseFloat(volVal.toString()) || 0,
     ]);
     var volStr = strip.volApi.call('str_for_value', parseFloat(volVal.toString()));
-    outlet(consts_1.OUTLET_OSC, ['/mixer/' + n + '/volStr', volStr ? volStr.toString() : '']);
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/' + n + '/volStr',
+        volStr ? volStr.toString() : '',
+    ]);
     // Pan
     var panVal = strip.panApi.get('value');
     outlet(consts_1.OUTLET_OSC, [
@@ -330,7 +385,10 @@ function sendStripState(n, strip) {
         parseFloat(panVal.toString()) || 0,
     ]);
     var panStr = strip.panApi.call('str_for_value', parseFloat(panVal.toString()));
-    outlet(consts_1.OUTLET_OSC, ['/mixer/' + n + '/panStr', panStr ? panStr.toString() : '']);
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/' + n + '/panStr',
+        panStr ? panStr.toString() : '',
+    ]);
     // Mute / Solo (master track lacks these)
     if (!strip.isMain) {
         outlet(consts_1.OUTLET_OSC, [
@@ -430,10 +488,10 @@ function applyWindow() {
         }
     }
     windowSlots = newSlots;
-    // Send full initial state for all visible strips
+    // Send initial state only for newly added strips
     for (var i = 0; i < windowSlots.length; i++) {
         var tid = windowSlots[i];
-        if (observersByTrackId[tid]) {
+        if (!oldSet[tid] && observersByTrackId[tid]) {
             sendStripState(leftIndex + i, observersByTrackId[tid]);
         }
     }
@@ -504,26 +562,51 @@ function vol(stripIdx, val) {
     if (!strip)
         return;
     pauseUnpause(strip, 'vol');
-    strip.volApi.set('value', parseFloat(val.toString()));
+    var fVal = parseFloat(val.toString());
+    strip.volApi.set('value', fVal);
+    var str = strip.volApi.call('str_for_value', fVal);
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/volStr',
+        str ? str.toString() : '',
+    ]);
 }
 function pan(stripIdx, val) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
     pauseUnpause(strip, 'pan');
-    strip.panApi.set('value', parseFloat(val.toString()));
+    var fVal = parseFloat(val.toString());
+    strip.panApi.set('value', fVal);
+    var str = strip.panApi.call('str_for_value', fVal);
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/panStr',
+        str ? str.toString() : '',
+    ]);
 }
 function volDefault(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    strip.volApi.set('value', parseFloat(strip.volApi.get('default_value').toString()));
+    var defVal = parseFloat(strip.volApi.get('default_value').toString());
+    strip.volApi.set('value', defVal);
+    outlet(consts_1.OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', defVal]);
+    var str = strip.volApi.call('str_for_value', defVal);
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/volStr',
+        str ? str.toString() : '',
+    ]);
 }
 function panDefault(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    strip.panApi.set('value', parseFloat(strip.panApi.get('default_value').toString()));
+    var defVal = parseFloat(strip.panApi.get('default_value').toString());
+    strip.panApi.set('value', defVal);
+    var str = strip.panApi.call('str_for_value', defVal);
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/panStr',
+        str ? str.toString() : '',
+    ]);
 }
 // Send handlers — send1 through send12
 function handleSend(stripIdx, sendNum, val) {

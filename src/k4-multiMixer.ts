@@ -40,11 +40,16 @@ type TrackInfo = {
   type: number
   name: string
   color: string
+  parentId: number
 }
 
 type StripObservers = {
   trackId: number
   trackApi: LiveAPI
+  colorApi: LiveAPI
+  muteApi: LiveAPI
+  soloApi: LiveAPI
+  armApi: LiveAPI
   mixerApi: LiveAPI
   volApi: LiveAPI
   panApi: LiveAPI
@@ -150,11 +155,13 @@ function buildTrackList(): TrackInfo[] {
   for (const id of trackIds) {
     api.id = id
     const isFoldable = parseInt(api.get('is_foldable').toString())
+    const parentId = cleanArr(api.get('group_track'))[0] || 0
     ret.push({
       id: id,
       type: isFoldable ? TYPE_GROUP : TYPE_TRACK,
       name: truncate(api.get('name').toString(), MAX_NAME_LEN),
       color: colorToString(api.get('color').toString()),
+      parentId: parentId,
     })
   }
 
@@ -168,6 +175,7 @@ function buildTrackList(): TrackInfo[] {
       type: TYPE_RETURN,
       name: truncate(api.get('name').toString(), MAX_NAME_LEN),
       color: colorToString(api.get('color').toString()),
+      parentId: 0,
     })
   }
 
@@ -180,6 +188,7 @@ function buildTrackList(): TrackInfo[] {
     type: TYPE_MAIN,
     name: truncate(api.get('name').toString(), MAX_NAME_LEN),
     color: colorToString(api.get('color').toString()),
+    parentId: 0,
   })
 
   return ret
@@ -187,7 +196,7 @@ function buildTrackList(): TrackInfo[] {
 
 function sendVisibleTracks() {
   const items = trackList.map(function (t) {
-    return [t.type, t.id, t.name, t.color]
+    return [t.type, t.id, t.name, t.color, null, null, t.parentId]
   })
   sendChunkedData('/visibleTracks', items)
 }
@@ -231,6 +240,10 @@ function createStripObservers(
   const strip: StripObservers = {
     trackId: trackId,
     trackApi: null,
+    colorApi: null,
+    muteApi: null,
+    soloApi: null,
+    armApi: null,
     mixerApi: null,
     volApi: null,
     panApi: null,
@@ -248,35 +261,53 @@ function createStripObservers(
   const mixerPath = trackPath + ' mixer_device'
   strip.isMain = trackPath.indexOf('master_track') > -1
 
-  // Track API — observe mute, solo, arm (master track lacks these)
-  strip.trackApi = new LiveAPI(function (args: any[]) {
-    const prop = args[0]
-    if (prop === 'mute') {
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/mute',
-        parseInt(args[1].toString()),
-      ])
-    } else if (prop === 'solo') {
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/solo',
-        parseInt(args[1].toString()),
-      ])
-    } else if (prop === 'arm') {
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/recordArm',
-        parseInt(args[1].toString()),
-      ])
+  // Color API — separate observer for track color changes
+  strip.colorApi = new LiveAPI(function (args: any[]) {
+    if (args[0] === 'color') {
+      trackList = buildTrackList()
+      sendVisibleTracks()
     }
   }, trackPath)
+  strip.colorApi.property = 'color'
 
+  // Track API — used for querying properties (no observer)
+  strip.trackApi = new LiveAPI(noFn, trackPath)
+
+  // Mute, solo, arm — separate observers (master track lacks these)
   if (!strip.isMain) {
-    strip.trackApi.property = 'mute'
-    strip.trackApi.property = 'solo'
+    strip.muteApi = new LiveAPI(function (args: any[]) {
+      if (args[0] === 'mute') {
+        outlet(OUTLET_OSC, [
+          '/mixer/' + strip.stripIndex + '/mute',
+          parseInt(args[1].toString()),
+        ])
+      }
+    }, trackPath)
+    strip.muteApi.property = 'mute'
+
+    strip.soloApi = new LiveAPI(function (args: any[]) {
+      if (args[0] === 'solo') {
+        outlet(OUTLET_OSC, [
+          '/mixer/' + strip.stripIndex + '/solo',
+          parseInt(args[1].toString()),
+        ])
+      }
+    }, trackPath)
+    strip.soloApi.property = 'solo'
   }
 
-  strip.canBeArmed = !strip.isMain && !!parseInt(strip.trackApi.get('can_be_armed').toString())
+  strip.canBeArmed =
+    !strip.isMain && !!parseInt(strip.trackApi.get('can_be_armed').toString())
   if (strip.canBeArmed) {
-    strip.trackApi.property = 'arm'
+    strip.armApi = new LiveAPI(function (args: any[]) {
+      if (args[0] === 'arm') {
+        outlet(OUTLET_OSC, [
+          '/mixer/' + strip.stripIndex + '/recordArm',
+          parseInt(args[1].toString()),
+        ])
+      }
+    }, trackPath)
+    strip.armApi.property = 'arm'
   }
 
   // Check has_audio_output
@@ -288,10 +319,15 @@ function createStripObservers(
 
   // Mixer API — observe crossfade_assign (master track lacks this)
   strip.mixerApi = new LiveAPI(function (args: any[]) {
+    //log('OMG', args)
     if (args[0] === 'crossfade_assign') {
       outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/xFadeAssign',
-        parseInt(args[1].toString()),
+        '/mixer/' + strip.stripIndex + '/xFadeA',
+        parseInt(args[1].toString()) === 0 ? 1 : 0,
+      ])
+      outlet(OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/xFadeB',
+        parseInt(args[1].toString()) === 2 ? 1 : 0,
       ])
     }
   }, mixerPath)
@@ -300,10 +336,17 @@ function createStripObservers(
   }
 
   // Volume observer
+  //log('vol observer path: ' + mixerPath + ' volume' + ' isMain=' + strip.isMain)
   strip.volApi = new LiveAPI(function (args: any[]) {
     if (args[0] !== 'value') return
     if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
-      outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', args[1] || 0])
+      const fVal = parseFloat(args[1]) || 0
+      outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', fVal])
+      const str = strip.volApi.call('str_for_value', fVal) as any
+      outlet(OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/volStr',
+        str ? str.toString() : '',
+      ])
     }
   }, mixerPath + ' volume')
   strip.volApi.property = 'value'
@@ -312,7 +355,13 @@ function createStripObservers(
   strip.panApi = new LiveAPI(function (args: any[]) {
     if (args[0] !== 'value') return
     if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
-      outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/pan', args[1] || 0])
+      const fVal = parseFloat(args[1]) || 0
+      outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/pan', fVal])
+      const str = strip.panApi.call('str_for_value', fVal) as any
+      outlet(OUTLET_OSC, [
+        '/mixer/' + strip.stripIndex + '/panStr',
+        str ? str.toString() : '',
+      ])
     }
   }, mixerPath + ' panning')
   strip.panApi.property = 'value'
@@ -343,6 +392,18 @@ function createStripObservers(
 function teardownStripObservers(strip: StripObservers) {
   if (strip.trackApi) {
     strip.trackApi.id = 0
+  }
+  if (strip.colorApi) {
+    strip.colorApi.id = 0
+  }
+  if (strip.muteApi) {
+    strip.muteApi.id = 0
+  }
+  if (strip.soloApi) {
+    strip.soloApi.id = 0
+  }
+  if (strip.armApi) {
+    strip.armApi.id = 0
   }
   if (strip.mixerApi) {
     strip.mixerApi.id = 0
@@ -400,8 +461,14 @@ function sendStripState(n: number, strip: StripObservers) {
     '/mixer/' + n + '/vol',
     parseFloat(volVal.toString()) || 0,
   ])
-  const volStr = strip.volApi.call('str_for_value', parseFloat(volVal.toString())) as any
-  outlet(OUTLET_OSC, ['/mixer/' + n + '/volStr', volStr ? volStr.toString() : ''])
+  const volStr = strip.volApi.call(
+    'str_for_value',
+    parseFloat(volVal.toString())
+  ) as any
+  outlet(OUTLET_OSC, [
+    '/mixer/' + n + '/volStr',
+    volStr ? volStr.toString() : '',
+  ])
 
   // Pan
   const panVal = strip.panApi.get('value')
@@ -409,8 +476,14 @@ function sendStripState(n: number, strip: StripObservers) {
     '/mixer/' + n + '/pan',
     parseFloat(panVal.toString()) || 0,
   ])
-  const panStr = strip.panApi.call('str_for_value', parseFloat(panVal.toString())) as any
-  outlet(OUTLET_OSC, ['/mixer/' + n + '/panStr', panStr ? panStr.toString() : ''])
+  const panStr = strip.panApi.call(
+    'str_for_value',
+    parseFloat(panVal.toString())
+  ) as any
+  outlet(OUTLET_OSC, [
+    '/mixer/' + n + '/panStr',
+    panStr ? panStr.toString() : '',
+  ])
 
   // Mute / Solo (master track lacks these)
   if (!strip.isMain) {
@@ -521,10 +594,10 @@ function applyWindow() {
 
   windowSlots = newSlots
 
-  // Send full initial state for all visible strips
+  // Send initial state only for newly added strips
   for (let i = 0; i < windowSlots.length; i++) {
     const tid = windowSlots[i]
-    if (observersByTrackId[tid]) {
+    if (!oldSet[tid] && observersByTrackId[tid]) {
       sendStripState(leftIndex + i, observersByTrackId[tid])
     }
   }
@@ -559,7 +632,10 @@ function setupWindow(left: number, count: number) {
 
   // Send numSends (= number of return tracks, same for all channels)
   const numSendsApi = new LiveAPI(noFn, 'live_set')
-  const numSends = Math.min(cleanArr(numSendsApi.get('return_tracks')).length, MAX_SENDS)
+  const numSends = Math.min(
+    cleanArr(numSendsApi.get('return_tracks')).length,
+    MAX_SENDS
+  )
   outlet(OUTLET_OSC, ['/mixer/numSends', numSends])
 
   trackList = buildTrackList()
@@ -610,32 +686,51 @@ function vol(stripIdx: number, val: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
   pauseUnpause(strip, 'vol')
-  strip.volApi.set('value', parseFloat(val.toString()))
+  const fVal = parseFloat(val.toString())
+  strip.volApi.set('value', fVal)
+  const str = strip.volApi.call('str_for_value', fVal) as any
+  outlet(OUTLET_OSC, [
+    '/mixer/' + strip.stripIndex + '/volStr',
+    str ? str.toString() : '',
+  ])
 }
 
 function pan(stripIdx: number, val: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
   pauseUnpause(strip, 'pan')
-  strip.panApi.set('value', parseFloat(val.toString()))
+  const fVal = parseFloat(val.toString())
+  strip.panApi.set('value', fVal)
+  const str = strip.panApi.call('str_for_value', fVal) as any
+  outlet(OUTLET_OSC, [
+    '/mixer/' + strip.stripIndex + '/panStr',
+    str ? str.toString() : '',
+  ])
 }
 
 function volDefault(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  strip.volApi.set(
-    'value',
-    parseFloat(strip.volApi.get('default_value').toString())
-  )
+  const defVal = parseFloat(strip.volApi.get('default_value').toString())
+  strip.volApi.set('value', defVal)
+  outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', defVal])
+  const str = strip.volApi.call('str_for_value', defVal) as any
+  outlet(OUTLET_OSC, [
+    '/mixer/' + strip.stripIndex + '/volStr',
+    str ? str.toString() : '',
+  ])
 }
 
 function panDefault(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  strip.panApi.set(
-    'value',
-    parseFloat(strip.panApi.get('default_value').toString())
-  )
+  const defVal = parseFloat(strip.panApi.get('default_value').toString())
+  strip.panApi.set('value', defVal)
+  const str = strip.panApi.call('str_for_value', defVal) as any
+  outlet(OUTLET_OSC, [
+    '/mixer/' + strip.stripIndex + '/panStr',
+    str ? str.toString() : '',
+  ])
 }
 
 // Send handlers — send1 through send12
