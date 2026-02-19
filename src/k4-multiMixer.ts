@@ -58,6 +58,7 @@ type StripObservers = {
   panApi: LiveAPI
   sendApis: LiveAPI[]
   pause: Record<string, { paused: boolean; task: MaxTask }>
+  meterLastSent: Record<string, number>
   stripIndex: number
   canBeArmed: boolean
   hasOutput: boolean
@@ -70,6 +71,7 @@ type StripObservers = {
 
 const MAX_SENDS = 12
 const PAUSE_MS = 300
+const METER_THROTTLE_MS = 20
 const CHUNK_MAX_BYTES = 1024
 const DEFAULT_VISIBLE_COUNT = 12
 
@@ -241,6 +243,9 @@ function onReturnTracksChange(args: any[]) {
 function createMeterObservers(strip: StripObservers, trackPath: string) {
   strip.meterLeftApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_left') {
+      const now = Date.now()
+      if (now - (strip.meterLastSent['L'] || 0) < METER_THROTTLE_MS) return
+      strip.meterLastSent['L'] = now
       outlet(OUTLET_OSC, [
         '/mixer/' + strip.stripIndex + '/meterLeft',
         parseFloat(args[1]) || 0,
@@ -251,6 +256,9 @@ function createMeterObservers(strip: StripObservers, trackPath: string) {
 
   strip.meterRightApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_right') {
+      const now = Date.now()
+      if (now - (strip.meterLastSent['R'] || 0) < METER_THROTTLE_MS) return
+      strip.meterLastSent['R'] = now
       outlet(OUTLET_OSC, [
         '/mixer/' + strip.stripIndex + '/meterRight',
         parseFloat(args[1]) || 0,
@@ -261,6 +269,9 @@ function createMeterObservers(strip: StripObservers, trackPath: string) {
 
   strip.meterLevelApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_level') {
+      const now = Date.now()
+      if (now - (strip.meterLastSent['V'] || 0) < METER_THROTTLE_MS) return
+      strip.meterLastSent['V'] = now
       outlet(OUTLET_OSC, [
         '/mixer/' + strip.stripIndex + '/meterLevel',
         parseFloat(args[1]) || 0,
@@ -308,6 +319,7 @@ function createStripObservers(
     panApi: null,
     sendApis: [],
     pause: {},
+    meterLastSent: {},
     stripIndex: stripIdx,
     canBeArmed: false,
     hasOutput: false,
@@ -659,6 +671,13 @@ function applyWindow() {
 
   windowSlots = newSlots
 
+  // // Debug: visualize window position across track list
+  // let viz = ''
+  // for (let i = 0; i < trackList.length; i++) {
+  //   viz += newSet[trackList[i].id] ? 'O' : '.'
+  // }
+  // log('window [' + viz + '] L=' + leftIndex + ' N=' + visibleCount)
+
   // Send initial state only for newly added strips
   for (let i = 0; i < windowSlots.length; i++) {
     const tid = windowSlots[i]
@@ -682,6 +701,7 @@ function mixerRefresh() {
 // ---------------------------------------------------------------------------
 
 function setupWindow(left: number, count: number) {
+  const firstSetup = trackList.length === 0
   leftIndex = left
   visibleCount = count
 
@@ -695,16 +715,19 @@ function setupWindow(left: number, count: number) {
     returnTracksWatcher.property = 'return_tracks'
   }
 
-  // Send numSends (= number of return tracks, same for all channels)
-  const numSendsApi = new LiveAPI(noFn, 'live_set')
-  const numSends = Math.min(
-    cleanArr(numSendsApi.get('return_tracks')).length,
-    MAX_SENDS
-  )
-  outlet(OUTLET_OSC, ['/mixer/numSends', numSends])
+  if (firstSetup) {
+    // Send numSends (= number of return tracks, same for all channels)
+    const numSendsApi = new LiveAPI(noFn, 'live_set')
+    const numSends = Math.min(
+      cleanArr(numSendsApi.get('return_tracks')).length,
+      MAX_SENDS
+    )
+    outlet(OUTLET_OSC, ['/mixer/numSends', numSends])
 
-  trackList = buildTrackList()
-  sendVisibleTracks()
+    trackList = buildTrackList()
+    sendVisibleTracks()
+  }
+
   applyWindow()
 }
 
@@ -728,9 +751,6 @@ function mixerView() {
 
 function mixerMeters(val: number) {
   const enabled = !!parseInt(val.toString())
-  //log('MIXERMETERSz ' + enabled + ' me=' + metersEnabled)
-  if (enabled === metersEnabled) return
-  //log('GOT HERE')
   metersEnabled = enabled
   outlet(OUTLET_OSC, ['/mixerMeters', metersEnabled ? 1 : 0])
   //log('MIXERMETERS AFTER ' + metersEnabled ? 1 : 0)

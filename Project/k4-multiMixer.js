@@ -14,6 +14,7 @@ setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 // ---------------------------------------------------------------------------
 var MAX_SENDS = 12;
 var PAUSE_MS = 300;
+var METER_THROTTLE_MS = 20;
 var CHUNK_MAX_BYTES = 1024;
 var DEFAULT_VISIBLE_COUNT = 12;
 // ---------------------------------------------------------------------------
@@ -165,6 +166,10 @@ function onReturnTracksChange(args) {
 function createMeterObservers(strip, trackPath) {
     strip.meterLeftApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_left') {
+            var now = Date.now();
+            if (now - (strip.meterLastSent['L'] || 0) < METER_THROTTLE_MS)
+                return;
+            strip.meterLastSent['L'] = now;
             outlet(consts_1.OUTLET_OSC, [
                 '/mixer/' + strip.stripIndex + '/meterLeft',
                 parseFloat(args[1]) || 0,
@@ -174,6 +179,10 @@ function createMeterObservers(strip, trackPath) {
     strip.meterLeftApi.property = 'output_meter_left';
     strip.meterRightApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_right') {
+            var now = Date.now();
+            if (now - (strip.meterLastSent['R'] || 0) < METER_THROTTLE_MS)
+                return;
+            strip.meterLastSent['R'] = now;
             outlet(consts_1.OUTLET_OSC, [
                 '/mixer/' + strip.stripIndex + '/meterRight',
                 parseFloat(args[1]) || 0,
@@ -183,6 +192,10 @@ function createMeterObservers(strip, trackPath) {
     strip.meterRightApi.property = 'output_meter_right';
     strip.meterLevelApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_level') {
+            var now = Date.now();
+            if (now - (strip.meterLastSent['V'] || 0) < METER_THROTTLE_MS)
+                return;
+            strip.meterLastSent['V'] = now;
             outlet(consts_1.OUTLET_OSC, [
                 '/mixer/' + strip.stripIndex + '/meterLevel',
                 parseFloat(args[1]) || 0,
@@ -224,6 +237,7 @@ function createStripObservers(trackId, stripIdx) {
         panApi: null,
         sendApis: [],
         pause: {},
+        meterLastSent: {},
         stripIndex: stripIdx,
         canBeArmed: false,
         hasOutput: false,
@@ -543,6 +557,12 @@ function applyWindow() {
         }
     }
     windowSlots = newSlots;
+    // // Debug: visualize window position across track list
+    // let viz = ''
+    // for (let i = 0; i < trackList.length; i++) {
+    //   viz += newSet[trackList[i].id] ? 'O' : '.'
+    // }
+    // log('window [' + viz + '] L=' + leftIndex + ' N=' + visibleCount)
     // Send initial state only for newly added strips
     for (var i = 0; i < windowSlots.length; i++) {
         var tid = windowSlots[i];
@@ -562,6 +582,7 @@ function mixerRefresh() {
 // Incoming: mixerView
 // ---------------------------------------------------------------------------
 function setupWindow(left, count) {
+    var firstSetup = trackList.length === 0;
     leftIndex = left;
     visibleCount = count;
     // Set up track list watchers on first activation
@@ -573,12 +594,14 @@ function setupWindow(left, count) {
         returnTracksWatcher = new LiveAPI(onReturnTracksChange, 'live_set');
         returnTracksWatcher.property = 'return_tracks';
     }
-    // Send numSends (= number of return tracks, same for all channels)
-    var numSendsApi = new LiveAPI(consts_1.noFn, 'live_set');
-    var numSends = Math.min((0, utils_1.cleanArr)(numSendsApi.get('return_tracks')).length, MAX_SENDS);
-    outlet(consts_1.OUTLET_OSC, ['/mixer/numSends', numSends]);
-    trackList = buildTrackList();
-    sendVisibleTracks();
+    if (firstSetup) {
+        // Send numSends (= number of return tracks, same for all channels)
+        var numSendsApi = new LiveAPI(consts_1.noFn, 'live_set');
+        var numSends = Math.min((0, utils_1.cleanArr)(numSendsApi.get('return_tracks')).length, MAX_SENDS);
+        outlet(consts_1.OUTLET_OSC, ['/mixer/numSends', numSends]);
+        trackList = buildTrackList();
+        sendVisibleTracks();
+    }
     applyWindow();
 }
 function mixerView() {
@@ -597,10 +620,6 @@ function mixerView() {
 }
 function mixerMeters(val) {
     var enabled = !!parseInt(val.toString());
-    //log('MIXERMETERSz ' + enabled + ' me=' + metersEnabled)
-    if (enabled === metersEnabled)
-        return;
-    //log('GOT HERE')
     metersEnabled = enabled;
     outlet(consts_1.OUTLET_OSC, ['/mixerMeters', metersEnabled ? 1 : 0]);
     //log('MIXERMETERS AFTER ' + metersEnabled ? 1 : 0)
