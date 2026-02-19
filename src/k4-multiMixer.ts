@@ -58,7 +58,6 @@ type StripObservers = {
   panApi: LiveAPI
   sendApis: LiveAPI[]
   pause: Record<string, { paused: boolean; task: MaxTask }>
-  meterLastSent: Record<string, number>
   stripIndex: number
   canBeArmed: boolean
   hasOutput: boolean
@@ -71,7 +70,7 @@ type StripObservers = {
 
 const MAX_SENDS = 12
 const PAUSE_MS = 300
-const METER_THROTTLE_MS = 20
+const METER_FLUSH_MS = 30
 const CHUNK_MAX_BYTES = 1024
 const DEFAULT_VISIBLE_COUNT = 12
 
@@ -90,6 +89,8 @@ let observersByTrackId: Record<number, StripObservers> = {}
 let windowSlots: number[] = []
 
 let metersEnabled = false
+let meterBuffer: number[] = []
+let meterFlushTask: MaxTask = null
 
 // Track list watchers
 let visibleTracksWatcher: LiveAPI = null
@@ -241,41 +242,25 @@ function onReturnTracksChange(args: any[]) {
 // ---------------------------------------------------------------------------
 
 function createMeterObservers(strip: StripObservers, trackPath: string) {
+  const baseOffset = strip.stripIndex * 3
+
   strip.meterLeftApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_left') {
-      const now = Date.now()
-      if (now - (strip.meterLastSent['L'] || 0) < METER_THROTTLE_MS) return
-      strip.meterLastSent['L'] = now
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/meterLeft',
-        parseFloat(args[1]) || 0,
-      ])
+      meterBuffer[baseOffset] = Math.round((parseFloat(args[1]) || 0) * 100) / 100
     }
   }, trackPath)
   strip.meterLeftApi.property = 'output_meter_left'
 
   strip.meterRightApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_right') {
-      const now = Date.now()
-      if (now - (strip.meterLastSent['R'] || 0) < METER_THROTTLE_MS) return
-      strip.meterLastSent['R'] = now
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/meterRight',
-        parseFloat(args[1]) || 0,
-      ])
+      meterBuffer[baseOffset + 1] = Math.round((parseFloat(args[1]) || 0) * 100) / 100
     }
   }, trackPath)
   strip.meterRightApi.property = 'output_meter_right'
 
   strip.meterLevelApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_level') {
-      const now = Date.now()
-      if (now - (strip.meterLastSent['V'] || 0) < METER_THROTTLE_MS) return
-      strip.meterLastSent['V'] = now
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/meterLevel',
-        parseFloat(args[1]) || 0,
-      ])
+      meterBuffer[baseOffset + 2] = Math.round((parseFloat(args[1]) || 0) * 100) / 100
     }
   }, trackPath)
   strip.meterLevelApi.property = 'output_meter_level'
@@ -294,6 +279,37 @@ function teardownMeterObservers(strip: StripObservers) {
     strip.meterLevelApi.id = 0
     strip.meterLevelApi = null
   }
+  // Zero out this strip's slots in the buffer
+  const baseOffset = strip.stripIndex * 3
+  if (baseOffset + 2 < meterBuffer.length) {
+    meterBuffer[baseOffset] = 0
+    meterBuffer[baseOffset + 1] = 0
+    meterBuffer[baseOffset + 2] = 0
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Meter Flush Timer
+// ---------------------------------------------------------------------------
+
+function flushMeters() {
+  outlet(OUTLET_OSC, ['/mixer/meters', JSON.stringify(meterBuffer)])
+}
+
+function startMeterFlush() {
+  if (meterFlushTask) return
+  meterFlushTask = new Task(function () {
+    flushMeters()
+    meterFlushTask.schedule(METER_FLUSH_MS)
+  }) as MaxTask
+  meterFlushTask.schedule(METER_FLUSH_MS)
+}
+
+function stopMeterFlush() {
+  if (!meterFlushTask) return
+  meterFlushTask.cancel()
+  meterFlushTask.freepeer()
+  meterFlushTask = null
 }
 
 // ---------------------------------------------------------------------------
@@ -319,7 +335,6 @@ function createStripObservers(
     panApi: null,
     sendApis: [],
     pause: {},
-    meterLastSent: {},
     stripIndex: stripIdx,
     canBeArmed: false,
     hasOutput: false,
@@ -504,12 +519,14 @@ function teardownStripObservers(strip: StripObservers) {
 }
 
 function teardownAll() {
+  stopMeterFlush()
   for (const trackIdStr in observersByTrackId) {
     teardownStripObservers(observersByTrackId[trackIdStr])
   }
   observersByTrackId = {}
   windowSlots = []
   trackList = []
+  meterBuffer = []
 }
 
 // ---------------------------------------------------------------------------
@@ -634,6 +651,17 @@ function applyWindow() {
     }
   }
 
+  // Resize meter buffer if visible count changed
+  const requiredLen = visibleCount * 3
+  if (meterBuffer.length !== requiredLen) {
+    const wasRunning = !!meterFlushTask
+    if (wasRunning) stopMeterFlush()
+    const newBuf: number[] = []
+    for (let i = 0; i < requiredLen; i++) newBuf.push(0)
+    meterBuffer = newBuf
+    if (wasRunning && metersEnabled) startMeterFlush()
+  }
+
   // Compute keep/remove/add sets
   const oldSet: Record<number, boolean> = {}
   for (let i = 0; i < windowSlots.length; i++) {
@@ -670,13 +698,6 @@ function applyWindow() {
   }
 
   windowSlots = newSlots
-
-  // // Debug: visualize window position across track list
-  // let viz = ''
-  // for (let i = 0; i < trackList.length; i++) {
-  //   viz += newSet[trackList[i].id] ? 'O' : '.'
-  // }
-  // log('window [' + viz + '] L=' + leftIndex + ' N=' + visibleCount)
 
   // Send initial state only for newly added strips
   for (let i = 0; i < windowSlots.length; i++) {
@@ -753,15 +774,20 @@ function mixerMeters(val: number) {
   const enabled = !!parseInt(val.toString())
   metersEnabled = enabled
   outlet(OUTLET_OSC, ['/mixerMeters', metersEnabled ? 1 : 0])
-  //log('MIXERMETERS AFTER ' + metersEnabled ? 1 : 0)
 
-  for (const trackIdStr in observersByTrackId) {
-    const strip = observersByTrackId[trackIdStr]
-    if (metersEnabled && strip.hasOutput) {
-      const trackPath = strip.trackApi.unquotedpath
-      createMeterObservers(strip, trackPath)
-    } else {
-      teardownMeterObservers(strip)
+  if (metersEnabled) {
+    for (const trackIdStr in observersByTrackId) {
+      const strip = observersByTrackId[trackIdStr]
+      if (strip.hasOutput) {
+        const trackPath = strip.trackApi.unquotedpath
+        createMeterObservers(strip, trackPath)
+      }
+    }
+    if (windowSlots.length > 0) startMeterFlush()
+  } else {
+    stopMeterFlush()
+    for (const trackIdStr in observersByTrackId) {
+      teardownMeterObservers(observersByTrackId[trackIdStr])
     }
   }
 }

@@ -429,17 +429,9 @@ Whether crossfader B is assigned for strip N.
 
 Send levels for strip N.
 
-#### /mixer/{N}/meterLeft {float}
+#### /mixer/meters {JSON array}
 
-Left channel output meter level for strip N (0.0-1.0). Only sent when meters are enabled.
-
-#### /mixer/{N}/meterRight {float}
-
-Right channel output meter level for strip N (0.0-1.0). Only sent when meters are enabled.
-
-#### /mixer/{N}/meterLevel {float}
-
-Combined output meter level for strip N (0.0-1.0). Only sent when meters are enabled.
+Batched meter values for all visible strips, sent as a single message every ~30ms when meters are enabled. The value is a flat JSON array `[L0, R0, V0, L1, R1, V1, ...]` where each group of 3 values represents left channel, right channel, and combined output level for one strip. Strip index N's values are at offsets `N*3` (left), `N*3+1` (right), `N*3+2` (level). Array length = `visibleCount * 3`. All values are floats (0.0-1.0).
 
 #### /mixerMeters { 0 | 1 }
 
