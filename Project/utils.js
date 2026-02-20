@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.cleanArr = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
@@ -79,6 +79,10 @@ function loadSetting(key) {
     return d.get(key);
 }
 exports.loadSetting = loadSetting;
+function meterVal(raw) {
+    return Math.round((parseFloat(raw) || 0) * 100) / 100;
+}
+exports.meterVal = meterVal;
 function cleanArr(arr) {
     if (!arr) {
         return [];

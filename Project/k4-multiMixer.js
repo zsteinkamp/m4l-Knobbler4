@@ -4,10 +4,12 @@ var config_1 = require("./config");
 var consts_1 = require("./consts");
 var toggleInput_1 = require("./toggleInput");
 autowatch = 1;
-inlets = 1;
+inlets = 2;
 outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
+var INLET_PAGE = 1;
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
+setinletassist(INLET_PAGE, 'Page change messages');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 // ---------------------------------------------------------------------------
 // Constants
@@ -28,8 +30,11 @@ var observersByTrackId = {};
 // Window slots: maps position index -> track ID currently at that position
 var windowSlots = [];
 var metersEnabled = false;
+var onMixerPage = false;
 var meterBuffer = [];
+var meterDirty = false;
 var meterFlushTask = null;
+var mixerViewTask = null;
 // Track list watchers
 var visibleTracksWatcher = null;
 var returnTracksWatcher = null;
@@ -151,6 +156,21 @@ function onVisibleTracksChange(args) {
     sendVisibleTracks();
     applyWindow();
 }
+function sendReturnTrackColors() {
+    var api = new LiveAPI(consts_1.noFn, 'live_set');
+    var returnIds = (0, utils_1.cleanArr)(api.get('return_tracks'));
+    var colors = [];
+    for (var i = 0; i < MAX_SENDS; i++) {
+        if (returnIds[i]) {
+            api.id = returnIds[i];
+            colors.push('#' + (0, utils_1.colorToString)(api.get('color').toString()));
+        }
+        else {
+            colors.push('#' + consts_1.DEFAULT_COLOR);
+        }
+    }
+    outlet(consts_1.OUTLET_OSC, ['/mixer/returnTrackColors', JSON.stringify(colors)]);
+}
 function onReturnTracksChange(args) {
     if (args[0] !== 'return_tracks') {
         return;
@@ -160,28 +180,41 @@ function onReturnTracksChange(args) {
     }
     trackList = buildTrackList();
     sendVisibleTracks();
+    sendReturnTrackColors();
     applyWindow();
 }
 // ---------------------------------------------------------------------------
 // Meter Observers
 // ---------------------------------------------------------------------------
 function createMeterObservers(strip, trackPath) {
-    var baseOffset = strip.stripIndex * 3;
+    var baseOffset = (strip.stripIndex - leftIndex) * 3;
     strip.meterLeftApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_left') {
-            meterBuffer[baseOffset] = Math.round((parseFloat(args[1]) || 0) * 100) / 100;
+            var v = (0, utils_1.meterVal)(args[1]);
+            if (v !== meterBuffer[baseOffset]) {
+                meterBuffer[baseOffset] = v;
+                meterDirty = true;
+            }
         }
     }, trackPath);
     strip.meterLeftApi.property = 'output_meter_left';
     strip.meterRightApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_right') {
-            meterBuffer[baseOffset + 1] = Math.round((parseFloat(args[1]) || 0) * 100) / 100;
+            var v = (0, utils_1.meterVal)(args[1]);
+            if (v !== meterBuffer[baseOffset + 1]) {
+                meterBuffer[baseOffset + 1] = v;
+                meterDirty = true;
+            }
         }
     }, trackPath);
     strip.meterRightApi.property = 'output_meter_right';
     strip.meterLevelApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_level') {
-            meterBuffer[baseOffset + 2] = Math.round((parseFloat(args[1]) || 0) * 100) / 100;
+            var v = (0, utils_1.meterVal)(args[1]);
+            if (v !== meterBuffer[baseOffset + 2]) {
+                meterBuffer[baseOffset + 2] = v;
+                meterDirty = true;
+            }
         }
     }, trackPath);
     strip.meterLevelApi.property = 'output_meter_level';
@@ -200,7 +233,7 @@ function teardownMeterObservers(strip) {
         strip.meterLevelApi = null;
     }
     // Zero out this strip's slots in the buffer
-    var baseOffset = strip.stripIndex * 3;
+    var baseOffset = (strip.stripIndex - leftIndex) * 3;
     if (baseOffset + 2 < meterBuffer.length) {
         meterBuffer[baseOffset] = 0;
         meterBuffer[baseOffset + 1] = 0;
@@ -211,6 +244,9 @@ function teardownMeterObservers(strip) {
 // Meter Flush Timer
 // ---------------------------------------------------------------------------
 function flushMeters() {
+    if (!meterDirty)
+        return;
+    meterDirty = false;
     outlet(consts_1.OUTLET_OSC, ['/mixer/meters', JSON.stringify(meterBuffer)]);
 }
 function startMeterFlush() {
@@ -614,10 +650,11 @@ function setupWindow(left, count) {
         returnTracksWatcher.property = 'return_tracks';
     }
     if (firstSetup) {
-        // Send numSends (= number of return tracks, same for all channels)
-        var numSendsApi = new LiveAPI(consts_1.noFn, 'live_set');
-        var numSends = Math.min((0, utils_1.cleanArr)(numSendsApi.get('return_tracks')).length, MAX_SENDS);
+        var api = new LiveAPI(consts_1.noFn, 'live_set');
+        var numSends = Math.min((0, utils_1.cleanArr)(api.get('return_tracks')).length, MAX_SENDS);
+        //log('SENDING numSends', numSends)
         outlet(consts_1.OUTLET_OSC, ['/mixer/numSends', numSends]);
+        sendReturnTrackColors();
         trackList = buildTrackList();
         sendVisibleTracks();
     }
@@ -629,13 +666,25 @@ function mixerView() {
     var left = parseInt(parsed[0].toString());
     var count = parseInt(parsed[1].toString());
     if (count === 0) {
-        // Tear down all
+        if (mixerViewTask) {
+            mixerViewTask.cancel();
+            mixerViewTask.freepeer();
+            mixerViewTask = null;
+        }
         teardownAll();
         leftIndex = -1;
         visibleCount = 0;
         return;
     }
-    setupWindow(left, count);
+    if (mixerViewTask) {
+        mixerViewTask.cancel();
+        mixerViewTask.freepeer();
+    }
+    mixerViewTask = new Task(function () {
+        setupWindow(left, count);
+        mixerViewTask = null;
+    });
+    mixerViewTask.schedule(500);
 }
 function mixerMeters(val) {
     var enabled = !!parseInt(val.toString());
@@ -649,7 +698,7 @@ function mixerMeters(val) {
                 createMeterObservers(strip, trackPath);
             }
         }
-        if (windowSlots.length > 0)
+        if (onMixerPage && windowSlots.length > 0)
             startMeterFlush();
     }
     else {
@@ -657,6 +706,19 @@ function mixerMeters(val) {
         for (var trackIdStr in observersByTrackId) {
             teardownMeterObservers(observersByTrackId[trackIdStr]);
         }
+    }
+}
+function page() {
+    var args = arrayfromargs(arguments);
+    var pageName = args[0].toString();
+    var wasMixerPage = onMixerPage;
+    onMixerPage = pageName === 'mixer';
+    if (onMixerPage && !wasMixerPage) {
+        if (metersEnabled && windowSlots.length > 0)
+            startMeterFlush();
+    }
+    else if (!onMixerPage && wasMixerPage) {
+        stopMeterFlush();
     }
 }
 function init() {

@@ -13,16 +13,18 @@ var config_1 = require("./config");
 var consts_1 = require("./consts");
 var toggleInput_1 = require("./toggleInput");
 autowatch = 1;
-inlets = 1;
+inlets = 2;
 outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
+var INLET_PAGE = 1;
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
+setinletassist(INLET_PAGE, 'Page change messages');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 var MAX_SENDS = 12;
 var PAUSE_MS = 300;
+var METER_FLUSH_MS = 30;
 var state = {
     trackLookupObj: null,
-    returnTrackColors: [],
     returnsObj: null,
     mixerObj: null,
     trackObj: null,
@@ -31,11 +33,15 @@ var state = {
     panObj: null,
     crossfaderObj: null,
     watchers: [],
+    onMixerPage: false,
     metersEnabled: false,
     hasOutput: false,
     meterLeftObj: null,
     meterRightObj: null,
     meterLevelObj: null,
+    meterBuffer: [0, 0, 0],
+    meterDirty: false,
+    meterFlushTask: null,
     pause: {
         send: { paused: false, task: null },
         vol: { paused: false, task: null },
@@ -57,50 +63,101 @@ function pauseUnpause(key) {
 // ---------------------------------------------------------------------------
 // Meter observers
 // ---------------------------------------------------------------------------
-function createMeterObservers() {
-    var trackPath = state.trackLookupObj.unquotedpath;
+function ensureMeterObservers() {
+    if (state.meterLeftObj)
+        return;
     state.meterLeftObj = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_left') {
-            outlet(consts_1.OUTLET_OSC, ['/mixer/meterLeft', parseFloat(args[1]) || 0]);
+            var v = (0, utils_1.meterVal)(args[1]);
+            if (v !== state.meterBuffer[0]) {
+                state.meterBuffer[0] = v;
+                state.meterDirty = true;
+            }
         }
-    }, trackPath);
-    state.meterLeftObj.property = 'output_meter_left';
+    }, 'live_set');
     state.meterRightObj = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_right') {
-            outlet(consts_1.OUTLET_OSC, ['/mixer/meterRight', parseFloat(args[1]) || 0]);
+            var v = (0, utils_1.meterVal)(args[1]);
+            if (v !== state.meterBuffer[1]) {
+                state.meterBuffer[1] = v;
+                state.meterDirty = true;
+            }
         }
-    }, trackPath);
-    state.meterRightObj.property = 'output_meter_right';
+    }, 'live_set');
     state.meterLevelObj = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_level') {
-            outlet(consts_1.OUTLET_OSC, ['/mixer/meterLevel', parseFloat(args[1]) || 0]);
+            var v = (0, utils_1.meterVal)(args[1]);
+            if (v !== state.meterBuffer[2]) {
+                state.meterBuffer[2] = v;
+                state.meterDirty = true;
+            }
         }
-    }, trackPath);
+    }, 'live_set');
+}
+function pointMetersAt(trackPath) {
+    ensureMeterObservers();
+    state.meterLeftObj.path = trackPath;
+    state.meterLeftObj.property = 'output_meter_left';
+    state.meterRightObj.path = trackPath;
+    state.meterRightObj.property = 'output_meter_right';
+    state.meterLevelObj.path = trackPath;
     state.meterLevelObj.property = 'output_meter_level';
 }
-function teardownMeterObservers() {
-    if (state.meterLeftObj) {
+function disableMeters() {
+    if (state.meterLeftObj)
         state.meterLeftObj.id = 0;
-        state.meterLeftObj = null;
-    }
-    if (state.meterRightObj) {
+    if (state.meterRightObj)
         state.meterRightObj.id = 0;
-        state.meterRightObj = null;
-    }
-    if (state.meterLevelObj) {
+    if (state.meterLevelObj)
         state.meterLevelObj.id = 0;
-        state.meterLevelObj = null;
-    }
+    state.meterBuffer[0] = 0;
+    state.meterBuffer[1] = 0;
+    state.meterBuffer[2] = 0;
+}
+function startMeterFlush() {
+    if (state.meterFlushTask)
+        return;
+    state.meterFlushTask = new Task(function () {
+        if (state.meterDirty) {
+            state.meterDirty = false;
+            outlet(consts_1.OUTLET_OSC, ['/mixer/meters', JSON.stringify(state.meterBuffer)]);
+        }
+        state.meterFlushTask.schedule(METER_FLUSH_MS);
+    });
+    state.meterFlushTask.schedule(METER_FLUSH_MS);
+}
+function stopMeterFlush() {
+    if (!state.meterFlushTask)
+        return;
+    state.meterFlushTask.cancel();
+    state.meterFlushTask.freepeer();
+    state.meterFlushTask = null;
 }
 function sidebarMeters(val) {
     var enabled = !!parseInt(val.toString());
     state.metersEnabled = enabled;
     outlet(consts_1.OUTLET_OSC, ['/sidebarMeters', state.metersEnabled ? 1 : 0]);
     if (state.metersEnabled && state.hasOutput && state.trackLookupObj) {
-        createMeterObservers();
+        pointMetersAt(state.trackLookupObj.unquotedpath);
+        if (!state.onMixerPage)
+            startMeterFlush();
     }
     else {
-        teardownMeterObservers();
+        stopMeterFlush();
+        disableMeters();
+    }
+}
+function page() {
+    var args = arrayfromargs(arguments);
+    var pageName = args[0].toString();
+    var wasMixerPage = state.onMixerPage;
+    state.onMixerPage = pageName === 'mixer';
+    if (!state.onMixerPage && wasMixerPage) {
+        if (state.metersEnabled && state.hasOutput)
+            startMeterFlush();
+    }
+    else if (state.onMixerPage && !wasMixerPage) {
+        stopMeterFlush();
     }
 }
 // ---------------------------------------------------------------------------
@@ -116,7 +173,6 @@ var setSendWatcherIds = function (sendIds) {
             outlet(consts_1.OUTLET_OSC, ['/mixer/send' + (i + 1), 0]);
         }
     }
-    outlet(consts_1.OUTLET_OSC, ['/mixer/numSends', sendIds.length]);
 };
 // ---------------------------------------------------------------------------
 // Command handlers (called by Max message dispatch)
@@ -391,10 +447,15 @@ var onTrackChange = function (args) {
             ? !!parseInt(state.trackLookupObj.get('has_audio_output'))
             : false;
     outlet(consts_1.OUTLET_OSC, ['/mixer/hasOutput', state.hasOutput ? 1 : 0]);
-    // meters — teardown old, recreate if enabled and track has output
-    teardownMeterObservers();
+    // meters — repoint or disable
     if (state.metersEnabled && state.hasOutput) {
-        createMeterObservers();
+        pointMetersAt(path);
+        if (!state.onMixerPage)
+            startMeterFlush();
+    }
+    else {
+        stopMeterFlush();
+        disableMeters();
     }
     // crossfade assign
     if (!isMain) {
@@ -420,34 +481,13 @@ var onTrackChange = function (args) {
     outlet(consts_1.OUTLET_OSC, ['/mixer/pan', panVal]);
     var panStr = state.panObj.call('str_for_value', panVal);
     outlet(consts_1.OUTLET_OSC, ['/mixer/panStr', panStr ? panStr.toString() : '']);
-    // re-fetch sends
-    var sendIds = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
-    setSendWatcherIds(sendIds);
-};
-// ---------------------------------------------------------------------------
-// Return track colors
-// ---------------------------------------------------------------------------
-var sendReturnTrackColors = function () {
-    outlet(consts_1.OUTLET_OSC, [
-        '/mixer/returnTrackColors',
-        JSON.stringify(state.returnTrackColors),
-    ]);
 };
 var onReturnsChange = function (args) {
     if (!state.returnsObj || args[0] !== 'return_tracks') {
         return;
     }
-    var api = new LiveAPI(consts_1.noFn, 'live_set');
     var returnIds = (0, utils_1.cleanArr)(args);
-    for (var i = 0; i < MAX_SENDS; i++) {
-        var color = consts_1.DEFAULT_COLOR;
-        if (returnIds[i]) {
-            api.id = returnIds[i];
-            color = (0, utils_1.colorToString)(api.get('color').toString());
-        }
-        state.returnTrackColors[i] = '#' + color;
-    }
-    sendReturnTrackColors();
+    setSendWatcherIds(returnIds);
 };
 // ---------------------------------------------------------------------------
 // Lifecycle
@@ -482,7 +522,6 @@ function init() {
         state.trackLookupObj = new LiveAPI(consts_1.noFn, 'live_set');
     }
     // Return tracks watcher
-    state.returnTrackColors = [];
     if (!state.returnsObj) {
         state.returnsObj = new LiveAPI(onReturnsChange, 'live_set');
         state.returnsObj.property = 'return_tracks';

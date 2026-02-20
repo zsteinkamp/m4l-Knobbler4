@@ -82,6 +82,10 @@ export function loadSetting(key: string): any {
   return d.get(key)
 }
 
+export function meterVal(raw: any): number {
+  return Math.round((parseFloat(raw) || 0) * 100) / 100
+}
+
 export function cleanArr(arr: IdObserverArg) {
   if (!arr) {
     return []

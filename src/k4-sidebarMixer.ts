@@ -1,4 +1,4 @@
-import { cleanArr, colorToString, logFactory } from './utils'
+import { cleanArr, logFactory, meterVal } from './utils'
 import config from './config'
 import {
   noFn,
@@ -8,7 +8,6 @@ import {
   TYPE_MAIN,
   TYPE_RETURN,
   TYPE_GROUP,
-  DEFAULT_COLOR,
 } from './consts'
 import {
   getTrackInputStatus,
@@ -17,22 +16,24 @@ import {
 } from './toggleInput'
 
 autowatch = 1
-inlets = 1
+inlets = 2
 outlets = 1
 
 const log = logFactory(config)
+const INLET_PAGE = 1
 
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
+setinletassist(INLET_PAGE, 'Page change messages')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
 type PauseTypes = 'send' | 'vol' | 'pan' | 'crossfader'
 
 const MAX_SENDS = 12
 const PAUSE_MS = 300
+const METER_FLUSH_MS = 30
 
 const state = {
   trackLookupObj: null as LiveAPI,
-  returnTrackColors: [] as string[],
   returnsObj: null as LiveAPI,
   mixerObj: null as LiveAPI,
   trackObj: null as LiveAPI,
@@ -41,11 +42,15 @@ const state = {
   panObj: null as LiveAPI,
   crossfaderObj: null as LiveAPI,
   watchers: [] as LiveAPI[],
+  onMixerPage: false as boolean,
   metersEnabled: false as boolean,
   hasOutput: false as boolean,
   meterLeftObj: null as LiveAPI,
   meterRightObj: null as LiveAPI,
   meterLevelObj: null as LiveAPI,
+  meterBuffer: [0, 0, 0] as number[],
+  meterDirty: false as boolean,
+  meterFlushTask: null as MaxTask,
   pause: {
     send: { paused: false as boolean, task: null as MaxTask },
     vol: { paused: false as boolean, task: null as MaxTask },
@@ -70,44 +75,73 @@ function pauseUnpause(key: PauseTypes) {
 // Meter observers
 // ---------------------------------------------------------------------------
 
-function createMeterObservers() {
-  const trackPath = state.trackLookupObj.unquotedpath
-
+function ensureMeterObservers() {
+  if (state.meterLeftObj) return
   state.meterLeftObj = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_left') {
-      outlet(OUTLET_OSC, ['/mixer/meterLeft', parseFloat(args[1]) || 0])
+      const v = meterVal(args[1])
+      if (v !== state.meterBuffer[0]) {
+        state.meterBuffer[0] = v
+        state.meterDirty = true
+      }
     }
-  }, trackPath)
-  state.meterLeftObj.property = 'output_meter_left'
-
+  }, 'live_set')
   state.meterRightObj = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_right') {
-      outlet(OUTLET_OSC, ['/mixer/meterRight', parseFloat(args[1]) || 0])
+      const v = meterVal(args[1])
+      if (v !== state.meterBuffer[1]) {
+        state.meterBuffer[1] = v
+        state.meterDirty = true
+      }
     }
-  }, trackPath)
-  state.meterRightObj.property = 'output_meter_right'
-
+  }, 'live_set')
   state.meterLevelObj = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_level') {
-      outlet(OUTLET_OSC, ['/mixer/meterLevel', parseFloat(args[1]) || 0])
+      const v = meterVal(args[1])
+      if (v !== state.meterBuffer[2]) {
+        state.meterBuffer[2] = v
+        state.meterDirty = true
+      }
     }
-  }, trackPath)
+  }, 'live_set')
+}
+
+function pointMetersAt(trackPath: string) {
+  ensureMeterObservers()
+  state.meterLeftObj.path = trackPath
+  state.meterLeftObj.property = 'output_meter_left'
+  state.meterRightObj.path = trackPath
+  state.meterRightObj.property = 'output_meter_right'
+  state.meterLevelObj.path = trackPath
   state.meterLevelObj.property = 'output_meter_level'
 }
 
-function teardownMeterObservers() {
-  if (state.meterLeftObj) {
-    state.meterLeftObj.id = 0
-    state.meterLeftObj = null
-  }
-  if (state.meterRightObj) {
-    state.meterRightObj.id = 0
-    state.meterRightObj = null
-  }
-  if (state.meterLevelObj) {
-    state.meterLevelObj.id = 0
-    state.meterLevelObj = null
-  }
+function disableMeters() {
+  if (state.meterLeftObj) state.meterLeftObj.id = 0
+  if (state.meterRightObj) state.meterRightObj.id = 0
+  if (state.meterLevelObj) state.meterLevelObj.id = 0
+  state.meterBuffer[0] = 0
+  state.meterBuffer[1] = 0
+  state.meterBuffer[2] = 0
+}
+
+function startMeterFlush() {
+  if (state.meterFlushTask) return
+  state.meterFlushTask = new Task(function () {
+    if (state.meterDirty) {
+      state.meterDirty = false
+      outlet(OUTLET_OSC, ['/mixer/meters', JSON.stringify(state.meterBuffer)])
+    }
+    state.meterFlushTask.schedule(METER_FLUSH_MS)
+  }) as MaxTask
+  state.meterFlushTask.schedule(METER_FLUSH_MS)
+}
+
+function stopMeterFlush() {
+  if (!state.meterFlushTask) return
+  state.meterFlushTask.cancel()
+  state.meterFlushTask.freepeer()
+  state.meterFlushTask = null
 }
 
 function sidebarMeters(val: number) {
@@ -116,9 +150,24 @@ function sidebarMeters(val: number) {
   outlet(OUTLET_OSC, ['/sidebarMeters', state.metersEnabled ? 1 : 0])
 
   if (state.metersEnabled && state.hasOutput && state.trackLookupObj) {
-    createMeterObservers()
+    pointMetersAt(state.trackLookupObj.unquotedpath)
+    if (!state.onMixerPage) startMeterFlush()
   } else {
-    teardownMeterObservers()
+    stopMeterFlush()
+    disableMeters()
+  }
+}
+
+function page() {
+  const args = arrayfromargs(arguments)
+  const pageName = args[0].toString()
+  const wasMixerPage = state.onMixerPage
+  state.onMixerPage = pageName === 'mixer'
+
+  if (!state.onMixerPage && wasMixerPage) {
+    if (state.metersEnabled && state.hasOutput) startMeterFlush()
+  } else if (state.onMixerPage && !wasMixerPage) {
+    stopMeterFlush()
   }
 }
 
@@ -135,7 +184,6 @@ const setSendWatcherIds = (sendIds: number[]) => {
       outlet(OUTLET_OSC, ['/mixer/send' + (i + 1), 0])
     }
   }
-  outlet(OUTLET_OSC, ['/mixer/numSends', sendIds.length])
 }
 
 // ---------------------------------------------------------------------------
@@ -439,10 +487,13 @@ const onTrackChange = (args: IdObserverArg) => {
       : false
   outlet(OUTLET_OSC, ['/mixer/hasOutput', state.hasOutput ? 1 : 0])
 
-  // meters — teardown old, recreate if enabled and track has output
-  teardownMeterObservers()
+  // meters — repoint or disable
   if (state.metersEnabled && state.hasOutput) {
-    createMeterObservers()
+    pointMetersAt(path)
+    if (!state.onMixerPage) startMeterFlush()
+  } else {
+    stopMeterFlush()
+    disableMeters()
   }
 
   // crossfade assign
@@ -471,38 +522,14 @@ const onTrackChange = (args: IdObserverArg) => {
   outlet(OUTLET_OSC, ['/mixer/pan', panVal])
   const panStr = state.panObj.call('str_for_value', panVal) as any
   outlet(OUTLET_OSC, ['/mixer/panStr', panStr ? panStr.toString() : ''])
-
-  // re-fetch sends
-  const sendIds = cleanArr(state.mixerObj.get('sends'))
-  setSendWatcherIds(sendIds)
-}
-
-// ---------------------------------------------------------------------------
-// Return track colors
-// ---------------------------------------------------------------------------
-
-const sendReturnTrackColors = () => {
-  outlet(OUTLET_OSC, [
-    '/mixer/returnTrackColors',
-    JSON.stringify(state.returnTrackColors),
-  ])
 }
 
 const onReturnsChange = (args: IdObserverArg) => {
   if (!state.returnsObj || args[0] !== 'return_tracks') {
     return
   }
-  const api = new LiveAPI(noFn, 'live_set')
   const returnIds = cleanArr(args)
-  for (let i = 0; i < MAX_SENDS; i++) {
-    let color = DEFAULT_COLOR
-    if (returnIds[i]) {
-      api.id = returnIds[i]
-      color = colorToString(api.get('color').toString())
-    }
-    state.returnTrackColors[i] = '#' + color
-  }
-  sendReturnTrackColors()
+  setSendWatcherIds(returnIds)
 }
 
 // ---------------------------------------------------------------------------
@@ -543,7 +570,6 @@ function init() {
   }
 
   // Return tracks watcher
-  state.returnTrackColors = []
   if (!state.returnsObj) {
     state.returnsObj = new LiveAPI(onReturnsChange, 'live_set')
     state.returnsObj.property = 'return_tracks'

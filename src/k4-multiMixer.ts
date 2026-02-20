@@ -3,6 +3,7 @@ import {
   colorToString,
   loadSetting,
   logFactory,
+  meterVal,
   truncate,
 } from './utils'
 import config from './config'
@@ -15,6 +16,7 @@ import {
   TYPE_RETURN,
   TYPE_GROUP,
   MAX_NAME_LEN,
+  DEFAULT_COLOR,
 } from './consts'
 import {
   getTrackInputStatus,
@@ -23,12 +25,15 @@ import {
 } from './toggleInput'
 
 autowatch = 1
-inlets = 1
+inlets = 2
 outlets = 1
 
 const log = logFactory(config)
 
+const INLET_PAGE = 1
+
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
+setinletassist(INLET_PAGE, 'Page change messages')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
 // ---------------------------------------------------------------------------
@@ -89,8 +94,11 @@ let observersByTrackId: Record<number, StripObservers> = {}
 let windowSlots: number[] = []
 
 let metersEnabled = false
+let onMixerPage = false
 let meterBuffer: number[] = []
+let meterDirty = false
 let meterFlushTask: MaxTask = null
+let mixerViewTask: MaxTask = null
 
 // Track list watchers
 let visibleTracksWatcher: LiveAPI = null
@@ -225,6 +233,21 @@ function onVisibleTracksChange(args: any[]) {
   applyWindow()
 }
 
+function sendReturnTrackColors() {
+  const api = new LiveAPI(noFn, 'live_set')
+  const returnIds = cleanArr(api.get('return_tracks'))
+  const colors: string[] = []
+  for (let i = 0; i < MAX_SENDS; i++) {
+    if (returnIds[i]) {
+      api.id = returnIds[i]
+      colors.push('#' + colorToString(api.get('color').toString()))
+    } else {
+      colors.push('#' + DEFAULT_COLOR)
+    }
+  }
+  outlet(OUTLET_OSC, ['/mixer/returnTrackColors', JSON.stringify(colors)])
+}
+
 function onReturnTracksChange(args: any[]) {
   if (args[0] !== 'return_tracks') {
     return
@@ -234,6 +257,7 @@ function onReturnTracksChange(args: any[]) {
   }
   trackList = buildTrackList()
   sendVisibleTracks()
+  sendReturnTrackColors()
   applyWindow()
 }
 
@@ -242,25 +266,37 @@ function onReturnTracksChange(args: any[]) {
 // ---------------------------------------------------------------------------
 
 function createMeterObservers(strip: StripObservers, trackPath: string) {
-  const baseOffset = strip.stripIndex * 3
+  const baseOffset = (strip.stripIndex - leftIndex) * 3
 
   strip.meterLeftApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_left') {
-      meterBuffer[baseOffset] = Math.round((parseFloat(args[1]) || 0) * 100) / 100
+      const v = meterVal(args[1])
+      if (v !== meterBuffer[baseOffset]) {
+        meterBuffer[baseOffset] = v
+        meterDirty = true
+      }
     }
   }, trackPath)
   strip.meterLeftApi.property = 'output_meter_left'
 
   strip.meterRightApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_right') {
-      meterBuffer[baseOffset + 1] = Math.round((parseFloat(args[1]) || 0) * 100) / 100
+      const v = meterVal(args[1])
+      if (v !== meterBuffer[baseOffset + 1]) {
+        meterBuffer[baseOffset + 1] = v
+        meterDirty = true
+      }
     }
   }, trackPath)
   strip.meterRightApi.property = 'output_meter_right'
 
   strip.meterLevelApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_level') {
-      meterBuffer[baseOffset + 2] = Math.round((parseFloat(args[1]) || 0) * 100) / 100
+      const v = meterVal(args[1])
+      if (v !== meterBuffer[baseOffset + 2]) {
+        meterBuffer[baseOffset + 2] = v
+        meterDirty = true
+      }
     }
   }, trackPath)
   strip.meterLevelApi.property = 'output_meter_level'
@@ -280,7 +316,7 @@ function teardownMeterObservers(strip: StripObservers) {
     strip.meterLevelApi = null
   }
   // Zero out this strip's slots in the buffer
-  const baseOffset = strip.stripIndex * 3
+  const baseOffset = (strip.stripIndex - leftIndex) * 3
   if (baseOffset + 2 < meterBuffer.length) {
     meterBuffer[baseOffset] = 0
     meterBuffer[baseOffset + 1] = 0
@@ -293,6 +329,8 @@ function teardownMeterObservers(strip: StripObservers) {
 // ---------------------------------------------------------------------------
 
 function flushMeters() {
+  if (!meterDirty) return
+  meterDirty = false
   outlet(OUTLET_OSC, ['/mixer/meters', JSON.stringify(meterBuffer)])
 }
 
@@ -737,13 +775,14 @@ function setupWindow(left: number, count: number) {
   }
 
   if (firstSetup) {
-    // Send numSends (= number of return tracks, same for all channels)
-    const numSendsApi = new LiveAPI(noFn, 'live_set')
+    const api = new LiveAPI(noFn, 'live_set')
     const numSends = Math.min(
-      cleanArr(numSendsApi.get('return_tracks')).length,
+      cleanArr(api.get('return_tracks')).length,
       MAX_SENDS
     )
+    //log('SENDING numSends', numSends)
     outlet(OUTLET_OSC, ['/mixer/numSends', numSends])
+    sendReturnTrackColors()
 
     trackList = buildTrackList()
     sendVisibleTracks()
@@ -760,14 +799,26 @@ function mixerView() {
   const count = parseInt(parsed[1].toString())
 
   if (count === 0) {
-    // Tear down all
+    if (mixerViewTask) {
+      mixerViewTask.cancel()
+      mixerViewTask.freepeer()
+      mixerViewTask = null
+    }
     teardownAll()
     leftIndex = -1
     visibleCount = 0
     return
   }
 
-  setupWindow(left, count)
+  if (mixerViewTask) {
+    mixerViewTask.cancel()
+    mixerViewTask.freepeer()
+  }
+  mixerViewTask = new Task(function () {
+    setupWindow(left, count)
+    mixerViewTask = null
+  }) as MaxTask
+  mixerViewTask.schedule(500)
 }
 
 function mixerMeters(val: number) {
@@ -783,12 +834,25 @@ function mixerMeters(val: number) {
         createMeterObservers(strip, trackPath)
       }
     }
-    if (windowSlots.length > 0) startMeterFlush()
+    if (onMixerPage && windowSlots.length > 0) startMeterFlush()
   } else {
     stopMeterFlush()
     for (const trackIdStr in observersByTrackId) {
       teardownMeterObservers(observersByTrackId[trackIdStr])
     }
+  }
+}
+
+function page() {
+  const args = arrayfromargs(arguments)
+  const pageName = args[0].toString()
+  const wasMixerPage = onMixerPage
+  onMixerPage = pageName === 'mixer'
+
+  if (onMixerPage && !wasMixerPage) {
+    if (metersEnabled && windowSlots.length > 0) startMeterFlush()
+  } else if (!onMixerPage && wasMixerPage) {
+    stopMeterFlush()
   }
 }
 

@@ -49,6 +49,9 @@ function synHandler(router, _, val) {
 function bareMsg(router) {
     outlet(router.outlet, router.msg);
 }
+function pageHandler(router) {
+    outlet(router.outlet, 'page', router.msg);
+}
 function bareVal(router, _, val) {
     outlet(router.outlet, val);
 }
@@ -445,13 +448,13 @@ var ROUTER = [
     {
         outlet: OUTLET_PAGE,
         prefix: '/page/knobbler1',
-        handler: bareMsg,
+        handler: pageHandler,
         msg: 'knobbler1',
     },
     {
         outlet: OUTLET_PAGE,
         prefix: '/page/knobbler2',
-        handler: bareMsg,
+        handler: pageHandler,
         msg: 'knobbler2',
     },
     {
@@ -463,14 +466,20 @@ var ROUTER = [
     {
         outlet: OUTLET_PAGE,
         prefix: '/page/nav',
-        handler: bareMsg,
+        handler: pageHandler,
         msg: 'nav',
     },
     {
         outlet: OUTLET_PAGE,
         prefix: '/page/bluhand',
-        handler: bareMsg,
+        handler: pageHandler,
         msg: 'bluhand',
+    },
+    {
+        outlet: OUTLET_PAGE,
+        prefix: '/page/mixer',
+        handler: pageHandler,
+        msg: 'mixer',
     },
     {
         outlet: OUTLET_BLUHAND,
