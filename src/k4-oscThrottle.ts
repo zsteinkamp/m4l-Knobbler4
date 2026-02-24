@@ -10,15 +10,20 @@ const log = logFactory(config)
 setinletassist(0, 'OSC messages to rate-limit')
 setoutletassist(0, 'Rate-limited OSC messages to [udpsend]')
 
-let intervalMs = 20
+let intervalMs = 30
 
 type ThrottleEntry = {
-  args: any[]
+  address: string
+  arg: any
   lastSentTime: number
   task: MaxTask | null
+  deferredFn: Function
 }
 
 const entries: { [address: string]: ThrottleEntry } = {}
+
+// Reusable 2-element output array to avoid allocations in send()
+const outMsg: any[] = ['', '']
 
 function setThrottleInterval(ms: number) {
   intervalMs = ms
@@ -28,8 +33,8 @@ function setThrottleInterval(ms: number) {
 const BYPASS_SUFFIXES = ['/start', '/end', '/chunk']
 
 function shouldBypass(address: string) {
-  for (var i = 0; i < BYPASS_SUFFIXES.length; i++) {
-    var suffix = BYPASS_SUFFIXES[i]
+  for (let i = 0; i < BYPASS_SUFFIXES.length; i++) {
+    const suffix = BYPASS_SUFFIXES[i]
     if (
       address.length >= suffix.length &&
       address.indexOf(suffix, address.length - suffix.length) !== -1
@@ -40,25 +45,32 @@ function shouldBypass(address: string) {
   return false
 }
 
-function anything() {
+function anything(val: any) {
   const address = messagename
-  const args = arrayfromargs(arguments)
 
   if (shouldBypass(address)) {
-    send(address, args)
+    outMsg[0] = address
+    outMsg[1] = val
+    outlet(0, outMsg)
     return
   }
 
-  const now = new Date().getTime()
+  const now = Date.now()
   const entry = entries[address]
 
   if (!entry) {
-    entries[address] = {
-      args: args,
+    const e: ThrottleEntry = {
+      address: address,
+      arg: val,
       lastSentTime: now,
       task: null,
+      deferredFn: null,
     }
-    send(address, args)
+    e.deferredFn = makeDeferred(e)
+    entries[address] = e
+    outMsg[0] = address
+    outMsg[1] = val
+    outlet(0, outMsg)
     return
   }
 
@@ -68,35 +80,31 @@ function anything() {
       entry.task.freepeer()
       entry.task = null
     }
-    entry.args = args
+    entry.arg = val
     entry.lastSentTime = now
-    send(address, args)
+    outMsg[0] = address
+    outMsg[1] = val
+    outlet(0, outMsg)
     return
   }
 
   // Too soon — store latest value and schedule deferred send
-  log('throttled', address, args.join(' '))
-  entry.args = args
+  entry.arg = val
   if (!entry.task) {
     const delay = entry.lastSentTime + intervalMs - now
-    entry.task = new Task(makeDeferred(address)) as MaxTask
+    entry.task = new Task(entry.deferredFn) as MaxTask
     entry.task.schedule(delay)
   }
 }
 
-function makeDeferred(address: string) {
+function makeDeferred(entry: ThrottleEntry) {
   return function () {
-    const entry = entries[address]
-    if (entry) {
-      entry.task = null
-      entry.lastSentTime = new Date().getTime()
-      send(address, entry.args)
-    }
+    entry.task = null
+    entry.lastSentTime = Date.now()
+    outMsg[0] = entry.address
+    outMsg[1] = entry.arg
+    outlet(0, outMsg)
   }
-}
-
-function send(address: string, args: any[]) {
-  outlet(0, [address].concat(args))
 }
 
 log('reloaded k4-oscThrottle')

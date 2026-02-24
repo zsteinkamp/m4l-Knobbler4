@@ -227,67 +227,45 @@ function paramValueCallback(slot, iargs) {
     // received, and only taking action here if more than 500ms has passed.
     //log(args, 'ALLOW_UPDATES=', param[slot].allowParamValueUpdates)
     if (param[slot].allowParamValueUpdates) {
-        var args = arrayfromargs(iargs);
-        if (args[0] === 'value') {
-            //log("PARAM_VAL", typeof(args[1]), args[1], "\n");
-            param[slot].val = args[1];
+        if (iargs[0] === 'value') {
+            //log("PARAM_VAL", typeof(iargs[1]), iargs[1], "\n");
+            param[slot].val = iargs[1];
             sendVal(slot);
-        }
-        else {
-            //log('SUMPIN ELSE', args[0], args[1])
         }
     }
 }
 function paramNameCallback(slot, iargs) {
-    //log(iargs)
-    var args = arrayfromargs(iargs);
-    //log('PARAM NAME CALLBACK ' + args.join(','))
-    if (args[0] === 'name') {
-        param[slot].name = args[1];
+    if (iargs[0] === 'name') {
+        param[slot].name = iargs[1];
         sendParamName(slot);
     }
 }
 function automationStateCallback(slot, iargs) {
-    //log(iargs)
-    var args = arrayfromargs(iargs);
-    //log('PARAM NAME CALLBACK ' + args.join(','))
-    if (args[0] === 'automation_state') {
+    if (iargs[0] === 'automation_state') {
         sendAutomationState(slot);
     }
 }
 function deviceNameCallback(slot, iargs) {
-    //log(args)
-    //log('DEVICE NAME CALLBACK')
-    var args = arrayfromargs(iargs);
-    if (args[0] === 'name') {
-        param[slot].deviceName = args[1];
+    if (iargs[0] === 'name') {
+        param[slot].deviceName = iargs[1];
         sendDeviceName(slot);
     }
 }
 function parentNameCallback(slot, iargs) {
-    //log('PARENT NAME CALLBACK')
-    //log(args)
-    var args = arrayfromargs(iargs);
-    if (args[0] === 'name') {
-        param[slot].parentName = args[1];
+    if (iargs[0] === 'name') {
+        param[slot].parentName = iargs[1];
         sendTrackName(slot);
     }
 }
 function trackNameCallback(slot, iargs) {
-    //log('TRACK NAME CALLBACK')
-    //log(args)
-    var args = arrayfromargs(iargs);
-    if (args[0] === 'name') {
-        param[slot].trackName = args[1];
+    if (iargs[0] === 'name') {
+        param[slot].trackName = iargs[1];
         sendTrackName(slot);
     }
 }
 function parentColorCallback(slot, iargs) {
-    //log('PARENT COLOR CALLBACK')
-    var args = arrayfromargs(iargs);
-    //log('PARENTCOLOR', args)
-    if (args[0] === 'color') {
-        param[slot].trackColor = (0, utils_1.colorToString)(args[1]) + 'FF';
+    if (iargs[0] === 'color') {
+        param[slot].trackColor = (0, utils_1.colorToString)(iargs[1]) + 'FF';
         sendColor(slot);
     }
 }

@@ -18,7 +18,7 @@ var MAX_SENDS = 12;
 var PAUSE_MS = 300;
 var METER_FLUSH_MS = 30;
 var CHUNK_MAX_BYTES = 1024;
-var DEFAULT_VISIBLE_COUNT = 12;
+var DEFAULT_VISIBLE_COUNT = 18;
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -631,7 +631,6 @@ function applyWindow() {
 // ---------------------------------------------------------------------------
 function mixerRefresh() {
     teardownAll();
-    setupWindow(0, DEFAULT_VISIBLE_COUNT);
 }
 // ---------------------------------------------------------------------------
 // Incoming: mixerView

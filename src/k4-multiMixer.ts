@@ -752,7 +752,6 @@ function applyWindow() {
 
 function mixerRefresh() {
   teardownAll()
-  setupWindow(0, DEFAULT_VISIBLE_COUNT)
 }
 
 // ---------------------------------------------------------------------------

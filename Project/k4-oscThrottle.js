@@ -7,8 +7,10 @@ outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(0, 'OSC messages to rate-limit');
 setoutletassist(0, 'Rate-limited OSC messages to [udpsend]');
-var intervalMs = 20;
+var intervalMs = 30;
 var entries = {};
+// Reusable 2-element output array to avoid allocations in send()
+var outMsg = ['', ''];
 function setThrottleInterval(ms) {
     intervalMs = ms;
     log('throttle interval set to', ms, 'ms');
@@ -24,22 +26,29 @@ function shouldBypass(address) {
     }
     return false;
 }
-function anything() {
+function anything(val) {
     var address = messagename;
-    var args = arrayfromargs(arguments);
     if (shouldBypass(address)) {
-        send(address, args);
+        outMsg[0] = address;
+        outMsg[1] = val;
+        outlet(0, outMsg);
         return;
     }
-    var now = new Date().getTime();
+    var now = Date.now();
     var entry = entries[address];
     if (!entry) {
-        entries[address] = {
-            args: args,
+        var e = {
+            address: address,
+            arg: val,
             lastSentTime: now,
             task: null,
+            deferredFn: null,
         };
-        send(address, args);
+        e.deferredFn = makeDeferred(e);
+        entries[address] = e;
+        outMsg[0] = address;
+        outMsg[1] = val;
+        outlet(0, outMsg);
         return;
     }
     if (now - entry.lastSentTime >= intervalMs) {
@@ -48,32 +57,29 @@ function anything() {
             entry.task.freepeer();
             entry.task = null;
         }
-        entry.args = args;
+        entry.arg = val;
         entry.lastSentTime = now;
-        send(address, args);
+        outMsg[0] = address;
+        outMsg[1] = val;
+        outlet(0, outMsg);
         return;
     }
     // Too soon — store latest value and schedule deferred send
-    log('throttled', address, args.join(' '));
-    entry.args = args;
+    entry.arg = val;
     if (!entry.task) {
         var delay = entry.lastSentTime + intervalMs - now;
-        entry.task = new Task(makeDeferred(address));
+        entry.task = new Task(entry.deferredFn);
         entry.task.schedule(delay);
     }
 }
-function makeDeferred(address) {
+function makeDeferred(entry) {
     return function () {
-        var entry = entries[address];
-        if (entry) {
-            entry.task = null;
-            entry.lastSentTime = new Date().getTime();
-            send(address, entry.args);
-        }
+        entry.task = null;
+        entry.lastSentTime = Date.now();
+        outMsg[0] = entry.address;
+        outMsg[1] = entry.arg;
+        outlet(0, outMsg);
     };
-}
-function send(address, args) {
-    outlet(0, [address].concat(args));
 }
 log('reloaded k4-oscThrottle');
 // NOTE: This section must appear in any .ts file that is directly used by a
