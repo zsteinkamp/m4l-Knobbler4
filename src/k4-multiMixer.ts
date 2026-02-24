@@ -77,7 +77,7 @@ const MAX_SENDS = 12
 const PAUSE_MS = 300
 const METER_FLUSH_MS = 30
 const CHUNK_MAX_BYTES = 1024
-const DEFAULT_VISIBLE_COUNT = 12
+const DEFAULT_VISIBLE_COUNT = 18
 
 // ---------------------------------------------------------------------------
 // State
