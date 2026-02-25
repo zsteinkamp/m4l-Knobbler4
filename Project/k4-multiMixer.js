@@ -673,6 +673,8 @@ function mixerView() {
 }
 function mixerMeters(val) {
     var enabled = !!parseInt(val.toString());
+    if (enabled === metersEnabled)
+        return;
     metersEnabled = enabled;
     (0, utils_1.saveSetting)('metersEnabled', metersEnabled ? 1 : 0);
     sendMetersState();
@@ -696,6 +698,9 @@ function mixerMeters(val) {
 }
 function sendMetersState() {
     (0, utils_1.osc)('/mixerMeters', metersEnabled ? 1 : 0);
+    var chk = patcher.getnamed('chkMeters');
+    if (chk)
+        chk.message('int', metersEnabled ? 1 : 0);
 }
 function page() {
     var pageName = arguments[0].toString();

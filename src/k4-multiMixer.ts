@@ -814,6 +814,7 @@ function mixerView() {
 
 function mixerMeters(val: number) {
   const enabled = !!parseInt(val.toString())
+  if (enabled === metersEnabled) return
   metersEnabled = enabled
   saveSetting('metersEnabled', metersEnabled ? 1 : 0)
   sendMetersState()
@@ -837,6 +838,8 @@ function mixerMeters(val: number) {
 
 function sendMetersState() {
   osc('/mixerMeters', metersEnabled ? 1 : 0)
+  var chk = patcher.getnamed('chkMeters')
+  if (chk) chk.message('int', metersEnabled ? 1 : 0)
 }
 
 function page() {
