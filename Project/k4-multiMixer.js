@@ -218,7 +218,7 @@ function onReturnTracksChange(args) {
 // Meter Observers
 // ---------------------------------------------------------------------------
 function createMeterObservers(strip, trackPath) {
-    var baseOffset = (strip.stripIndex - leftIndex) * 3;
+    var baseOffset = strip.stripIndex * 3;
     strip.meterLeftApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_left') {
             var v = (0, utils_1.meterVal)(args[1]);
@@ -264,7 +264,7 @@ function teardownMeterObservers(strip) {
         strip.meterLevelApi = null;
     }
     // Zero out this strip's slots in the buffer
-    var baseOffset = (strip.stripIndex - leftIndex) * 3;
+    var baseOffset = strip.stripIndex * 3;
     if (baseOffset + 2 < meterBuffer.length) {
         meterBuffer[baseOffset] = 0;
         meterBuffer[baseOffset + 1] = 0;
@@ -553,8 +553,8 @@ function applyWindow() {
             newSlots.push(trackList[trackIdx].id);
         }
     }
-    // Resize meter buffer if visible count changed
-    var requiredLen = visibleCount * 3;
+    // Resize meter buffer if track count changed
+    var requiredLen = trackList.length * 3;
     if (meterBuffer.length !== requiredLen) {
         var wasRunning = !!meterFlushTask;
         if (wasRunning)
@@ -576,20 +576,27 @@ function applyWindow() {
         newSet[newSlots[i]] = true;
     }
     // Remove: in old but not in new
+    var removed = 0;
     for (var i = 0; i < windowSlots.length; i++) {
         var tid = windowSlots[i];
         if (!newSet[tid] && observersByTrackId[tid]) {
             teardownStripObservers(observersByTrackId[tid]);
             delete observersByTrackId[tid];
+            removed++;
         }
     }
     // Add: in new but not in old
+    var added = 0;
     for (var i = 0; i < newSlots.length; i++) {
         var tid = newSlots[i];
         if (!oldSet[tid]) {
             observersByTrackId[tid] = createStripObservers(tid, leftIndex + i);
+            added++;
         }
     }
+    //if (removed > 0 || added > 0) {
+    //  log('applyWindow: removed=' + removed + ' added=' + added + ' kept=' + (newSlots.length - added) + ' total=' + newSlots.length)
+    //}
     // Update strip indices for all observers (positions may have shifted)
     for (var i = 0; i < newSlots.length; i++) {
         var tid = newSlots[i];
@@ -611,6 +618,7 @@ function applyWindow() {
 // ---------------------------------------------------------------------------
 function mixerRefresh() {
     teardownAll();
+    (0, utils_1.osc)('/sendMixerView', 1);
 }
 // ---------------------------------------------------------------------------
 // Incoming: mixerView

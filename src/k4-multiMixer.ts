@@ -304,7 +304,7 @@ function onReturnTracksChange(args: any[]) {
 // ---------------------------------------------------------------------------
 
 function createMeterObservers(strip: StripObservers, trackPath: string) {
-  const baseOffset = (strip.stripIndex - leftIndex) * 3
+  const baseOffset = strip.stripIndex * 3
 
   strip.meterLeftApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'output_meter_left') {
@@ -354,7 +354,7 @@ function teardownMeterObservers(strip: StripObservers) {
     strip.meterLevelApi = null
   }
   // Zero out this strip's slots in the buffer
-  const baseOffset = (strip.stripIndex - leftIndex) * 3
+  const baseOffset = strip.stripIndex * 3
   if (baseOffset + 2 < meterBuffer.length) {
     meterBuffer[baseOffset] = 0
     meterBuffer[baseOffset + 1] = 0
@@ -673,8 +673,8 @@ function applyWindow() {
     }
   }
 
-  // Resize meter buffer if visible count changed
-  const requiredLen = visibleCount * 3
+  // Resize meter buffer if track count changed
+  const requiredLen = trackList.length * 3
   if (meterBuffer.length !== requiredLen) {
     const wasRunning = !!meterFlushTask
     if (wasRunning) stopMeterFlush()
@@ -695,21 +695,29 @@ function applyWindow() {
   }
 
   // Remove: in old but not in new
+  let removed = 0
   for (let i = 0; i < windowSlots.length; i++) {
     const tid = windowSlots[i]
     if (!newSet[tid] && observersByTrackId[tid]) {
       teardownStripObservers(observersByTrackId[tid])
       delete observersByTrackId[tid]
+      removed++
     }
   }
 
   // Add: in new but not in old
+  let added = 0
   for (let i = 0; i < newSlots.length; i++) {
     const tid = newSlots[i]
     if (!oldSet[tid]) {
       observersByTrackId[tid] = createStripObservers(tid, leftIndex + i)
+      added++
     }
   }
+
+  //if (removed > 0 || added > 0) {
+  //  log('applyWindow: removed=' + removed + ' added=' + added + ' kept=' + (newSlots.length - added) + ' total=' + newSlots.length)
+  //}
 
   // Update strip indices for all observers (positions may have shifted)
   for (let i = 0; i < newSlots.length; i++) {
@@ -736,6 +744,7 @@ function applyWindow() {
 
 function mixerRefresh() {
   teardownAll()
+  osc('/sendMixerView', 1)
 }
 
 // ---------------------------------------------------------------------------
