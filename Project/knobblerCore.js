@@ -35,6 +35,8 @@ for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
     ADDR_QUANT[_i] = '/quant' + _i;
     ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i;
 }
+// Module-level scratchpad for one-off lookups (reuse via .path is fastest)
+var scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
 // slot arrays
 var paramObj = [];
 var paramNameObj = [];
@@ -131,8 +133,8 @@ function clearPath(slot) {
 }
 exports.clearPath = clearPath;
 function bkMap(slot, id) {
-    var api = new LiveAPI(consts_1.noFn, 'id ' + id);
-    setPath(slot, api.unquotedpath);
+    scratchApi.id = id;
+    setPath(slot, scratchApi.unquotedpath);
 }
 exports.bkMap = bkMap;
 function initAll() {
@@ -217,8 +219,8 @@ function gotoTrackFor(slot) {
     if (!trackObj[slot]) {
         return;
     }
-    var viewObj = new LiveAPI(function () { }, 'live_set view');
-    viewObj.set('selected_track', ['id', trackObj[slot].id]);
+    scratchApi.path = 'live_set view';
+    scratchApi.set('selected_track', ['id', trackObj[slot].id]);
 }
 exports.gotoTrackFor = gotoTrackFor;
 function setDefault(slot) {
@@ -544,15 +546,15 @@ function val(slot, val) {
                 (0, utils_1.debouncedTask)('allowUpdateFromOsc', slot, allowUpdateFromOscTask, 500);
             }
             //log("PRE-SELOBJ\n");
-            var selObj = new LiveAPI(function () { }, 'live_set view selected_parameter');
-            if (!selObj.unquotedpath) {
+            scratchApi.path = 'live_set view selected_parameter';
+            if (!scratchApi.unquotedpath) {
                 post('No Live param is selected.\n');
             }
             else {
-                //log('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
+                //log('SELOBJ', scratchApi.unquotedpath, 'SELOBJINFO', scratchApi.info)
                 // Only map things that have a 'value' property
-                if (selObj.info.match(/property value/)) {
-                    setPath(slot, selObj.unquotedpath);
+                if (scratchApi.info.match(/property value/)) {
+                    setPath(slot, scratchApi.unquotedpath);
                 }
             }
         }

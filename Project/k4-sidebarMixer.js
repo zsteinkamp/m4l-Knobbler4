@@ -230,17 +230,17 @@ function handleRecordInternal(intent) {
     if (intent === Intent.Enable) {
         (0, toggleInput_1.enableTrackInput)(state.trackObj);
         state.trackObj.set('arm', 1);
-        var api = new LiveAPI(consts_1.noFn, 'live_set');
-        if (parseInt(api.get('exclusive_arm')) === 1) {
-            var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
+        state.trackLookupObj.path = 'live_set';
+        if (parseInt(state.trackLookupObj.get('exclusive_arm')) === 1) {
+            var tracks = (0, utils_1.cleanArr)(state.trackLookupObj.get('tracks'));
             for (var _i = 0, tracks_1 = tracks; _i < tracks_1.length; _i++) {
                 var trackId = tracks_1[_i];
                 if (trackId === parseInt(state.trackObj.id.toString())) {
                     continue;
                 }
-                api.id = trackId;
-                if (parseInt(api.get('can_be_armed'))) {
-                    api.set('arm', 0);
+                state.trackLookupObj.id = trackId;
+                if (parseInt(state.trackLookupObj.get('can_be_armed'))) {
+                    state.trackLookupObj.set('arm', 0);
                 }
             }
         }
@@ -266,17 +266,17 @@ function toggleSolo() {
     var currState = parseInt(state.trackObj.get('solo'));
     var newState = currState ? 0 : 1;
     if (newState) {
-        var api = new LiveAPI(consts_1.noFn, 'live_set');
-        if (parseInt(api.get('exclusive_solo')) === 1) {
-            var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
-            var returns = (0, utils_1.cleanArr)(api.get('return_tracks'));
+        state.trackLookupObj.path = 'live_set';
+        if (parseInt(state.trackLookupObj.get('exclusive_solo')) === 1) {
+            var tracks = (0, utils_1.cleanArr)(state.trackLookupObj.get('tracks'));
+            var returns = (0, utils_1.cleanArr)(state.trackLookupObj.get('return_tracks'));
             for (var _i = 0, _a = __spreadArray(__spreadArray([], tracks, true), returns, true); _i < _a.length; _i++) {
                 var trackId = _a[_i];
                 if (trackId === parseInt(state.trackObj.id.toString())) {
                     continue;
                 }
-                api.id = trackId;
-                api.set('solo', 0);
+                state.trackLookupObj.id = trackId;
+                state.trackLookupObj.set('solo', 0);
             }
         }
     }

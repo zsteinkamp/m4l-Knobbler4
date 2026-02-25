@@ -40,6 +40,9 @@ for (let _i = 1; _i <= MAX_SLOTS; _i++) {
   ADDR_QUANT[_i] = '/quant' + _i
   ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i
 }
+// Module-level scratchpad for one-off lookups (reuse via .path is fastest)
+const scratchApi = new LiveAPI(noFn, 'live_set')
+
 // slot arrays
 const paramObj: LiveAPI[] = []
 const paramNameObj: LiveAPI[] = []
@@ -145,8 +148,8 @@ function clearPath(slot: number) {
 }
 
 function bkMap(slot: number, id: number) {
-  const api = new LiveAPI(noFn, 'id ' + id)
-  setPath(slot, api.unquotedpath)
+  scratchApi.id = id
+  setPath(slot, scratchApi.unquotedpath)
 }
 
 function initAll() {
@@ -234,8 +237,8 @@ function gotoTrackFor(slot: number) {
   if (!trackObj[slot]) {
     return
   }
-  const viewObj = new LiveAPI(() => {}, 'live_set view')
-  viewObj.set('selected_track', ['id', trackObj[slot].id])
+  scratchApi.path = 'live_set view'
+  scratchApi.set('selected_track', ['id', trackObj[slot].id])
 }
 
 function setDefault(slot: number) {
@@ -637,14 +640,14 @@ function val(slot: number, val: number) {
       }
 
       //log("PRE-SELOBJ\n");
-      const selObj = new LiveAPI(() => {}, 'live_set view selected_parameter')
-      if (!selObj.unquotedpath) {
+      scratchApi.path = 'live_set view selected_parameter'
+      if (!scratchApi.unquotedpath) {
         post('No Live param is selected.\n')
       } else {
-        //log('SELOBJ', selObj.unquotedpath, 'SELOBJINFO', selObj.info)
+        //log('SELOBJ', scratchApi.unquotedpath, 'SELOBJINFO', scratchApi.info)
         // Only map things that have a 'value' property
-        if (selObj.info.match(/property value/)) {
-          setPath(slot, selObj.unquotedpath)
+        if (scratchApi.info.match(/property value/)) {
+          setPath(slot, scratchApi.unquotedpath)
         }
       }
     }

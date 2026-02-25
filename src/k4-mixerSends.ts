@@ -138,18 +138,16 @@ function handleRecordInternal(intent: Intent) {
   if (intent === Intent.Enable) {
     enableTrackInput(state.trackObj)
     state.trackObj.set('arm', 1)
-    // TODO handle exclusive
-    const api = new LiveAPI(noFn, 'live_set')
-    if (parseInt(api.get('exclusive_arm')) === 1) {
-      // disarm any other track
-      const tracks = cleanArr(api.get('tracks'))
+    state.trackLookupObj.path = 'live_set'
+    if (parseInt(state.trackLookupObj.get('exclusive_arm')) === 1) {
+      const tracks = cleanArr(state.trackLookupObj.get('tracks'))
       for (const trackId of tracks) {
         if (trackId === parseInt(state.trackObj.id.toString())) {
           continue
         }
-        api.id = trackId
-        if (parseInt(api.get('can_be_armed'))) {
-          api.set('arm', 0)
+        state.trackLookupObj.id = trackId
+        if (parseInt(state.trackLookupObj.get('can_be_armed'))) {
+          state.trackLookupObj.set('arm', 0)
         }
       }
     }
@@ -174,18 +172,16 @@ function toggleSolo() {
   const newState = currState ? 0 : 1
 
   if (newState) {
-    // enabling solo, look at exclusive
-    const api = new LiveAPI(noFn, 'live_set')
-    if (parseInt(api.get('exclusive_solo')) === 1) {
-      // un-solo any other track
-      const tracks = cleanArr(api.get('tracks'))
-      const returns = cleanArr(api.get('return_tracks'))
+    state.trackLookupObj.path = 'live_set'
+    if (parseInt(state.trackLookupObj.get('exclusive_solo')) === 1) {
+      const tracks = cleanArr(state.trackLookupObj.get('tracks'))
+      const returns = cleanArr(state.trackLookupObj.get('return_tracks'))
       for (const trackId of [...tracks, ...returns]) {
         if (trackId === parseInt(state.trackObj.id.toString())) {
           continue
         }
-        api.id = trackId
-        api.set('solo', 0)
+        state.trackLookupObj.id = trackId
+        state.trackLookupObj.set('solo', 0)
       }
     }
   }
@@ -325,13 +321,12 @@ const onReturnsChange = (args: IdObserverArg) => {
     return
   }
   //log('ON RETURNS CHANGE ' + args)
-  const api = new LiveAPI(noFn, 'live_set')
   const returnIds = cleanArr(args)
   for (let i = 0; i < MAX_SENDS; i++) {
     let color = DEFAULT_COLOR
     if (returnIds[i]) {
-      api.id = returnIds[i]
-      color = colorToString(api.get('color').toString())
+      state.trackLookupObj.id = returnIds[i]
+      color = colorToString(state.trackLookupObj.get('color').toString())
     }
     state.returnTrackColors[i] = '#' + color
   }

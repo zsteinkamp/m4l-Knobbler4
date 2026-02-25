@@ -79,6 +79,9 @@ type StripObservers = {
 // Constants
 // ---------------------------------------------------------------------------
 
+// Module-level scratchpad for one-off lookups (reuse via .path is fastest)
+const scratchApi = new LiveAPI(noFn, 'live_set')
+
 const CHUNK_MAX_BYTES = 1024
 const DEFAULT_VISIBLE_COUNT = 18
 const MAX_STRIP_IDX = 128
@@ -198,47 +201,47 @@ function stripPause(strip: StripObservers, key: string) {
 // ---------------------------------------------------------------------------
 
 function buildTrackList(): TrackInfo[] {
-  const api = new LiveAPI(noFn, 'live_set')
   const ret: TrackInfo[] = []
 
   // visible tracks only (respects group folding)
-  const trackIds = cleanArr(api.get('visible_tracks'))
+  scratchApi.path = 'live_set'
+  const trackIds = cleanArr(scratchApi.get('visible_tracks'))
   for (const id of trackIds) {
-    api.id = id
-    const isFoldable = parseInt(api.get('is_foldable').toString())
-    const parentId = cleanArr(api.get('group_track'))[0] || 0
+    scratchApi.id = id
+    const isFoldable = parseInt(scratchApi.get('is_foldable').toString())
+    const parentId = cleanArr(scratchApi.get('group_track'))[0] || 0
     ret.push({
       id: id,
       type: isFoldable ? TYPE_GROUP : TYPE_TRACK,
-      name: truncate(api.get('name').toString(), MAX_NAME_LEN),
-      color: colorToString(api.get('color').toString()),
+      name: truncate(scratchApi.get('name').toString(), MAX_NAME_LEN),
+      color: colorToString(scratchApi.get('color').toString()),
       parentId: parentId,
     })
   }
 
   // return tracks (always visible)
-  api.path = 'live_set'
-  const returnIds = cleanArr(api.get('return_tracks'))
+  scratchApi.path = 'live_set'
+  const returnIds = cleanArr(scratchApi.get('return_tracks'))
   for (const id of returnIds) {
-    api.id = id
+    scratchApi.id = id
     ret.push({
       id: id,
       type: TYPE_RETURN,
-      name: truncate(api.get('name').toString(), MAX_NAME_LEN),
-      color: colorToString(api.get('color').toString()),
+      name: truncate(scratchApi.get('name').toString(), MAX_NAME_LEN),
+      color: colorToString(scratchApi.get('color').toString()),
       parentId: 0,
     })
   }
 
   // master track
-  api.path = 'live_set'
-  const mainId = cleanArr(api.get('master_track'))[0]
-  api.id = mainId
+  scratchApi.path = 'live_set'
+  const mainId = cleanArr(scratchApi.get('master_track'))[0]
+  scratchApi.id = mainId
   ret.push({
     id: mainId,
     type: TYPE_MAIN,
-    name: truncate(api.get('name').toString(), MAX_NAME_LEN),
-    color: colorToString(api.get('color').toString()),
+    name: truncate(scratchApi.get('name').toString(), MAX_NAME_LEN),
+    color: colorToString(scratchApi.get('color').toString()),
     parentId: 0,
   })
 
@@ -269,13 +272,13 @@ function onVisibleTracksChange(args: any[]) {
 }
 
 function sendReturnTrackColors() {
-  const api = new LiveAPI(noFn, 'live_set')
-  const returnIds = cleanArr(api.get('return_tracks'))
+  scratchApi.path = 'live_set'
+  const returnIds = cleanArr(scratchApi.get('return_tracks'))
   const colors: string[] = []
   for (let i = 0; i < MAX_SENDS; i++) {
     if (returnIds[i]) {
-      api.id = returnIds[i]
-      colors.push('#' + colorToString(api.get('color').toString()))
+      scratchApi.id = returnIds[i]
+      colors.push('#' + colorToString(scratchApi.get('color').toString()))
     } else {
       colors.push('#' + DEFAULT_COLOR)
     }
@@ -415,8 +418,8 @@ function createStripObservers(
   }
 
   // Get the track's path so we can build full paths for children
-  const pathLookup = new LiveAPI(noFn, 'id ' + trackId)
-  const trackPath = pathLookup.unquotedpath
+  scratchApi.id = trackId
+  const trackPath = scratchApi.unquotedpath
   const mixerPath = trackPath + ' mixer_device'
   strip.isMain = trackPath.indexOf('master_track') > -1
 
@@ -511,8 +514,8 @@ function createStripObservers(
   strip.panApi.property = 'value'
 
   // Send observers
-  const tempApi = new LiveAPI(noFn, mixerPath)
-  const sendIds = cleanArr(tempApi.get('sends'))
+  scratchApi.path = mixerPath
+  const sendIds = cleanArr(scratchApi.get('sends'))
   const numSends = Math.min(sendIds.length, MAX_SENDS)
 
   for (let i = 0; i < numSends; i++) {
@@ -755,9 +758,9 @@ function setupWindow(left: number, count: number) {
   }
 
   if (firstSetup) {
-    const api = new LiveAPI(noFn, 'live_set')
+    scratchApi.path = 'live_set'
     const numSends = Math.min(
-      cleanArr(api.get('return_tracks')).length,
+      cleanArr(scratchApi.get('return_tracks')).length,
       MAX_SENDS
     )
     //log('SENDING numSends', numSends)
@@ -1003,14 +1006,14 @@ function toggleSolo(stripIdx: number) {
   const newState = curr ? 0 : 1
 
   if (newState) {
-    const api = new LiveAPI(noFn, 'live_set')
-    if (parseInt(api.get('exclusive_solo').toString()) === 1) {
-      const tracks = cleanArr(api.get('tracks'))
-      const returns = cleanArr(api.get('return_tracks'))
+    scratchApi.path = 'live_set'
+    if (parseInt(scratchApi.get('exclusive_solo').toString()) === 1) {
+      const tracks = cleanArr(scratchApi.get('tracks'))
+      const returns = cleanArr(scratchApi.get('return_tracks'))
       for (const tid of tracks.concat(returns)) {
         if (tid === strip.trackId) continue
-        api.id = tid
-        api.set('solo', 0)
+        scratchApi.id = tid
+        scratchApi.set('solo', 0)
       }
     }
   }
@@ -1024,14 +1027,14 @@ function enableRecord(stripIdx: number) {
   enableTrackInput(strip.trackApi)
   strip.trackApi.set('arm', 1)
 
-  const api = new LiveAPI(noFn, 'live_set')
-  if (parseInt(api.get('exclusive_arm').toString()) === 1) {
-    const tracks = cleanArr(api.get('tracks'))
+  scratchApi.path = 'live_set'
+  if (parseInt(scratchApi.get('exclusive_arm').toString()) === 1) {
+    const tracks = cleanArr(scratchApi.get('tracks'))
     for (const tid of tracks) {
       if (tid === strip.trackId) continue
-      api.id = tid
-      if (parseInt(api.get('can_be_armed').toString())) {
-        api.set('arm', 0)
+      scratchApi.id = tid
+      if (parseInt(scratchApi.get('can_be_armed').toString())) {
+        scratchApi.set('arm', 0)
       }
     }
   }

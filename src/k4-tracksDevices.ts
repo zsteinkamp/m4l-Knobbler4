@@ -257,7 +257,8 @@ function updateDeviceNav() {
   outlet(OUTLET_OSC, ['/nav/currDeviceId', state.currDeviceId])
 
   const ret: MaxObjRecord[] = []
-  const utilObj = new LiveAPI(noFn, 'live_set')
+  const utilObj = state.api
+  utilObj.path = 'live_set'
   const currDeviceObj = new LiveAPI(noFn, 'id ' + state.currDeviceId)
   const currIsSupported = isDeviceSupported(currDeviceObj)
 
@@ -329,7 +330,6 @@ function updateDeviceNav() {
   // now add hierarchy, up to when the parent is a track
   let indent = 0
   let watchdog = 0
-  const grandparentObj = new LiveAPI(noFn, 'live_set')
 
   while (parentObj.type !== 'Track' && watchdog < 20) {
     const isChain = parentObj.type === 'Chain' || parentObj.type === 'DrumChain'
@@ -338,8 +338,8 @@ function updateDeviceNav() {
       color = colorToString(parentObj.get('color').toString())
     } else {
       const grandparentId = cleanArr(parentObj.get('canonical_parent'))[0]
-      grandparentObj.id = grandparentId
-      color = colorToString(grandparentObj.get('color').toString())
+      utilObj.id = grandparentId
+      color = colorToString(utilObj.get('color').toString())
     }
 
     const parentObjParentId = cleanArr(parentObj.get('canonical_parent'))[0]
@@ -422,24 +422,24 @@ function onCurrTrackChange(val: IdObserverArg) {
 function updateTrackNav() {
   const currTrackIdStr = state.currTrackId.toString()
   // Rebuild trees on track nav
-  const utilObj = new LiveAPI(noFn, 'live_set')
+  state.api.path = 'live_set'
   state.track.tree = makeTrackTree(
     'track',
     TYPE_TRACK,
-    cleanArr(utilObj.get('tracks'))
+    cleanArr(state.api.get('tracks'))
   )
 
   state.return.tree = makeTrackTree(
     'return',
     TYPE_RETURN,
-    cleanArr(utilObj.get('return_tracks'))
+    cleanArr(state.api.get('return_tracks'))
   )
 
-  utilObj.path = 'live_set'
+  state.api.path = 'live_set'
   state.main.tree = makeTrackTree(
     'main',
     TYPE_MAIN,
-    cleanArr(utilObj.get('master_track'))
+    cleanArr(state.api.get('master_track'))
   )
 
   const trackTree = state.track.tree
@@ -551,16 +551,16 @@ function updateTrackNav() {
   outlet(OUTLET_OSC, ['/nav/currTrackId', state.currTrackId])
 
   // ensure a device is selected if one exists
-  utilObj.path = 'live_set view selected_track view selected_device'
-  //log('HERE ' + utilObj.id)
-  if (+utilObj.id === 0) {
-    utilObj.path = 'live_set view selected_track'
-    //log('TACKNAME ' + utilObj.get('name'))
-    const devices = cleanArr(utilObj.get('devices'))
+  state.api.path = 'live_set view selected_track view selected_device'
+  //log('HERE ' + state.api.id)
+  if (+state.api.id === 0) {
+    state.api.path = 'live_set view selected_track'
+    //log('TACKNAME ' + state.api.get('name'))
+    const devices = cleanArr(state.api.get('devices'))
     //log('DEVICES ' + devices)
     if (devices.length > 0) {
-      utilObj.path = 'live_set view'
-      utilObj.call('select_device', 'id ' + devices[0])
+      state.api.path = 'live_set view'
+      state.api.call('select_device', 'id ' + devices[0])
     }
   }
 }

@@ -210,7 +210,8 @@ function updateDeviceNav() {
     //log('NEW CURR DEVICE ID=' + state.currDeviceId)
     outlet(consts_1.OUTLET_OSC, ['/nav/currDeviceId', state.currDeviceId]);
     var ret = [];
-    var utilObj = new LiveAPI(consts_1.noFn, 'live_set');
+    var utilObj = state.api;
+    utilObj.path = 'live_set';
     var currDeviceObj = new LiveAPI(consts_1.noFn, 'id ' + state.currDeviceId);
     var currIsSupported = (0, utils_1.isDeviceSupported)(currDeviceObj);
     var parentObj = new LiveAPI(consts_1.noFn, currIsSupported
@@ -276,7 +277,6 @@ function updateDeviceNav() {
     // now add hierarchy, up to when the parent is a track
     var indent = 0;
     var watchdog = 0;
-    var grandparentObj = new LiveAPI(consts_1.noFn, 'live_set');
     while (parentObj.type !== 'Track' && watchdog < 20) {
         var isChain = parentObj.type === 'Chain' || parentObj.type === 'DrumChain';
         var color = null;
@@ -285,8 +285,8 @@ function updateDeviceNav() {
         }
         else {
             var grandparentId = (0, utils_1.cleanArr)(parentObj.get('canonical_parent'))[0];
-            grandparentObj.id = grandparentId;
-            color = (0, utils_1.colorToString)(grandparentObj.get('color').toString());
+            utilObj.id = grandparentId;
+            color = (0, utils_1.colorToString)(utilObj.get('color').toString());
         }
         var parentObjParentId = (0, utils_1.cleanArr)(parentObj.get('canonical_parent'))[0];
         ret.unshift([
@@ -358,11 +358,11 @@ function onCurrTrackChange(val) {
 function updateTrackNav() {
     var currTrackIdStr = state.currTrackId.toString();
     // Rebuild trees on track nav
-    var utilObj = new LiveAPI(consts_1.noFn, 'live_set');
-    state.track.tree = makeTrackTree('track', consts_1.TYPE_TRACK, (0, utils_1.cleanArr)(utilObj.get('tracks')));
-    state.return.tree = makeTrackTree('return', consts_1.TYPE_RETURN, (0, utils_1.cleanArr)(utilObj.get('return_tracks')));
-    utilObj.path = 'live_set';
-    state.main.tree = makeTrackTree('main', consts_1.TYPE_MAIN, (0, utils_1.cleanArr)(utilObj.get('master_track')));
+    state.api.path = 'live_set';
+    state.track.tree = makeTrackTree('track', consts_1.TYPE_TRACK, (0, utils_1.cleanArr)(state.api.get('tracks')));
+    state.return.tree = makeTrackTree('return', consts_1.TYPE_RETURN, (0, utils_1.cleanArr)(state.api.get('return_tracks')));
+    state.api.path = 'live_set';
+    state.main.tree = makeTrackTree('main', consts_1.TYPE_MAIN, (0, utils_1.cleanArr)(state.api.get('master_track')));
     var trackTree = state.track.tree;
     var returnTree = state.return.tree;
     var mainTree = state.main.tree;
@@ -477,16 +477,16 @@ function updateTrackNav() {
     //log('NEW CURR TRACK ID =' + state.currTrackId)
     outlet(consts_1.OUTLET_OSC, ['/nav/currTrackId', state.currTrackId]);
     // ensure a device is selected if one exists
-    utilObj.path = 'live_set view selected_track view selected_device';
-    //log('HERE ' + utilObj.id)
-    if (+utilObj.id === 0) {
-        utilObj.path = 'live_set view selected_track';
-        //log('TACKNAME ' + utilObj.get('name'))
-        var devices = (0, utils_1.cleanArr)(utilObj.get('devices'));
+    state.api.path = 'live_set view selected_track view selected_device';
+    //log('HERE ' + state.api.id)
+    if (+state.api.id === 0) {
+        state.api.path = 'live_set view selected_track';
+        //log('TACKNAME ' + state.api.get('name'))
+        var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
         //log('DEVICES ' + devices)
         if (devices.length > 0) {
-            utilObj.path = 'live_set view';
-            utilObj.call('select_device', 'id ' + devices[0]);
+            state.api.path = 'live_set view';
+            state.api.call('select_device', 'id ' + devices[0]);
         }
     }
 }
