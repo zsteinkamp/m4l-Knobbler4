@@ -548,9 +548,9 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_MULTI_MIXER,
-    prefix: '/mixerMeters',
+    prefix: '/meters',
     handler: stdVal,
-    msg: 'mixerMeters',
+    msg: 'meters',
   },
   {
     outlet: OUTLET_MULTI_MIXER,

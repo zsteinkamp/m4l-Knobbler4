@@ -671,10 +671,11 @@ function mixerView() {
     });
     mixerViewTask.schedule(500);
 }
-function mixerMeters(val) {
+function meters(val) {
     var enabled = !!parseInt(val.toString());
     metersEnabled = enabled;
-    outlet(consts_1.OUTLET_OSC, ['/mixerMeters', metersEnabled ? 1 : 0]);
+    (0, utils_1.saveSetting)('metersEnabled', metersEnabled ? 1 : 0);
+    sendMetersState();
     if (metersEnabled) {
         for (var trackIdStr in observersByTrackId) {
             var strip = observersByTrackId[trackIdStr];
@@ -693,6 +694,9 @@ function mixerMeters(val) {
         }
     }
 }
+function sendMetersState() {
+    (0, utils_1.osc)('/meters', metersEnabled ? 1 : 0);
+}
 function page() {
     var pageName = arguments[0].toString();
     var wasMixerPage = onMixerPage;
@@ -706,6 +710,8 @@ function page() {
     }
 }
 function init() {
+    metersEnabled = !!(0, utils_1.loadSetting)('metersEnabled');
+    sendMetersState();
     setupWindow(0, DEFAULT_VISIBLE_COUNT);
 }
 // ---------------------------------------------------------------------------

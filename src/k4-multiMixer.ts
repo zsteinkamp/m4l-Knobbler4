@@ -2,6 +2,7 @@ import {
   cleanArr,
   colorToString,
   loadSetting,
+  saveSetting,
   logFactory,
   meterVal,
   osc,
@@ -810,10 +811,11 @@ function mixerView() {
   mixerViewTask.schedule(500)
 }
 
-function mixerMeters(val: number) {
+function meters(val: number) {
   const enabled = !!parseInt(val.toString())
   metersEnabled = enabled
-  outlet(OUTLET_OSC, ['/mixerMeters', metersEnabled ? 1 : 0])
+  saveSetting('metersEnabled', metersEnabled ? 1 : 0)
+  sendMetersState()
 
   if (metersEnabled) {
     for (const trackIdStr in observersByTrackId) {
@@ -832,6 +834,10 @@ function mixerMeters(val: number) {
   }
 }
 
+function sendMetersState() {
+  osc('/meters', metersEnabled ? 1 : 0)
+}
+
 function page() {
   const pageName = arguments[0].toString()
   const wasMixerPage = onMixerPage
@@ -845,6 +851,8 @@ function page() {
 }
 
 function init() {
+  metersEnabled = !!loadSetting('metersEnabled')
+  sendMetersState()
   setupWindow(0, DEFAULT_VISIBLE_COUNT)
 }
 
