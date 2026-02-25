@@ -1,4 +1,4 @@
-import { cleanArr, logFactory, meterVal, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
+import { cleanArr, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
 import config from './config'
 import {
   noFn,
@@ -115,7 +115,7 @@ function startMeterFlush() {
   state.meterFlushTask = new Task(function () {
     if (state.meterDirty) {
       state.meterDirty = false
-      outlet(OUTLET_OSC, ['/mixer/meters', JSON.stringify(state.meterBuffer)])
+      outlet(OUTLET_OSC, ['/mixer/meters', numArrToJson(state.meterBuffer)])
     }
     state.meterFlushTask.schedule(METER_FLUSH_MS)
   }) as MaxTask

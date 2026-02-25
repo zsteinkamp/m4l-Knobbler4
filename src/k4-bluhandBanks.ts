@@ -383,12 +383,11 @@ function onVariationChange() {
   }
   //log('VARIATIONSCHANGE3')
   // send variation stuff
+  const varCount = +api.get('variation_count')
+  const varSelected = +api.get('selected_variation_index')
   outlet(OUTLET_OSC, [
     '/blu/variations',
-    JSON.stringify({
-      count: +api.get('variation_count'),
-      selected: +api.get('selected_variation_index'),
-    }),
+    '{"count":' + varCount + ',"selected":' + varSelected + '}',
   ])
 }
 

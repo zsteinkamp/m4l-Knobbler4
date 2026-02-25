@@ -91,21 +91,21 @@ function sendChunkedData(prefix, items) {
     var chunked = clientHasCapability('cNav');
     if (chunked) {
         outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
-        var chunk = [];
+        var chunkParts = [];
         var chunkSize = 2;
         for (var i = 0; i < items.length; i++) {
             var itemJson = JSON.stringify(items[i]);
-            var added = (chunk.length > 0 ? 1 : 0) + itemJson.length;
-            if (chunk.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)]);
-                chunk = [];
+            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
+            if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
+                chunkParts = [];
                 chunkSize = 2;
             }
-            chunk.push(items[i]);
+            chunkParts.push(itemJson);
             chunkSize += added;
         }
-        if (chunk.length > 0) {
-            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)]);
+        if (chunkParts.length > 0) {
+            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
         }
         outlet(consts_1.OUTLET_OSC, [prefix + '/end']);
     }
@@ -278,7 +278,7 @@ function flushMeters() {
     if (!meterDirty)
         return;
     meterDirty = false;
-    outlet(consts_1.OUTLET_OSC, ['/mixer/meters', JSON.stringify(meterBuffer)]);
+    outlet(consts_1.OUTLET_OSC, ['/mixer/meters', (0, utils_1.numArrToJson)(meterBuffer)]);
 }
 function startMeterFlush() {
     if (meterFlushTask)
@@ -671,7 +671,7 @@ function mixerView() {
     });
     mixerViewTask.schedule(500);
 }
-function meters(val) {
+function mixerMeters(val) {
     var enabled = !!parseInt(val.toString());
     metersEnabled = enabled;
     (0, utils_1.saveSetting)('metersEnabled', metersEnabled ? 1 : 0);
@@ -695,7 +695,7 @@ function meters(val) {
     }
 }
 function sendMetersState() {
-    (0, utils_1.osc)('/meters', metersEnabled ? 1 : 0);
+    (0, utils_1.osc)('/mixerMeters', metersEnabled ? 1 : 0);
 }
 function page() {
     var pageName = arguments[0].toString();

@@ -2,6 +2,7 @@ import {
   cleanArr,
   colorToString,
   loadSetting,
+  numArrToJson,
   saveSetting,
   logFactory,
   meterVal,
@@ -167,21 +168,21 @@ function sendChunkedData(prefix: string, items: any[]) {
   const chunked = clientHasCapability('cNav')
   if (chunked) {
     outlet(OUTLET_OSC, [prefix + '/start', items.length])
-    let chunk: any[] = []
+    let chunkParts: string[] = []
     let chunkSize = 2
     for (let i = 0; i < items.length; i++) {
       const itemJson = JSON.stringify(items[i])
-      const added = (chunk.length > 0 ? 1 : 0) + itemJson.length
-      if (chunk.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-        outlet(OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)])
-        chunk = []
+      const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length
+      if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+        outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
+        chunkParts = []
         chunkSize = 2
       }
-      chunk.push(items[i])
+      chunkParts.push(itemJson)
       chunkSize += added
     }
-    if (chunk.length > 0) {
-      outlet(OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)])
+    if (chunkParts.length > 0) {
+      outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
     }
     outlet(OUTLET_OSC, [prefix + '/end'])
   }
@@ -370,7 +371,7 @@ function teardownMeterObservers(strip: StripObservers) {
 function flushMeters() {
   if (!meterDirty) return
   meterDirty = false
-  outlet(OUTLET_OSC, ['/mixer/meters', JSON.stringify(meterBuffer)])
+  outlet(OUTLET_OSC, ['/mixer/meters', numArrToJson(meterBuffer)])
 }
 
 function startMeterFlush() {
@@ -811,7 +812,7 @@ function mixerView() {
   mixerViewTask.schedule(500)
 }
 
-function meters(val: number) {
+function mixerMeters(val: number) {
   const enabled = !!parseInt(val.toString())
   metersEnabled = enabled
   saveSetting('metersEnabled', metersEnabled ? 1 : 0)
@@ -835,7 +836,7 @@ function meters(val: number) {
 }
 
 function sendMetersState() {
-  osc('/meters', metersEnabled ? 1 : 0)
+  osc('/mixerMeters', metersEnabled ? 1 : 0)
 }
 
 function page() {

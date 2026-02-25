@@ -531,9 +531,9 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_MULTI_MIXER,
-        prefix: '/meters',
+        prefix: '/mixerMeters',
         handler: stdVal,
-        msg: 'meters',
+        msg: 'mixerMeters',
     },
     {
         outlet: OUTLET_MULTI_MIXER,

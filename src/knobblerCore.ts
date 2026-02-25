@@ -5,6 +5,7 @@ import {
   isValidPath,
   loadSetting,
   logFactory,
+  numArrToJson,
   osc,
   saveSetting,
 } from './utils'
@@ -90,7 +91,7 @@ function loadXYPairs() {
 
 function sendXYPairs() {
   //log('SEND XY PAIRS', JSON.stringify(xyPairs))
-  osc('/xyPairs', JSON.stringify(xyPairs))
+  osc('/xyPairs', numArrToJson(xyPairs))
 }
 
 function xyJoin(leftIdx: number) {

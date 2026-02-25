@@ -19,21 +19,21 @@ function sendNavData(prefix, items) {
     if (chunked) {
         // chunked protocol: start, chunk(s), end
         outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
-        var chunk = [];
+        var chunkParts = [];
         var chunkSize = 2; // for the surrounding []
         for (var i = 0; i < items.length; i++) {
             var itemJson = JSON.stringify(items[i]);
-            var added = (chunk.length > 0 ? 1 : 0) + itemJson.length; // comma + item
-            if (chunk.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)]);
-                chunk = [];
+            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length; // comma + item
+            if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
+                chunkParts = [];
                 chunkSize = 2;
             }
-            chunk.push(items[i]);
+            chunkParts.push(itemJson);
             chunkSize += added;
         }
-        if (chunk.length > 0) {
-            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)]);
+        if (chunkParts.length > 0) {
+            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
         }
         outlet(consts_1.OUTLET_OSC, [prefix + '/end']);
     }

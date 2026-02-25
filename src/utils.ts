@@ -113,6 +113,10 @@ for (let _i = 0; _i < MAX_SENDS; _i++) {
   SEND_ADDR[_i] = '/mixer/send' + (_i + 1)
 }
 
+export function numArrToJson(arr: number[]): string {
+  return '[' + arr.join(',') + ']'
+}
+
 export function cleanArr(arr: IdObserverArg) {
   if (!arr) {
     return []

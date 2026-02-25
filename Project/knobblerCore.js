@@ -79,7 +79,7 @@ function loadXYPairs() {
 }
 function sendXYPairs() {
     //log('SEND XY PAIRS', JSON.stringify(xyPairs))
-    (0, utils_1.osc)('/xyPairs', JSON.stringify(xyPairs));
+    (0, utils_1.osc)('/xyPairs', (0, utils_1.numArrToJson)(xyPairs));
 }
 function xyJoin(leftIdx) {
     //log('xyJOIN', leftIdx)

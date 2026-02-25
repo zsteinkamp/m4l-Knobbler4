@@ -46,21 +46,21 @@ function sendNavData(prefix: string, items: MaxObjRecord[]) {
     // chunked protocol: start, chunk(s), end
     outlet(OUTLET_OSC, [prefix + '/start', items.length])
 
-    let chunk: MaxObjRecord[] = []
+    let chunkParts: string[] = []
     let chunkSize = 2 // for the surrounding []
     for (let i = 0; i < items.length; i++) {
       const itemJson = JSON.stringify(items[i])
-      const added = (chunk.length > 0 ? 1 : 0) + itemJson.length // comma + item
-      if (chunk.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-        outlet(OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)])
-        chunk = []
+      const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length // comma + item
+      if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+        outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
+        chunkParts = []
         chunkSize = 2
       }
-      chunk.push(items[i])
+      chunkParts.push(itemJson)
       chunkSize += added
     }
-    if (chunk.length > 0) {
-      outlet(OUTLET_OSC, [prefix + '/chunk', JSON.stringify(chunk)])
+    if (chunkParts.length > 0) {
+      outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
     }
 
     outlet(OUTLET_OSC, [prefix + '/end'])

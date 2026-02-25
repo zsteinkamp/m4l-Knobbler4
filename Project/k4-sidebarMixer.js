@@ -106,7 +106,7 @@ function startMeterFlush() {
     state.meterFlushTask = new Task(function () {
         if (state.meterDirty) {
             state.meterDirty = false;
-            outlet(consts_1.OUTLET_OSC, ['/mixer/meters', JSON.stringify(state.meterBuffer)]);
+            outlet(consts_1.OUTLET_OSC, ['/mixer/meters', (0, utils_1.numArrToJson)(state.meterBuffer)]);
         }
         state.meterFlushTask.schedule(consts_1.METER_FLUSH_MS);
     });

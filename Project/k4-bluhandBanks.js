@@ -344,12 +344,11 @@ function onVariationChange() {
     }
     //log('VARIATIONSCHANGE3')
     // send variation stuff
+    var varCount = +api.get('variation_count');
+    var varSelected = +api.get('selected_variation_index');
     outlet(consts_1.OUTLET_OSC, [
         '/blu/variations',
-        JSON.stringify({
-            count: +api.get('variation_count'),
-            selected: +api.get('selected_variation_index'),
-        }),
+        '{"count":' + varCount + ',"selected":' + varSelected + '}',
     ]);
 }
 function sendCuePoints() {

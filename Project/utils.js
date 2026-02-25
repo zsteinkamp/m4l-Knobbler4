@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.cleanArr = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
@@ -108,6 +108,10 @@ exports.SEND_ADDR = [];
 for (var _i = 0; _i < consts_1.MAX_SENDS; _i++) {
     exports.SEND_ADDR[_i] = '/mixer/send' + (_i + 1);
 }
+function numArrToJson(arr) {
+    return '[' + arr.join(',') + ']';
+}
+exports.numArrToJson = numArrToJson;
 function cleanArr(arr) {
     if (!arr) {
         return [];
