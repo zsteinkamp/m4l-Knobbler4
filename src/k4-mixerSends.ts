@@ -1,10 +1,11 @@
-import { cleanArr, colorToString, logFactory } from './utils'
+import { cleanArr, colorToString, logFactory, osc, pauseUnpause, PauseState } from './utils'
 import config from './config'
 import {
   noFn,
   INLET_MSGS,
   OUTLET_MSGS,
   OUTLET_OSC,
+  MAX_SENDS,
   TYPE_TRACK,
   TYPE_MAIN,
   TYPE_RETURN,
@@ -27,7 +28,7 @@ setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 setoutletassist(OUTLET_MSGS, 'Output messages to other objects')
 
-type PauseTypes = 'send' | 'vol' | 'pan' | 'crossfader'
+const PAUSE_MS = 300
 
 const state = {
   trackLookupObj: null as LiveAPI,
@@ -41,23 +42,11 @@ const state = {
   crossfaderObj: null as LiveAPI,
   watchers: [] as LiveAPI[],
   pause: {
-    send: { paused: false as boolean, task: null as MaxTask },
-    vol: { paused: false as boolean, task: null as MaxTask },
-    pan: { paused: false as boolean, task: null as MaxTask },
-    crossfader: { paused: false as boolean, task: null as MaxTask },
-  } as Record<PauseTypes, { paused: boolean; task: MaxTask }>,
-}
-
-function pauseUnpause(key: PauseTypes) {
-  if (state.pause[key].paused) {
-    state.pause[key].task.cancel()
-    state.pause[key].task.freepeer()
-  }
-  state.pause[key].paused = true
-  state.pause[key].task = new Task(() => {
-    state.pause[key].paused = false
-  }) as MaxTask
-  state.pause[key].task.schedule(300)
+    send: { paused: false, task: null },
+    vol: { paused: false, task: null },
+    pan: { paused: false, task: null },
+    crossfader: { paused: false, task: null },
+  } as Record<string, PauseState>,
 }
 
 const setSendWatcherIds = (sendIds: number[]) => {
@@ -66,10 +55,10 @@ const setSendWatcherIds = (sendIds: number[]) => {
       state.watchers[i] && (state.watchers[i].id = sendIds[i])
     } else {
       state.watchers[i] && (state.watchers[i].id = 0)
-      outlet(OUTLET_OSC, ['/mixer/send' + (i + 1), 0])
+      osc(SEND_ADDR[i], 0)
     }
   }
-  outlet(OUTLET_OSC, ['/mixer/numSends', sendIds.length])
+  osc('/mixer/numSends', sendIds.length)
 }
 
 function updateSendVal(slot: number, val: number) {
@@ -79,7 +68,7 @@ function updateSendVal(slot: number, val: number) {
     //log('EARLY ' + idx + ' v=' + val)
     return
   }
-  pauseUnpause('send')
+  pauseUnpause(state.pause['send'], PAUSE_MS)
   state.watchers[idx].set('value', val)
 }
 
@@ -124,8 +113,8 @@ function sendRecordStatus(lookupObj: LiveAPI) {
     parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'))
   const trackInputStatus = getTrackInputStatus(lookupObj)
   const inputStatus = trackInputStatus && trackInputStatus.inputEnabled
-  outlet(OUTLET_OSC, ['/mixer/recordArm', armStatus ? 1 : 0])
-  outlet(OUTLET_OSC, ['/mixer/inputEnabled', inputStatus ? 1 : 0])
+  osc('/mixer/recordArm', armStatus ? 1 : 0)
+  osc('/mixer/inputEnabled', inputStatus ? 1 : 0)
 }
 
 enum Intent {
@@ -210,7 +199,7 @@ function handleCrossfader(val: string) {
   if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
     return
   }
-  pauseUnpause('crossfader')
+  pauseUnpause(state.pause['crossfader'], PAUSE_MS)
   state.crossfaderObj.set('value', parseFloat(val))
 }
 function handleCrossfaderDefault() {
@@ -228,7 +217,7 @@ function handlePan(val: string) {
   if (!state.panObj || state.panObj.id === 0) {
     return
   }
-  pauseUnpause('pan')
+  pauseUnpause(state.pause['pan'], PAUSE_MS)
   state.panObj.set('value', parseFloat(val))
 }
 function handlePanDefault() {
@@ -242,7 +231,7 @@ function handleVol(val: string) {
   if (!state.volObj || state.volObj.id === 0) {
     return
   }
-  pauseUnpause('vol')
+  pauseUnpause(state.pause['vol'], PAUSE_MS)
   state.volObj.set('value', parseFloat(val))
 }
 function handleVolDefault() {
@@ -258,7 +247,7 @@ const handleVolVal = (val: IdObserverArg) => {
     return
   }
   if (!state.pause.vol.paused) {
-    outlet(OUTLET_OSC, ['/mixer/vol', val[1] || 0])
+    osc('/mixer/vol', val[1] || 0)
   }
 }
 const handlePanVal = (val: IdObserverArg) => {
@@ -267,7 +256,7 @@ const handlePanVal = (val: IdObserverArg) => {
   }
   //log('HANDLE_PAN_VAL i=' + idx + ' val=' + val)
   if (!state.pause.pan.paused) {
-    outlet(OUTLET_OSC, ['/mixer/pan', val[1] || 0])
+    osc('/mixer/pan', val[1] || 0)
   }
 }
 const handleCrossfaderVal = (val: IdObserverArg) => {
@@ -276,7 +265,7 @@ const handleCrossfaderVal = (val: IdObserverArg) => {
   }
   //log('HANDLE_XFAD_VAL i=' + idx + ' val=' + val)
   if (!state.pause.crossfader.paused) {
-    outlet(OUTLET_OSC, ['/mixer/crossfader', val[1] || 0])
+    osc('/mixer/crossfader', val[1] || 0)
   }
 }
 const handleSendVal = (idx: number, val: IdObserverArg) => {
@@ -285,11 +274,15 @@ const handleSendVal = (idx: number, val: IdObserverArg) => {
   }
   //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
   if (!state.pause.send.paused) {
-    outlet(OUTLET_OSC, ['/mixer/send' + (idx + 1), val[1] || 0])
+    osc(SEND_ADDR[idx], val[1] || 0)
   }
 }
 
-const MAX_SENDS = 12
+// Pre-computed OSC address strings for sends
+const SEND_ADDR: string[] = []
+for (let _i = 0; _i < MAX_SENDS; _i++) {
+  SEND_ADDR[_i] = '/mixer/send' + (_i + 1)
+}
 
 const onTrackChange = (args: IdObserverArg) => {
   if (!state.trackObj) {
@@ -320,7 +313,7 @@ const onTrackChange = (args: IdObserverArg) => {
   } else if (parseInt(state.trackLookupObj.get('is_foldable')) === 1) {
     trackType = TYPE_GROUP
   }
-  outlet(OUTLET_OSC, ['/mixer/type', trackType])
+  osc('/mixer/type', trackType)
 
   //log('ON TRACK CHANGE ' + trackType + ' => ' + path)
 

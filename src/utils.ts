@@ -1,4 +1,4 @@
-import { DEFAULT_COLOR } from './consts'
+import { DEFAULT_COLOR, OUTLET_OSC } from './consts'
 
 export type logFn = (...args: any[]) => void
 export function logFactory({ outputLogs = true }) {
@@ -84,6 +84,27 @@ export function loadSetting(key: string): any {
 
 export function meterVal(raw: any): number {
   return Math.round((parseFloat(raw) || 0) * 100) / 100
+}
+
+const oscOut: any[] = [null, null]
+export function osc(addr: string, val: any) {
+  oscOut[0] = addr
+  oscOut[1] = val
+  outlet(OUTLET_OSC, oscOut)
+}
+
+export type PauseState = { paused: boolean; task: MaxTask }
+
+export function pauseUnpause(p: PauseState, delayMs: number) {
+  if (p.task) {
+    p.task.cancel()
+  } else {
+    p.task = new Task(() => {
+      p.paused = false
+    }) as MaxTask
+  }
+  p.paused = true
+  p.task.schedule(delayMs)
 }
 
 export function cleanArr(arr: IdObserverArg) {

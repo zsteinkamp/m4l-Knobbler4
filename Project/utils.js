@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.cleanArr = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
@@ -83,6 +83,26 @@ function meterVal(raw) {
     return Math.round((parseFloat(raw) || 0) * 100) / 100;
 }
 exports.meterVal = meterVal;
+var oscOut = [null, null];
+function osc(addr, val) {
+    oscOut[0] = addr;
+    oscOut[1] = val;
+    outlet(consts_1.OUTLET_OSC, oscOut);
+}
+exports.osc = osc;
+function pauseUnpause(p, delayMs) {
+    if (p.task) {
+        p.task.cancel();
+    }
+    else {
+        p.task = new Task(function () {
+            p.paused = false;
+        });
+    }
+    p.paused = true;
+    p.task.schedule(delayMs);
+}
+exports.pauseUnpause = pauseUnpause;
 function cleanArr(arr) {
     if (!arr) {
         return [];

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FIELD_INDENT = exports.FIELD_COLOR = exports.FIELD_NAME = exports.FIELD_ID = exports.FIELD_TYPE = exports.nullString = exports.MAX_NAME_LEN = exports.noFn = exports.DEFAULT_COLOR_FF = exports.DEFAULT_COLOR = exports.TYPE_CHILD_CHAIN = exports.TYPE_RACK = exports.TYPE_DEVICE = exports.TYPE_GROUP = exports.TYPE_MAIN = exports.TYPE_RETURN = exports.TYPE_CHAIN = exports.TYPE_TRACK = exports.MAX_SLOTS = exports.OUTLET_MSGS = exports.OUTLET_OSC = exports.INLET_MSGS = void 0;
+exports.FIELD_INDENT = exports.FIELD_COLOR = exports.FIELD_NAME = exports.FIELD_ID = exports.FIELD_TYPE = exports.nullString = exports.MAX_SENDS = exports.MAX_NAME_LEN = exports.noFn = exports.DEFAULT_COLOR_FF = exports.DEFAULT_COLOR = exports.TYPE_CHILD_CHAIN = exports.TYPE_RACK = exports.TYPE_DEVICE = exports.TYPE_GROUP = exports.TYPE_MAIN = exports.TYPE_RETURN = exports.TYPE_CHAIN = exports.TYPE_TRACK = exports.MAX_SLOTS = exports.OUTLET_MSGS = exports.OUTLET_OSC = exports.INLET_MSGS = void 0;
 exports.INLET_MSGS = 0;
 exports.OUTLET_OSC = 0;
 exports.OUTLET_MSGS = 1;
@@ -18,6 +18,7 @@ exports.DEFAULT_COLOR_FF = exports.DEFAULT_COLOR + 'FF';
 var noFn = function () { };
 exports.noFn = noFn;
 exports.MAX_NAME_LEN = 32;
+exports.MAX_SENDS = 12;
 exports.nullString = '- - -';
 // indices into MaxObjRecord arrays for fields
 exports.FIELD_TYPE = 0;

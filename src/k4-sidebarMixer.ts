@@ -1,9 +1,10 @@
-import { cleanArr, logFactory, meterVal } from './utils'
+import { cleanArr, logFactory, meterVal, osc, pauseUnpause, PauseState } from './utils'
 import config from './config'
 import {
   noFn,
   INLET_MSGS,
   OUTLET_OSC,
+  MAX_SENDS,
   TYPE_TRACK,
   TYPE_MAIN,
   TYPE_RETURN,
@@ -26,11 +27,14 @@ setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setinletassist(INLET_PAGE, 'Page change messages')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
-type PauseTypes = 'send' | 'vol' | 'pan' | 'crossfader'
-
-const MAX_SENDS = 12
 const PAUSE_MS = 300
 const METER_FLUSH_MS = 30
+
+// Pre-computed OSC address strings for sends
+const SEND_ADDR: string[] = []
+for (let _i = 0; _i < MAX_SENDS; _i++) {
+  SEND_ADDR[_i] = '/mixer/send' + (_i + 1)
+}
 
 const state = {
   trackLookupObj: null as LiveAPI,
@@ -52,23 +56,11 @@ const state = {
   meterDirty: false as boolean,
   meterFlushTask: null as MaxTask,
   pause: {
-    send: { paused: false as boolean, task: null as MaxTask },
-    vol: { paused: false as boolean, task: null as MaxTask },
-    pan: { paused: false as boolean, task: null as MaxTask },
-    crossfader: { paused: false as boolean, task: null as MaxTask },
-  } as Record<PauseTypes, { paused: boolean; task: MaxTask }>,
-}
-
-function pauseUnpause(key: PauseTypes) {
-  if (state.pause[key].paused) {
-    state.pause[key].task.cancel()
-    state.pause[key].task.freepeer()
-  }
-  state.pause[key].paused = true
-  state.pause[key].task = new Task(() => {
-    state.pause[key].paused = false
-  }) as MaxTask
-  state.pause[key].task.schedule(PAUSE_MS)
+    send: { paused: false, task: null },
+    vol: { paused: false, task: null },
+    pan: { paused: false, task: null },
+    crossfader: { paused: false, task: null },
+  } as Record<string, PauseState>,
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +139,7 @@ function stopMeterFlush() {
 function sidebarMeters(val: number) {
   const enabled = !!parseInt(val.toString())
   state.metersEnabled = enabled
-  outlet(OUTLET_OSC, ['/sidebarMeters', state.metersEnabled ? 1 : 0])
+  osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
 
   if (state.metersEnabled && state.hasOutput && state.trackLookupObj) {
     pointMetersAt(state.trackLookupObj.unquotedpath)
@@ -159,8 +151,7 @@ function sidebarMeters(val: number) {
 }
 
 function page() {
-  const args = arrayfromargs(arguments)
-  const pageName = args[0].toString()
+  const pageName = arguments[0].toString()
   const wasMixerPage = state.onMixerPage
   state.onMixerPage = pageName === 'mixer'
 
@@ -181,7 +172,7 @@ const setSendWatcherIds = (sendIds: number[]) => {
       state.watchers[i] && (state.watchers[i].id = sendIds[i])
     } else {
       state.watchers[i] && (state.watchers[i].id = 0)
-      outlet(OUTLET_OSC, ['/mixer/send' + (i + 1), 0])
+      osc(SEND_ADDR[i], 0)
     }
   }
 }
@@ -195,7 +186,7 @@ function updateSendVal(slot: number, val: number) {
   if (!state.watchers[idx]) {
     return
   }
-  pauseUnpause('send')
+  pauseUnpause(state.pause['send'], PAUSE_MS)
   state.watchers[idx].set('value', val)
 }
 
@@ -236,8 +227,8 @@ function sendRecordStatus(lookupObj: LiveAPI) {
     parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'))
   const trackInputStatus = getTrackInputStatus(lookupObj)
   const inputStatus = trackInputStatus && trackInputStatus.inputEnabled
-  outlet(OUTLET_OSC, ['/mixer/recordArm', armStatus ? 1 : 0])
-  outlet(OUTLET_OSC, ['/mixer/inputEnabled', inputStatus ? 1 : 0])
+  osc('/mixer/recordArm', armStatus ? 1 : 0)
+  osc('/mixer/inputEnabled', inputStatus ? 1 : 0)
 }
 
 enum Intent {
@@ -291,7 +282,7 @@ function toggleMute() {
   const currState = parseInt(state.trackObj.get('mute'))
   const newState = currState ? 0 : 1
   state.trackObj.set('mute', newState)
-  outlet(OUTLET_OSC, ['/mixer/mute', newState])
+  osc('/mixer/mute', newState)
 }
 
 function toggleSolo() {
@@ -316,14 +307,14 @@ function toggleSolo() {
     }
   }
   state.trackObj.set('solo', newState)
-  outlet(OUTLET_OSC, ['/mixer/solo', newState])
+  osc('/mixer/solo', newState)
 }
 
 function handleCrossfader(val: string) {
   if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
     return
   }
-  pauseUnpause('crossfader')
+  pauseUnpause(state.pause['crossfader'], PAUSE_MS)
   state.crossfaderObj.set('value', parseFloat(val))
 }
 
@@ -341,11 +332,11 @@ function handlePan(val: string) {
   if (!state.panObj || state.panObj.id === 0) {
     return
   }
-  pauseUnpause('pan')
+  pauseUnpause(state.pause['pan'], PAUSE_MS)
   const fVal = parseFloat(val)
   state.panObj.set('value', fVal)
   const str = state.panObj.call('str_for_value', fVal) as any
-  outlet(OUTLET_OSC, ['/mixer/panStr', str ? str.toString() : ''])
+  osc('/mixer/panStr', str ? str.toString() : '')
 }
 
 function handlePanDefault() {
@@ -354,20 +345,20 @@ function handlePanDefault() {
   }
   const defVal = parseFloat(state.panObj.get('default_value'))
   state.panObj.set('value', defVal)
-  outlet(OUTLET_OSC, ['/mixer/pan', defVal])
+  osc('/mixer/pan', defVal)
   const str = state.panObj.call('str_for_value', defVal) as any
-  outlet(OUTLET_OSC, ['/mixer/panStr', str ? str.toString() : ''])
+  osc('/mixer/panStr', str ? str.toString() : '')
 }
 
 function handleVol(val: string) {
   if (!state.volObj || state.volObj.id === 0) {
     return
   }
-  pauseUnpause('vol')
+  pauseUnpause(state.pause['vol'], PAUSE_MS)
   const fVal = parseFloat(val)
   state.volObj.set('value', fVal)
   const str = state.volObj.call('str_for_value', fVal) as any
-  outlet(OUTLET_OSC, ['/mixer/volStr', str ? str.toString() : ''])
+  osc('/mixer/volStr', str ? str.toString() : '')
 }
 
 function handleVolDefault() {
@@ -376,9 +367,9 @@ function handleVolDefault() {
   }
   const defVal = parseFloat(state.volObj.get('default_value'))
   state.volObj.set('value', defVal)
-  outlet(OUTLET_OSC, ['/mixer/vol', defVal])
+  osc('/mixer/vol', defVal)
   const str = state.volObj.call('str_for_value', defVal) as any
-  outlet(OUTLET_OSC, ['/mixer/volStr', str ? str.toString() : ''])
+  osc('/mixer/volStr', str ? str.toString() : '')
 }
 
 // ---------------------------------------------------------------------------
@@ -391,9 +382,9 @@ const handleVolVal = (val: IdObserverArg) => {
   }
   if (!state.pause.vol.paused) {
     const fVal = parseFloat(val[1].toString()) || 0
-    outlet(OUTLET_OSC, ['/mixer/vol', fVal])
+    osc('/mixer/vol', fVal)
     const str = state.volObj.call('str_for_value', fVal) as any
-    outlet(OUTLET_OSC, ['/mixer/volStr', str ? str.toString() : ''])
+    osc('/mixer/volStr', str ? str.toString() : '')
   }
 }
 
@@ -403,9 +394,9 @@ const handlePanVal = (val: IdObserverArg) => {
   }
   if (!state.pause.pan.paused) {
     const fVal = parseFloat(val[1].toString()) || 0
-    outlet(OUTLET_OSC, ['/mixer/pan', fVal])
+    osc('/mixer/pan', fVal)
     const str = state.panObj.call('str_for_value', fVal) as any
-    outlet(OUTLET_OSC, ['/mixer/panStr', str ? str.toString() : ''])
+    osc('/mixer/panStr', str ? str.toString() : '')
   }
 }
 
@@ -414,7 +405,7 @@ const handleCrossfaderVal = (val: IdObserverArg) => {
     return
   }
   if (!state.pause.crossfader.paused) {
-    outlet(OUTLET_OSC, ['/mixer/crossfader', val[1] || 0])
+    osc('/mixer/crossfader', val[1] || 0)
   }
 }
 
@@ -423,7 +414,7 @@ const handleSendVal = (idx: number, val: IdObserverArg) => {
     return
   }
   if (!state.pause.send.paused) {
-    outlet(OUTLET_OSC, ['/mixer/send' + (idx + 1), val[1] || 0])
+    osc(SEND_ADDR[idx], val[1] || 0)
   }
 }
 
@@ -459,24 +450,18 @@ const onTrackChange = (args: IdObserverArg) => {
   } else if (parseInt(state.trackLookupObj.get('is_foldable')) === 1) {
     trackType = TYPE_GROUP
   }
-  outlet(OUTLET_OSC, ['/mixer/type', trackType])
+  osc('/mixer/type', trackType)
 
   // record / input status
   sendRecordStatus(state.trackLookupObj)
 
   // mute / solo
   if (!isMain) {
-    outlet(OUTLET_OSC, [
-      '/mixer/mute',
-      parseInt(state.trackLookupObj.get('mute')),
-    ])
-    outlet(OUTLET_OSC, [
-      '/mixer/solo',
-      parseInt(state.trackLookupObj.get('solo')),
-    ])
+    osc('/mixer/mute', parseInt(state.trackLookupObj.get('mute')))
+    osc('/mixer/solo', parseInt(state.trackLookupObj.get('solo')))
   } else {
-    outlet(OUTLET_OSC, ['/mixer/mute', 0])
-    outlet(OUTLET_OSC, ['/mixer/solo', 0])
+    osc('/mixer/mute', 0)
+    osc('/mixer/solo', 0)
   }
 
   // has_audio_output
@@ -485,7 +470,7 @@ const onTrackChange = (args: IdObserverArg) => {
     trackInfo.indexOf('has_audio_output') > -1
       ? !!parseInt(state.trackLookupObj.get('has_audio_output'))
       : false
-  outlet(OUTLET_OSC, ['/mixer/hasOutput', state.hasOutput ? 1 : 0])
+  osc('/mixer/hasOutput', state.hasOutput ? 1 : 0)
 
   // meters — repoint or disable
   if (state.metersEnabled && state.hasOutput) {
@@ -499,29 +484,26 @@ const onTrackChange = (args: IdObserverArg) => {
   // crossfade assign
   if (!isMain) {
     const xfade = parseInt(state.mixerObj.get('crossfade_assign'))
-    outlet(OUTLET_OSC, ['/mixer/xFadeA', xfade === 0 ? 1 : 0])
-    outlet(OUTLET_OSC, ['/mixer/xFadeB', xfade === 2 ? 1 : 0])
+    osc('/mixer/xFadeA', xfade === 0 ? 1 : 0)
+    osc('/mixer/xFadeB', xfade === 2 ? 1 : 0)
   } else {
-    outlet(OUTLET_OSC, ['/mixer/xFadeA', 0])
-    outlet(OUTLET_OSC, ['/mixer/xFadeB', 0])
+    osc('/mixer/xFadeA', 0)
+    osc('/mixer/xFadeB', 0)
   }
 
   // track color
-  outlet(OUTLET_OSC, [
-    '/mixer/trackColor',
-    parseInt(state.trackLookupObj.get('color')),
-  ])
+  osc('/mixer/trackColor', parseInt(state.trackLookupObj.get('color')))
 
   // vol/pan str
   const volVal = parseFloat(state.volObj.get('value')) || 0
-  outlet(OUTLET_OSC, ['/mixer/vol', volVal])
+  osc('/mixer/vol', volVal)
   const volStr = state.volObj.call('str_for_value', volVal) as any
-  outlet(OUTLET_OSC, ['/mixer/volStr', volStr ? volStr.toString() : ''])
+  osc('/mixer/volStr', volStr ? volStr.toString() : '')
 
   const panVal = parseFloat(state.panObj.get('value')) || 0
-  outlet(OUTLET_OSC, ['/mixer/pan', panVal])
+  osc('/mixer/pan', panVal)
   const panStr = state.panObj.call('str_for_value', panVal) as any
-  outlet(OUTLET_OSC, ['/mixer/panStr', panStr ? panStr.toString() : ''])
+  osc('/mixer/panStr', panStr ? panStr.toString() : '')
 }
 
 const onReturnsChange = (args: IdObserverArg) => {

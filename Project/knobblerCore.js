@@ -14,6 +14,27 @@ var utils_1 = require("./utils");
 var consts_1 = require("./consts");
 var config_1 = require("./config");
 var log = (0, utils_1.logFactory)(config_1.default);
+// Pre-computed OSC address strings (indexed 1–32)
+var ADDR_VAL = [];
+var ADDR_VALSTR = [];
+var ADDR_VALCOLOR = [];
+var ADDR_PARAM = [];
+var ADDR_PARAM_AUTO = [];
+var ADDR_DEVICE = [];
+var ADDR_TRACK = [];
+var ADDR_QUANT = [];
+var ADDR_QUANT_ITEMS = [];
+for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
+    ADDR_VAL[_i] = '/val' + _i;
+    ADDR_VALSTR[_i] = '/valStr' + _i;
+    ADDR_VALCOLOR[_i] = '/val' + _i + 'color';
+    ADDR_PARAM[_i] = '/param' + _i;
+    ADDR_PARAM_AUTO[_i] = '/param' + _i + 'auto';
+    ADDR_DEVICE[_i] = '/device' + _i;
+    ADDR_TRACK[_i] = '/track' + _i;
+    ADDR_QUANT[_i] = '/quant' + _i;
+    ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i;
+}
 // slot arrays
 var paramObj = [];
 var paramNameObj = [];
@@ -56,7 +77,7 @@ function loadXYPairs() {
 }
 function sendXYPairs() {
     //log('SEND XY PAIRS', JSON.stringify(xyPairs))
-    outlet(consts_1.OUTLET_OSC, ['/xyPairs', JSON.stringify(xyPairs)]);
+    (0, utils_1.osc)('/xyPairs', JSON.stringify(xyPairs));
 }
 function xyJoin(leftIdx) {
     //log('xyJOIN', leftIdx)
@@ -130,7 +151,7 @@ function init(slot) {
     if (paramObj[slot]) {
         // clean up callbacks when unmapping
         paramObj[slot].id = 0;
-        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, consts_1.nullString]);
+        (0, utils_1.osc)(ADDR_VALSTR[slot], consts_1.nullString);
     }
     paramObj[slot] = null;
     allowMapping[slot] = true;
@@ -392,15 +413,12 @@ function sendNames(slot) {
 }
 function sendQuant(slot) {
     initSlotIfNecessary(slot);
-    outlet(consts_1.OUTLET_OSC, ['/quant' + slot, param[slot].quant]);
+    (0, utils_1.osc)(ADDR_QUANT[slot], param[slot].quant);
     if (param[slot] && param[slot].quant > 2) {
-        outlet(consts_1.OUTLET_OSC, [
-            '/quantItems' + slot,
-            JSON.stringify(param[slot].quantItems),
-        ]);
+        (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], JSON.stringify(param[slot].quantItems));
     }
     else {
-        outlet(consts_1.OUTLET_OSC, ['/quantItems' + slot, '[]']);
+        (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], '[]');
     }
 }
 function sendParamName(slot) {
@@ -410,14 +428,13 @@ function sendParamName(slot) {
         consts_1.nullString).toString());
     sendMsg(slot, ['param', paramName]);
     //log('SEND PARAM NAME ' + slot + '=' + paramName)
-    outlet(consts_1.OUTLET_OSC, ['/param' + slot, paramName]);
+    (0, utils_1.osc)(ADDR_PARAM[slot], paramName);
 }
 function sendAutomationState(slot) {
     initSlotIfNecessary(slot);
     var automationState = parseInt((paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0);
-    var payload = ['/param' + slot + 'auto', automationState];
-    //log('PAYLOAD ' + JSON.stringify(payload))
-    outlet(consts_1.OUTLET_OSC, payload);
+    //log('PAYLOAD ' + ADDR_PARAM_AUTO[slot] + ' ' + automationState)
+    (0, utils_1.osc)(ADDR_PARAM_AUTO[slot], automationState);
 }
 function sendDeviceName(slot) {
     //log(`SEND DEVICE NAME ${slot}`)
@@ -426,7 +443,7 @@ function sendDeviceName(slot) {
         ? (0, utils_1.dequote)(param[slot].deviceName.toString())
         : consts_1.nullString;
     sendMsg(slot, ['device', deviceName]);
-    outlet(consts_1.OUTLET_OSC, ['/device' + slot, deviceName]);
+    (0, utils_1.osc)(ADDR_DEVICE[slot], deviceName);
 }
 function sendTrackName(slot) {
     //log(`SEND TRACK NAME ${slot}`)
@@ -435,7 +452,7 @@ function sendTrackName(slot) {
         ? (0, utils_1.dequote)(param[slot].parentName.toString())
         : consts_1.nullString;
     sendMsg(slot, ['track', trackName]);
-    outlet(consts_1.OUTLET_OSC, ['/track' + slot, trackName]);
+    (0, utils_1.osc)(ADDR_TRACK[slot], trackName);
 }
 function sendColor(slot) {
     //log(`SEND COLOR ${slot}`)
@@ -443,7 +460,7 @@ function sendColor(slot) {
     var trackColor = param[slot].trackColor
         ? (0, utils_1.dequote)(param[slot].trackColor.toString())
         : consts_1.DEFAULT_COLOR_FF;
-    outlet(consts_1.OUTLET_OSC, ['/val' + slot + 'color', trackColor]);
+    (0, utils_1.osc)(ADDR_VALCOLOR[slot], trackColor);
     // for the color highlight in the Max for Live device
     if (trackColor === consts_1.DEFAULT_COLOR_FF) {
         trackColor = '000000FF';
@@ -463,8 +480,8 @@ function sendVal(slot) {
         param[slot].max === undefined ||
         param[slot].min === undefined ||
         outMax[slot] === outMin[slot]) {
-        outlet(consts_1.OUTLET_OSC, ['/val' + slot, 0]);
-        outlet(consts_1.OUTLET_OSC, ['/valStr' + slot, consts_1.nullString]);
+        (0, utils_1.osc)(ADDR_VAL[slot], 0);
+        (0, utils_1.osc)(ADDR_VALSTR[slot], consts_1.nullString);
         return;
     }
     // the value, expressed as a proportion between the param min and max
@@ -475,13 +492,10 @@ function sendVal(slot) {
     scaledValProp = Math.min(scaledValProp, 1);
     scaledValProp = Math.max(scaledValProp, 0);
     //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
-    outlet(consts_1.OUTLET_OSC, ['/val' + slot, scaledValProp]);
-    outlet(consts_1.OUTLET_OSC, [
-        '/valStr' + slot,
-        paramObj[slot]
-            ? paramObj[slot].call('str_for_value', param[slot].val)
-            : consts_1.nullString,
-    ]);
+    (0, utils_1.osc)(ADDR_VAL[slot], scaledValProp);
+    (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot]
+        ? paramObj[slot].call('str_for_value', param[slot].val)
+        : consts_1.nullString);
 }
 // new value received over OSC
 function val(slot, val) {
@@ -502,15 +516,12 @@ function val(slot, val) {
             }
             //log('VAL ' + paramObj[slot] + ' ' + param[slot].val)
             paramObj[slot].set('value', param[slot].val);
-            outlet(consts_1.OUTLET_OSC, [
-                '/valStr' + slot,
-                // get() the value from the param instead of re-using the val we
-                // calculated above because buttons and whatnot will report the wrong
-                // string value due to what looks like a rounding bug inside of
-                // those params (e.g. str_for_value(0.9) yields "on" even though
-                // the device shows up as "off"
-                paramObj[slot].call('str_for_value', paramObj[slot].get('value')),
-            ]);
+            // get() the value from the param instead of re-using the val we
+            // calculated above because buttons and whatnot will report the wrong
+            // string value due to what looks like a rounding bug inside of
+            // those params (e.g. str_for_value(0.9) yields "on" even though
+            // the device shows up as "off"
+            (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot].call('str_for_value', paramObj[slot].get('value')));
         }
     }
     else {

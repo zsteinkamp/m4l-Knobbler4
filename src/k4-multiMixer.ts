@@ -4,6 +4,9 @@ import {
   loadSetting,
   logFactory,
   meterVal,
+  osc,
+  pauseUnpause,
+  PauseState,
   truncate,
 } from './utils'
 import config from './config'
@@ -11,6 +14,7 @@ import {
   noFn,
   INLET_MSGS,
   OUTLET_OSC,
+  MAX_SENDS,
   TYPE_TRACK,
   TYPE_MAIN,
   TYPE_RETURN,
@@ -62,7 +66,7 @@ type StripObservers = {
   volApi: LiveAPI
   panApi: LiveAPI
   sendApis: LiveAPI[]
-  pause: Record<string, { paused: boolean; task: MaxTask }>
+  pause: Record<string, PauseState>
   stripIndex: number
   canBeArmed: boolean
   hasOutput: boolean
@@ -73,12 +77,51 @@ type StripObservers = {
 // Constants
 // ---------------------------------------------------------------------------
 
-const MAX_SENDS = 12
 const PAUSE_MS = 300
 const METER_FLUSH_MS = 30
 const CHUNK_MAX_BYTES = 1024
 const DEFAULT_VISIBLE_COUNT = 18
+const MAX_STRIP_IDX = 128
 
+// Pre-computed OSC address strings for mixer strips
+const SA_VOL: string[] = []
+const SA_VOLSTR: string[] = []
+const SA_PAN: string[] = []
+const SA_PANSTR: string[] = []
+const SA_MUTE: string[] = []
+const SA_SOLO: string[] = []
+const SA_ARM: string[] = []
+const SA_INPUT: string[] = []
+const SA_HASOUTPUT: string[] = []
+const SA_XFADEA: string[] = []
+const SA_XFADEB: string[] = []
+const SA_XFADEASSIGN: string[] = []
+const SA_NAME: string[] = []
+const SA_COLOR: string[] = []
+const SA_TYPE: string[] = []
+const SA_SEND: string[][] = []
+for (let _i = 0; _i < MAX_STRIP_IDX; _i++) {
+  const _p = '/mixer/' + _i + '/'
+  SA_VOL[_i] = _p + 'vol'
+  SA_VOLSTR[_i] = _p + 'volStr'
+  SA_PAN[_i] = _p + 'pan'
+  SA_PANSTR[_i] = _p + 'panStr'
+  SA_MUTE[_i] = _p + 'mute'
+  SA_SOLO[_i] = _p + 'solo'
+  SA_ARM[_i] = _p + 'recordArm'
+  SA_INPUT[_i] = _p + 'inputEnabled'
+  SA_HASOUTPUT[_i] = _p + 'hasOutput'
+  SA_XFADEA[_i] = _p + 'xFadeA'
+  SA_XFADEB[_i] = _p + 'xFadeB'
+  SA_XFADEASSIGN[_i] = _p + 'xFadeAssign'
+  SA_NAME[_i] = _p + 'name'
+  SA_COLOR[_i] = _p + 'color'
+  SA_TYPE[_i] = _p + 'type'
+  SA_SEND[_i] = []
+  for (let _j = 0; _j < MAX_SENDS; _j++) {
+    SA_SEND[_i][_j] = _p + 'send' + (_j + 1)
+  }
+}
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -143,19 +186,11 @@ function sendChunkedData(prefix: string, items: any[]) {
   }
 }
 
-function pauseUnpause(strip: StripObservers, key: string) {
+function stripPause(strip: StripObservers, key: string) {
   if (!strip.pause[key]) {
     strip.pause[key] = { paused: false, task: null }
   }
-  if (strip.pause[key].paused) {
-    strip.pause[key].task.cancel()
-    strip.pause[key].task.freepeer()
-  }
-  strip.pause[key].paused = true
-  strip.pause[key].task = new Task(() => {
-    strip.pause[key].paused = false
-  }) as MaxTask
-  strip.pause[key].task.schedule(PAUSE_MS)
+  pauseUnpause(strip.pause[key], PAUSE_MS)
 }
 
 // ---------------------------------------------------------------------------
@@ -401,20 +436,14 @@ function createStripObservers(
   if (!strip.isMain) {
     strip.muteApi = new LiveAPI(function (args: any[]) {
       if (args[0] === 'mute') {
-        outlet(OUTLET_OSC, [
-          '/mixer/' + strip.stripIndex + '/mute',
-          parseInt(args[1].toString()),
-        ])
+        osc(SA_MUTE[strip.stripIndex], parseInt(args[1].toString()))
       }
     }, trackPath)
     strip.muteApi.property = 'mute'
 
     strip.soloApi = new LiveAPI(function (args: any[]) {
       if (args[0] === 'solo') {
-        outlet(OUTLET_OSC, [
-          '/mixer/' + strip.stripIndex + '/solo',
-          parseInt(args[1].toString()),
-        ])
+        osc(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()))
       }
     }, trackPath)
     strip.soloApi.property = 'solo'
@@ -425,10 +454,7 @@ function createStripObservers(
   if (strip.canBeArmed) {
     strip.armApi = new LiveAPI(function (args: any[]) {
       if (args[0] === 'arm') {
-        outlet(OUTLET_OSC, [
-          '/mixer/' + strip.stripIndex + '/recordArm',
-          parseInt(args[1].toString()),
-        ])
+        osc(SA_ARM[strip.stripIndex], parseInt(args[1].toString()))
       }
     }, trackPath)
     strip.armApi.property = 'arm'
@@ -450,14 +476,9 @@ function createStripObservers(
   strip.mixerApi = new LiveAPI(function (args: any[]) {
     //log('OMG', args)
     if (args[0] === 'crossfade_assign') {
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/xFadeA',
-        parseInt(args[1].toString()) === 0 ? 1 : 0,
-      ])
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/xFadeB',
-        parseInt(args[1].toString()) === 2 ? 1 : 0,
-      ])
+      const xVal = parseInt(args[1].toString())
+      osc(SA_XFADEA[strip.stripIndex], xVal === 0 ? 1 : 0)
+      osc(SA_XFADEB[strip.stripIndex], xVal === 2 ? 1 : 0)
     }
   }, mixerPath)
   if (!strip.isMain) {
@@ -470,12 +491,9 @@ function createStripObservers(
     if (args[0] !== 'value') return
     if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
       const fVal = parseFloat(args[1]) || 0
-      outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', fVal])
+      osc(SA_VOL[strip.stripIndex], fVal)
       const str = strip.volApi.call('str_for_value', fVal) as any
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/volStr',
-        str ? str.toString() : '',
-      ])
+      osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
     }
   }, mixerPath + ' volume')
   strip.volApi.property = 'value'
@@ -485,12 +503,9 @@ function createStripObservers(
     if (args[0] !== 'value') return
     if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
       const fVal = parseFloat(args[1]) || 0
-      outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/pan', fVal])
+      osc(SA_PAN[strip.stripIndex], fVal)
       const str = strip.panApi.call('str_for_value', fVal) as any
-      outlet(OUTLET_OSC, [
-        '/mixer/' + strip.stripIndex + '/panStr',
-        str ? str.toString() : '',
-      ])
+      osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
     }
   }, mixerPath + ' panning')
   strip.panApi.property = 'value'
@@ -505,10 +520,7 @@ function createStripObservers(
     const sendApi = new LiveAPI(function (args: IdObserverArg) {
       if (args[0] !== 'value') return
       if (!strip.pause['send'] || !strip.pause['send'].paused) {
-        outlet(OUTLET_OSC, [
-          '/mixer/' + strip.stripIndex + '/send' + (sendIdx + 1),
-          args[1] || 0,
-        ])
+        osc(SA_SEND[strip.stripIndex][sendIdx], args[1] || 0)
       }
     }, 'id ' + sendIds[i])
     sendApi.property = 'value'
@@ -582,92 +594,61 @@ function sendStripState(n: number, strip: StripObservers) {
   }
 
   if (info) {
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/name', info.name])
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/color', info.color])
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/type', info.type])
+    osc(SA_NAME[n], info.name)
+    osc(SA_COLOR[n], info.color)
+    osc(SA_TYPE[n], info.type)
   }
 
   // Volume
   const volVal = strip.volApi.get('value')
-  outlet(OUTLET_OSC, [
-    '/mixer/' + n + '/vol',
-    parseFloat(volVal.toString()) || 0,
-  ])
-  const volStr = strip.volApi.call(
-    'str_for_value',
-    parseFloat(volVal.toString())
-  ) as any
-  outlet(OUTLET_OSC, [
-    '/mixer/' + n + '/volStr',
-    volStr ? volStr.toString() : '',
-  ])
+  const fVolVal = parseFloat(volVal.toString()) || 0
+  osc(SA_VOL[n], fVolVal)
+  const volStr = strip.volApi.call('str_for_value', fVolVal) as any
+  osc(SA_VOLSTR[n], volStr ? volStr.toString() : '')
 
   // Pan
   const panVal = strip.panApi.get('value')
-  outlet(OUTLET_OSC, [
-    '/mixer/' + n + '/pan',
-    parseFloat(panVal.toString()) || 0,
-  ])
-  const panStr = strip.panApi.call(
-    'str_for_value',
-    parseFloat(panVal.toString())
-  ) as any
-  outlet(OUTLET_OSC, [
-    '/mixer/' + n + '/panStr',
-    panStr ? panStr.toString() : '',
-  ])
+  const fPanVal = parseFloat(panVal.toString()) || 0
+  osc(SA_PAN[n], fPanVal)
+  const panStr = strip.panApi.call('str_for_value', fPanVal) as any
+  osc(SA_PANSTR[n], panStr ? panStr.toString() : '')
 
   // Mute / Solo (master track lacks these)
   if (!strip.isMain) {
-    outlet(OUTLET_OSC, [
-      '/mixer/' + n + '/mute',
-      parseInt(strip.trackApi.get('mute').toString()),
-    ])
-    outlet(OUTLET_OSC, [
-      '/mixer/' + n + '/solo',
-      parseInt(strip.trackApi.get('solo').toString()),
-    ])
+    osc(SA_MUTE[n], parseInt(strip.trackApi.get('mute').toString()))
+    osc(SA_SOLO[n], parseInt(strip.trackApi.get('solo').toString()))
   } else {
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/mute', 0])
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/solo', 0])
+    osc(SA_MUTE[n], 0)
+    osc(SA_SOLO[n], 0)
   }
 
   // Arm / Input
   if (strip.canBeArmed) {
-    outlet(OUTLET_OSC, [
-      '/mixer/' + n + '/recordArm',
-      parseInt(strip.trackApi.get('arm').toString()),
-    ])
+    osc(SA_ARM[n], parseInt(strip.trackApi.get('arm').toString()))
     const inputStatus = getTrackInputStatus(strip.trackApi)
-    outlet(OUTLET_OSC, [
-      '/mixer/' + n + '/inputEnabled',
-      inputStatus && inputStatus.inputEnabled ? 1 : 0,
-    ])
+    osc(SA_INPUT[n], inputStatus && inputStatus.inputEnabled ? 1 : 0)
   } else {
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/recordArm', 0])
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/inputEnabled', 0])
+    osc(SA_ARM[n], 0)
+    osc(SA_INPUT[n], 0)
   }
 
   // Has output
-  outlet(OUTLET_OSC, ['/mixer/' + n + '/hasOutput', strip.hasOutput ? 1 : 0])
+  osc(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0)
 
   // Crossfade assign (master track lacks this)
   if (!strip.isMain) {
-    outlet(OUTLET_OSC, [
-      '/mixer/' + n + '/xFadeAssign',
-      parseInt(strip.mixerApi.get('crossfade_assign').toString()),
-    ])
+    osc(
+      SA_XFADEASSIGN[n],
+      parseInt(strip.mixerApi.get('crossfade_assign').toString())
+    )
   } else {
-    outlet(OUTLET_OSC, ['/mixer/' + n + '/xFadeAssign', 0])
+    osc(SA_XFADEASSIGN[n], 0)
   }
 
   // Sends
   for (let i = 0; i < strip.sendApis.length; i++) {
     const sendVal = strip.sendApis[i].get('value')
-    outlet(OUTLET_OSC, [
-      '/mixer/' + n + '/send' + (i + 1),
-      parseFloat(sendVal.toString()) || 0,
-    ])
+    osc(SA_SEND[n][i], parseFloat(sendVal.toString()) || 0)
   }
 }
 
@@ -791,9 +772,7 @@ function setupWindow(left: number, count: number) {
 }
 
 function mixerView() {
-  const aargs = arrayfromargs(arguments)
-
-  const parsed = JSON.parse(aargs[0].toString())
+  const parsed = JSON.parse(arguments[0].toString())
   const left = parseInt(parsed[0].toString())
   const count = parseInt(parsed[1].toString())
 
@@ -815,7 +794,6 @@ function mixerView() {
   }
   mixerViewTask = new Task(function () {
     setupWindow(left, count)
-    mixerViewTask = null
   }) as MaxTask
   mixerViewTask.schedule(500)
 }
@@ -843,8 +821,7 @@ function mixerMeters(val: number) {
 }
 
 function page() {
-  const args = arrayfromargs(arguments)
-  const pageName = args[0].toString()
+  const pageName = arguments[0].toString()
   const wasMixerPage = onMixerPage
   onMixerPage = pageName === 'mixer'
 
@@ -879,27 +856,21 @@ function getStrip(stripIdx: number): StripObservers {
 function vol(stripIdx: number, val: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  pauseUnpause(strip, 'vol')
+  stripPause(strip, 'vol')
   const fVal = parseFloat(val.toString())
   strip.volApi.set('value', fVal)
   const str = strip.volApi.call('str_for_value', fVal) as any
-  outlet(OUTLET_OSC, [
-    '/mixer/' + strip.stripIndex + '/volStr',
-    str ? str.toString() : '',
-  ])
+  osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
 }
 
 function pan(stripIdx: number, val: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  pauseUnpause(strip, 'pan')
+  stripPause(strip, 'pan')
   const fVal = parseFloat(val.toString())
   strip.panApi.set('value', fVal)
   const str = strip.panApi.call('str_for_value', fVal) as any
-  outlet(OUTLET_OSC, [
-    '/mixer/' + strip.stripIndex + '/panStr',
-    str ? str.toString() : '',
-  ])
+  osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
 }
 
 function volDefault(stripIdx: number) {
@@ -907,12 +878,9 @@ function volDefault(stripIdx: number) {
   if (!strip) return
   const defVal = parseFloat(strip.volApi.get('default_value').toString())
   strip.volApi.set('value', defVal)
-  outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/vol', defVal])
+  osc(SA_VOL[strip.stripIndex], defVal)
   const str = strip.volApi.call('str_for_value', defVal) as any
-  outlet(OUTLET_OSC, [
-    '/mixer/' + strip.stripIndex + '/volStr',
-    str ? str.toString() : '',
-  ])
+  osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
 }
 
 function panDefault(stripIdx: number) {
@@ -921,10 +889,7 @@ function panDefault(stripIdx: number) {
   const defVal = parseFloat(strip.panApi.get('default_value').toString())
   strip.panApi.set('value', defVal)
   const str = strip.panApi.call('str_for_value', defVal) as any
-  outlet(OUTLET_OSC, [
-    '/mixer/' + strip.stripIndex + '/panStr',
-    str ? str.toString() : '',
-  ])
+  osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
 }
 
 // Send handlers — send1 through send12
@@ -933,7 +898,7 @@ function handleSend(stripIdx: number, sendNum: number, val: number) {
   if (!strip) return
   const idx = sendNum - 1
   if (idx < 0 || idx >= strip.sendApis.length) return
-  pauseUnpause(strip, 'send')
+  stripPause(strip, 'send')
   strip.sendApis[idx].set('value', parseFloat(val.toString()))
 }
 
@@ -1028,7 +993,7 @@ function toggleMute(stripIdx: number) {
   const curr = parseInt(strip.trackApi.get('mute').toString())
   const newState = curr ? 0 : 1
   strip.trackApi.set('mute', newState)
-  outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/mute', newState])
+  osc(SA_MUTE[strip.stripIndex], newState)
 }
 
 function toggleSolo(stripIdx: number) {
@@ -1050,7 +1015,7 @@ function toggleSolo(stripIdx: number) {
     }
   }
   strip.trackApi.set('solo', newState)
-  outlet(OUTLET_OSC, ['/mixer/' + strip.stripIndex + '/solo', newState])
+  osc(SA_SOLO[strip.stripIndex], newState)
 }
 
 function enableRecord(stripIdx: number) {
@@ -1093,11 +1058,8 @@ function sendRecordStatusForStrip(strip: StripObservers) {
   const armStatus =
     strip.canBeArmed && parseInt(strip.trackApi.get('arm').toString())
   const inputStatus = getTrackInputStatus(strip.trackApi)
-  outlet(OUTLET_OSC, ['/mixer/' + n + '/recordArm', armStatus ? 1 : 0])
-  outlet(OUTLET_OSC, [
-    '/mixer/' + n + '/inputEnabled',
-    inputStatus && inputStatus.inputEnabled ? 1 : 0,
-  ])
+  osc(SA_ARM[n], armStatus ? 1 : 0)
+  osc(SA_INPUT[n], inputStatus && inputStatus.inputEnabled ? 1 : 0)
 }
 
 function toggleXFadeA(stripIdx: number) {
@@ -1121,10 +1083,9 @@ function toggleXFadeB(stripIdx: number) {
 // anything() dispatcher — Max calls this with messagename = subCmd,
 // arguments = [stripIdx, val] (from router outlet)
 function anything() {
-  const args = arrayfromargs(arguments)
   const subCmd = messagename
-  const stripIdx = parseInt(args[0].toString())
-  const val = args[1]
+  const stripIdx = parseInt(arguments[0].toString())
+  const val = arguments[1]
 
   if (subCmd === 'vol') vol(stripIdx, val)
   else if (subCmd === 'pan') pan(stripIdx, val)

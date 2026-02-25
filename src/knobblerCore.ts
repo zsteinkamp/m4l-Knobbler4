@@ -5,6 +5,7 @@ import {
   isValidPath,
   loadSetting,
   logFactory,
+  osc,
   saveSetting,
 } from './utils'
 import {
@@ -13,12 +14,32 @@ import {
   noFn,
   nullString,
   OUTLET_MSGS,
-  OUTLET_OSC,
 } from './consts'
 
 import config from './config'
 const log = logFactory(config)
 
+// Pre-computed OSC address strings (indexed 1–32)
+const ADDR_VAL: string[] = []
+const ADDR_VALSTR: string[] = []
+const ADDR_VALCOLOR: string[] = []
+const ADDR_PARAM: string[] = []
+const ADDR_PARAM_AUTO: string[] = []
+const ADDR_DEVICE: string[] = []
+const ADDR_TRACK: string[] = []
+const ADDR_QUANT: string[] = []
+const ADDR_QUANT_ITEMS: string[] = []
+for (let _i = 1; _i <= MAX_SLOTS; _i++) {
+  ADDR_VAL[_i] = '/val' + _i
+  ADDR_VALSTR[_i] = '/valStr' + _i
+  ADDR_VALCOLOR[_i] = '/val' + _i + 'color'
+  ADDR_PARAM[_i] = '/param' + _i
+  ADDR_PARAM_AUTO[_i] = '/param' + _i + 'auto'
+  ADDR_DEVICE[_i] = '/device' + _i
+  ADDR_TRACK[_i] = '/track' + _i
+  ADDR_QUANT[_i] = '/quant' + _i
+  ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i
+}
 // slot arrays
 const paramObj: LiveAPI[] = []
 const paramNameObj: LiveAPI[] = []
@@ -66,7 +87,7 @@ function loadXYPairs() {
 
 function sendXYPairs() {
   //log('SEND XY PAIRS', JSON.stringify(xyPairs))
-  outlet(OUTLET_OSC, ['/xyPairs', JSON.stringify(xyPairs)])
+  osc('/xyPairs', JSON.stringify(xyPairs))
 }
 
 function xyJoin(leftIdx: number) {
@@ -145,7 +166,7 @@ function init(slot: number) {
   if (paramObj[slot]) {
     // clean up callbacks when unmapping
     paramObj[slot].id = 0
-    outlet(OUTLET_OSC, ['/valStr' + slot, nullString])
+    osc(ADDR_VALSTR[slot], nullString)
   }
   paramObj[slot] = null
   allowMapping[slot] = true
@@ -456,14 +477,11 @@ function sendNames(slot: number) {
 
 function sendQuant(slot: number) {
   initSlotIfNecessary(slot)
-  outlet(OUTLET_OSC, ['/quant' + slot, param[slot].quant])
+  osc(ADDR_QUANT[slot], param[slot].quant)
   if (param[slot] && param[slot].quant > 2) {
-    outlet(OUTLET_OSC, [
-      '/quantItems' + slot,
-      JSON.stringify(param[slot].quantItems),
-    ])
+    osc(ADDR_QUANT_ITEMS[slot], JSON.stringify(param[slot].quantItems))
   } else {
-    outlet(OUTLET_OSC, ['/quantItems' + slot, '[]'])
+    osc(ADDR_QUANT_ITEMS[slot], '[]')
   }
 }
 
@@ -478,7 +496,7 @@ function sendParamName(slot: number) {
   )
   sendMsg(slot, ['param', paramName])
   //log('SEND PARAM NAME ' + slot + '=' + paramName)
-  outlet(OUTLET_OSC, ['/param' + slot, paramName])
+  osc(ADDR_PARAM[slot], paramName)
 }
 
 function sendAutomationState(slot: number) {
@@ -486,9 +504,8 @@ function sendAutomationState(slot: number) {
   const automationState = parseInt(
     (paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0
   )
-  const payload = ['/param' + slot + 'auto', automationState]
-  //log('PAYLOAD ' + JSON.stringify(payload))
-  outlet(OUTLET_OSC, payload)
+  //log('PAYLOAD ' + ADDR_PARAM_AUTO[slot] + ' ' + automationState)
+  osc(ADDR_PARAM_AUTO[slot], automationState)
 }
 
 function sendDeviceName(slot: number) {
@@ -498,7 +515,7 @@ function sendDeviceName(slot: number) {
     ? dequote(param[slot].deviceName.toString())
     : nullString
   sendMsg(slot, ['device', deviceName])
-  outlet(OUTLET_OSC, ['/device' + slot, deviceName])
+  osc(ADDR_DEVICE[slot], deviceName)
 }
 
 function sendTrackName(slot: number) {
@@ -508,7 +525,7 @@ function sendTrackName(slot: number) {
     ? dequote(param[slot].parentName.toString())
     : nullString
   sendMsg(slot, ['track', trackName])
-  outlet(OUTLET_OSC, ['/track' + slot, trackName])
+  osc(ADDR_TRACK[slot], trackName)
 }
 
 function sendColor(slot: number) {
@@ -517,7 +534,7 @@ function sendColor(slot: number) {
   let trackColor = param[slot].trackColor
     ? dequote(param[slot].trackColor.toString())
     : DEFAULT_COLOR_FF
-  outlet(OUTLET_OSC, ['/val' + slot + 'color', trackColor])
+  osc(ADDR_VALCOLOR[slot], trackColor)
 
   // for the color highlight in the Max for Live device
   if (trackColor === DEFAULT_COLOR_FF) {
@@ -542,8 +559,8 @@ function sendVal(slot: number) {
     param[slot].min === undefined ||
     outMax[slot] === outMin[slot]
   ) {
-    outlet(OUTLET_OSC, ['/val' + slot, 0])
-    outlet(OUTLET_OSC, ['/valStr' + slot, nullString])
+    osc(ADDR_VAL[slot], 0)
+    osc(ADDR_VALSTR[slot], nullString)
     return
   }
 
@@ -559,13 +576,13 @@ function sendVal(slot: number) {
   scaledValProp = Math.max(scaledValProp, 0)
 
   //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
-  outlet(OUTLET_OSC, ['/val' + slot, scaledValProp])
-  outlet(OUTLET_OSC, [
-    '/valStr' + slot,
+  osc(ADDR_VAL[slot], scaledValProp)
+  osc(
+    ADDR_VALSTR[slot],
     paramObj[slot]
       ? paramObj[slot].call('str_for_value', param[slot].val)
-      : nullString,
-  ])
+      : nullString
+  )
 }
 
 // new value received over OSC
@@ -588,15 +605,15 @@ function val(slot: number, val: number) {
       }
       //log('VAL ' + paramObj[slot] + ' ' + param[slot].val)
       paramObj[slot].set('value', param[slot].val)
-      outlet(OUTLET_OSC, [
-        '/valStr' + slot,
-        // get() the value from the param instead of re-using the val we
-        // calculated above because buttons and whatnot will report the wrong
-        // string value due to what looks like a rounding bug inside of
-        // those params (e.g. str_for_value(0.9) yields "on" even though
-        // the device shows up as "off"
-        paramObj[slot].call('str_for_value', paramObj[slot].get('value')),
-      ])
+      // get() the value from the param instead of re-using the val we
+      // calculated above because buttons and whatnot will report the wrong
+      // string value due to what looks like a rounding bug inside of
+      // those params (e.g. str_for_value(0.9) yields "on" even though
+      // the device shows up as "off"
+      osc(
+        ADDR_VALSTR[slot],
+        paramObj[slot].call('str_for_value', paramObj[slot].get('value'))
+      )
     }
   } else {
     //log('GONNA_MAP', 'ALLOWED=', allowMapping)
