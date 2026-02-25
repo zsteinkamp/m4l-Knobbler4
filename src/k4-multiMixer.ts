@@ -15,6 +15,8 @@ import {
   INLET_MSGS,
   OUTLET_OSC,
   MAX_SENDS,
+  PAUSE_MS,
+  METER_FLUSH_MS,
   TYPE_TRACK,
   TYPE_MAIN,
   TYPE_RETURN,
@@ -77,8 +79,6 @@ type StripObservers = {
 // Constants
 // ---------------------------------------------------------------------------
 
-const PAUSE_MS = 300
-const METER_FLUSH_MS = 30
 const CHUNK_MAX_BYTES = 1024
 const DEFAULT_VISIBLE_COUNT = 18
 const MAX_STRIP_IDX = 128

@@ -14,8 +14,6 @@ setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-var PAUSE_MS = 300;
-var METER_FLUSH_MS = 30;
 var CHUNK_MAX_BYTES = 1024;
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
@@ -117,7 +115,7 @@ function stripPause(strip, key) {
     if (!strip.pause[key]) {
         strip.pause[key] = { paused: false, task: null };
     }
-    (0, utils_1.pauseUnpause)(strip.pause[key], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(strip.pause[key], consts_1.PAUSE_MS);
 }
 // ---------------------------------------------------------------------------
 // Track List Builder
@@ -285,9 +283,9 @@ function startMeterFlush() {
         return;
     meterFlushTask = new Task(function () {
         flushMeters();
-        meterFlushTask.schedule(METER_FLUSH_MS);
+        meterFlushTask.schedule(consts_1.METER_FLUSH_MS);
     });
-    meterFlushTask.schedule(METER_FLUSH_MS);
+    meterFlushTask.schedule(consts_1.METER_FLUSH_MS);
 }
 function stopMeterFlush() {
     if (!meterFlushTask)

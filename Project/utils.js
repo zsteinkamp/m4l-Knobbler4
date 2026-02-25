@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
+exports.cleanArr = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = void 0;
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
     function log() {
         var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
+        for (var _a = 0; _a < arguments.length; _a++) {
+            args[_a] = arguments[_a];
         }
         post(args
             .map(function (a) {
@@ -103,6 +103,11 @@ function pauseUnpause(p, delayMs) {
     p.task.schedule(delayMs);
 }
 exports.pauseUnpause = pauseUnpause;
+// Pre-computed OSC address strings for sends
+exports.SEND_ADDR = [];
+for (var _i = 0; _i < consts_1.MAX_SENDS; _i++) {
+    exports.SEND_ADDR[_i] = '/mixer/send' + (_i + 1);
+}
 function cleanArr(arr) {
     if (!arr) {
         return [];

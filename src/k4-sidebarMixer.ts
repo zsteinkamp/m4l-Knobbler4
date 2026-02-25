@@ -1,10 +1,12 @@
-import { cleanArr, logFactory, meterVal, osc, pauseUnpause, PauseState } from './utils'
+import { cleanArr, logFactory, meterVal, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
 import config from './config'
 import {
   noFn,
   INLET_MSGS,
   OUTLET_OSC,
   MAX_SENDS,
+  PAUSE_MS,
+  METER_FLUSH_MS,
   TYPE_TRACK,
   TYPE_MAIN,
   TYPE_RETURN,
@@ -26,15 +28,6 @@ const INLET_PAGE = 1
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setinletassist(INLET_PAGE, 'Page change messages')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
-
-const PAUSE_MS = 300
-const METER_FLUSH_MS = 30
-
-// Pre-computed OSC address strings for sends
-const SEND_ADDR: string[] = []
-for (let _i = 0; _i < MAX_SENDS; _i++) {
-  SEND_ADDR[_i] = '/mixer/send' + (_i + 1)
-}
 
 const state = {
   trackLookupObj: null as LiveAPI,

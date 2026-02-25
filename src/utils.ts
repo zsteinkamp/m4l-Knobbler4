@@ -1,4 +1,4 @@
-import { DEFAULT_COLOR, OUTLET_OSC } from './consts'
+import { DEFAULT_COLOR, MAX_SENDS, OUTLET_OSC } from './consts'
 
 export type logFn = (...args: any[]) => void
 export function logFactory({ outputLogs = true }) {
@@ -105,6 +105,12 @@ export function pauseUnpause(p: PauseState, delayMs: number) {
   }
   p.paused = true
   p.task.schedule(delayMs)
+}
+
+// Pre-computed OSC address strings for sends
+export const SEND_ADDR: string[] = []
+for (let _i = 0; _i < MAX_SENDS; _i++) {
+  SEND_ADDR[_i] = '/mixer/send' + (_i + 1)
 }
 
 export function cleanArr(arr: IdObserverArg) {

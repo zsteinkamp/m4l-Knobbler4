@@ -20,13 +20,6 @@ var INLET_PAGE = 1;
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(INLET_PAGE, 'Page change messages');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
-var PAUSE_MS = 300;
-var METER_FLUSH_MS = 30;
-// Pre-computed OSC address strings for sends
-var SEND_ADDR = [];
-for (var _i = 0; _i < consts_1.MAX_SENDS; _i++) {
-    SEND_ADDR[_i] = '/mixer/send' + (_i + 1);
-}
 var state = {
     trackLookupObj: null,
     returnsObj: null,
@@ -115,9 +108,9 @@ function startMeterFlush() {
             state.meterDirty = false;
             outlet(consts_1.OUTLET_OSC, ['/mixer/meters', JSON.stringify(state.meterBuffer)]);
         }
-        state.meterFlushTask.schedule(METER_FLUSH_MS);
+        state.meterFlushTask.schedule(consts_1.METER_FLUSH_MS);
     });
-    state.meterFlushTask.schedule(METER_FLUSH_MS);
+    state.meterFlushTask.schedule(consts_1.METER_FLUSH_MS);
 }
 function stopMeterFlush() {
     if (!state.meterFlushTask)
@@ -162,7 +155,7 @@ var setSendWatcherIds = function (sendIds) {
         }
         else {
             state.watchers[i] && (state.watchers[i].id = 0);
-            (0, utils_1.osc)(SEND_ADDR[i], 0);
+            (0, utils_1.osc)(utils_1.SEND_ADDR[i], 0);
         }
     }
 };
@@ -174,7 +167,7 @@ function updateSendVal(slot, val) {
     if (!state.watchers[idx]) {
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['send'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['send'], consts_1.PAUSE_MS);
     state.watchers[idx].set('value', val);
 }
 function handleSendDefault(slot) {
@@ -240,8 +233,8 @@ function handleRecordInternal(intent) {
         var api = new LiveAPI(consts_1.noFn, 'live_set');
         if (parseInt(api.get('exclusive_arm')) === 1) {
             var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
-            for (var _a = 0, tracks_1 = tracks; _a < tracks_1.length; _a++) {
-                var trackId = tracks_1[_a];
+            for (var _i = 0, tracks_1 = tracks; _i < tracks_1.length; _i++) {
+                var trackId = tracks_1[_i];
                 if (trackId === parseInt(state.trackObj.id.toString())) {
                     continue;
                 }
@@ -277,8 +270,8 @@ function toggleSolo() {
         if (parseInt(api.get('exclusive_solo')) === 1) {
             var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
             var returns = (0, utils_1.cleanArr)(api.get('return_tracks'));
-            for (var _a = 0, _b = __spreadArray(__spreadArray([], tracks, true), returns, true); _a < _b.length; _a++) {
-                var trackId = _b[_a];
+            for (var _i = 0, _a = __spreadArray(__spreadArray([], tracks, true), returns, true); _i < _a.length; _i++) {
+                var trackId = _a[_i];
                 if (trackId === parseInt(state.trackObj.id.toString())) {
                     continue;
                 }
@@ -294,7 +287,7 @@ function handleCrossfader(val) {
     if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['crossfader'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['crossfader'], consts_1.PAUSE_MS);
     state.crossfaderObj.set('value', parseFloat(val));
 }
 function handleCrossfaderDefault() {
@@ -307,7 +300,7 @@ function handlePan(val) {
     if (!state.panObj || state.panObj.id === 0) {
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['pan'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['pan'], consts_1.PAUSE_MS);
     var fVal = parseFloat(val);
     state.panObj.set('value', fVal);
     var str = state.panObj.call('str_for_value', fVal);
@@ -327,7 +320,7 @@ function handleVol(val) {
     if (!state.volObj || state.volObj.id === 0) {
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['vol'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['vol'], consts_1.PAUSE_MS);
     var fVal = parseFloat(val);
     state.volObj.set('value', fVal);
     var str = state.volObj.call('str_for_value', fVal);
@@ -381,7 +374,7 @@ var handleSendVal = function (idx, val) {
         return;
     }
     if (!state.pause.send.paused) {
-        (0, utils_1.osc)(SEND_ADDR[idx], val[1] || 0);
+        (0, utils_1.osc)(utils_1.SEND_ADDR[idx], val[1] || 0);
     }
 };
 // ---------------------------------------------------------------------------

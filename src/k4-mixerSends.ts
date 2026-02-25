@@ -1,4 +1,4 @@
-import { cleanArr, colorToString, logFactory, osc, pauseUnpause, PauseState } from './utils'
+import { cleanArr, colorToString, logFactory, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
 import config from './config'
 import {
   noFn,
@@ -6,6 +6,7 @@ import {
   OUTLET_MSGS,
   OUTLET_OSC,
   MAX_SENDS,
+  PAUSE_MS,
   TYPE_TRACK,
   TYPE_MAIN,
   TYPE_RETURN,
@@ -27,8 +28,6 @@ const log = logFactory(config)
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 setoutletassist(OUTLET_MSGS, 'Output messages to other objects')
-
-const PAUSE_MS = 300
 
 const state = {
   trackLookupObj: null as LiveAPI,
@@ -276,12 +275,6 @@ const handleSendVal = (idx: number, val: IdObserverArg) => {
   if (!state.pause.send.paused) {
     osc(SEND_ADDR[idx], val[1] || 0)
   }
-}
-
-// Pre-computed OSC address strings for sends
-const SEND_ADDR: string[] = []
-for (let _i = 0; _i < MAX_SENDS; _i++) {
-  SEND_ADDR[_i] = '/mixer/send' + (_i + 1)
 }
 
 const onTrackChange = (args: IdObserverArg) => {

@@ -19,7 +19,6 @@ var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setoutletassist(consts_1.OUTLET_MSGS, 'Output messages to other objects');
-var PAUSE_MS = 300;
 var state = {
     trackLookupObj: null,
     returnTrackColors: [],
@@ -45,7 +44,7 @@ var setSendWatcherIds = function (sendIds) {
         }
         else {
             state.watchers[i] && (state.watchers[i].id = 0);
-            (0, utils_1.osc)(SEND_ADDR[i], 0);
+            (0, utils_1.osc)(utils_1.SEND_ADDR[i], 0);
         }
     }
     (0, utils_1.osc)('/mixer/numSends', sendIds.length);
@@ -57,7 +56,7 @@ function updateSendVal(slot, val) {
         //log('EARLY ' + idx + ' v=' + val)
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['send'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['send'], consts_1.PAUSE_MS);
     state.watchers[idx].set('value', val);
 }
 function handleSendDefault(slot) {
@@ -131,8 +130,8 @@ function handleRecordInternal(intent) {
         if (parseInt(api.get('exclusive_arm')) === 1) {
             // disarm any other track
             var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
-            for (var _a = 0, tracks_1 = tracks; _a < tracks_1.length; _a++) {
-                var trackId = tracks_1[_a];
+            for (var _i = 0, tracks_1 = tracks; _i < tracks_1.length; _i++) {
+                var trackId = tracks_1[_i];
                 if (trackId === parseInt(state.trackObj.id.toString())) {
                     continue;
                 }
@@ -168,8 +167,8 @@ function toggleSolo() {
             // un-solo any other track
             var tracks = (0, utils_1.cleanArr)(api.get('tracks'));
             var returns = (0, utils_1.cleanArr)(api.get('return_tracks'));
-            for (var _a = 0, _b = __spreadArray(__spreadArray([], tracks, true), returns, true); _a < _b.length; _a++) {
-                var trackId = _b[_a];
+            for (var _i = 0, _a = __spreadArray(__spreadArray([], tracks, true), returns, true); _i < _a.length; _i++) {
+                var trackId = _a[_i];
                 if (trackId === parseInt(state.trackObj.id.toString())) {
                     continue;
                 }
@@ -186,7 +185,7 @@ function handleCrossfader(val) {
     if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['crossfader'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['crossfader'], consts_1.PAUSE_MS);
     state.crossfaderObj.set('value', parseFloat(val));
 }
 function handleCrossfaderDefault() {
@@ -201,7 +200,7 @@ function handlePan(val) {
     if (!state.panObj || state.panObj.id === 0) {
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['pan'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['pan'], consts_1.PAUSE_MS);
     state.panObj.set('value', parseFloat(val));
 }
 function handlePanDefault() {
@@ -215,7 +214,7 @@ function handleVol(val) {
     if (!state.volObj || state.volObj.id === 0) {
         return;
     }
-    (0, utils_1.pauseUnpause)(state.pause['vol'], PAUSE_MS);
+    (0, utils_1.pauseUnpause)(state.pause['vol'], consts_1.PAUSE_MS);
     state.volObj.set('value', parseFloat(val));
 }
 function handleVolDefault() {
@@ -257,14 +256,9 @@ var handleSendVal = function (idx, val) {
     }
     //log('HANDLE_SEND_VAL i=' + idx + ' val=' + val)
     if (!state.pause.send.paused) {
-        (0, utils_1.osc)(SEND_ADDR[idx], val[1] || 0);
+        (0, utils_1.osc)(utils_1.SEND_ADDR[idx], val[1] || 0);
     }
 };
-// Pre-computed OSC address strings for sends
-var SEND_ADDR = [];
-for (var _i = 0; _i < consts_1.MAX_SENDS; _i++) {
-    SEND_ADDR[_i] = '/mixer/send' + (_i + 1);
-}
 var onTrackChange = function (args) {
     if (!state.trackObj) {
         return;
@@ -386,8 +380,8 @@ function init() {
 }
 function handleSends() {
     var sendArr = [];
-    for (var _a = 0; _a < arguments.length; _a++) {
-        sendArr[_a] = arguments[_a];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        sendArr[_i] = arguments[_i];
     }
     //log('HANDLE SENDS ' + sendArr)
     var sendIds = (0, utils_1.cleanArr)(sendArr);
