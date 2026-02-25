@@ -696,11 +696,27 @@ function mixerMeters(val) {
         }
     }
 }
+var sidebarMixerObj = null;
+function getSidebarMixer() {
+    if (sidebarMixerObj)
+        return sidebarMixerObj;
+    patcher.apply(function (obj) {
+        if (obj.getattr && obj.getattr('filename') === 'k4-sidebarMixer.js') {
+            sidebarMixerObj = obj;
+            return false;
+        }
+        return true;
+    });
+    return sidebarMixerObj;
+}
 function sendMetersState() {
     (0, utils_1.osc)('/mixerMeters', metersEnabled ? 1 : 0);
     var chk = patcher.getnamed('chkMeters');
     if (chk)
-        chk.message('int', metersEnabled ? 1 : 0);
+        chk.message('set', metersEnabled ? 1 : 0);
+    var sb = getSidebarMixer();
+    if (sb)
+        sb.message('sidebarMeters', metersEnabled ? 1 : 0);
 }
 function page() {
     var pageName = arguments[0].toString();

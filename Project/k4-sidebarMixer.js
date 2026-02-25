@@ -535,6 +535,9 @@ function init() {
         state.crossfaderObj.property = 'value';
         state.crossfaderObj.mode = 1;
     }
+    // Restore meters state from settings dict
+    state.metersEnabled = !!(0, utils_1.loadSetting)('metersEnabled');
+    (0, utils_1.osc)('/sidebarMeters', state.metersEnabled ? 1 : 0);
 }
 log('reloaded k4-sidebarMixer');
 // NOTE: This section must appear in any .ts file that is directuly used by a

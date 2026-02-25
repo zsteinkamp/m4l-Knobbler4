@@ -1,4 +1,4 @@
-import { cleanArr, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
+import { cleanArr, loadSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
 import config from './config'
 import {
   noFn,
@@ -599,6 +599,10 @@ function init() {
     state.crossfaderObj.property = 'value'
     state.crossfaderObj.mode = 1
   }
+
+  // Restore meters state from settings dict
+  state.metersEnabled = !!loadSetting('metersEnabled')
+  osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
 }
 
 log('reloaded k4-sidebarMixer')
