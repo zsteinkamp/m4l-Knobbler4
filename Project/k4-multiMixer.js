@@ -19,6 +19,7 @@ var scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
 var CHUNK_MAX_BYTES = 1024;
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
+var OBSERVER_BUFFER = 2;
 // Pre-computed OSC address strings for mixer strips
 var SA_VOL = [];
 var SA_VOLSTR = [];
@@ -66,14 +67,15 @@ var leftIndex = -1;
 var visibleCount = 0;
 // Observers keyed by track ID — survives window slides if the track stays visible
 var observersByTrackId = {};
-// Window slots: maps position index -> track ID currently at that position
-var windowSlots = [];
+// Observer slots: track IDs in the wider observer window (visible + buffer)
+var observerSlots = [];
 var metersEnabled = false;
 var onMixerPage = false;
 var meterBuffer = [];
 var meterDirty = false;
 var meterFlushTask = null;
 var mixerViewTask = null;
+var rebuildTrackListTask = null;
 // Track list watchers
 var visibleTracksWatcher = null;
 var returnTracksWatcher = null;
@@ -326,10 +328,16 @@ function createStripObservers(trackId, stripIdx) {
     var mixerPath = trackPath + ' mixer_device';
     strip.isMain = trackPath.indexOf('master_track') > -1;
     // Color API — separate observer for track color changes
+    // Deferred to avoid re-entrancy with scratchApi during createStripObservers
     strip.colorApi = new LiveAPI(function (args) {
         if (args[0] === 'color') {
-            trackList = buildTrackList();
-            sendVisibleTracks();
+            if (!rebuildTrackListTask) {
+                rebuildTrackListTask = new Task(function () {
+                    trackList = buildTrackList();
+                    sendVisibleTracks();
+                });
+            }
+            rebuildTrackListTask.schedule(0);
         }
     }, trackPath);
     strip.colorApi.property = 'color';
@@ -467,11 +475,16 @@ function teardownStripObservers(strip) {
 }
 function teardownAll() {
     stopMeterFlush();
+    if (rebuildTrackListTask) {
+        rebuildTrackListTask.cancel();
+        rebuildTrackListTask.freepeer();
+        rebuildTrackListTask = null;
+    }
     for (var trackIdStr in observersByTrackId) {
         teardownStripObservers(observersByTrackId[trackIdStr]);
     }
     observersByTrackId = {};
-    windowSlots = [];
+    observerSlots = [];
     trackList = [];
     meterBuffer = [];
 }
@@ -545,13 +558,13 @@ function applyWindow() {
     if (leftIndex < 0 || visibleCount <= 0) {
         return;
     }
-    // Build new window slots
+    // Compute wider observer window (visible + buffer on each side)
+    var obsLeft = Math.max(0, leftIndex - OBSERVER_BUFFER);
+    var obsRight = Math.min(trackList.length, leftIndex + visibleCount + OBSERVER_BUFFER);
+    // Build new observer slots for the wider window
     var newSlots = [];
-    for (var i = 0; i < visibleCount; i++) {
-        var trackIdx = leftIndex + i;
-        if (trackIdx < trackList.length) {
-            newSlots.push(trackList[trackIdx].id);
-        }
+    for (var i = obsLeft; i < obsRight; i++) {
+        newSlots.push(trackList[i].id);
     }
     // Resize meter buffer if track count changed
     var requiredLen = trackList.length * 3;
@@ -568,48 +581,42 @@ function applyWindow() {
     }
     // Compute keep/remove/add sets
     var oldSet = {};
-    for (var i = 0; i < windowSlots.length; i++) {
-        oldSet[windowSlots[i]] = true;
+    for (var i = 0; i < observerSlots.length; i++) {
+        oldSet[observerSlots[i]] = true;
     }
     var newSet = {};
     for (var i = 0; i < newSlots.length; i++) {
         newSet[newSlots[i]] = true;
     }
     // Remove: in old but not in new
-    var removed = 0;
-    for (var i = 0; i < windowSlots.length; i++) {
-        var tid = windowSlots[i];
+    for (var i = 0; i < observerSlots.length; i++) {
+        var tid = observerSlots[i];
         if (!newSet[tid] && observersByTrackId[tid]) {
             teardownStripObservers(observersByTrackId[tid]);
             delete observersByTrackId[tid];
-            removed++;
         }
     }
     // Add: in new but not in old
-    var added = 0;
     for (var i = 0; i < newSlots.length; i++) {
         var tid = newSlots[i];
         if (!oldSet[tid]) {
-            observersByTrackId[tid] = createStripObservers(tid, leftIndex + i);
-            added++;
+            observersByTrackId[tid] = createStripObservers(tid, obsLeft + i);
         }
     }
-    //if (removed > 0 || added > 0) {
-    //  log('applyWindow: removed=' + removed + ' added=' + added + ' kept=' + (newSlots.length - added) + ' total=' + newSlots.length)
-    //}
     // Update strip indices for all observers (positions may have shifted)
     for (var i = 0; i < newSlots.length; i++) {
         var tid = newSlots[i];
         if (observersByTrackId[tid]) {
-            observersByTrackId[tid].stripIndex = leftIndex + i;
+            observersByTrackId[tid].stripIndex = obsLeft + i;
         }
     }
-    windowSlots = newSlots;
-    // Send initial state only for newly added strips
-    for (var i = 0; i < windowSlots.length; i++) {
-        var tid = windowSlots[i];
+    observerSlots = newSlots;
+    // Send initial state only for newly added strips in the visible range
+    var visRight = Math.min(leftIndex + visibleCount, trackList.length);
+    for (var i = leftIndex; i < visRight; i++) {
+        var tid = trackList[i].id;
         if (!oldSet[tid] && observersByTrackId[tid]) {
-            sendStripState(leftIndex + i, observersByTrackId[tid]);
+            sendStripState(i, observersByTrackId[tid]);
         }
     }
 }
@@ -686,7 +693,7 @@ function mixerMeters(val) {
                 createMeterObservers(strip, trackPath);
             }
         }
-        if (onMixerPage && windowSlots.length > 0)
+        if (onMixerPage && observerSlots.length > 0)
             startMeterFlush();
     }
     else {
@@ -723,7 +730,7 @@ function page() {
     var wasMixerPage = onMixerPage;
     onMixerPage = pageName === 'mixer';
     if (onMixerPage && !wasMixerPage) {
-        if (metersEnabled && windowSlots.length > 0)
+        if (metersEnabled && observerSlots.length > 0)
             startMeterFlush();
     }
     else if (!onMixerPage && wasMixerPage) {
@@ -740,10 +747,11 @@ function init() {
 // ---------------------------------------------------------------------------
 function getStrip(stripIdx) {
     var rel = stripIdx - leftIndex;
-    if (rel < 0 || rel >= windowSlots.length) {
+    if (rel < 0 || rel >= visibleCount)
         return null;
-    }
-    var tid = windowSlots[rel];
+    if (stripIdx >= trackList.length)
+        return null;
+    var tid = trackList[stripIdx].id;
     return observersByTrackId[tid] || null;
 }
 // ---------------------------------------------------------------------------

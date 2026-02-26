@@ -5,6 +5,11 @@ autowatch = 1;
 inlets = 1;
 outlets = 12;
 var log = (0, utils_1.logFactory)(config_1.default);
+var deviceVersion = '';
+function setDeviceVersion(ver) {
+    deviceVersion = ver.toString();
+    outlet(OUTLET_OSC, ['/deviceVersion', deviceVersion]);
+}
 var INLET_OSC = 0;
 var OUTLET_KNOBBLER = 0;
 var OUTLET_BLUHAND = 1;
@@ -46,6 +51,14 @@ function synHandler(router, _, val) {
     }
     outlet(router.outlet, router.msg);
 }
+function synAckHandler(router, _, val) {
+    if (val) {
+        var parts = val.toString().split(' ');
+        (0, utils_1.saveSetting)('clientVersion', parts[0]);
+        (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
+    }
+    outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
+}
 function bareMsg(router) {
     outlet(router.outlet, router.msg);
 }
@@ -80,10 +93,10 @@ function multiMixerHandler(router, msg, val) {
 }
 var ROUTER = [
     {
-        outlet: OUTLET_ACK,
+        outlet: OUTLET_OSC,
         prefix: '/syn',
-        handler: synHandler,
-        msg: 'ack',
+        handler: synAckHandler,
+        msg: '/ack',
     },
     {
         outlet: OUTLET_LOOP,
@@ -460,7 +473,7 @@ var ROUTER = [
     {
         outlet: OUTLET_OSC,
         prefix: '/ping',
-        handler: synHandler,
+        handler: synAckHandler,
         msg: '/pong',
     },
     {

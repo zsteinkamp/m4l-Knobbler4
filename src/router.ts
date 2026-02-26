@@ -6,6 +6,11 @@ inlets = 1
 outlets = 12
 
 const log = logFactory(config)
+let deviceVersion = ''
+function setDeviceVersion(ver: string) {
+  deviceVersion = ver.toString()
+  outlet(OUTLET_OSC, ['/deviceVersion', deviceVersion])
+}
 
 const INLET_OSC = 0
 const OUTLET_KNOBBLER = 0
@@ -58,6 +63,14 @@ function synHandler(router: RouterItem, _: string, val: string | number) {
   }
   outlet(router.outlet, router.msg)
 }
+function synAckHandler(router: RouterItem, _: string, val: string | number) {
+  if (val) {
+    const parts = val.toString().split(' ')
+    saveSetting('clientVersion', parts[0])
+    saveSetting('clientCapabilities', parts.slice(1).join(' '))
+  }
+  outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr'])
+}
 function bareMsg(router: RouterItem) {
   outlet(router.outlet, router.msg)
 }
@@ -97,10 +110,10 @@ function multiMixerHandler(
 
 const ROUTER: RouterItem[] = [
   {
-    outlet: OUTLET_ACK,
+    outlet: OUTLET_OSC,
     prefix: '/syn',
-    handler: synHandler,
-    msg: 'ack',
+    handler: synAckHandler,
+    msg: '/ack',
   },
   {
     outlet: OUTLET_LOOP,
@@ -477,7 +490,7 @@ const ROUTER: RouterItem[] = [
   {
     outlet: OUTLET_OSC,
     prefix: '/ping',
-    handler: synHandler,
+    handler: synAckHandler,
     msg: '/pong',
   },
   {

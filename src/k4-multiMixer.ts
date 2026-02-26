@@ -87,6 +87,7 @@ const scratchApi = new LiveAPI(noFn, 'live_set')
 const CHUNK_MAX_BYTES = 1024
 const DEFAULT_VISIBLE_COUNT = 18
 const MAX_STRIP_IDX = 128
+const OBSERVER_BUFFER = 2
 
 // Pre-computed OSC address strings for mixer strips
 const SA_VOL: string[] = []
@@ -138,8 +139,8 @@ let visibleCount = 0
 // Observers keyed by track ID — survives window slides if the track stays visible
 let observersByTrackId: Record<number, StripObservers> = {}
 
-// Window slots: maps position index -> track ID currently at that position
-let windowSlots: number[] = []
+// Observer slots: track IDs in the wider observer window (visible + buffer)
+let observerSlots: number[] = []
 
 let metersEnabled = false
 let onMixerPage = false
@@ -147,6 +148,7 @@ let meterBuffer: number[] = []
 let meterDirty = false
 let meterFlushTask: MaxTask = null
 let mixerViewTask: MaxTask = null
+let rebuildTrackListTask: MaxTask = null
 
 // Track list watchers
 let visibleTracksWatcher: LiveAPI = null
@@ -426,10 +428,16 @@ function createStripObservers(
   strip.isMain = trackPath.indexOf('master_track') > -1
 
   // Color API — separate observer for track color changes
+  // Deferred to avoid re-entrancy with scratchApi during createStripObservers
   strip.colorApi = new LiveAPI(function (args: any[]) {
     if (args[0] === 'color') {
-      trackList = buildTrackList()
-      sendVisibleTracks()
+      if (!rebuildTrackListTask) {
+        rebuildTrackListTask = new Task(function () {
+          trackList = buildTrackList()
+          sendVisibleTracks()
+        }) as MaxTask
+      }
+      rebuildTrackListTask.schedule(0)
     }
   }, trackPath)
   strip.colorApi.property = 'color'
@@ -575,11 +583,16 @@ function teardownStripObservers(strip: StripObservers) {
 
 function teardownAll() {
   stopMeterFlush()
+  if (rebuildTrackListTask) {
+    rebuildTrackListTask.cancel()
+    rebuildTrackListTask.freepeer()
+    rebuildTrackListTask = null
+  }
   for (const trackIdStr in observersByTrackId) {
     teardownStripObservers(observersByTrackId[trackIdStr])
   }
   observersByTrackId = {}
-  windowSlots = []
+  observerSlots = []
   trackList = []
   meterBuffer = []
 }
@@ -666,13 +679,14 @@ function applyWindow() {
     return
   }
 
-  // Build new window slots
+  // Compute wider observer window (visible + buffer on each side)
+  const obsLeft = Math.max(0, leftIndex - OBSERVER_BUFFER)
+  const obsRight = Math.min(trackList.length, leftIndex + visibleCount + OBSERVER_BUFFER)
+
+  // Build new observer slots for the wider window
   const newSlots: number[] = []
-  for (let i = 0; i < visibleCount; i++) {
-    const trackIdx = leftIndex + i
-    if (trackIdx < trackList.length) {
-      newSlots.push(trackList[trackIdx].id)
-    }
+  for (let i = obsLeft; i < obsRight; i++) {
+    newSlots.push(trackList[i].id)
   }
 
   // Resize meter buffer if track count changed
@@ -688,8 +702,8 @@ function applyWindow() {
 
   // Compute keep/remove/add sets
   const oldSet: Record<number, boolean> = {}
-  for (let i = 0; i < windowSlots.length; i++) {
-    oldSet[windowSlots[i]] = true
+  for (let i = 0; i < observerSlots.length; i++) {
+    oldSet[observerSlots[i]] = true
   }
   const newSet: Record<number, boolean> = {}
   for (let i = 0; i < newSlots.length; i++) {
@@ -697,45 +711,38 @@ function applyWindow() {
   }
 
   // Remove: in old but not in new
-  let removed = 0
-  for (let i = 0; i < windowSlots.length; i++) {
-    const tid = windowSlots[i]
+  for (let i = 0; i < observerSlots.length; i++) {
+    const tid = observerSlots[i]
     if (!newSet[tid] && observersByTrackId[tid]) {
       teardownStripObservers(observersByTrackId[tid])
       delete observersByTrackId[tid]
-      removed++
     }
   }
 
   // Add: in new but not in old
-  let added = 0
   for (let i = 0; i < newSlots.length; i++) {
     const tid = newSlots[i]
     if (!oldSet[tid]) {
-      observersByTrackId[tid] = createStripObservers(tid, leftIndex + i)
-      added++
+      observersByTrackId[tid] = createStripObservers(tid, obsLeft + i)
     }
   }
-
-  //if (removed > 0 || added > 0) {
-  //  log('applyWindow: removed=' + removed + ' added=' + added + ' kept=' + (newSlots.length - added) + ' total=' + newSlots.length)
-  //}
 
   // Update strip indices for all observers (positions may have shifted)
   for (let i = 0; i < newSlots.length; i++) {
     const tid = newSlots[i]
     if (observersByTrackId[tid]) {
-      observersByTrackId[tid].stripIndex = leftIndex + i
+      observersByTrackId[tid].stripIndex = obsLeft + i
     }
   }
 
-  windowSlots = newSlots
+  observerSlots = newSlots
 
-  // Send initial state only for newly added strips
-  for (let i = 0; i < windowSlots.length; i++) {
-    const tid = windowSlots[i]
+  // Send initial state only for newly added strips in the visible range
+  const visRight = Math.min(leftIndex + visibleCount, trackList.length)
+  for (let i = leftIndex; i < visRight; i++) {
+    const tid = trackList[i].id
     if (!oldSet[tid] && observersByTrackId[tid]) {
-      sendStripState(leftIndex + i, observersByTrackId[tid])
+      sendStripState(i, observersByTrackId[tid])
     }
   }
 }
@@ -827,7 +834,7 @@ function mixerMeters(val: number) {
         createMeterObservers(strip, trackPath)
       }
     }
-    if (onMixerPage && windowSlots.length > 0) startMeterFlush()
+    if (onMixerPage && observerSlots.length > 0) startMeterFlush()
   } else {
     stopMeterFlush()
     for (const trackIdStr in observersByTrackId) {
@@ -864,7 +871,7 @@ function page() {
   onMixerPage = pageName === 'mixer'
 
   if (onMixerPage && !wasMixerPage) {
-    if (metersEnabled && windowSlots.length > 0) startMeterFlush()
+    if (metersEnabled && observerSlots.length > 0) startMeterFlush()
   } else if (!onMixerPage && wasMixerPage) {
     stopMeterFlush()
   }
@@ -882,10 +889,9 @@ function init() {
 
 function getStrip(stripIdx: number): StripObservers {
   const rel = stripIdx - leftIndex
-  if (rel < 0 || rel >= windowSlots.length) {
-    return null
-  }
-  const tid = windowSlots[rel]
+  if (rel < 0 || rel >= visibleCount) return null
+  if (stripIdx >= trackList.length) return null
+  const tid = trackList[stripIdx].id
   return observersByTrackId[tid] || null
 }
 
