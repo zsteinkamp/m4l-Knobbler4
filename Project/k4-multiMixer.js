@@ -625,6 +625,7 @@ function applyWindow() {
 // ---------------------------------------------------------------------------
 function mixerRefresh() {
     teardownAll();
+    sendMetersState();
     (0, utils_1.osc)('/sendMixerView', 1);
 }
 // ---------------------------------------------------------------------------

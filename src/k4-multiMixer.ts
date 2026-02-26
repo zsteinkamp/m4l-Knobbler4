@@ -753,6 +753,7 @@ function applyWindow() {
 
 function mixerRefresh() {
   teardownAll()
+  sendMetersState()
   osc('/sendMixerView', 1)
 }
 
