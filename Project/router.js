@@ -58,6 +58,7 @@ function synAckHandler(router, _, val) {
         (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
     }
     outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
+    outlet(OUTLET_OSC, ['/sendState']);
 }
 function bareMsg(router) {
     outlet(router.outlet, router.msg);
