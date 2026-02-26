@@ -220,12 +220,12 @@ function onReturnTracksChange(args) {
 // Meter Observers
 // ---------------------------------------------------------------------------
 function createMeterObservers(strip, trackPath) {
-    var baseOffset = strip.stripIndex * 3;
     strip.meterLeftApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_left') {
             var v = (0, utils_1.meterVal)(args[1]);
-            if (v !== meterBuffer[baseOffset]) {
-                meterBuffer[baseOffset] = v;
+            var off = strip.stripIndex * 3;
+            if (v !== meterBuffer[off]) {
+                meterBuffer[off] = v;
                 meterDirty = true;
             }
         }
@@ -234,8 +234,9 @@ function createMeterObservers(strip, trackPath) {
     strip.meterRightApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_right') {
             var v = (0, utils_1.meterVal)(args[1]);
-            if (v !== meterBuffer[baseOffset + 1]) {
-                meterBuffer[baseOffset + 1] = v;
+            var off = strip.stripIndex * 3 + 1;
+            if (v !== meterBuffer[off]) {
+                meterBuffer[off] = v;
                 meterDirty = true;
             }
         }
@@ -244,8 +245,9 @@ function createMeterObservers(strip, trackPath) {
     strip.meterLevelApi = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_level') {
             var v = (0, utils_1.meterVal)(args[1]);
-            if (v !== meterBuffer[baseOffset + 2]) {
-                meterBuffer[baseOffset + 2] = v;
+            var off = strip.stripIndex * 3 + 2;
+            if (v !== meterBuffer[off]) {
+                meterBuffer[off] = v;
                 meterDirty = true;
             }
         }
