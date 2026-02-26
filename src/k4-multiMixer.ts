@@ -480,10 +480,7 @@ function createStripObservers(
       ? !!parseInt(strip.trackApi.get('has_audio_output').toString())
       : false
 
-  // Output level meters (only if enabled and track has audio output)
-  if (metersEnabled && strip.hasOutput) {
-    createMeterObservers(strip, trackPath)
-  }
+  // Meter observers are managed separately by applyWindow (visible tracks only)
 
   // Mixer API — observe crossfade_assign (master track lacks this)
   strip.mixerApi = new LiveAPI(function (args: any[]) {
@@ -737,8 +734,30 @@ function applyWindow() {
 
   observerSlots = newSlots
 
-  // Send initial state only for newly added strips in the visible range
+  // Manage meter observers for visible tracks only (not buffer)
   const visRight = Math.min(leftIndex + visibleCount, trackList.length)
+  if (metersEnabled) {
+    // Teardown meters on buffer-only tracks
+    for (let i = obsLeft; i < leftIndex; i++) {
+      const tid = trackList[i].id
+      if (observersByTrackId[tid]) teardownMeterObservers(observersByTrackId[tid])
+    }
+    for (let i = visRight; i < obsRight; i++) {
+      const tid = trackList[i].id
+      if (observersByTrackId[tid]) teardownMeterObservers(observersByTrackId[tid])
+    }
+    // Create meters on visible tracks that don't have them
+    for (let i = leftIndex; i < visRight; i++) {
+      const tid = trackList[i].id
+      const strip = observersByTrackId[tid]
+      if (strip && strip.hasOutput && !strip.meterLeftApi) {
+        createMeterObservers(strip, strip.trackApi.unquotedpath)
+      }
+    }
+    if (onMixerPage && !meterFlushTask) startMeterFlush()
+  }
+
+  // Send initial state only for newly added strips in the visible range
   for (let i = leftIndex; i < visRight; i++) {
     const tid = trackList[i].id
     if (!oldSet[tid] && observersByTrackId[tid]) {
@@ -828,11 +847,13 @@ function mixerMeters(val: number) {
   sendMetersState()
 
   if (metersEnabled) {
-    for (const trackIdStr in observersByTrackId) {
-      const strip = observersByTrackId[trackIdStr]
-      if (strip.hasOutput) {
-        const trackPath = strip.trackApi.unquotedpath
-        createMeterObservers(strip, trackPath)
+    // Only create meter observers for visible tracks, not buffer
+    const visRight = Math.min(leftIndex + visibleCount, trackList.length)
+    for (let i = leftIndex; i < visRight; i++) {
+      const tid = trackList[i].id
+      const strip = observersByTrackId[tid]
+      if (strip && strip.hasOutput && !strip.meterLeftApi) {
+        createMeterObservers(strip, strip.trackApi.unquotedpath)
       }
     }
     if (onMixerPage && observerSlots.length > 0) startMeterFlush()
