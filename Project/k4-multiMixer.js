@@ -31,6 +31,7 @@ var OBSERVER_BUFFER = 2;
 // Pre-computed OSC address strings for mixer strips
 var SA_VOL = [];
 var SA_VOLSTR = [];
+var SA_VOLAUTO = [];
 var SA_PAN = [];
 var SA_PANSTR = [];
 var SA_MUTE = [];
@@ -49,6 +50,7 @@ for (var _i = 0; _i < MAX_STRIP_IDX; _i++) {
     var _p = '/mixer/' + _i + '/';
     SA_VOL[_i] = _p + 'vol';
     SA_VOLSTR[_i] = _p + 'volStr';
+    SA_VOLAUTO[_i] = _p + 'volAuto';
     SA_PAN[_i] = _p + 'pan';
     SA_PANSTR[_i] = _p + 'panStr';
     SA_MUTE[_i] = _p + 'mute';
@@ -329,6 +331,7 @@ function createStripObservers(trackId, stripIdx) {
         meterLevelApi: null,
         mixerApi: null,
         volApi: null,
+        volAutoApi: null,
         panApi: null,
         sendApis: [],
         pause: {},
@@ -414,6 +417,13 @@ function createStripObservers(trackId, stripIdx) {
         }
     }, mixerPath + ' volume');
     strip.volApi.property = 'value';
+    // Volume automation state observer
+    strip.volAutoApi = new LiveAPI(function (args) {
+        if (args[0] === 'automation_state' && isVisible(strip)) {
+            (0, utils_1.osc)(SA_VOLAUTO[strip.stripIndex], parseInt(args[1].toString()));
+        }
+    }, mixerPath + ' volume');
+    strip.volAutoApi.property = 'automation_state';
     // Pan observer
     strip.panApi = new LiveAPI(function (args) {
         if (args[0] !== 'value' || !isVisible(strip))
@@ -455,6 +465,7 @@ function teardownStripObservers(strip) {
     teardownMeterObservers(strip);
     (0, utils_1.detach)(strip.mixerApi);
     (0, utils_1.detach)(strip.volApi);
+    (0, utils_1.detach)(strip.volAutoApi);
     (0, utils_1.detach)(strip.panApi);
     for (var i = 0; i < strip.sendApis.length; i++) {
         (0, utils_1.detach)(strip.sendApis[i]);
@@ -506,6 +517,8 @@ function sendStripState(n, strip) {
     (0, utils_1.osc)(SA_VOL[n], fVolVal);
     var volStr = strip.volApi.call('str_for_value', fVolVal);
     (0, utils_1.osc)(SA_VOLSTR[n], volStr ? volStr.toString() : '');
+    // Volume automation state
+    (0, utils_1.osc)(SA_VOLAUTO[n], parseInt(strip.volAutoApi.get('automation_state').toString()));
     // Pan
     var panVal = strip.panApi.get('value');
     var fPanVal = parseFloat(panVal.toString()) || 0;

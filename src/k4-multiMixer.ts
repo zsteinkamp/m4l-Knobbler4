@@ -69,6 +69,7 @@ type StripObservers = {
   meterLevelApi: LiveAPI
   mixerApi: LiveAPI
   volApi: LiveAPI
+  volAutoApi: LiveAPI
   panApi: LiveAPI
   sendApis: LiveAPI[]
   pause: Record<string, PauseState>
@@ -99,6 +100,7 @@ const OBSERVER_BUFFER = 2
 // Pre-computed OSC address strings for mixer strips
 const SA_VOL: string[] = []
 const SA_VOLSTR: string[] = []
+const SA_VOLAUTO: string[] = []
 const SA_PAN: string[] = []
 const SA_PANSTR: string[] = []
 const SA_MUTE: string[] = []
@@ -117,6 +119,7 @@ for (let _i = 0; _i < MAX_STRIP_IDX; _i++) {
   const _p = '/mixer/' + _i + '/'
   SA_VOL[_i] = _p + 'vol'
   SA_VOLSTR[_i] = _p + 'volStr'
+  SA_VOLAUTO[_i] = _p + 'volAuto'
   SA_PAN[_i] = _p + 'pan'
   SA_PANSTR[_i] = _p + 'panStr'
   SA_MUTE[_i] = _p + 'mute'
@@ -426,6 +429,7 @@ function createStripObservers(
     meterLevelApi: null,
     mixerApi: null,
     volApi: null,
+    volAutoApi: null,
     panApi: null,
     sendApis: [],
     pause: {},
@@ -521,6 +525,14 @@ function createStripObservers(
   }, mixerPath + ' volume')
   strip.volApi.property = 'value'
 
+  // Volume automation state observer
+  strip.volAutoApi = new LiveAPI(function (args: any[]) {
+    if (args[0] === 'automation_state' && isVisible(strip)) {
+      osc(SA_VOLAUTO[strip.stripIndex], parseInt(args[1].toString()))
+    }
+  }, mixerPath + ' volume')
+  strip.volAutoApi.property = 'automation_state'
+
   // Pan observer
   strip.panApi = new LiveAPI(function (args: any[]) {
     if (args[0] !== 'value' || !isVisible(strip)) return
@@ -561,6 +573,7 @@ function teardownStripObservers(strip: StripObservers) {
   teardownMeterObservers(strip)
   detach(strip.mixerApi)
   detach(strip.volApi)
+  detach(strip.volAutoApi)
   detach(strip.panApi)
   for (let i = 0; i < strip.sendApis.length; i++) {
     detach(strip.sendApis[i])
@@ -617,6 +630,9 @@ function sendStripState(n: number, strip: StripObservers) {
   osc(SA_VOL[n], fVolVal)
   const volStr = strip.volApi.call('str_for_value', fVolVal) as any
   osc(SA_VOLSTR[n], volStr ? volStr.toString() : '')
+
+  // Volume automation state
+  osc(SA_VOLAUTO[n], parseInt(strip.volAutoApi.get('automation_state').toString()))
 
   // Pan
   const panVal = strip.panApi.get('value')
