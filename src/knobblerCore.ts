@@ -262,15 +262,7 @@ function setDefault(slot: number) {
 }
 
 function paramValueCallback(slot: number, iargs: IArguments) {
-  // This function is called whenever the parameter value changes,
-  // either via OSC control or by changing the device directly.
-  // We need to distinguish between the two and not do anything if the
-  // value was changed due to OSC input. Otherwise, we would create a feedback
-  // loop since this the purpose of this function is to update the displayed
-  // value on the OSC controller to show automation or direct manipulation.
-  // We accomplish this by keeping a timestamp of the last time OSC data was
-  // received, and only taking action here if more than 500ms has passed.
-
+  if (!param[slot]) return
   //log(args, 'ALLOW_UPDATES=', param[slot].allowParamValueUpdates)
   if (param[slot].allowParamValueUpdates) {
     if (iargs[0] === 'value') {
@@ -282,6 +274,7 @@ function paramValueCallback(slot: number, iargs: IArguments) {
 }
 
 function paramNameCallback(slot: number, iargs: IArguments) {
+  if (!param[slot]) return
   if (iargs[0] === 'name') {
     param[slot].name = iargs[1]
     sendParamName(slot)
@@ -295,6 +288,7 @@ function automationStateCallback(slot: number, iargs: IArguments) {
 }
 
 function deviceNameCallback(slot: number, iargs: IArguments) {
+  if (!param[slot]) return
   if (iargs[0] === 'name') {
     param[slot].deviceName = iargs[1]
     sendDeviceName(slot)
@@ -309,6 +303,7 @@ function parentNameCallback(slot: number, iargs: IArguments) {
 }
 
 function trackNameCallback(slot: number, iargs: IArguments) {
+  if (!param[slot]) return
   if (iargs[0] === 'name') {
     param[slot].trackName = iargs[1]
     sendTrackName(slot)
@@ -316,6 +311,7 @@ function trackNameCallback(slot: number, iargs: IArguments) {
 }
 
 function parentColorCallback(slot: number, iargs: IArguments) {
+  if (!param[slot]) return
   if (iargs[0] === 'color') {
     param[slot].trackColor = colorToString(iargs[1]) + 'FF'
     sendColor(slot)
@@ -324,6 +320,7 @@ function parentColorCallback(slot: number, iargs: IArguments) {
 
 function checkDevicePresent(slot: number) {
   //log('CHECK_DEVICE_PRESENT ' + slot)
+  if (!param[slot]) return
   if (deviceObj[slot] && !deviceObj[slot].unquotedpath) {
     //log(`slot=${slot} DEVICE DELETED`)
     init(slot)
@@ -341,6 +338,7 @@ function checkDevicePresent(slot: number) {
 
 function setPath(slot: number, paramPath: string) {
   //log(`SETPATH ${slot}: ${paramPath}`)
+  if (!apiReady) return
   initSlotIfNecessary(slot)
   //log(paramPath)
   if (!isValidPath(paramPath)) {
@@ -459,6 +457,7 @@ function setPath(slot: number, paramPath: string) {
 
 function refresh() {
   //log('IN REFRESH')
+  if (!apiReady) return
   for (let i = 1; i <= MAX_SLOTS; i++) {
     refreshSlotUI(i)
   }
