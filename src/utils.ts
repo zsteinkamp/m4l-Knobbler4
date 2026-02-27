@@ -1,5 +1,14 @@
 import { DEFAULT_COLOR, MAX_SENDS, OUTLET_OSC } from './consts'
 
+// Safely tear down a LiveAPI observer: unsubscribe from property notifications
+// before detaching, to prevent callbacks firing on invalidated objects
+// (which can crash SpiderMonkey via JS_EncodeString null pointer).
+export function detach(api: LiveAPI) {
+  if (!api) return
+  api.property = ''
+  api.id = 0
+}
+
 export type logFn = (...args: any[]) => void
 export function logFactory({ outputLogs = true }) {
   function log(...args: any[]) {

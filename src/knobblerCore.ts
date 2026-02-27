@@ -2,6 +2,7 @@ import {
   colorToString,
   debouncedTask,
   dequote,
+  detach,
   isValidPath,
   loadSetting,
   logFactory,
@@ -42,7 +43,8 @@ for (let _i = 1; _i <= MAX_SLOTS; _i++) {
   ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i
 }
 // Module-level scratchpad for one-off lookups (reuse via .path is fastest)
-const scratchApi = new LiveAPI(noFn, 'live_set')
+// Initialized in init() to avoid "Live API is not initialized" at load time
+let scratchApi: LiveAPI = null
 
 // slot arrays
 const paramObj: LiveAPI[] = []
@@ -166,10 +168,10 @@ function initSlotIfNecessary(slot: number) {
 }
 
 function init(slot: number) {
+  if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
   //log(`INIT ${slot}`)
   if (paramObj[slot]) {
-    // clean up callbacks when unmapping
-    paramObj[slot].id = 0
+    detach(paramObj[slot])
     osc(ADDR_VALSTR[slot], nullString)
   }
   paramObj[slot] = null
@@ -188,18 +190,12 @@ function init(slot: number) {
     deviceCheckerTask[slot].freepeer()
     deviceCheckerTask[slot] = null
   }
-  if (paramNameObj[slot]) {
-    paramNameObj[slot].id = 0
-  }
-  if (deviceObj[slot]) {
-    deviceObj[slot].id = 0
-  }
-  if (trackObj[slot]) {
-    trackObj[slot].id = 0
-  }
-  if (parentColorObj[slot]) {
-    parentColorObj[slot].id = 0
-  }
+  detach(paramNameObj[slot])
+  detach(automationStateObj[slot])
+  detach(deviceObj[slot])
+  detach(parentNameObj[slot])
+  detach(parentColorObj[slot])
+  detach(trackObj[slot])
   sendMsg(slot, ['mapped', false])
   sendMsg(slot, ['path', ''])
 }

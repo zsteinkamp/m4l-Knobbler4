@@ -36,7 +36,8 @@ for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
     ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i;
 }
 // Module-level scratchpad for one-off lookups (reuse via .path is fastest)
-var scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
+// Initialized in init() to avoid "Live API is not initialized" at load time
+var scratchApi = null;
 // slot arrays
 var paramObj = [];
 var paramNameObj = [];
@@ -149,10 +150,11 @@ function initSlotIfNecessary(slot) {
     }
 }
 function init(slot) {
+    if (!scratchApi)
+        scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     //log(`INIT ${slot}`)
     if (paramObj[slot]) {
-        // clean up callbacks when unmapping
-        paramObj[slot].id = 0;
+        (0, utils_1.detach)(paramObj[slot]);
         (0, utils_1.osc)(ADDR_VALSTR[slot], consts_1.nullString);
     }
     paramObj[slot] = null;
@@ -171,18 +173,12 @@ function init(slot) {
         deviceCheckerTask[slot].freepeer();
         deviceCheckerTask[slot] = null;
     }
-    if (paramNameObj[slot]) {
-        paramNameObj[slot].id = 0;
-    }
-    if (deviceObj[slot]) {
-        deviceObj[slot].id = 0;
-    }
-    if (trackObj[slot]) {
-        trackObj[slot].id = 0;
-    }
-    if (parentColorObj[slot]) {
-        parentColorObj[slot].id = 0;
-    }
+    (0, utils_1.detach)(paramNameObj[slot]);
+    (0, utils_1.detach)(automationStateObj[slot]);
+    (0, utils_1.detach)(deviceObj[slot]);
+    (0, utils_1.detach)(parentNameObj[slot]);
+    (0, utils_1.detach)(parentColorObj[slot]);
+    (0, utils_1.detach)(trackObj[slot]);
     sendMsg(slot, ['mapped', false]);
     sendMsg(slot, ['path', '']);
 }

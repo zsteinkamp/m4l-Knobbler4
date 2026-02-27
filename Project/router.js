@@ -43,14 +43,6 @@ function getSlotNum(router, msg) {
     return null;
 }
 // HANDLERS
-function synHandler(router, _, val) {
-    if (val) {
-        var parts = val.toString().split(' ');
-        (0, utils_1.saveSetting)('clientVersion', parts[0]);
-        (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
-    }
-    outlet(router.outlet, router.msg);
-}
 function synAckHandler(router, _, val) {
     if (val) {
         var parts = val.toString().split(' ');

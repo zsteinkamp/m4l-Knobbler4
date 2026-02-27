@@ -14,8 +14,16 @@ setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-// Module-level scratchpad for one-off lookups (reuse via .path is fastest)
-var scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
+// Module-level scratchpads for one-off lookups (reuse via .path is fastest)
+// Lazily initialized to avoid "Live API is not initialized" at load time
+var scratchApi = null;
+var trackListApi = null;
+function ensureApis() {
+    if (!scratchApi)
+        scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
+    if (!trackListApi)
+        trackListApi = new LiveAPI(consts_1.noFn, 'live_set');
+}
 var CHUNK_MAX_BYTES = 1024;
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
@@ -82,6 +90,9 @@ var returnTracksWatcher = null;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+function isVisible(strip) {
+    return strip.stripIndex >= leftIndex && strip.stripIndex < leftIndex + visibleCount;
+}
 function clientHasCapability(cap) {
     var caps = (0, utils_1.loadSetting)('clientCapabilities');
     if (!caps) {
@@ -127,44 +138,44 @@ function stripPause(strip, key) {
 function buildTrackList() {
     var ret = [];
     // visible tracks only (respects group folding)
-    scratchApi.path = 'live_set';
-    var trackIds = (0, utils_1.cleanArr)(scratchApi.get('visible_tracks'));
+    trackListApi.path = 'live_set';
+    var trackIds = (0, utils_1.cleanArr)(trackListApi.get('visible_tracks'));
     for (var _a = 0, trackIds_1 = trackIds; _a < trackIds_1.length; _a++) {
         var id = trackIds_1[_a];
-        scratchApi.id = id;
-        var isFoldable = parseInt(scratchApi.get('is_foldable').toString());
-        var parentId = (0, utils_1.cleanArr)(scratchApi.get('group_track'))[0] || 0;
+        trackListApi.id = id;
+        var isFoldable = parseInt(trackListApi.get('is_foldable').toString());
+        var parentId = (0, utils_1.cleanArr)(trackListApi.get('group_track'))[0] || 0;
         ret.push({
             id: id,
             type: isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_TRACK,
-            name: (0, utils_1.truncate)(scratchApi.get('name').toString(), consts_1.MAX_NAME_LEN),
-            color: (0, utils_1.colorToString)(scratchApi.get('color').toString()),
+            name: (0, utils_1.truncate)(trackListApi.get('name').toString(), consts_1.MAX_NAME_LEN),
+            color: (0, utils_1.colorToString)(trackListApi.get('color').toString()),
             parentId: parentId,
         });
     }
     // return tracks (always visible)
-    scratchApi.path = 'live_set';
-    var returnIds = (0, utils_1.cleanArr)(scratchApi.get('return_tracks'));
+    trackListApi.path = 'live_set';
+    var returnIds = (0, utils_1.cleanArr)(trackListApi.get('return_tracks'));
     for (var _b = 0, returnIds_1 = returnIds; _b < returnIds_1.length; _b++) {
         var id = returnIds_1[_b];
-        scratchApi.id = id;
+        trackListApi.id = id;
         ret.push({
             id: id,
             type: consts_1.TYPE_RETURN,
-            name: (0, utils_1.truncate)(scratchApi.get('name').toString(), consts_1.MAX_NAME_LEN),
-            color: (0, utils_1.colorToString)(scratchApi.get('color').toString()),
+            name: (0, utils_1.truncate)(trackListApi.get('name').toString(), consts_1.MAX_NAME_LEN),
+            color: (0, utils_1.colorToString)(trackListApi.get('color').toString()),
             parentId: 0,
         });
     }
     // master track
-    scratchApi.path = 'live_set';
-    var mainId = (0, utils_1.cleanArr)(scratchApi.get('master_track'))[0];
-    scratchApi.id = mainId;
+    trackListApi.path = 'live_set';
+    var mainId = (0, utils_1.cleanArr)(trackListApi.get('master_track'))[0];
+    trackListApi.id = mainId;
     ret.push({
         id: mainId,
         type: consts_1.TYPE_MAIN,
-        name: (0, utils_1.truncate)(scratchApi.get('name').toString(), consts_1.MAX_NAME_LEN),
-        color: (0, utils_1.colorToString)(scratchApi.get('color').toString()),
+        name: (0, utils_1.truncate)(trackListApi.get('name').toString(), consts_1.MAX_NAME_LEN),
+        color: (0, utils_1.colorToString)(trackListApi.get('color').toString()),
         parentId: 0,
     });
     return ret;
@@ -190,13 +201,13 @@ function onVisibleTracksChange(args) {
     applyWindow();
 }
 function sendReturnTrackColors() {
-    scratchApi.path = 'live_set';
-    var returnIds = (0, utils_1.cleanArr)(scratchApi.get('return_tracks'));
+    trackListApi.path = 'live_set';
+    var returnIds = (0, utils_1.cleanArr)(trackListApi.get('return_tracks'));
     var colors = [];
     for (var i = 0; i < consts_1.MAX_SENDS; i++) {
         if (returnIds[i]) {
-            scratchApi.id = returnIds[i];
-            colors.push('#' + (0, utils_1.colorToString)(scratchApi.get('color').toString()));
+            trackListApi.id = returnIds[i];
+            colors.push('#' + (0, utils_1.colorToString)(trackListApi.get('color').toString()));
         }
         else {
             colors.push('#' + consts_1.DEFAULT_COLOR);
@@ -214,6 +225,8 @@ function onReturnTracksChange(args) {
     trackList = buildTrackList();
     sendVisibleTracks();
     sendReturnTrackColors();
+    var numReturns = trackList.filter(function (t) { return t.type === consts_1.TYPE_RETURN; }).length;
+    outlet(consts_1.OUTLET_OSC, ['/mixer/setNumSends', Math.min(numReturns, consts_1.MAX_SENDS)]);
     applyWindow();
 }
 // ---------------------------------------------------------------------------
@@ -256,15 +269,15 @@ function createMeterObservers(strip, trackPath) {
 }
 function teardownMeterObservers(strip) {
     if (strip.meterLeftApi) {
-        strip.meterLeftApi.id = 0;
+        (0, utils_1.detach)(strip.meterLeftApi);
         strip.meterLeftApi = null;
     }
     if (strip.meterRightApi) {
-        strip.meterRightApi.id = 0;
+        (0, utils_1.detach)(strip.meterRightApi);
         strip.meterRightApi = null;
     }
     if (strip.meterLevelApi) {
-        strip.meterLevelApi.id = 0;
+        (0, utils_1.detach)(strip.meterLevelApi);
         strip.meterLevelApi = null;
     }
     // Zero out this strip's slots in the buffer
@@ -348,13 +361,13 @@ function createStripObservers(trackId, stripIdx) {
     // Mute, solo, arm — separate observers (master track lacks these)
     if (!strip.isMain) {
         strip.muteApi = new LiveAPI(function (args) {
-            if (args[0] === 'mute') {
+            if (args[0] === 'mute' && isVisible(strip)) {
                 (0, utils_1.osc)(SA_MUTE[strip.stripIndex], parseInt(args[1].toString()));
             }
         }, trackPath);
         strip.muteApi.property = 'mute';
         strip.soloApi = new LiveAPI(function (args) {
-            if (args[0] === 'solo') {
+            if (args[0] === 'solo' && isVisible(strip)) {
                 (0, utils_1.osc)(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()));
             }
         }, trackPath);
@@ -364,7 +377,7 @@ function createStripObservers(trackId, stripIdx) {
         !strip.isMain && !!parseInt(strip.trackApi.get('can_be_armed').toString());
     if (strip.canBeArmed) {
         strip.armApi = new LiveAPI(function (args) {
-            if (args[0] === 'arm') {
+            if (args[0] === 'arm' && isVisible(strip)) {
                 (0, utils_1.osc)(SA_ARM[strip.stripIndex], parseInt(args[1].toString()));
             }
         }, trackPath);
@@ -379,8 +392,7 @@ function createStripObservers(trackId, stripIdx) {
     // Meter observers are managed separately by applyWindow (visible tracks only)
     // Mixer API — observe crossfade_assign (master track lacks this)
     strip.mixerApi = new LiveAPI(function (args) {
-        //log('OMG', args)
-        if (args[0] === 'crossfade_assign') {
+        if (args[0] === 'crossfade_assign' && isVisible(strip)) {
             var xVal = parseInt(args[1].toString());
             (0, utils_1.osc)(SA_XFADEA[strip.stripIndex], xVal === 0 ? 1 : 0);
             (0, utils_1.osc)(SA_XFADEB[strip.stripIndex], xVal === 2 ? 1 : 0);
@@ -392,7 +404,7 @@ function createStripObservers(trackId, stripIdx) {
     // Volume observer
     //log('vol observer path: ' + mixerPath + ' volume' + ' isMain=' + strip.isMain)
     strip.volApi = new LiveAPI(function (args) {
-        if (args[0] !== 'value')
+        if (args[0] !== 'value' || !isVisible(strip))
             return;
         if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
             var fVal = parseFloat(args[1]) || 0;
@@ -404,7 +416,7 @@ function createStripObservers(trackId, stripIdx) {
     strip.volApi.property = 'value';
     // Pan observer
     strip.panApi = new LiveAPI(function (args) {
-        if (args[0] !== 'value')
+        if (args[0] !== 'value' || !isVisible(strip))
             return;
         if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
             var fVal = parseFloat(args[1]) || 0;
@@ -421,7 +433,7 @@ function createStripObservers(trackId, stripIdx) {
     var _loop_1 = function (i) {
         var sendIdx = i;
         var sendApi = new LiveAPI(function (args) {
-            if (args[0] !== 'value')
+            if (args[0] !== 'value' || !isVisible(strip))
                 return;
             if (!strip.pause['send'] || !strip.pause['send'].paused) {
                 (0, utils_1.osc)(SA_SEND[strip.stripIndex][sendIdx], args[1] || 0);
@@ -436,34 +448,18 @@ function createStripObservers(trackId, stripIdx) {
     return strip;
 }
 function teardownStripObservers(strip) {
-    if (strip.trackApi) {
-        strip.trackApi.id = 0;
-    }
-    if (strip.colorApi) {
-        strip.colorApi.id = 0;
-    }
-    if (strip.muteApi) {
-        strip.muteApi.id = 0;
-    }
-    if (strip.soloApi) {
-        strip.soloApi.id = 0;
-    }
-    if (strip.armApi) {
-        strip.armApi.id = 0;
-    }
+    (0, utils_1.detach)(strip.colorApi);
+    (0, utils_1.detach)(strip.muteApi);
+    (0, utils_1.detach)(strip.soloApi);
+    (0, utils_1.detach)(strip.armApi);
     teardownMeterObservers(strip);
-    if (strip.mixerApi) {
-        strip.mixerApi.id = 0;
-    }
-    if (strip.volApi) {
-        strip.volApi.id = 0;
-    }
-    if (strip.panApi) {
-        strip.panApi.id = 0;
-    }
+    (0, utils_1.detach)(strip.mixerApi);
+    (0, utils_1.detach)(strip.volApi);
+    (0, utils_1.detach)(strip.panApi);
     for (var i = 0; i < strip.sendApis.length; i++) {
-        strip.sendApis[i].id = 0;
+        (0, utils_1.detach)(strip.sendApis[i]);
     }
+    (0, utils_1.detach)(strip.trackApi);
     // Cancel all pause tasks
     for (var key in strip.pause) {
         if (strip.pause[key].task) {
@@ -655,6 +651,7 @@ function mixerRefresh() {
 // Incoming: mixerView
 // ---------------------------------------------------------------------------
 function setupWindow(left, count) {
+    ensureApis();
     var firstSetup = trackList.length === 0;
     leftIndex = left;
     visibleCount = count;
@@ -671,7 +668,7 @@ function setupWindow(left, count) {
         scratchApi.path = 'live_set';
         var numSends = Math.min((0, utils_1.cleanArr)(scratchApi.get('return_tracks')).length, consts_1.MAX_SENDS);
         //log('SENDING numSends', numSends)
-        outlet(consts_1.OUTLET_OSC, ['/mixer/numSends', numSends]);
+        outlet(consts_1.OUTLET_OSC, ['/mixer/setNumSends', numSends]);
         sendReturnTrackColors();
         trackList = buildTrackList();
         sendVisibleTracks();
@@ -764,6 +761,7 @@ function page() {
     }
 }
 function init() {
+    ensureApis();
     metersEnabled = !!(0, utils_1.loadSetting)('metersEnabled');
     sendMetersState();
     setupWindow(0, DEFAULT_VISIBLE_COUNT);
