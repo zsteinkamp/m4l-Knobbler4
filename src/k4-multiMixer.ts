@@ -654,9 +654,11 @@ function sendStripState(n: number, strip: StripObservers) {
     state.inputEnabled = inputStatus && inputStatus.inputEnabled ? 1 : 0
   }
 
-  const xFadeAssign = !strip.isMain ? parseInt(strip.mixerApi.get('crossfade_assign').toString()) : 1
-  state.xFadeA = xFadeAssign === 0 ? 1 : 0
-  state.xFadeB = xFadeAssign === 2 ? 1 : 0
+  if (!strip.isMain) {
+    const xFadeAssign = parseInt(strip.mixerApi.get('crossfade_assign').toString())
+    state.xFadeA = xFadeAssign === 0 ? 1 : 0
+    state.xFadeB = xFadeAssign === 2 ? 1 : 0
+  }
 
   const sends: number[] = []
   for (let i = 0; i < strip.sendApis.length; i++) {

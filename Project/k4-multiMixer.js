@@ -537,9 +537,11 @@ function sendStripState(n, strip) {
         var inputStatus = (0, toggleInput_1.getTrackInputStatus)(strip.trackApi);
         state.inputEnabled = inputStatus && inputStatus.inputEnabled ? 1 : 0;
     }
-    var xFadeAssign = !strip.isMain ? parseInt(strip.mixerApi.get('crossfade_assign').toString()) : 1;
-    state.xFadeA = xFadeAssign === 0 ? 1 : 0;
-    state.xFadeB = xFadeAssign === 2 ? 1 : 0;
+    if (!strip.isMain) {
+        var xFadeAssign = parseInt(strip.mixerApi.get('crossfade_assign').toString());
+        state.xFadeA = xFadeAssign === 0 ? 1 : 0;
+        state.xFadeB = xFadeAssign === 2 ? 1 : 0;
+    }
     var sends = [];
     for (var i = 0; i < strip.sendApis.length; i++) {
         sends.push(parseFloat(strip.sendApis[i].get('value').toString()) || 0);
