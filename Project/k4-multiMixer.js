@@ -45,6 +45,7 @@ var SA_XFADEASSIGN = [];
 var SA_NAME = [];
 var SA_COLOR = [];
 var SA_TYPE = [];
+var SA_STATE = [];
 var SA_SEND = [];
 for (var _i = 0; _i < MAX_STRIP_IDX; _i++) {
     var _p = '/mixer/' + _i + '/';
@@ -64,6 +65,7 @@ for (var _i = 0; _i < MAX_STRIP_IDX; _i++) {
     SA_NAME[_i] = _p + 'name';
     SA_COLOR[_i] = _p + 'color';
     SA_TYPE[_i] = _p + 'type';
+    SA_STATE[_i] = _p + 'state';
     SA_SEND[_i] = [];
     for (var _j = 0; _j < consts_1.MAX_SENDS; _j++) {
         SA_SEND[_i][_j] = _p + 'send' + (_j + 1);
@@ -79,6 +81,10 @@ var visibleCount = 0;
 var observersByTrackId = {};
 // Observer slots: track IDs in the wider observer window (visible + buffer)
 var observerSlots = [];
+// Track IDs for which sendStripState has been called in the current visible window.
+// Rebuilt each applyWindow so strips leaving the visible range get state re-sent
+// if they scroll back in (observer callbacks don't fire while !isVisible).
+var visibleStateSet = {};
 var metersEnabled = false;
 var onMixerPage = false;
 var meterBuffer = [];
@@ -339,6 +345,7 @@ function createStripObservers(trackId, stripIdx) {
         canBeArmed: false,
         hasOutput: false,
         isMain: false,
+        initialized: false,
     };
     // Get the track's path so we can build full paths for children
     scratchApi.id = trackId;
@@ -364,13 +371,13 @@ function createStripObservers(trackId, stripIdx) {
     // Mute, solo, arm — separate observers (master track lacks these)
     if (!strip.isMain) {
         strip.muteApi = new LiveAPI(function (args) {
-            if (args[0] === 'mute' && isVisible(strip)) {
+            if (args[0] === 'mute' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_MUTE[strip.stripIndex], parseInt(args[1].toString()));
             }
         }, trackPath);
         strip.muteApi.property = 'mute';
         strip.soloApi = new LiveAPI(function (args) {
-            if (args[0] === 'solo' && isVisible(strip)) {
+            if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()));
             }
         }, trackPath);
@@ -380,7 +387,7 @@ function createStripObservers(trackId, stripIdx) {
         !strip.isMain && !!parseInt(strip.trackApi.get('can_be_armed').toString());
     if (strip.canBeArmed) {
         strip.armApi = new LiveAPI(function (args) {
-            if (args[0] === 'arm' && isVisible(strip)) {
+            if (args[0] === 'arm' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_ARM[strip.stripIndex], parseInt(args[1].toString()));
             }
         }, trackPath);
@@ -395,7 +402,7 @@ function createStripObservers(trackId, stripIdx) {
     // Meter observers are managed separately by applyWindow (visible tracks only)
     // Mixer API — observe crossfade_assign (master track lacks this)
     strip.mixerApi = new LiveAPI(function (args) {
-        if (args[0] === 'crossfade_assign' && isVisible(strip)) {
+        if (args[0] === 'crossfade_assign' && strip.initialized && isVisible(strip)) {
             var xVal = parseInt(args[1].toString());
             (0, utils_1.osc)(SA_XFADEA[strip.stripIndex], xVal === 0 ? 1 : 0);
             (0, utils_1.osc)(SA_XFADEB[strip.stripIndex], xVal === 2 ? 1 : 0);
@@ -407,7 +414,7 @@ function createStripObservers(trackId, stripIdx) {
     // Volume observer
     //log('vol observer path: ' + mixerPath + ' volume' + ' isMain=' + strip.isMain)
     strip.volApi = new LiveAPI(function (args) {
-        if (args[0] !== 'value' || !isVisible(strip))
+        if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
             return;
         if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
             var fVal = parseFloat(args[1]) || 0;
@@ -419,14 +426,14 @@ function createStripObservers(trackId, stripIdx) {
     strip.volApi.property = 'value';
     // Volume automation state observer
     strip.volAutoApi = new LiveAPI(function (args) {
-        if (args[0] === 'automation_state' && isVisible(strip)) {
+        if (args[0] === 'automation_state' && strip.initialized && isVisible(strip)) {
             (0, utils_1.osc)(SA_VOLAUTO[strip.stripIndex], parseInt(args[1].toString()));
         }
     }, mixerPath + ' volume');
     strip.volAutoApi.property = 'automation_state';
     // Pan observer
     strip.panApi = new LiveAPI(function (args) {
-        if (args[0] !== 'value' || !isVisible(strip))
+        if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
             return;
         if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
             var fVal = parseFloat(args[1]) || 0;
@@ -443,7 +450,7 @@ function createStripObservers(trackId, stripIdx) {
     var _loop_1 = function (i) {
         var sendIdx = i;
         var sendApi = new LiveAPI(function (args) {
-            if (args[0] !== 'value' || !isVisible(strip))
+            if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
                 return;
             if (!strip.pause['send'] || !strip.pause['send'].paused) {
                 (0, utils_1.osc)(SA_SEND[strip.stripIndex][sendIdx], args[1] || 0);
@@ -455,6 +462,7 @@ function createStripObservers(trackId, stripIdx) {
     for (var i = 0; i < numSends; i++) {
         _loop_1(i);
     }
+    strip.initialized = true;
     return strip;
 }
 function teardownStripObservers(strip) {
@@ -491,6 +499,7 @@ function teardownAll() {
     }
     observersByTrackId = {};
     observerSlots = [];
+    visibleStateSet = {};
     trackList = [];
     meterBuffer = [];
 }
@@ -498,7 +507,6 @@ function teardownAll() {
 // Send Strip State
 // ---------------------------------------------------------------------------
 function sendStripState(n, strip) {
-    // Find the track info
     var info = null;
     for (var i = 0; i < trackList.length; i++) {
         if (trackList[i].id === strip.trackId) {
@@ -506,58 +514,38 @@ function sendStripState(n, strip) {
             break;
         }
     }
-    if (info) {
-        (0, utils_1.osc)(SA_NAME[n], info.name);
-        (0, utils_1.osc)(SA_COLOR[n], info.color);
-        (0, utils_1.osc)(SA_TYPE[n], info.type);
-    }
-    // Volume
-    var volVal = strip.volApi.get('value');
-    var fVolVal = parseFloat(volVal.toString()) || 0;
-    (0, utils_1.osc)(SA_VOL[n], fVolVal);
-    var volStr = strip.volApi.call('str_for_value', fVolVal);
-    (0, utils_1.osc)(SA_VOLSTR[n], volStr ? volStr.toString() : '');
-    // Volume automation state
-    (0, utils_1.osc)(SA_VOLAUTO[n], parseInt(strip.volAutoApi.get('automation_state').toString()));
-    // Pan
-    var panVal = strip.panApi.get('value');
-    var fPanVal = parseFloat(panVal.toString()) || 0;
-    (0, utils_1.osc)(SA_PAN[n], fPanVal);
-    var panStr = strip.panApi.call('str_for_value', fPanVal);
-    (0, utils_1.osc)(SA_PANSTR[n], panStr ? panStr.toString() : '');
-    // Mute / Solo (master track lacks these)
-    if (!strip.isMain) {
-        (0, utils_1.osc)(SA_MUTE[n], parseInt(strip.trackApi.get('mute').toString()));
-        (0, utils_1.osc)(SA_SOLO[n], parseInt(strip.trackApi.get('solo').toString()));
-    }
-    else {
-        (0, utils_1.osc)(SA_MUTE[n], 0);
-        (0, utils_1.osc)(SA_SOLO[n], 0);
-    }
-    // Arm / Input
+    var volVal = parseFloat(strip.volApi.get('value').toString()) || 0;
+    var volStr = strip.volApi.call('str_for_value', volVal);
+    var panVal = parseFloat(strip.panApi.get('value').toString()) || 0;
+    var panStr = strip.panApi.call('str_for_value', panVal);
+    var state = {
+        name: info ? info.name : '',
+        color: info ? info.color : consts_1.DEFAULT_COLOR,
+        type: info ? info.type : consts_1.TYPE_TRACK,
+        vol: volVal,
+        volStr: volStr ? volStr.toString() : '',
+        volAuto: parseInt(strip.volAutoApi.get('automation_state').toString()),
+        pan: panVal,
+        panStr: panStr ? panStr.toString() : '',
+        mute: !strip.isMain ? parseInt(strip.trackApi.get('mute').toString()) : 0,
+        solo: !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0,
+        recordArm: strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0,
+        inputEnabled: 0,
+        hasOutput: strip.hasOutput ? 1 : 0,
+    };
     if (strip.canBeArmed) {
-        (0, utils_1.osc)(SA_ARM[n], parseInt(strip.trackApi.get('arm').toString()));
         var inputStatus = (0, toggleInput_1.getTrackInputStatus)(strip.trackApi);
-        (0, utils_1.osc)(SA_INPUT[n], inputStatus && inputStatus.inputEnabled ? 1 : 0);
+        state.inputEnabled = inputStatus && inputStatus.inputEnabled ? 1 : 0;
     }
-    else {
-        (0, utils_1.osc)(SA_ARM[n], 0);
-        (0, utils_1.osc)(SA_INPUT[n], 0);
-    }
-    // Has output
-    (0, utils_1.osc)(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0);
-    // Crossfade assign (master track lacks this)
-    if (!strip.isMain) {
-        (0, utils_1.osc)(SA_XFADEASSIGN[n], parseInt(strip.mixerApi.get('crossfade_assign').toString()));
-    }
-    else {
-        (0, utils_1.osc)(SA_XFADEASSIGN[n], 0);
-    }
-    // Sends
+    var xFadeAssign = !strip.isMain ? parseInt(strip.mixerApi.get('crossfade_assign').toString()) : 1;
+    state.xFadeA = xFadeAssign === 0 ? 1 : 0;
+    state.xFadeB = xFadeAssign === 2 ? 1 : 0;
+    var sends = [];
     for (var i = 0; i < strip.sendApis.length; i++) {
-        var sendVal = strip.sendApis[i].get('value');
-        (0, utils_1.osc)(SA_SEND[n][i], parseFloat(sendVal.toString()) || 0);
+        sends.push(parseFloat(strip.sendApis[i].get('value').toString()) || 0);
     }
+    state.sends = sends;
+    outlet(consts_1.OUTLET_OSC, [SA_STATE[n], JSON.stringify(state)]);
 }
 // ---------------------------------------------------------------------------
 // Window Management
@@ -644,13 +632,20 @@ function applyWindow() {
         if (onMixerPage && !meterFlushTask)
             startMeterFlush();
     }
-    // Send initial state only for newly added strips in the visible range
+    // Send state for strips that are newly visible (weren't in the previous visible set).
+    // This catches both newly created strips and buffer-zone strips scrolling into view.
+    var newVisibleSet = {};
     for (var i = leftIndex; i < visRight; i++) {
         var tid = trackList[i].id;
-        if (!oldSet[tid] && observersByTrackId[tid]) {
-            sendStripState(i, observersByTrackId[tid]);
+        var strip = observersByTrackId[tid];
+        if (strip) {
+            newVisibleSet[tid] = true;
+            if (!visibleStateSet[tid]) {
+                sendStripState(i, strip);
+            }
         }
     }
+    visibleStateSet = newVisibleSet;
 }
 // ---------------------------------------------------------------------------
 // Refresh — called on /btnRefresh to invalidate stale observers
