@@ -43,8 +43,11 @@ for (let _i = 1; _i <= MAX_SLOTS; _i++) {
   ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i
 }
 // Module-level scratchpad for one-off lookups (reuse via .path is fastest)
-// Initialized in init() to avoid "Live API is not initialized" at load time
+// Initialized in initAll() to avoid "Live API is not initialized" at load time
 let scratchApi: LiveAPI = null
+// Set true by initAll() (gated by live.thisdevice). Bpatcher parameters
+// can fire setMin/setMax/setPath before the API is ready — skip those.
+let apiReady = false
 
 // slot arrays
 const paramObj: LiveAPI[] = []
@@ -151,11 +154,14 @@ function clearPath(slot: number) {
 }
 
 function bkMap(slot: number, id: number) {
+  if (!apiReady) return
   scratchApi.id = id
   setPath(slot, scratchApi.unquotedpath)
 }
 
 function initAll() {
+  if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
+  apiReady = true
   for (let i = 1; i <= MAX_SLOTS; i++) {
     initSlotIfNecessary(i)
   }
@@ -168,7 +174,7 @@ function initSlotIfNecessary(slot: number) {
 }
 
 function init(slot: number) {
-  if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
+  if (!apiReady) return
   //log(`INIT ${slot}`)
   if (paramObj[slot]) {
     detach(paramObj[slot])

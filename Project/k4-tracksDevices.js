@@ -360,6 +360,7 @@ function updateTrackNav() {
     // Rebuild trees on track nav
     state.api.path = 'live_set';
     state.track.tree = makeTrackTree('track', consts_1.TYPE_TRACK, (0, utils_1.cleanArr)(state.api.get('tracks')));
+    state.api.path = 'live_set';
     state.return.tree = makeTrackTree('return', consts_1.TYPE_RETURN, (0, utils_1.cleanArr)(state.api.get('return_tracks')));
     state.api.path = 'live_set';
     state.main.tree = makeTrackTree('main', consts_1.TYPE_MAIN, (0, utils_1.cleanArr)(state.api.get('master_track')));

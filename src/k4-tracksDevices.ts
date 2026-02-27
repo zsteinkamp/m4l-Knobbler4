@@ -429,6 +429,7 @@ function updateTrackNav() {
     cleanArr(state.api.get('tracks'))
   )
 
+  state.api.path = 'live_set'
   state.return.tree = makeTrackTree(
     'return',
     TYPE_RETURN,

@@ -710,7 +710,7 @@ function mixerView() {
     mixerViewTask = new Task(function () {
         setupWindow(left, count);
     });
-    mixerViewTask.schedule(500);
+    mixerViewTask.schedule(250);
 }
 function mixerMeters(val) {
     var enabled = !!parseInt(val.toString());

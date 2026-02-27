@@ -850,7 +850,7 @@ function mixerView() {
   mixerViewTask = new Task(function () {
     setupWindow(left, count)
   }) as MaxTask
-  mixerViewTask.schedule(500)
+  mixerViewTask.schedule(250)
 }
 
 function mixerMeters(val: number) {
