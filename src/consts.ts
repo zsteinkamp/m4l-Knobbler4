@@ -20,7 +20,7 @@ export const noFn = () => {}
 export const MAX_NAME_LEN = 32
 export const MAX_SENDS = 12
 export const PAUSE_MS = 300
-export const METER_FLUSH_MS = 30
+export const METER_FLUSH_MS = 20
 
 export const nullString = '- - -'
 

@@ -20,7 +20,7 @@ exports.noFn = noFn;
 exports.MAX_NAME_LEN = 32;
 exports.MAX_SENDS = 12;
 exports.PAUSE_MS = 300;
-exports.METER_FLUSH_MS = 30;
+exports.METER_FLUSH_MS = 20;
 exports.nullString = '- - -';
 // indices into MaxObjRecord arrays for fields
 exports.FIELD_TYPE = 0;
