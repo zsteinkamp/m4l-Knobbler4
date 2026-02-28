@@ -15,7 +15,7 @@ function setThrottleInterval(ms) {
     intervalMs = ms;
     log('throttle interval set to', ms, 'ms');
 }
-var BYPASS_SUFFIXES = ['/start', '/end', '/chunk'];
+var BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/batch'];
 function shouldBypass(address) {
     for (var i = 0; i < BYPASS_SUFFIXES.length; i++) {
         var suffix = BYPASS_SUFFIXES[i];

@@ -30,7 +30,7 @@ function setThrottleInterval(ms: number) {
   log('throttle interval set to', ms, 'ms')
 }
 
-const BYPASS_SUFFIXES = ['/start', '/end', '/chunk']
+const BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/batch']
 
 function shouldBypass(address: string) {
   for (let i = 0; i < BYPASS_SUFFIXES.length; i++) {

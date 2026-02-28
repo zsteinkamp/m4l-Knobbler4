@@ -115,7 +115,6 @@ const SA_XFADEASSIGN: string[] = []
 const SA_NAME: string[] = []
 const SA_COLOR: string[] = []
 const SA_TYPE: string[] = []
-const SA_STATE: string[] = []
 const SA_SEND: string[][] = []
 for (let _i = 0; _i < MAX_STRIP_IDX; _i++) {
   const _p = '/mixer/' + _i + '/'
@@ -135,7 +134,6 @@ for (let _i = 0; _i < MAX_STRIP_IDX; _i++) {
   SA_NAME[_i] = _p + 'name'
   SA_COLOR[_i] = _p + 'color'
   SA_TYPE[_i] = _p + 'type'
-  SA_STATE[_i] = _p + 'state'
   SA_SEND[_i] = []
   for (let _j = 0; _j < MAX_SENDS; _j++) {
     SA_SEND[_i][_j] = _p + 'send' + (_j + 1)
@@ -628,45 +626,42 @@ function sendStripState(n: number, strip: StripObservers) {
     }
   }
 
+  osc(SA_NAME[n], info ? info.name : '')
+  osc(SA_COLOR[n], info ? info.color : DEFAULT_COLOR)
+  osc(SA_TYPE[n], info ? info.type : TYPE_TRACK)
+
   const volVal = parseFloat(strip.volApi.get('value').toString()) || 0
   const volStr = strip.volApi.call('str_for_value', volVal) as any
+  osc(SA_VOL[n], volVal)
+  osc(SA_VOLSTR[n], volStr ? volStr.toString() : '')
+  osc(SA_VOLAUTO[n], parseInt(strip.volAutoApi.get('automation_state').toString()))
+
   const panVal = parseFloat(strip.panApi.get('value').toString()) || 0
   const panStr = strip.panApi.call('str_for_value', panVal) as any
+  osc(SA_PAN[n], panVal)
+  osc(SA_PANSTR[n], panStr ? panStr.toString() : '')
 
-  const state: any = {
-    name: info ? info.name : '',
-    color: info ? info.color : DEFAULT_COLOR,
-    type: info ? info.type : TYPE_TRACK,
-    vol: volVal,
-    volStr: volStr ? volStr.toString() : '',
-    volAuto: parseInt(strip.volAutoApi.get('automation_state').toString()),
-    pan: panVal,
-    panStr: panStr ? panStr.toString() : '',
-    mute: !strip.isMain ? parseInt(strip.trackApi.get('mute').toString()) : 0,
-    solo: !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0,
-    recordArm: strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0,
-    inputEnabled: 0,
-    hasOutput: strip.hasOutput ? 1 : 0,
-  }
+  osc(SA_MUTE[n], !strip.isMain ? parseInt(strip.trackApi.get('mute').toString()) : 0)
+  osc(SA_SOLO[n], !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0)
+  osc(SA_ARM[n], strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0)
 
+  let inputEnabled = 0
   if (strip.canBeArmed) {
     const inputStatus = getTrackInputStatus(strip.trackApi)
-    state.inputEnabled = inputStatus && inputStatus.inputEnabled ? 1 : 0
+    inputEnabled = inputStatus && inputStatus.inputEnabled ? 1 : 0
   }
+  osc(SA_INPUT[n], inputEnabled)
+  osc(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0)
 
   if (!strip.isMain) {
     const xFadeAssign = parseInt(strip.mixerApi.get('crossfade_assign').toString())
-    state.xFadeA = xFadeAssign === 0 ? 1 : 0
-    state.xFadeB = xFadeAssign === 2 ? 1 : 0
+    osc(SA_XFADEA[n], xFadeAssign === 0 ? 1 : 0)
+    osc(SA_XFADEB[n], xFadeAssign === 2 ? 1 : 0)
   }
 
-  const sends: number[] = []
   for (let i = 0; i < strip.sendApis.length; i++) {
-    sends.push(parseFloat(strip.sendApis[i].get('value').toString()) || 0)
+    osc(SA_SEND[n][i], parseFloat(strip.sendApis[i].get('value').toString()) || 0)
   }
-  state.sends = sends
-
-  outlet(OUTLET_OSC, [SA_STATE[n], JSON.stringify(state)])
 }
 
 // ---------------------------------------------------------------------------
