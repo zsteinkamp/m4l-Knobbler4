@@ -39,8 +39,9 @@ for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
 // Initialized in initAll() to avoid "Live API is not initialized" at load time
 var scratchApi = null;
 // Set true by initAll() (gated by live.thisdevice). Bpatcher parameters
-// can fire setMin/setMax/setPath before the API is ready — skip those.
+// can fire setMin/setMax/setPath before the API is ready — queue those.
 var apiReady = false;
+var pendingCalls = [];
 // slot arrays
 var paramObj = [];
 var paramNameObj = [];
@@ -147,8 +148,14 @@ function initAll() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     apiReady = true;
-    for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
-        initSlotIfNecessary(i);
+    for (var i_1 = 1; i_1 <= consts_1.MAX_SLOTS; i_1++) {
+        initSlotIfNecessary(i_1);
+    }
+    // Replay calls that arrived before the API was ready
+    var queued = pendingCalls;
+    pendingCalls = [];
+    for (var i = 0; i < queued.length; i++) {
+        queued[i]();
     }
 }
 exports.initAll = initAll;
@@ -158,8 +165,10 @@ function initSlotIfNecessary(slot) {
     }
 }
 function init(slot) {
-    if (!apiReady)
+    if (!apiReady) {
+        pendingCalls.push(function () { init(slot); });
         return;
+    }
     //log(`INIT ${slot}`)
     if (paramObj[slot]) {
         (0, utils_1.detach)(paramObj[slot]);
@@ -317,8 +326,10 @@ function checkDevicePresent(slot) {
 }
 function setPath(slot, paramPath) {
     //log(`SETPATH ${slot}: ${paramPath}`)
-    if (!apiReady)
+    if (!apiReady) {
+        pendingCalls.push(function () { setPath(slot, paramPath); });
         return;
+    }
     initSlotIfNecessary(slot);
     //log(paramPath)
     if (!(0, utils_1.isValidPath)(paramPath)) {
@@ -403,8 +414,10 @@ function setPath(slot, paramPath) {
 exports.setPath = setPath;
 function refresh() {
     //log('IN REFRESH')
-    if (!apiReady)
+    if (!apiReady) {
+        pendingCalls.push(function () { refresh(); });
         return;
+    }
     for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         refreshSlotUI(i);
     }

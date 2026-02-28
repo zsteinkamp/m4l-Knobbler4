@@ -1,7 +1,8 @@
-import { cleanArr, loadSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
+import { cleanArr, colorToString, loadSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
 import config from './config'
 import {
   noFn,
+  DEFAULT_COLOR,
   INLET_MSGS,
   OUTLET_OSC,
   MAX_SENDS,
@@ -31,6 +32,7 @@ setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
 const state = {
   trackLookupObj: null as LiveAPI,
+  returnTrackColors: [] as string[],
   returnsObj: null as LiveAPI,
   mixerObj: null as LiveAPI,
   trackObj: null as LiveAPI,
@@ -168,6 +170,20 @@ const setSendWatcherIds = (sendIds: number[]) => {
       osc(SEND_ADDR[i], 0)
     }
   }
+  osc('/mixer/numSends', sendIds.length)
+}
+
+function updateSendsFromMixer() {
+  if (!state.mixerObj || state.mixerObj.id === 0) return
+  const sendIds = cleanArr(state.mixerObj.get('sends') as any)
+  setSendWatcherIds(sendIds)
+}
+
+const sendReturnTrackColors = () => {
+  outlet(OUTLET_OSC, [
+    '/mixer/returnTrackColors',
+    JSON.stringify(state.returnTrackColors),
+  ])
 }
 
 // ---------------------------------------------------------------------------
@@ -497,6 +513,9 @@ const onTrackChange = (args: IdObserverArg) => {
   osc('/mixer/pan', panVal)
   const panStr = state.panObj.call('str_for_value', panVal) as any
   osc('/mixer/panStr', panStr ? panStr.toString() : '')
+
+  // sends
+  updateSendsFromMixer()
 }
 
 const onReturnsChange = (args: IdObserverArg) => {
@@ -504,7 +523,17 @@ const onReturnsChange = (args: IdObserverArg) => {
     return
   }
   const returnIds = cleanArr(args)
-  setSendWatcherIds(returnIds)
+  for (let i = 0; i < MAX_SENDS; i++) {
+    var color = DEFAULT_COLOR
+    if (returnIds[i]) {
+      state.trackLookupObj.id = returnIds[i]
+      color = colorToString(state.trackLookupObj.get('color').toString())
+    }
+    state.returnTrackColors[i] = '#' + color
+  }
+  sendReturnTrackColors()
+  // Return track count changed — re-query sends for the selected track
+  updateSendsFromMixer()
 }
 
 // ---------------------------------------------------------------------------

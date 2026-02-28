@@ -22,6 +22,7 @@ setinletassist(INLET_PAGE, 'Page change messages');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 var state = {
     trackLookupObj: null,
+    returnTrackColors: [],
     returnsObj: null,
     mixerObj: null,
     trackObj: null,
@@ -158,6 +159,19 @@ var setSendWatcherIds = function (sendIds) {
             (0, utils_1.osc)(utils_1.SEND_ADDR[i], 0);
         }
     }
+    (0, utils_1.osc)('/mixer/numSends', sendIds.length);
+};
+function updateSendsFromMixer() {
+    if (!state.mixerObj || state.mixerObj.id === 0)
+        return;
+    var sendIds = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
+    setSendWatcherIds(sendIds);
+}
+var sendReturnTrackColors = function () {
+    outlet(consts_1.OUTLET_OSC, [
+        '/mixer/returnTrackColors',
+        JSON.stringify(state.returnTrackColors),
+    ]);
 };
 // ---------------------------------------------------------------------------
 // Command handlers (called by Max message dispatch)
@@ -457,13 +471,25 @@ var onTrackChange = function (args) {
     (0, utils_1.osc)('/mixer/pan', panVal);
     var panStr = state.panObj.call('str_for_value', panVal);
     (0, utils_1.osc)('/mixer/panStr', panStr ? panStr.toString() : '');
+    // sends
+    updateSendsFromMixer();
 };
 var onReturnsChange = function (args) {
     if (!state.returnsObj || args[0] !== 'return_tracks') {
         return;
     }
     var returnIds = (0, utils_1.cleanArr)(args);
-    setSendWatcherIds(returnIds);
+    for (var i = 0; i < consts_1.MAX_SENDS; i++) {
+        var color = consts_1.DEFAULT_COLOR;
+        if (returnIds[i]) {
+            state.trackLookupObj.id = returnIds[i];
+            color = (0, utils_1.colorToString)(state.trackLookupObj.get('color').toString());
+        }
+        state.returnTrackColors[i] = '#' + color;
+    }
+    sendReturnTrackColors();
+    // Return track count changed — re-query sends for the selected track
+    updateSendsFromMixer();
 };
 // ---------------------------------------------------------------------------
 // Lifecycle

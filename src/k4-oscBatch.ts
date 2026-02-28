@@ -1,4 +1,4 @@
-import { logFactory } from './utils'
+import { loadSetting, logFactory } from './utils'
 import config from './config'
 
 autowatch = 1
@@ -15,6 +15,7 @@ const OSC_MAX_BYTES = 1024
 
 const BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/meters']
 
+let batchEnabled = false
 let oscBuffer: Record<string, any> = {}
 let oscBufferSize = 0
 let oscBufferBytes = 2 // opening/closing braces: {}
@@ -41,10 +42,20 @@ function shouldBypass(address: string) {
   return false
 }
 
+function checkClientCapabilities() {
+  var caps = loadSetting('clientCapabilities')
+  batchEnabled = typeof caps === 'string' && caps.indexOf('batch') !== -1
+}
+
 function anything(val: any) {
   var address = messagename
 
-  if (shouldBypass(address)) {
+  // /sendState fires right after /syn handshake — re-check capabilities
+  if (address === '/sendState') {
+    checkClientCapabilities()
+  }
+
+  if (shouldBypass(address) || !batchEnabled) {
     outlet(0, address, val)
     return
   }

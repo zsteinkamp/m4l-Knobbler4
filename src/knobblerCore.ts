@@ -46,8 +46,9 @@ for (let _i = 1; _i <= MAX_SLOTS; _i++) {
 // Initialized in initAll() to avoid "Live API is not initialized" at load time
 let scratchApi: LiveAPI = null
 // Set true by initAll() (gated by live.thisdevice). Bpatcher parameters
-// can fire setMin/setMax/setPath before the API is ready — skip those.
+// can fire setMin/setMax/setPath before the API is ready — queue those.
 let apiReady = false
+let pendingCalls: Array<() => void> = []
 
 // slot arrays
 const paramObj: LiveAPI[] = []
@@ -165,6 +166,12 @@ function initAll() {
   for (let i = 1; i <= MAX_SLOTS; i++) {
     initSlotIfNecessary(i)
   }
+  // Replay calls that arrived before the API was ready
+  var queued = pendingCalls
+  pendingCalls = []
+  for (var i = 0; i < queued.length; i++) {
+    queued[i]()
+  }
 }
 
 function initSlotIfNecessary(slot: number) {
@@ -174,7 +181,10 @@ function initSlotIfNecessary(slot: number) {
 }
 
 function init(slot: number) {
-  if (!apiReady) return
+  if (!apiReady) {
+    pendingCalls.push(function () { init(slot) })
+    return
+  }
   //log(`INIT ${slot}`)
   if (paramObj[slot]) {
     detach(paramObj[slot])
@@ -338,7 +348,10 @@ function checkDevicePresent(slot: number) {
 
 function setPath(slot: number, paramPath: string) {
   //log(`SETPATH ${slot}: ${paramPath}`)
-  if (!apiReady) return
+  if (!apiReady) {
+    pendingCalls.push(function () { setPath(slot, paramPath) })
+    return
+  }
   initSlotIfNecessary(slot)
   //log(paramPath)
   if (!isValidPath(paramPath)) {
@@ -457,7 +470,10 @@ function setPath(slot: number, paramPath: string) {
 
 function refresh() {
   //log('IN REFRESH')
-  if (!apiReady) return
+  if (!apiReady) {
+    pendingCalls.push(function () { refresh() })
+    return
+  }
   for (let i = 1; i <= MAX_SLOTS; i++) {
     refreshSlotUI(i)
   }

@@ -10,6 +10,7 @@ setoutletassist(0, 'Batched OSC messages to [udpsend]');
 var OSC_FLUSH_MS = 10;
 var OSC_MAX_BYTES = 1024;
 var BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/meters'];
+var batchEnabled = false;
 var oscBuffer = {};
 var oscBufferSize = 0;
 var oscBufferBytes = 2; // opening/closing braces: {}
@@ -33,9 +34,17 @@ function shouldBypass(address) {
     }
     return false;
 }
+function checkClientCapabilities() {
+    var caps = (0, utils_1.loadSetting)('clientCapabilities');
+    batchEnabled = typeof caps === 'string' && caps.indexOf('batch') !== -1;
+}
 function anything(val) {
     var address = messagename;
-    if (shouldBypass(address)) {
+    // /sendState fires right after /syn handshake — re-check capabilities
+    if (address === '/sendState') {
+        checkClientCapabilities();
+    }
+    if (shouldBypass(address) || !batchEnabled) {
         outlet(0, address, val);
         return;
     }
