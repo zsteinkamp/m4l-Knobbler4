@@ -231,8 +231,6 @@ function onReturnTracksChange(args) {
     trackList = buildTrackList();
     sendVisibleTracks();
     sendReturnTrackColors();
-    var numReturns = trackList.filter(function (t) { return t.type === consts_1.TYPE_RETURN; }).length;
-    outlet(consts_1.OUTLET_OSC, ['/mixer/setNumSends', Math.min(numReturns, consts_1.MAX_SENDS)]);
     applyWindow();
 }
 // ---------------------------------------------------------------------------
@@ -669,10 +667,6 @@ function setupWindow(left, count) {
         returnTracksWatcher.property = 'return_tracks';
     }
     if (firstSetup) {
-        scratchApi.path = 'live_set';
-        var numSends = Math.min((0, utils_1.cleanArr)(scratchApi.get('return_tracks')).length, consts_1.MAX_SENDS);
-        //log('SENDING numSends', numSends)
-        outlet(consts_1.OUTLET_OSC, ['/mixer/setNumSends', numSends]);
         sendReturnTrackColors();
         trackList = buildTrackList();
         sendVisibleTracks();

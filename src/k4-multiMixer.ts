@@ -320,8 +320,6 @@ function onReturnTracksChange(args: any[]) {
   trackList = buildTrackList()
   sendVisibleTracks()
   sendReturnTrackColors()
-  const numReturns = trackList.filter(function (t) { return t.type === TYPE_RETURN }).length
-  outlet(OUTLET_OSC, ['/mixer/setNumSends', Math.min(numReturns, MAX_SENDS)])
   applyWindow()
 }
 
@@ -801,13 +799,6 @@ function setupWindow(left: number, count: number) {
   }
 
   if (firstSetup) {
-    scratchApi.path = 'live_set'
-    const numSends = Math.min(
-      cleanArr(scratchApi.get('return_tracks')).length,
-      MAX_SENDS
-    )
-    //log('SENDING numSends', numSends)
-    outlet(OUTLET_OSC, ['/mixer/setNumSends', numSends])
     sendReturnTrackColors()
 
     trackList = buildTrackList()
