@@ -151,11 +151,22 @@ function page() {
 // ---------------------------------------------------------------------------
 var setSendWatcherIds = function (sendIds) {
     for (var i = 0; i < consts_1.MAX_SENDS; i++) {
+        if (!state.watchers[i])
+            continue;
+        state.watchers[i].property = '';
         if (sendIds[i] !== undefined) {
-            state.watchers[i] && (state.watchers[i].id = sendIds[i]);
+            state.watchers[i].id = sendIds[i];
+            if (state.watchers[i].type === 'DeviceParameter') {
+                state.watchers[i].property = 'value';
+            }
+            else {
+                log('send watcher', i, 'expected DeviceParameter, got', state.watchers[i].type);
+                state.watchers[i].id = 0;
+                (0, utils_1.osc)(utils_1.SEND_ADDR[i], 0);
+            }
         }
         else {
-            state.watchers[i] && (state.watchers[i].id = 0);
+            state.watchers[i].id = 0;
             (0, utils_1.osc)(utils_1.SEND_ADDR[i], 0);
         }
     }

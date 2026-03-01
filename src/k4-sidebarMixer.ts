@@ -163,10 +163,19 @@ function page() {
 
 const setSendWatcherIds = (sendIds: number[]) => {
   for (let i = 0; i < MAX_SENDS; i++) {
+    if (!state.watchers[i]) continue
+    state.watchers[i].property = ''
     if (sendIds[i] !== undefined) {
-      state.watchers[i] && (state.watchers[i].id = sendIds[i])
+      state.watchers[i].id = sendIds[i]
+      if (state.watchers[i].type === 'DeviceParameter') {
+        state.watchers[i].property = 'value'
+      } else {
+        log('send watcher', i, 'expected DeviceParameter, got', state.watchers[i].type)
+        state.watchers[i].id = 0
+        osc(SEND_ADDR[i], 0)
+      }
     } else {
-      state.watchers[i] && (state.watchers[i].id = 0)
+      state.watchers[i].id = 0
       osc(SEND_ADDR[i], 0)
     }
   }
