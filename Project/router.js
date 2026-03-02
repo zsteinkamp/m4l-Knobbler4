@@ -52,6 +52,9 @@ function synAckHandler(router, _, val) {
     outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
     outlet(OUTLET_OSC, ['/sendState']);
 }
+function pingHandler(router) {
+    outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
+}
 function bareMsg(router) {
     outlet(router.outlet, router.msg);
 }
@@ -466,7 +469,7 @@ var ROUTER = [
     {
         outlet: OUTLET_OSC,
         prefix: '/ping',
-        handler: synAckHandler,
+        handler: pingHandler,
         msg: '/pong',
     },
     {
