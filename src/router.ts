@@ -550,6 +550,24 @@ const ROUTER: RouterItem[] = [
     msg: 'currentParamDefault',
   },
   {
+    outlet: OUTLET_CURRPARAM,
+    prefix: '/currentParam/lock',
+    handler: stdVal,
+    msg: 'lock',
+  },
+  {
+    outlet: OUTLET_CURRPARAM,
+    prefix: '/currentParam/show',
+    handler: bareMsg,
+    msg: 'show',
+  },
+  {
+    outlet: OUTLET_CURRPARAM,
+    prefix: '/currentParam/hide',
+    handler: bareMsg,
+    msg: 'hide',
+  },
+  {
     outlet: OUTLET_MULTI_MIXER,
     prefix: '/mixerView',
     handler: stdVal,
