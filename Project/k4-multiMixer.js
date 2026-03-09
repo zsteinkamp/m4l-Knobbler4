@@ -820,6 +820,8 @@ function panDefault(stripIdx) {
 }
 // Send handlers — send1 through send12
 function handleSend(stripIdx, sendNum, val) {
+    if (val === undefined)
+        return;
     var strip = getStrip(stripIdx);
     if (!strip)
         return;

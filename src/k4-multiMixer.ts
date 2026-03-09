@@ -959,6 +959,7 @@ function panDefault(stripIdx: number) {
 
 // Send handlers — send1 through send12
 function handleSend(stripIdx: number, sendNum: number, val: number) {
+  if (val === undefined) return
   const strip = getStrip(stripIdx)
   if (!strip) return
   const idx = sendNum - 1
