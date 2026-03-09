@@ -23,7 +23,7 @@ function show() {
     if (active)
         return;
     active = true;
-    log('currentParam show');
+    //log('currentParam show')
     // scratchApi for throwaway lookups — separate instance to avoid re-entrancy
     if (!scratchApi) {
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
@@ -53,7 +53,7 @@ function hide() {
     if (!active)
         return;
     active = false;
-    log('currentParam hide');
+    //log('currentParam hide')
     if (paramSelObj) {
         //log('detaching paramSelObj')
         (0, utils_1.detach)(paramSelObj);

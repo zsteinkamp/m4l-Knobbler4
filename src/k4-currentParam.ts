@@ -36,7 +36,7 @@ let locked = false
 function show() {
   if (active) return
   active = true
-  log('currentParam show')
+  //log('currentParam show')
 
   // scratchApi for throwaway lookups — separate instance to avoid re-entrancy
   if (!scratchApi) {
@@ -69,7 +69,7 @@ function show() {
 function hide() {
   if (!active) return
   active = false
-  log('currentParam hide')
+  //log('currentParam hide')
 
   if (paramSelObj) {
     //log('detaching paramSelObj')
