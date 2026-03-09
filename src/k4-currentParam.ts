@@ -56,10 +56,12 @@ function show() {
   // paramSelObj follows live_set view selected_parameter (mode=1)
   // Created last because setting property fires the callback immediately
   if (!paramSelObj) {
+    log('activating paramSelObj observer')
     paramSelObj = new LiveAPI(onParamSelected, 'live_set view selected_parameter')
     paramSelObj.mode = 1
     paramSelObj.property = 'id'
   } else {
+    log('reactivating paramSelObj observer')
     paramSelObj.property = 'id'
   }
 }
@@ -70,12 +72,15 @@ function hide() {
   log('currentParam hide')
 
   if (paramSelObj) {
+    log('detaching paramSelObj')
     detach(paramSelObj)
   }
   if (paramValObj) {
+    log('detaching paramValObj')
     detach(paramValObj)
   }
   if (trackColorObj) {
+    log('detaching trackColorObj')
     detach(trackColorObj)
   }
   currentParamId = 0
@@ -89,7 +94,7 @@ function lock(val: number) {
 }
 
 function onParamSelected() {
-  if (!active || locked) return
+  if (!active || locked || !paramSelObj) return
   const paramId = parseInt(paramSelObj.id as any)
   if (!paramId || paramId === 0) {
     currentParamId = 0
@@ -148,12 +153,14 @@ function sendAllParamInfo(paramId: number) {
     trackColorObj.property = ''
     trackColorObj.path = trackMatch[1]
     trackColorObj.property = 'color'
+    log('trackColorObj observing color on', trackMatch[1])
   }
 
   // Set up value observer on the parameter
   paramValObj.property = ''
   paramValObj.id = paramId
   paramValObj.property = 'value'
+  log('paramValObj observing value on param', paramId)
 
   // Send all info to the app
   osc('/currentParam/name', paramName)
