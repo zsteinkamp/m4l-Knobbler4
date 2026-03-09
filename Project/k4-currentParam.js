@@ -39,13 +39,13 @@ function show() {
     // paramSelObj follows live_set view selected_parameter (mode=1)
     // Created last because setting property fires the callback immediately
     if (!paramSelObj) {
-        log('activating paramSelObj observer');
+        //log('activating paramSelObj observer')
         paramSelObj = new LiveAPI(onParamSelected, 'live_set view selected_parameter');
         paramSelObj.mode = 1;
         paramSelObj.property = 'id';
     }
     else {
-        log('reactivating paramSelObj observer');
+        //log('reactivating paramSelObj observer')
         paramSelObj.property = 'id';
     }
 }
@@ -55,15 +55,15 @@ function hide() {
     active = false;
     log('currentParam hide');
     if (paramSelObj) {
-        log('detaching paramSelObj');
+        //log('detaching paramSelObj')
         (0, utils_1.detach)(paramSelObj);
     }
     if (paramValObj) {
-        log('detaching paramValObj');
+        //log('detaching paramValObj')
         (0, utils_1.detach)(paramValObj);
     }
     if (trackColorObj) {
-        log('detaching trackColorObj');
+        //log('detaching trackColorObj')
         (0, utils_1.detach)(trackColorObj);
     }
     currentParamId = 0;
@@ -123,13 +123,13 @@ function sendAllParamInfo(paramId) {
         trackColorObj.property = '';
         trackColorObj.path = trackMatch[1];
         trackColorObj.property = 'color';
-        log('trackColorObj observing color on', trackMatch[1]);
+        //log('trackColorObj observing color on', trackMatch[1])
     }
     // Set up value observer on the parameter
     paramValObj.property = '';
     paramValObj.id = paramId;
     paramValObj.property = 'value';
-    log('paramValObj observing value on param', paramId);
+    //log('paramValObj observing value on param', paramId)
     // Send all info to the app
     (0, utils_1.osc)('/currentParam/name', paramName);
     (0, utils_1.osc)('/currentParam/deviceName', deviceName);
