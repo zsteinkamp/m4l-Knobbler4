@@ -421,6 +421,10 @@ Whether strip N has audio output.
 
 Whether crossfader A is assigned for strip N.
 
+#### /mixer/{N}/volAuto {integer}
+
+The volume automation state for strip N. Values match Ableton's automation state enum (0 = none, 1 = playing, 2 = overridden).
+
 #### /mixer/{N}/xFadeB { 0 | 1 }
 
 Whether crossfader B is assigned for strip N.
@@ -440,6 +444,66 @@ Confirms the current meters enabled/disabled state.
 #### /mixer/numSends {0-12}
 
 The number of return tracks (same for all strips).
+
+## Current Parameter
+
+Displays information about the currently selected parameter in Live. The device follows Live's selected parameter and pushes updates to the app. Supports locking the display to a specific parameter.
+
+### Tablet to Knobbler4
+
+#### /currentParam/show
+
+Activates the current parameter observer. The device will begin following Live's selected parameter.
+
+#### /currentParam/hide
+
+Deactivates the current parameter observer and tears down all observers.
+
+#### /currentParam/val {float}
+
+Sets the value of the currently displayed parameter, as a float between 0 and 1.
+
+#### /currentParam/default
+
+Resets the currently displayed parameter to its default value.
+
+#### /currentParam/lock {0 | 1}
+
+Locks (1) or unlocks (0) the current parameter display. When locked, the display stays on the current parameter even if the user selects a different parameter in Live. On unlock, the display updates to whichever parameter is currently selected.
+
+### Knobbler4 to Tablet
+
+#### /currentParam/name {string}
+
+The parameter name.
+
+#### /currentParam/deviceName {string}
+
+The name of the device containing the parameter.
+
+#### /currentParam/trackName {string}
+
+The name of the track containing the device.
+
+#### /currentParam/trackColor {string}
+
+The color of the track, as a hex string (e.g. `#FF0034`).
+
+#### /currentParam/val {float}
+
+The parameter value, scaled to 0-1.
+
+#### /currentParam/valStr {string}
+
+The string representation of the parameter value (e.g. "-6.0 dB", "2.5 kHz").
+
+#### /currentParam/minStr {string}
+
+The string representation of the parameter's minimum value.
+
+#### /currentParam/maxStr {string}
+
+The string representation of the parameter's maximum value.
 
 ## Toolbar
 
@@ -502,9 +566,9 @@ Jumps to the next cue point.
 
 ### Knobbler4 to Tablet
 
-#### /ack
+#### /ack {string}
 
-Response to a `/syn` message to facilitate, e.g. for feedback in setting up the tablet-computer connection.
+Response to a `/syn` message to facilitate connection setup. The value is a string containing the device version number followed by capability flags (e.g. `52 mxr`). The `mxr` capability indicates support for the multi-track mixer.
 
 #### /page/X
 
@@ -514,9 +578,19 @@ Sent when one of the tabs in the Max for Live device is clicked. `X` can be:
 - knobbler2
 - bluhand
 
-#### /pong
+#### /pong {string}
 
-Response to a `/ping` message to keep the network connection "warmed up".
+Response to a `/ping` message to keep the network connection "warmed up". Like `/ack`, the value contains the device version and capability flags (e.g. `52 mxr`).
+
+#### /batch {JSON string}
+
+A batched set of OSC messages combined into a single JSON object. Each key is an OSC address and each value is the message payload. Example:
+
+```json
+{"/param1":"Filter Freq","/val1":0.5,"/valStr1":"2.5 kHz"}
+```
+
+Batching is only used when the client advertises the `batch` capability in its `/syn` handshake. Messages are flushed every 10ms or when the buffer exceeds 1KB. Chunked data (`/start`, `/end`, `/chunk` suffixes) and meter messages are never batched.
 
 #### /toggleInput {0, 1}
 
@@ -540,6 +614,6 @@ This is useful when recording automation over existing MIDI clips, since the rec
 
 Sent out as part of the network startup sequence to detect network loops (e.g. the send and receive destination being the same). If `/loop` is received, then network communication is halted until the `host` or `port` values are changed.
 
-#### /syn
+#### /syn {string}
 
-A request for an `/ack` response to facilitate a UX feedback loop when configuring the connections.
+A request for an `/ack` response to facilitate a UX feedback loop when configuring the connections. The value is an optional string containing the client version followed by capability flags (e.g. `1.2.0 batch`). The device stores the client version and capabilities for feature negotiation. Triggers a `/sendState` message internally to push full state to the app.

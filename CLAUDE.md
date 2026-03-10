@@ -105,6 +105,27 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 
 - Simple module mapping device names to their parameter banks
 
+**`k4-currentParam.ts`** - Selected parameter display
+
+- Follows Live's `selected_parameter` view property (mode=1 observer)
+- Pushes parameter name, device name, track name, track color, value, and min/max strings to the app
+- Supports lock/unlock to freeze the display on a specific parameter
+- Observes value changes and track color changes in real time
+
+**`k4-multiMixer.ts`** - Multi-track mixer
+
+- Full-screen, horizontally scrollable mixer with per-strip observers
+- Windowed approach: observers only active for visible strips
+- Per-strip observers for volume, pan, mute, solo, arm, color, sends, meters, and volume automation state
+- Batched meter output via `/mixer/meters` JSON array
+
+**`k4-oscBatch.ts`** - OSC message batching
+
+- Batches outbound OSC messages into single `/batch` JSON payloads
+- Flushes every 10ms or when buffer exceeds 1KB
+- Only active when the client advertises `batch` capability
+- Bypasses batching for chunked data and meter messages
+
 **`k4-discovery.ts`** - Network device discovery
 
 - Discovers and filters available Knobbler apps on the network

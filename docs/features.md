@@ -63,6 +63,10 @@ To unmap a Knobbler slider, tap the Unmap button in the [Toolbar](#toolbar). All
 
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
 
+#### Fine Control
+
+Use two fingers on any slider for 10x precision. This works on all sliders throughout the app — Knobbler pages, Bluhand, Channel Strip, Multi-Track Mixer, and Current Parameter.
+
 #### X-Y Pads
 
 Two adjacent Knobbler sliders can be linked into an X-Y pad, giving you two-dimensional control over a pair of parameters with a single finger.
@@ -149,6 +153,18 @@ Tap the Unmap button again to exit Unmapping mode.
 
 Regardless of whether you are on a Bluhand or Knobbler page, tapping a shortcut button will take you to the Bluhand page with that device selected.
 
+### Current Parameter
+
+The current parameter display shows information about whichever parameter is currently selected in Live. When you click a parameter in Ableton, the app automatically updates to show the parameter name, device name, track name, track color, current value, and the min/max range.
+
+#### Lock
+
+You can lock the display to a specific parameter so it stays visible even as you click around in Live. Unlock to resume following the selected parameter.
+
+#### Control
+
+The current parameter can be adjusted directly from the app via a slider. Double-tap to reset to the default value.
+
 ### External Hardware
 
 You can use Knobbler with external hardware in conjunction with a device like the `CC Control` device that comes with Live 12. Note that as of what is shipped in Live 12.1, `CC Control` has a defective API implementation and does not work properly with Knobbler. Until that device is fixed, you can download and use my free device called [MIDI CC Bridge](https://plugins.steinkamp.us/m4l-MIDI-CC-Bridge).
@@ -218,6 +234,34 @@ If you select the Main track, the `A`/`B` buttons are replaced with a crossfader
 #### Default Value
 
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
+
+### Multi-Track Mixer
+
+The multi-track mixer provides a full-screen, horizontally scrollable view of all tracks in your Live Set. It gives you hands-on control of volume, pan, mute, solo, record arm, sends, and crossfader assignments across multiple tracks at once.
+
+#### Windowed Observers
+
+The mixer uses a windowed approach for performance — only the tracks visible on screen have active observers. As you scroll, observers are automatically created for newly visible strips and torn down for strips that scroll out of view.
+
+#### Volume and Pan
+
+Each strip has a volume fader and pan control. Double-tap to reset either to its default value. Volume automation state is shown with a colored indicator, matching the same automation dot colors used on Knobbler knobs (green for controlled, red for recorded automation, grey for overridden).
+
+#### Mute, Solo, and Record Arm
+
+Toggle mute, solo, and record arm per strip. Record arm respects the exclusive arm preference. Disabling input is also supported for recording automation over existing MIDI clips.
+
+#### Sends
+
+Send levels for up to 12 return tracks are available per strip. Send colors match their corresponding return track colors.
+
+#### Crossfader
+
+Assign tracks to crossfader side A or B directly from the mixer.
+
+#### Meters
+
+Output level meters can be enabled for all visible strips. Meters display left channel, right channel, and combined output levels, updated at approximately 30ms intervals. Only tracks with audio output show meters.
 
 ### Toolbar
 
