@@ -492,7 +492,7 @@ function applyWindow() {
             trackPlayObservers[col] = createTrackPlayObservers(col);
         }
     }
-    // --- Scene observers ---
+    // --- Scene observers (visible window + buffer only) ---
     var newSceneSet = {};
     for (var s = obsTop; s < obsBottom; s++) {
         newSceneSet[s] = true;
@@ -569,18 +569,27 @@ function sendFullGrid() {
     (0, utils_1.osc)('/clips/grid', JSON.stringify({ left: leftTrack, top: topScene, clips: rows }));
 }
 function sendSceneInfo() {
-    if (topScene < 0)
+    if (totalScenes <= 0)
         return;
-    var visBottom = Math.min(bottomScene, totalScenes);
     var scenes = [];
-    for (var row = topScene; row < visBottom; row++) {
+    for (var row = 0; row < totalScenes; row++) {
+        var name = void 0;
+        var color = void 0;
         var info = sceneObservers[row];
         if (info) {
-            scenes.push({ n: info.name, c: info.color });
+            name = info.name;
+            color = info.color;
         }
         else {
-            scenes.push({ n: '', c: '000000' });
+            // Not observed — read directly
+            cellInitApi.path = 'live_set scenes ' + row;
+            name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
+            color = colorHex(cellInitApi.get('color'));
         }
+        scenes.push({
+            n: name,
+            c: color && color !== '000000' ? color : null,
+        });
     }
     (0, utils_1.osc)('/clips/scenes', JSON.stringify(scenes));
 }

@@ -3,7 +3,7 @@ import { logFactory, saveSetting } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 13
+outlets = 14
 
 const log = logFactory(config)
 let deviceVersion = ''
@@ -26,6 +26,7 @@ const OUTLET_OSC = 9
 const OUTLET_UNKNOWN = 10
 const OUTLET_MULTI_MIXER = 11
 const OUTLET_CLIP_VIEW = 12
+const OUTLET_UDPSEND = 13
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -37,9 +38,11 @@ setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn')
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer')
 setoutletassist(OUTLET_PAGE, 'Messages for Page')
 setoutletassist(OUTLET_CURRPARAM, 'Messages for Current Param')
+setoutletassist(OUTLET_OSC, 'OSC Messages')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer')
 setoutletassist(OUTLET_CLIP_VIEW, 'Messages for Clip View')
+setoutletassist(OUTLET_UDPSEND, 'host/port messages for [udpsend]')
 
 type RouterItem = {
   outlet: number
@@ -94,6 +97,19 @@ function stdSlotVal(router: RouterItem, msg: string, val: number | string) {
   //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
   outlet(router.outlet, router.msg, slot, val)
 }
+// /connect <ip>:<port> — configure [udpsend] target
+function connectHandler(
+  _router: RouterItem,
+  _msg: string,
+  val: string | number
+) {
+  //log(`connectHandler val: ${val}`)
+  const parts = val.toString().split(':')
+  if (parts.length === 2) {
+    outlet(OUTLET_UDPSEND, 'host', parts[0])
+    outlet(OUTLET_UDPSEND, 'port', parseInt(parts[1]))
+  }
+}
 // parses /mixer/{n}/{subCmd} and emits (subCmd, stripIdx, val)
 function multiMixerHandler(
   router: RouterItem,
@@ -112,6 +128,12 @@ const ROUTER: RouterItem[] = [
     prefix: '/syn',
     handler: synAckHandler,
     msg: '/ack',
+  },
+  {
+    outlet: OUTLET_UDPSEND,
+    prefix: '/connect',
+    handler: connectHandler,
+    msg: '',
   },
   {
     outlet: OUTLET_LOOP,
@@ -514,6 +536,12 @@ const ROUTER: RouterItem[] = [
     prefix: '/page/clips',
     handler: pageHandler,
     msg: 'clips',
+  },
+  {
+    outlet: OUTLET_PAGE,
+    prefix: '/page/setup',
+    handler: pageHandler,
+    msg: 'setup',
   },
   {
     outlet: OUTLET_BLUHAND,

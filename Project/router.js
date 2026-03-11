@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 13;
+outlets = 14;
 var log = (0, utils_1.logFactory)(config_1.default);
 var deviceVersion = '';
 function setDeviceVersion(ver) {
@@ -24,6 +24,7 @@ var OUTLET_OSC = 9;
 var OUTLET_UNKNOWN = 10;
 var OUTLET_MULTI_MIXER = 11;
 var OUTLET_CLIP_VIEW = 12;
+var OUTLET_UDPSEND = 13;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -34,9 +35,11 @@ setoutletassist(OUTLET_ACK, 'Messages for /ack response for /syn');
 setoutletassist(OUTLET_MIXER, 'Messages for Mixer');
 setoutletassist(OUTLET_PAGE, 'Messages for Page');
 setoutletassist(OUTLET_CURRPARAM, 'Messages for Current Param');
+setoutletassist(OUTLET_OSC, 'OSC Messages');
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact');
 setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer');
 setoutletassist(OUTLET_CLIP_VIEW, 'Messages for Clip View');
+setoutletassist(OUTLET_UDPSEND, 'host/port messages for [udpsend]');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
     if (matches) {
@@ -82,6 +85,15 @@ function stdSlotVal(router, msg, val) {
     //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
     outlet(router.outlet, router.msg, slot, val);
 }
+// /connect <ip>:<port> — configure [udpsend] target
+function connectHandler(_router, _msg, val) {
+    //log(`connectHandler val: ${val}`)
+    var parts = val.toString().split(':');
+    if (parts.length === 2) {
+        outlet(OUTLET_UDPSEND, 'host', parts[0]);
+        outlet(OUTLET_UDPSEND, 'port', parseInt(parts[1]));
+    }
+}
 // parses /mixer/{n}/{subCmd} and emits (subCmd, stripIdx, val)
 function multiMixerHandler(router, msg, val) {
     var parts = msg.split('/'); // ['', 'mixer', '2', 'vol']
@@ -95,6 +107,12 @@ var ROUTER = [
         prefix: '/syn',
         handler: synAckHandler,
         msg: '/ack',
+    },
+    {
+        outlet: OUTLET_UDPSEND,
+        prefix: '/connect',
+        handler: connectHandler,
+        msg: '',
     },
     {
         outlet: OUTLET_LOOP,
@@ -497,6 +515,12 @@ var ROUTER = [
         prefix: '/page/clips',
         handler: pageHandler,
         msg: 'clips',
+    },
+    {
+        outlet: OUTLET_PAGE,
+        prefix: '/page/setup',
+        handler: pageHandler,
+        msg: 'setup',
     },
     {
         outlet: OUTLET_BLUHAND,

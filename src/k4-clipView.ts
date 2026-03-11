@@ -581,7 +581,7 @@ function applyWindow() {
     }
   }
 
-  // --- Scene observers ---
+  // --- Scene observers (visible window + buffer only) ---
   const newSceneSet: Record<number, boolean> = {}
   for (let s = obsTop; s < obsBottom; s++) {
     newSceneSet[s] = true
@@ -669,18 +669,27 @@ function sendFullGrid() {
 }
 
 function sendSceneInfo() {
-  if (topScene < 0) return
+  if (totalScenes <= 0) return
 
-  const visBottom = Math.min(bottomScene, totalScenes)
   const scenes: any[] = []
 
-  for (let row = topScene; row < visBottom; row++) {
+  for (let row = 0; row < totalScenes; row++) {
+    let name: string
+    let color: string
     const info = sceneObservers[row]
     if (info) {
-      scenes.push({ n: info.name, c: info.color })
+      name = info.name
+      color = info.color
     } else {
-      scenes.push({ n: '', c: '000000' })
+      // Not observed — read directly
+      cellInitApi.path = 'live_set scenes ' + row
+      name = dequote(cellInitApi.get('name').toString())
+      color = colorHex(cellInitApi.get('color'))
     }
+    scenes.push({
+      n: name,
+      c: color && color !== '000000' ? color : null,
+    })
   }
 
   osc('/clips/scenes', JSON.stringify(scenes))
