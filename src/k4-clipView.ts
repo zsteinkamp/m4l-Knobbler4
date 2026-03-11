@@ -692,7 +692,7 @@ function sendSceneInfo() {
     })
   }
 
-  osc('/clips/scenes', JSON.stringify(scenes))
+  osc('/clips/scenes', JSON.stringify({ top: 0, scenes: scenes }))
 }
 
 // ---------------------------------------------------------------------------

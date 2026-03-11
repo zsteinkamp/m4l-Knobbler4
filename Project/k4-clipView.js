@@ -591,7 +591,7 @@ function sendSceneInfo() {
             c: color && color !== '000000' ? color : null,
         });
     }
-    (0, utils_1.osc)('/clips/scenes', JSON.stringify(scenes));
+    (0, utils_1.osc)('/clips/scenes', JSON.stringify({ top: 0, scenes: scenes }));
 }
 // ---------------------------------------------------------------------------
 // Incoming: clipView
