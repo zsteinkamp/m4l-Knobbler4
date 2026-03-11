@@ -3,7 +3,7 @@ import { logFactory, saveSetting } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 12
+outlets = 13
 
 const log = logFactory(config)
 let deviceVersion = ''
@@ -25,6 +25,7 @@ const OUTLET_CURRPARAM = 8
 const OUTLET_OSC = 9
 const OUTLET_UNKNOWN = 10
 const OUTLET_MULTI_MIXER = 11
+const OUTLET_CLIP_VIEW = 12
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -38,6 +39,7 @@ setoutletassist(OUTLET_PAGE, 'Messages for Page')
 setoutletassist(OUTLET_CURRPARAM, 'Messages for Current Param')
 setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer')
+setoutletassist(OUTLET_CLIP_VIEW, 'Messages for Clip View')
 
 type RouterItem = {
   outlet: number
@@ -508,6 +510,12 @@ const ROUTER: RouterItem[] = [
     msg: 'mixer',
   },
   {
+    outlet: OUTLET_PAGE,
+    prefix: '/page/clips',
+    handler: pageHandler,
+    msg: 'clips',
+  },
+  {
     outlet: OUTLET_BLUHAND,
     prefix: '/hideChains',
     handler: stdVal,
@@ -566,6 +574,54 @@ const ROUTER: RouterItem[] = [
     prefix: '/currentParam/hide',
     handler: bareMsg,
     msg: 'hide',
+  },
+  {
+    outlet: OUTLET_MULTI_MIXER,
+    prefix: '/requestVisibleTracks',
+    handler: bareMsg,
+    msg: 'requestVisibleTracks',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/clipView',
+    handler: stdVal,
+    msg: 'clipView',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/clipLaunch',
+    handler: stdVal,
+    msg: 'clipLaunch',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/clipRecord',
+    handler: stdVal,
+    msg: 'clipRecord',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/clipStop',
+    handler: stdVal,
+    msg: 'clipStop',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/sceneLaunch',
+    handler: stdVal,
+    msg: 'sceneLaunch',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/stopAll',
+    handler: bareMsg,
+    msg: 'stopAll',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/captureScene',
+    handler: bareMsg,
+    msg: 'captureScene',
   },
   {
     outlet: OUTLET_MULTI_MIXER,

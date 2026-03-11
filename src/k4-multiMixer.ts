@@ -1190,6 +1190,14 @@ function anything() {
   else if (subCmd === 'sendDefault12') sendDefault12(stripIdx)
 }
 
+function requestVisibleTracks() {
+  ensureApis()
+  if (trackList.length === 0) {
+    trackList = buildTrackList()
+  }
+  sendVisibleTracks()
+}
+
 log('reloaded k4-multiMixer')
 
 // NOTE: This section must appear in any .ts file that is directuly used by a
