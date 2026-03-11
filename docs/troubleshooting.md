@@ -80,6 +80,8 @@ If both sides have Local Network discovery enabled, then it's possible that the 
 
 Check in your network equipment's configuration interfaces around the terms "Bonjour", "Zeroconf", "uPnP", "mDNS", "Multicast DNS", or "Service Auto-Discovery". Some routers have options to disable this traffic, and many people don't know what it is and disable it.
 
+If you are running VPN software (e.g. NordVPN, ExpressVPN, Mullvad, Tailscale, etc.), try disabling it temporarily. VPNs can interfere with local network discovery and prevent the device and app from finding each other, even when both are on the same WiFi network.
+
 #### I can move sliders on the tablet screen and see parameters in Ableton Live update, but no labels, colors, or values are shown on the tablet.
 
 This indicates there is a problem with the computer-to-tablet network connection.
