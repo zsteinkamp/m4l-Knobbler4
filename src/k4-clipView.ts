@@ -830,6 +830,19 @@ function clipRecord(jsonStr: string) {
   scratchApi.call('fire', null)
 }
 
+function clipDelete(jsonStr: string) {
+  ensureApis()
+  const parsed = JSON.parse(jsonStr.toString())
+  const trackIdx = parseInt(parsed[0].toString())
+  const sceneIdx = parseInt(parsed[1].toString())
+
+  if (trackIdx < 0 || trackIdx >= trackPaths.length) return
+  if (sceneIdx < 0 || sceneIdx >= totalScenes) return
+
+  scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
+  scratchApi.call('delete_clip', null)
+}
+
 function clipStop(trackIdx: number) {
   ensureApis()
   const idx = parseInt(trackIdx.toString())
@@ -852,6 +865,25 @@ function sceneLaunch(sceneIdx: number) {
 
   scratchApi.path = 'live_set scenes ' + idx
   scratchApi.call('fire', null)
+}
+
+function clipsUpdate(jsonStr: string) {
+  ensureApis()
+  var updates = JSON.parse(jsonStr.toString())
+  if (!Array.isArray(updates)) updates = [updates]
+
+  for (var i = 0; i < updates.length; i++) {
+    var u = updates[i]
+    var trackIdx = parseInt(u.t.toString())
+    var sceneIdx = parseInt(u.sc.toString())
+    if (trackIdx < 0 || trackIdx >= trackPaths.length) continue
+    if (sceneIdx < 0 || sceneIdx >= totalScenes) continue
+
+    scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx + ' clip'
+    if (parseInt(scratchApi.id.toString()) <= 0) continue
+
+    if (u.n != null) scratchApi.set('name', u.n.toString())
+  }
 }
 
 function captureScene() {

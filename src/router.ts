@@ -629,6 +629,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_CLIP_VIEW,
+    prefix: '/clipDelete',
+    handler: stdVal,
+    msg: 'clipDelete',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
     prefix: '/clipStop',
     handler: stdVal,
     msg: 'clipStop',
@@ -644,6 +650,12 @@ const ROUTER: RouterItem[] = [
     prefix: '/stopAll',
     handler: bareMsg,
     msg: 'stopAll',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
+    prefix: '/clips/update',
+    handler: stdVal,
+    msg: 'clipsUpdate',
   },
   {
     outlet: OUTLET_CLIP_VIEW,
