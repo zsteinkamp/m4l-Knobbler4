@@ -24,7 +24,6 @@ var UPDATE_FLUSH_MS = 50;
 // State
 // ---------------------------------------------------------------------------
 var scratchApi = null;
-var trackListApi = null;
 var cellInitApi = null; // separate scratchpad for createCellObservers (avoids re-entrancy)
 // Track IDs in display order (visible_tracks, no return/master)
 var trackIds = [];
@@ -46,7 +45,6 @@ var viewTask = null;
 var pendingUpdates = [];
 var updateFlushTask = null;
 // Watchers
-var visibleTracksWatcher = null;
 var sceneCountWatcher = null;
 var selectedSceneApi = null;
 // ---------------------------------------------------------------------------
@@ -55,8 +53,6 @@ var selectedSceneApi = null;
 function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
-    if (!trackListApi)
-        trackListApi = new LiveAPI(consts_1.noFn, 'live_set');
     if (!cellInitApi)
         cellInitApi = new LiveAPI(consts_1.noFn, 'live_set');
 }
@@ -86,28 +82,21 @@ function deriveCellState(hasClip, trackIdx, sceneIdx) {
 // ---------------------------------------------------------------------------
 // Track List
 // ---------------------------------------------------------------------------
-function buildTrackIds() {
+function visibleTracks() {
+    var d = new Dict('visibleTracksDict');
+    var raw = d.get('tracks');
+    var tracks = JSON.parse(raw.toString());
     trackIds = [];
     trackPaths = [];
-    // visible tracks only (respects group folding), skip return and master
-    trackListApi.path = 'live_set';
-    var visIds = (0, utils_1.cleanArr)(trackListApi.get('visible_tracks'));
-    for (var i = 0; i < visIds.length; i++) {
-        trackListApi.id = visIds[i];
-        var t = trackListApi.type;
-        if (t === 'MasterTrack' || t === 'ReturnTrack')
+    for (var i = 0; i < tracks.length; i++) {
+        var t = tracks[i];
+        if (t.type === consts_1.TYPE_RETURN || t.type === consts_1.TYPE_MAIN)
             continue;
-        trackIds.push(visIds[i]);
-        trackPaths.push(trackListApi.unquotedpath);
+        trackIds.push(t.id);
+        trackPaths.push(t.path);
     }
-}
-function onVisibleTracksChange(args) {
-    if (args[0] !== 'visible_tracks')
-        return;
     if (leftTrack < 0 || settingUp)
         return;
-    ensureApis();
-    buildTrackIds();
     teardownAllCells();
     teardownAllTrackPlay();
     applyWindow();
@@ -619,7 +608,6 @@ function sendSceneInfo() {
 // ---------------------------------------------------------------------------
 function setupWindow(left, top, right, bottom) {
     ensureApis();
-    var firstSetup = trackIds.length === 0;
     leftTrack = left;
     topScene = top;
     rightTrack = right;
@@ -627,10 +615,6 @@ function setupWindow(left, top, right, bottom) {
     // Guard: prevent watcher callbacks from running teardown+applyWindow during setup
     settingUp = true;
     // Set up watchers on first activation
-    if (!visibleTracksWatcher) {
-        visibleTracksWatcher = new LiveAPI(onVisibleTracksChange, 'live_set');
-        visibleTracksWatcher.property = 'visible_tracks';
-    }
     if (!sceneCountWatcher) {
         sceneCountWatcher = new LiveAPI(onSceneCountChange, 'live_set');
         sceneCountWatcher.property = 'scenes';
@@ -641,11 +625,13 @@ function setupWindow(left, top, right, bottom) {
         selectedSceneApi.property = 'id';
     }
     settingUp = false;
-    if (firstSetup) {
-        buildTrackIds();
-        totalScenes = querySceneCount();
-    }
+    totalScenes = querySceneCount();
     applyWindow();
+}
+function refresh() {
+    if (leftTrack < 0)
+        return;
+    setupWindow(leftTrack, topScene, rightTrack, bottomScene);
 }
 function clipView(jsonStr) {
     var parsed = JSON.parse(jsonStr.toString());

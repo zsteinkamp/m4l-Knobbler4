@@ -3,7 +3,7 @@ import { logFactory, saveSetting } from './utils'
 
 autowatch = 1
 inlets = 1
-outlets = 14
+outlets = 15
 
 const log = logFactory(config)
 let deviceVersion = ''
@@ -27,6 +27,7 @@ const OUTLET_UNKNOWN = 10
 const OUTLET_MULTI_MIXER = 11
 const OUTLET_CLIP_VIEW = 12
 const OUTLET_UDPSEND = 13
+const OUTLET_VISIBLE_TRACKS = 14
 
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]')
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4')
@@ -43,6 +44,7 @@ setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact')
 setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer')
 setoutletassist(OUTLET_CLIP_VIEW, 'Messages for Clip View')
 setoutletassist(OUTLET_UDPSEND, 'host/port messages for [udpsend]')
+setoutletassist(OUTLET_VISIBLE_TRACKS, 'Messages for Visible Tracks')
 
 type RouterItem = {
   outlet: number
@@ -604,7 +606,7 @@ const ROUTER: RouterItem[] = [
     msg: 'hide',
   },
   {
-    outlet: OUTLET_MULTI_MIXER,
+    outlet: OUTLET_VISIBLE_TRACKS,
     prefix: '/requestVisibleTracks',
     handler: bareMsg,
     msg: 'requestVisibleTracks',

@@ -1,6 +1,6 @@
 import { cleanArr, detach, dequote, logFactory, osc } from './utils'
 import config from './config'
-import { noFn, INLET_MSGS, OUTLET_OSC } from './consts'
+import { noFn, INLET_MSGS, OUTLET_OSC, TYPE_RETURN, TYPE_MAIN } from './consts'
 
 autowatch = 1
 inlets = 1
@@ -69,7 +69,6 @@ type SceneInfo = {
 // ---------------------------------------------------------------------------
 
 let scratchApi: LiveAPI = null
-let trackListApi: LiveAPI = null
 let cellInitApi: LiveAPI = null // separate scratchpad for createCellObservers (avoids re-entrancy)
 
 // Track IDs in display order (visible_tracks, no return/master)
@@ -97,7 +96,6 @@ let pendingUpdates: { t: number; sc: number; s: number }[] = []
 let updateFlushTask: MaxTask = null
 
 // Watchers
-let visibleTracksWatcher: LiveAPI = null
 let sceneCountWatcher: LiveAPI = null
 let selectedSceneApi: LiveAPI = null
 
@@ -107,7 +105,6 @@ let selectedSceneApi: LiveAPI = null
 
 function ensureApis() {
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
-  if (!trackListApi) trackListApi = new LiveAPI(noFn, 'live_set')
   if (!cellInitApi) cellInitApi = new LiveAPI(noFn, 'live_set')
 }
 
@@ -146,27 +143,19 @@ function deriveCellState(
 // Track List
 // ---------------------------------------------------------------------------
 
-function buildTrackIds() {
+function visibleTracks() {
+  const d = new Dict('visibleTracksDict')
+  const raw = d.get('tracks')
+  const tracks = JSON.parse(raw.toString())
   trackIds = []
   trackPaths = []
-
-  // visible tracks only (respects group folding), skip return and master
-  trackListApi.path = 'live_set'
-  const visIds = cleanArr(trackListApi.get('visible_tracks'))
-  for (let i = 0; i < visIds.length; i++) {
-    trackListApi.id = visIds[i]
-    const t = trackListApi.type as string
-    if (t === 'MasterTrack' || t === 'ReturnTrack') continue
-    trackIds.push(visIds[i])
-    trackPaths.push(trackListApi.unquotedpath)
+  for (let i = 0; i < tracks.length; i++) {
+    const t = tracks[i]
+    if (t.type === TYPE_RETURN || t.type === TYPE_MAIN) continue
+    trackIds.push(t.id)
+    trackPaths.push(t.path)
   }
-}
-
-function onVisibleTracksChange(args: any[]) {
-  if (args[0] !== 'visible_tracks') return
   if (leftTrack < 0 || settingUp) return
-  ensureApis()
-  buildTrackIds()
   teardownAllCells()
   teardownAllTrackPlay()
   applyWindow()
@@ -724,7 +713,6 @@ function setupWindow(
   bottom: number
 ) {
   ensureApis()
-  const firstSetup = trackIds.length === 0
 
   leftTrack = left
   topScene = top
@@ -735,10 +723,6 @@ function setupWindow(
   settingUp = true
 
   // Set up watchers on first activation
-  if (!visibleTracksWatcher) {
-    visibleTracksWatcher = new LiveAPI(onVisibleTracksChange, 'live_set')
-    visibleTracksWatcher.property = 'visible_tracks'
-  }
   if (!sceneCountWatcher) {
     sceneCountWatcher = new LiveAPI(onSceneCountChange, 'live_set')
     sceneCountWatcher.property = 'scenes'
@@ -754,12 +738,14 @@ function setupWindow(
 
   settingUp = false
 
-  if (firstSetup) {
-    buildTrackIds()
-    totalScenes = querySceneCount()
-  }
+  totalScenes = querySceneCount()
 
   applyWindow()
+}
+
+function refresh() {
+  if (leftTrack < 0) return
+  setupWindow(leftTrack, topScene, rightTrack, bottomScene)
 }
 
 function clipView(jsonStr: string) {

@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 14;
+outlets = 15;
 var log = (0, utils_1.logFactory)(config_1.default);
 var deviceVersion = '';
 function setDeviceVersion(ver) {
@@ -25,6 +25,7 @@ var OUTLET_UNKNOWN = 10;
 var OUTLET_MULTI_MIXER = 11;
 var OUTLET_CLIP_VIEW = 12;
 var OUTLET_UDPSEND = 13;
+var OUTLET_VISIBLE_TRACKS = 14;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -40,6 +41,7 @@ setoutletassist(OUTLET_UNKNOWN, 'Unknown messages, intact');
 setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer');
 setoutletassist(OUTLET_CLIP_VIEW, 'Messages for Clip View');
 setoutletassist(OUTLET_UDPSEND, 'host/port messages for [udpsend]');
+setoutletassist(OUTLET_VISIBLE_TRACKS, 'Messages for Visible Tracks');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
     if (matches) {
@@ -583,7 +585,7 @@ var ROUTER = [
         msg: 'hide',
     },
     {
-        outlet: OUTLET_MULTI_MIXER,
+        outlet: OUTLET_VISIBLE_TRACKS,
         prefix: '/requestVisibleTracks',
         handler: bareMsg,
         msg: 'requestVisibleTracks',

@@ -17,14 +17,10 @@ setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 // Module-level scratchpads for one-off lookups (reuse via .path is fastest)
 // Lazily initialized to avoid "Live API is not initialized" at load time
 var scratchApi = null;
-var trackListApi = null;
 function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
-    if (!trackListApi)
-        trackListApi = new LiveAPI(consts_1.noFn, 'live_set');
 }
-var CHUNK_MAX_BYTES = 1024;
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
 var OBSERVER_BUFFER = 2;
@@ -89,58 +85,11 @@ var meterBuffer = [];
 var meterDirty = false;
 var meterFlushTask = null;
 var mixerViewTask = null;
-var rebuildTrackListTask = null;
-// Track list watchers
-var visibleTracksWatcher = null;
-var returnTracksWatcher = null;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 function isVisible(strip) {
     return strip.stripIndex >= leftIndex && strip.stripIndex < leftIndex + visibleCount;
-}
-function clientHasCapability(cap) {
-    var caps = (0, utils_1.loadSetting)('clientCapabilities');
-    if (!caps) {
-        return false;
-    }
-    return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1;
-}
-function simpleHash(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-    }
-    return hash;
-}
-function sendChunkedData(prefix, items) {
-    var chunked = clientHasCapability('cNav');
-    if (chunked) {
-        outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
-        var chunkParts = [];
-        var chunkSize = 2;
-        var allParts = [];
-        for (var i = 0; i < items.length; i++) {
-            var itemJson = JSON.stringify(items[i]);
-            allParts.push(itemJson);
-            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
-            if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
-                chunkParts = [];
-                chunkSize = 2;
-            }
-            chunkParts.push(itemJson);
-            chunkSize += added;
-        }
-        if (chunkParts.length > 0) {
-            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
-        }
-        var checksum = simpleHash('[' + allParts.join(',') + ']');
-        outlet(consts_1.OUTLET_OSC, [prefix + '/end', checksum]);
-    }
-    if (!chunked) {
-        outlet(consts_1.OUTLET_OSC, [prefix, JSON.stringify(items)]);
-    }
 }
 function stripPause(strip, key) {
     if (!strip.pause[key]) {
@@ -148,100 +97,20 @@ function stripPause(strip, key) {
     }
     (0, utils_1.pauseUnpause)(strip.pause[key], consts_1.PAUSE_MS);
 }
-// ---------------------------------------------------------------------------
-// Track List Builder
-// ---------------------------------------------------------------------------
-function buildTrackList() {
-    var ret = [];
-    // visible tracks only (respects group folding)
-    trackListApi.path = 'live_set';
-    var trackIds = (0, utils_1.cleanArr)(trackListApi.get('visible_tracks'));
-    for (var _a = 0, trackIds_1 = trackIds; _a < trackIds_1.length; _a++) {
-        var id = trackIds_1[_a];
-        trackListApi.id = id;
-        var isFoldable = parseInt(trackListApi.get('is_foldable').toString());
-        var parentId = (0, utils_1.cleanArr)(trackListApi.get('group_track'))[0] || 0;
-        ret.push({
-            id: id,
-            type: isFoldable ? consts_1.TYPE_GROUP : consts_1.TYPE_TRACK,
-            name: (0, utils_1.truncate)(trackListApi.get('name').toString(), consts_1.MAX_NAME_LEN),
-            color: (0, utils_1.colorToString)(trackListApi.get('color').toString()),
-            parentId: parentId,
-        });
-    }
-    // return tracks (always visible)
-    trackListApi.path = 'live_set';
-    var returnIds = (0, utils_1.cleanArr)(trackListApi.get('return_tracks'));
-    for (var _b = 0, returnIds_1 = returnIds; _b < returnIds_1.length; _b++) {
-        var id = returnIds_1[_b];
-        trackListApi.id = id;
-        ret.push({
-            id: id,
-            type: consts_1.TYPE_RETURN,
-            name: (0, utils_1.truncate)(trackListApi.get('name').toString(), consts_1.MAX_NAME_LEN),
-            color: (0, utils_1.colorToString)(trackListApi.get('color').toString()),
-            parentId: 0,
-        });
-    }
-    // master track
-    trackListApi.path = 'live_set';
-    var mainId = (0, utils_1.cleanArr)(trackListApi.get('master_track'))[0];
-    trackListApi.id = mainId;
-    ret.push({
-        id: mainId,
-        type: consts_1.TYPE_MAIN,
-        name: (0, utils_1.truncate)(trackListApi.get('name').toString(), consts_1.MAX_NAME_LEN),
-        color: (0, utils_1.colorToString)(trackListApi.get('color').toString()),
-        parentId: 0,
-    });
-    return ret;
-}
-function sendVisibleTracks() {
-    var items = trackList.map(function (t) {
-        return [t.type, t.id, t.name, t.color, null, null, t.parentId];
-    });
-    sendChunkedData('/visibleTracks', items);
-}
-// ---------------------------------------------------------------------------
-// Track List Watchers
-// ---------------------------------------------------------------------------
-function onVisibleTracksChange(args) {
-    if (args[0] !== 'visible_tracks') {
-        return;
-    }
-    if (visibleCount <= 0) {
-        return;
-    }
-    trackList = buildTrackList();
-    sendVisibleTracks();
-    applyWindow();
-}
 function sendReturnTrackColors() {
-    trackListApi.path = 'live_set';
-    var returnIds = (0, utils_1.cleanArr)(trackListApi.get('return_tracks'));
+    var returns = trackList.filter(function (t) {
+        return t.type === consts_1.TYPE_RETURN;
+    });
     var colors = [];
     for (var i = 0; i < consts_1.MAX_SENDS; i++) {
-        if (returnIds[i]) {
-            trackListApi.id = returnIds[i];
-            colors.push('#' + (0, utils_1.colorToString)(trackListApi.get('color').toString()));
+        if (returns[i]) {
+            colors.push('#' + returns[i].color);
         }
         else {
             colors.push('#' + consts_1.DEFAULT_COLOR);
         }
     }
     outlet(consts_1.OUTLET_OSC, ['/mixer/returnTrackColors', JSON.stringify(colors)]);
-}
-function onReturnTracksChange(args) {
-    if (args[0] !== 'return_tracks') {
-        return;
-    }
-    if (visibleCount <= 0) {
-        return;
-    }
-    trackList = buildTrackList();
-    sendVisibleTracks();
-    sendReturnTrackColors();
-    applyWindow();
 }
 // ---------------------------------------------------------------------------
 // Meter Observers
@@ -359,16 +228,15 @@ function createStripObservers(trackId, stripIdx) {
     var mixerPath = trackPath + ' mixer_device';
     strip.isMain = trackPath.indexOf('master_track') > -1;
     // Color API — separate observer for track color changes
-    // Deferred to avoid re-entrancy with scratchApi during createStripObservers
     strip.colorApi = new LiveAPI(function (args) {
         if (args[0] === 'color') {
-            if (!rebuildTrackListTask) {
-                rebuildTrackListTask = new Task(function () {
-                    trackList = buildTrackList();
-                    sendVisibleTracks();
-                });
+            var newColor = (0, utils_1.colorToString)(args[1].toString());
+            for (var j = 0; j < trackList.length; j++) {
+                if (trackList[j].id === strip.trackId) {
+                    trackList[j].color = newColor;
+                    break;
+                }
             }
-            rebuildTrackListTask.schedule(0);
         }
     }, trackPath);
     strip.colorApi.property = 'color';
@@ -495,11 +363,6 @@ function teardownStripObservers(strip) {
 }
 function teardownAll() {
     stopMeterFlush();
-    if (rebuildTrackListTask) {
-        rebuildTrackListTask.cancel();
-        rebuildTrackListTask.freepeer();
-        rebuildTrackListTask = null;
-    }
     for (var trackIdStr in observersByTrackId) {
         teardownStripObservers(observersByTrackId[trackIdStr]);
     }
@@ -664,23 +527,8 @@ function mixerRefresh() {
 // ---------------------------------------------------------------------------
 function setupWindow(left, count) {
     ensureApis();
-    var firstSetup = trackList.length === 0;
     leftIndex = left;
     visibleCount = count;
-    // Set up track list watchers on first activation
-    if (!visibleTracksWatcher) {
-        visibleTracksWatcher = new LiveAPI(onVisibleTracksChange, 'live_set');
-        visibleTracksWatcher.property = 'visible_tracks';
-    }
-    if (!returnTracksWatcher) {
-        returnTracksWatcher = new LiveAPI(onReturnTracksChange, 'live_set');
-        returnTracksWatcher.property = 'return_tracks';
-    }
-    if (firstSetup) {
-        sendReturnTrackColors();
-        trackList = buildTrackList();
-        sendVisibleTracks();
-    }
     applyWindow();
 }
 function mixerView() {
@@ -1090,12 +938,13 @@ function anything() {
     else if (subCmd === 'sendDefault12')
         sendDefault12(stripIdx);
 }
-function requestVisibleTracks() {
-    ensureApis();
-    if (trackList.length === 0) {
-        trackList = buildTrackList();
+function visibleTracks() {
+    var d = new Dict('visibleTracksDict');
+    trackList = JSON.parse(d.get('tracks').toString());
+    sendReturnTrackColors();
+    if (visibleCount > 0) {
+        applyWindow();
     }
-    sendVisibleTracks();
 }
 log('reloaded k4-multiMixer');
 // NOTE: This section must appear in any .ts file that is directuly used by a
