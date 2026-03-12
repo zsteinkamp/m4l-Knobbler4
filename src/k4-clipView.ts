@@ -62,6 +62,8 @@ type TrackPlayObservers = {
   playingSlotApi: LiveAPI // observes playing_slot_index on track
   firedSlotApi: LiveAPI // observes fired_slot_index on track
   armApi: LiveAPI // observes arm on track
+  nameApi: LiveAPI // observes track name
+  colorApi: LiveAPI // observes track color
   playingSlot: number // current playing slot index (-2 = none)
   firedSlot: number // current fired/triggered slot index (-2 = none)
   armed: boolean
@@ -227,6 +229,8 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     playingSlotApi: null,
     firedSlotApi: null,
     armApi: null,
+    nameApi: null,
+    colorApi: null,
     playingSlot: -2,
     firedSlot: -2,
     armed: false,
@@ -285,6 +289,22 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     tObs.armApi.property = 'arm'
   }
 
+  // Observer: track name
+  tObs.nameApi = new LiveAPI(function (args: any[]) {
+    if (!tObs.nameApi) return
+    if (args[0] !== 'name') return
+    osc('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, n: dequote(args[1]) }))
+  }, trackPath)
+  tObs.nameApi.property = 'name'
+
+  // Observer: track color
+  tObs.colorApi = new LiveAPI(function (args: any[]) {
+    if (!tObs.colorApi) return
+    if (args[0] !== 'color') return
+    osc('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, c: colorHex(args[1]) }))
+  }, trackPath)
+  tObs.colorApi.property = 'color'
+
   return tObs
 }
 
@@ -300,6 +320,14 @@ function teardownTrackPlayObservers(tObs: TrackPlayObservers) {
   if (tObs.armApi) {
     detach(tObs.armApi)
     tObs.armApi = null
+  }
+  if (tObs.nameApi) {
+    detach(tObs.nameApi)
+    tObs.nameApi = null
+  }
+  if (tObs.colorApi) {
+    detach(tObs.colorApi)
+    tObs.colorApi = null
   }
 }
 
@@ -698,8 +726,9 @@ function applyWindow() {
     }
   }
 
-  // Send full grid and scene info for visible range
+  // Send full grid, track info, and scene info for visible range
   sendFullGrid()
+  sendTrackInfo()
   sendSceneInfo()
   sendSelectedScene()
 }
@@ -737,6 +766,22 @@ function sendFullGrid() {
     '/clips/grid',
     JSON.stringify({ left: leftTrack, top: topScene, clips: rows })
   )
+}
+
+function sendTrackInfo() {
+  if (leftTrack < 0) return
+
+  const tracks: any[] = []
+  for (let col = leftTrack; col < rightTrack; col++) {
+    if (col < trackPaths.length) {
+      cellInitApi.path = trackPaths[col]
+      tracks.push({
+        n: dequote(cellInitApi.get('name').toString()),
+        c: colorHex(cellInitApi.get('color')),
+      })
+    }
+  }
+  osc('/clips/trackInfo', JSON.stringify({ left: leftTrack, tracks: tracks }))
 }
 
 function sendSceneInfo() {

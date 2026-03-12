@@ -152,6 +152,8 @@ function createTrackPlayObservers(trackIdx) {
         playingSlotApi: null,
         firedSlotApi: null,
         armApi: null,
+        nameApi: null,
+        colorApi: null,
         playingSlot: -2,
         firedSlot: -2,
         armed: false,
@@ -214,6 +216,24 @@ function createTrackPlayObservers(trackIdx) {
         }, trackPath);
         tObs.armApi.property = 'arm';
     }
+    // Observer: track name
+    tObs.nameApi = new LiveAPI(function (args) {
+        if (!tObs.nameApi)
+            return;
+        if (args[0] !== 'name')
+            return;
+        (0, utils_1.osc)('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, n: (0, utils_1.dequote)(args[1]) }));
+    }, trackPath);
+    tObs.nameApi.property = 'name';
+    // Observer: track color
+    tObs.colorApi = new LiveAPI(function (args) {
+        if (!tObs.colorApi)
+            return;
+        if (args[0] !== 'color')
+            return;
+        (0, utils_1.osc)('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, c: colorHex(args[1]) }));
+    }, trackPath);
+    tObs.colorApi.property = 'color';
     return tObs;
 }
 function teardownTrackPlayObservers(tObs) {
@@ -228,6 +248,14 @@ function teardownTrackPlayObservers(tObs) {
     if (tObs.armApi) {
         (0, utils_1.detach)(tObs.armApi);
         tObs.armApi = null;
+    }
+    if (tObs.nameApi) {
+        (0, utils_1.detach)(tObs.nameApi);
+        tObs.nameApi = null;
+    }
+    if (tObs.colorApi) {
+        (0, utils_1.detach)(tObs.colorApi);
+        tObs.colorApi = null;
     }
 }
 function teardownAllTrackPlay() {
@@ -599,8 +627,9 @@ function applyWindow() {
             }
         }
     }
-    // Send full grid and scene info for visible range
+    // Send full grid, track info, and scene info for visible range
     sendFullGrid();
+    sendTrackInfo();
     sendSceneInfo();
     sendSelectedScene();
 }
@@ -636,6 +665,21 @@ function sendFullGrid() {
         rows.push(rowData);
     }
     (0, utils_1.osc)('/clips/grid', JSON.stringify({ left: leftTrack, top: topScene, clips: rows }));
+}
+function sendTrackInfo() {
+    if (leftTrack < 0)
+        return;
+    var tracks = [];
+    for (var col = leftTrack; col < rightTrack; col++) {
+        if (col < trackPaths.length) {
+            cellInitApi.path = trackPaths[col];
+            tracks.push({
+                n: (0, utils_1.dequote)(cellInitApi.get('name').toString()),
+                c: colorHex(cellInitApi.get('color')),
+            });
+        }
+    }
+    (0, utils_1.osc)('/clips/trackInfo', JSON.stringify({ left: leftTrack, tracks: tracks }));
 }
 function sendSceneInfo() {
     if (totalScenes <= 0)
