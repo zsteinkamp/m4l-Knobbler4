@@ -106,14 +106,23 @@ function clientHasCapability(cap) {
     }
     return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1;
 }
+function simpleHash(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return hash;
+}
 function sendChunkedData(prefix, items) {
     var chunked = clientHasCapability('cNav');
     if (chunked) {
         outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
         var chunkParts = [];
         var chunkSize = 2;
+        var allParts = [];
         for (var i = 0; i < items.length; i++) {
             var itemJson = JSON.stringify(items[i]);
+            allParts.push(itemJson);
             var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
             if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
                 outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
@@ -126,7 +135,8 @@ function sendChunkedData(prefix, items) {
         if (chunkParts.length > 0) {
             outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
         }
-        outlet(consts_1.OUTLET_OSC, [prefix + '/end']);
+        var checksum = simpleHash('[' + allParts.join(',') + ']');
+        outlet(consts_1.OUTLET_OSC, [prefix + '/end', checksum]);
     }
     if (!chunked) {
         outlet(consts_1.OUTLET_OSC, [prefix, JSON.stringify(items)]);

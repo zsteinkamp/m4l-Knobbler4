@@ -42,6 +42,7 @@ type CellObservers = {
   hasClip: boolean
   hasClipApi: LiveAPI // observes has_clip on clip_slot
   clipApi: LiveAPI // observes clip name (only when has_clip)
+  clipColorApi: LiveAPI // observes clip color (only when has_clip)
   cell: ClipCell
 }
 
@@ -346,6 +347,7 @@ function createCellObservers(col: number, row: number): CellObservers {
     hasClip: false,
     hasClipApi: null,
     clipApi: null,
+    clipColorApi: null,
     cell: cell,
   }
 
@@ -412,16 +414,10 @@ function setupClipObserver(obs: CellObservers) {
   if (!obs.clipApi) {
     obs.clipApi = new LiveAPI(function (args: any[]) {
       if (!obs.clipApi) return
-      if (args[0] === 'name') {
-        obs.cell.name = dequote(args[1])
-        if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-          queueFullUpdate(obs)
-        }
-      } else if (args[0] === 'color') {
-        obs.cell.color = colorHex(args[1])
-        if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-          queueFullUpdate(obs)
-        }
+      if (args[0] !== 'name') return
+      obs.cell.name = dequote(args[1])
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+        queueFullUpdate(obs)
       }
     }, clipPath)
     obs.clipApi.property = 'name'
@@ -429,12 +425,31 @@ function setupClipObserver(obs: CellObservers) {
     obs.clipApi.path = clipPath
     obs.clipApi.property = 'name'
   }
+
+  if (!obs.clipColorApi) {
+    obs.clipColorApi = new LiveAPI(function (args: any[]) {
+      if (!obs.clipColorApi) return
+      if (args[0] !== 'color') return
+      obs.cell.color = colorHex(args[1])
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+        queueFullUpdate(obs)
+      }
+    }, clipPath)
+    obs.clipColorApi.property = 'color'
+  } else {
+    obs.clipColorApi.path = clipPath
+    obs.clipColorApi.property = 'color'
+  }
 }
 
 function teardownClipObserver(obs: CellObservers) {
   if (obs.clipApi) {
     detach(obs.clipApi)
     obs.clipApi = null
+  }
+  if (obs.clipColorApi) {
+    detach(obs.clipColorApi)
+    obs.clipColorApi = null
   }
 }
 
@@ -448,7 +463,10 @@ function queueStateUpdate(trackIdx: number, sceneIdx: number, state: number) {
 }
 
 function queueFullUpdate(obs: CellObservers) {
-  pendingUpdates.push({ t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state })
+  const entry: any = { t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state }
+  if (obs.cell.name) entry.n = obs.cell.name
+  if (obs.cell.color) entry.c = obs.cell.color
+  pendingUpdates.push(entry)
   scheduleFlush()
 }
 

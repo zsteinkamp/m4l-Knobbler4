@@ -278,6 +278,7 @@ function createCellObservers(col, row) {
         hasClip: false,
         hasClipApi: null,
         clipApi: null,
+        clipColorApi: null,
         cell: cell,
     };
     // Read initial state via cellInitApi (separate from scratchApi to avoid re-entrancy)
@@ -340,17 +341,11 @@ function setupClipObserver(obs) {
         obs.clipApi = new LiveAPI(function (args) {
             if (!obs.clipApi)
                 return;
-            if (args[0] === 'name') {
-                obs.cell.name = (0, utils_1.dequote)(args[1]);
-                if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-                    queueFullUpdate(obs);
-                }
-            }
-            else if (args[0] === 'color') {
-                obs.cell.color = colorHex(args[1]);
-                if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-                    queueFullUpdate(obs);
-                }
+            if (args[0] !== 'name')
+                return;
+            obs.cell.name = (0, utils_1.dequote)(args[1]);
+            if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+                queueFullUpdate(obs);
             }
         }, clipPath);
         obs.clipApi.property = 'name';
@@ -359,11 +354,32 @@ function setupClipObserver(obs) {
         obs.clipApi.path = clipPath;
         obs.clipApi.property = 'name';
     }
+    if (!obs.clipColorApi) {
+        obs.clipColorApi = new LiveAPI(function (args) {
+            if (!obs.clipColorApi)
+                return;
+            if (args[0] !== 'color')
+                return;
+            obs.cell.color = colorHex(args[1]);
+            if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+                queueFullUpdate(obs);
+            }
+        }, clipPath);
+        obs.clipColorApi.property = 'color';
+    }
+    else {
+        obs.clipColorApi.path = clipPath;
+        obs.clipColorApi.property = 'color';
+    }
 }
 function teardownClipObserver(obs) {
     if (obs.clipApi) {
         (0, utils_1.detach)(obs.clipApi);
         obs.clipApi = null;
+    }
+    if (obs.clipColorApi) {
+        (0, utils_1.detach)(obs.clipColorApi);
+        obs.clipColorApi = null;
     }
 }
 // ---------------------------------------------------------------------------
@@ -374,7 +390,12 @@ function queueStateUpdate(trackIdx, sceneIdx, state) {
     scheduleFlush();
 }
 function queueFullUpdate(obs) {
-    pendingUpdates.push({ t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state });
+    var entry = { t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state };
+    if (obs.cell.name)
+        entry.n = obs.cell.name;
+    if (obs.cell.color)
+        entry.c = obs.cell.color;
+    pendingUpdates.push(entry);
     scheduleFlush();
 }
 function scheduleFlush() {

@@ -186,14 +186,24 @@ function clientHasCapability(cap: string): boolean {
   return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1
 }
 
+function simpleHash(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+  }
+  return hash
+}
+
 function sendChunkedData(prefix: string, items: any[]) {
   const chunked = clientHasCapability('cNav')
   if (chunked) {
     outlet(OUTLET_OSC, [prefix + '/start', items.length])
     let chunkParts: string[] = []
     let chunkSize = 2
+    let allParts: string[] = []
     for (let i = 0; i < items.length; i++) {
       const itemJson = JSON.stringify(items[i])
+      allParts.push(itemJson)
       const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length
       if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
         outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
@@ -206,7 +216,8 @@ function sendChunkedData(prefix: string, items: any[]) {
     if (chunkParts.length > 0) {
       outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
     }
-    outlet(OUTLET_OSC, [prefix + '/end'])
+    const checksum = simpleHash('[' + allParts.join(',') + ']')
+    outlet(OUTLET_OSC, [prefix + '/end', checksum])
   }
   if (!chunked) {
     outlet(OUTLET_OSC, [prefix, JSON.stringify(items)])
