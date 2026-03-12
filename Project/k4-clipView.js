@@ -28,6 +28,7 @@ var cellInitApi = null; // separate scratchpad for createCellObservers (avoids r
 // Track IDs in display order (visible_tracks, no return/master)
 var trackIds = [];
 var trackPaths = [];
+var trackIsGroup = [];
 // Visible window (track and scene ranges)
 var leftTrack = -1;
 var topScene = -1;
@@ -88,12 +89,14 @@ function visibleTracks() {
     var tracks = JSON.parse(raw.toString());
     trackIds = [];
     trackPaths = [];
+    trackIsGroup = [];
     for (var i = 0; i < tracks.length; i++) {
         var t = tracks[i];
         if (t.type === consts_1.TYPE_RETURN || t.type === consts_1.TYPE_MAIN)
             continue;
         trackIds.push(t.id);
         trackPaths.push(t.path);
+        trackIsGroup.push(t.type === consts_1.TYPE_GROUP);
     }
     if (leftTrack < 0 || settingUp)
         return;
@@ -260,7 +263,7 @@ function updateCellFromTrack(trackIdx, sceneIdx) {
 function createCellObservers(col, row) {
     var trackPath = trackPaths[col];
     var slotPath = trackPath + ' clip_slots ' + row;
-    var cell = { state: CLIP_EMPTY, name: '', color: '' };
+    var cell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0 };
     var obs = {
         trackIdx: col,
         sceneIdx: row,
@@ -268,6 +271,8 @@ function createCellObservers(col, row) {
         hasClipApi: null,
         clipApi: null,
         clipColorApi: null,
+        playingStatusApi: null,
+        controlsOtherClipsApi: null,
         cell: cell,
     };
     // Read initial state via cellInitApi (separate from scratchApi to avoid re-entrancy)
@@ -279,6 +284,41 @@ function createCellObservers(col, row) {
         cellInitApi.path = slotPath + ' clip';
         cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
         cell.color = colorHex(cellInitApi.get('color'));
+    }
+    // Group track only: playing_status and has_child_clips
+    if (trackIsGroup[col]) {
+        cellInitApi.path = slotPath;
+        cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0;
+        obs.playingStatusApi = new LiveAPI(function (args) {
+            if (!obs.playingStatusApi)
+                return;
+            if (args[0] !== 'playing_status')
+                return;
+            var newPs = parseInt(args[1]) || 0;
+            if (newPs === obs.cell.ps)
+                return;
+            obs.cell.ps = newPs;
+            if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+                queueStateUpdate(obs.trackIdx, obs.sceneIdx, obs.cell.state, newPs);
+            }
+        }, slotPath);
+        obs.playingStatusApi.property = 'playing_status';
+        // controls_other_clips: 1 if child tracks have clips in this slot
+        cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString()) ? 1 : 0;
+        obs.controlsOtherClipsApi = new LiveAPI(function (args) {
+            if (!obs.controlsOtherClipsApi)
+                return;
+            if (args[0] !== 'controls_other_clips')
+                return;
+            var newHc = parseInt(args[1]) ? 1 : 0;
+            if (newHc === obs.cell.hc)
+                return;
+            obs.cell.hc = newHc;
+            if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+                queueFullUpdate(obs);
+            }
+        }, slotPath);
+        obs.controlsOtherClipsApi.property = 'controls_other_clips';
     }
     // Observer: has_clip
     obs.hasClipApi = new LiveAPI(function (args) {
@@ -316,6 +356,14 @@ function teardownCellObservers(obs) {
     if (obs.hasClipApi) {
         (0, utils_1.detach)(obs.hasClipApi);
         obs.hasClipApi = null;
+    }
+    if (obs.playingStatusApi) {
+        (0, utils_1.detach)(obs.playingStatusApi);
+        obs.playingStatusApi = null;
+    }
+    if (obs.controlsOtherClipsApi) {
+        (0, utils_1.detach)(obs.controlsOtherClipsApi);
+        obs.controlsOtherClipsApi = null;
     }
     teardownClipObserver(obs);
 }
@@ -374,8 +422,11 @@ function teardownClipObserver(obs) {
 // ---------------------------------------------------------------------------
 // State update & batching
 // ---------------------------------------------------------------------------
-function queueStateUpdate(trackIdx, sceneIdx, state) {
-    pendingUpdates.push({ t: trackIdx, sc: sceneIdx, s: state });
+function queueStateUpdate(trackIdx, sceneIdx, state, ps) {
+    var entry = { t: trackIdx, sc: sceneIdx, s: state };
+    if (ps)
+        entry.ps = ps;
+    pendingUpdates.push(entry);
     scheduleFlush();
 }
 function queueFullUpdate(obs) {
@@ -384,6 +435,10 @@ function queueFullUpdate(obs) {
         entry.n = obs.cell.name;
     if (obs.cell.color)
         entry.c = obs.cell.color;
+    if (obs.cell.ps)
+        entry.ps = obs.cell.ps;
+    if (obs.cell.hc)
+        entry.hc = obs.cell.hc;
     pendingUpdates.push(entry);
     scheduleFlush();
 }
@@ -562,12 +617,16 @@ function sendFullGrid() {
         for (var col = leftTrack; col < rightTrack; col++) {
             var key = cellKey(col, row);
             var obs = cellObservers[key];
-            if (obs && obs.cell.state !== CLIP_EMPTY) {
+            if (obs) {
                 var entry = { s: obs.cell.state };
                 if (obs.cell.name)
                     entry.n = obs.cell.name;
                 if (obs.cell.color)
                     entry.c = obs.cell.color;
+                if (obs.cell.ps)
+                    entry.ps = obs.cell.ps;
+                if (obs.cell.hc)
+                    entry.hc = obs.cell.hc;
                 rowData.push(entry);
             }
             else {

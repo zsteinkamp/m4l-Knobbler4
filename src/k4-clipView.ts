@@ -1,6 +1,13 @@
 import { cleanArr, detach, dequote, logFactory, osc } from './utils'
 import config from './config'
-import { noFn, INLET_MSGS, OUTLET_OSC, TYPE_RETURN, TYPE_MAIN } from './consts'
+import {
+  noFn,
+  INLET_MSGS,
+  OUTLET_OSC,
+  TYPE_RETURN,
+  TYPE_MAIN,
+  TYPE_GROUP,
+} from './consts'
 
 autowatch = 1
 inlets = 1
@@ -34,6 +41,8 @@ type ClipCell = {
   state: number // CLIP_EMPTY..CLIP_RECORDING
   name: string
   color: string // RRGGBB hex, no #
+  ps: number // playing_status for group tracks (0=stopped, 1=playing, 2=recording)
+  hc: number // has_child_clips for group tracks (1 if any child has clip at this row)
 }
 
 type CellObservers = {
@@ -43,6 +52,8 @@ type CellObservers = {
   hasClipApi: LiveAPI // observes has_clip on clip_slot
   clipApi: LiveAPI // observes clip name (only when has_clip)
   clipColorApi: LiveAPI // observes clip color (only when has_clip)
+  playingStatusApi: LiveAPI // observes playing_status (group tracks only)
+  controlsOtherClipsApi: LiveAPI // observes controls_other_clips (group tracks only)
   cell: ClipCell
 }
 
@@ -74,6 +85,7 @@ let cellInitApi: LiveAPI = null // separate scratchpad for createCellObservers (
 // Track IDs in display order (visible_tracks, no return/master)
 let trackIds: number[] = []
 let trackPaths: string[] = []
+let trackIsGroup: boolean[] = []
 
 // Visible window (track and scene ranges)
 let leftTrack = -1
@@ -149,11 +161,13 @@ function visibleTracks() {
   const tracks = JSON.parse(raw.toString())
   trackIds = []
   trackPaths = []
+  trackIsGroup = []
   for (let i = 0; i < tracks.length; i++) {
     const t = tracks[i]
     if (t.type === TYPE_RETURN || t.type === TYPE_MAIN) continue
     trackIds.push(t.id)
     trackPaths.push(t.path)
+    trackIsGroup.push(t.type === TYPE_GROUP)
   }
   if (leftTrack < 0 || settingUp) return
   teardownAllCells()
@@ -220,9 +234,7 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
 
   // Read initial values
   cellInitApi.path = trackPath
-  tObs.playingSlot = parseInt(
-    cellInitApi.get('playing_slot_index').toString()
-  )
+  tObs.playingSlot = parseInt(cellInitApi.get('playing_slot_index').toString())
   tObs.firedSlot = parseInt(cellInitApi.get('fired_slot_index').toString())
   const canBeArmed = !!parseInt(cellInitApi.get('can_be_armed').toString())
   if (canBeArmed) {
@@ -328,7 +340,7 @@ function createCellObservers(col: number, row: number): CellObservers {
   const trackPath = trackPaths[col]
   const slotPath = trackPath + ' clip_slots ' + row
 
-  const cell: ClipCell = { state: CLIP_EMPTY, name: '', color: '' }
+  const cell: ClipCell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0 }
 
   const obs: CellObservers = {
     trackIdx: col,
@@ -337,6 +349,8 @@ function createCellObservers(col: number, row: number): CellObservers {
     hasClipApi: null,
     clipApi: null,
     clipColorApi: null,
+    playingStatusApi: null,
+    controlsOtherClipsApi: null,
     cell: cell,
   }
 
@@ -350,6 +364,37 @@ function createCellObservers(col: number, row: number): CellObservers {
     cellInitApi.path = slotPath + ' clip'
     cell.name = dequote(cellInitApi.get('name').toString())
     cell.color = colorHex(cellInitApi.get('color'))
+  }
+
+  // Group track only: playing_status and has_child_clips
+  if (trackIsGroup[col]) {
+    cellInitApi.path = slotPath
+    cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0
+    obs.playingStatusApi = new LiveAPI(function (args: any[]) {
+      if (!obs.playingStatusApi) return
+      if (args[0] !== 'playing_status') return
+      const newPs = parseInt(args[1]) || 0
+      if (newPs === obs.cell.ps) return
+      obs.cell.ps = newPs
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+        queueStateUpdate(obs.trackIdx, obs.sceneIdx, obs.cell.state, newPs)
+      }
+    }, slotPath)
+    obs.playingStatusApi.property = 'playing_status'
+
+    // controls_other_clips: 1 if child tracks have clips in this slot
+    cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString()) ? 1 : 0
+    obs.controlsOtherClipsApi = new LiveAPI(function (args: any[]) {
+      if (!obs.controlsOtherClipsApi) return
+      if (args[0] !== 'controls_other_clips') return
+      const newHc = parseInt(args[1]) ? 1 : 0
+      if (newHc === obs.cell.hc) return
+      obs.cell.hc = newHc
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+        queueFullUpdate(obs)
+      }
+    }, slotPath)
+    obs.controlsOtherClipsApi.property = 'controls_other_clips'
   }
 
   // Observer: has_clip
@@ -387,6 +432,14 @@ function teardownCellObservers(obs: CellObservers) {
   if (obs.hasClipApi) {
     detach(obs.hasClipApi)
     obs.hasClipApi = null
+  }
+  if (obs.playingStatusApi) {
+    detach(obs.playingStatusApi)
+    obs.playingStatusApi = null
+  }
+  if (obs.controlsOtherClipsApi) {
+    detach(obs.controlsOtherClipsApi)
+    obs.controlsOtherClipsApi = null
   }
   teardownClipObserver(obs)
 }
@@ -446,8 +499,15 @@ function teardownClipObserver(obs: CellObservers) {
 // State update & batching
 // ---------------------------------------------------------------------------
 
-function queueStateUpdate(trackIdx: number, sceneIdx: number, state: number) {
-  pendingUpdates.push({ t: trackIdx, sc: sceneIdx, s: state })
+function queueStateUpdate(
+  trackIdx: number,
+  sceneIdx: number,
+  state: number,
+  ps?: number
+) {
+  const entry: any = { t: trackIdx, sc: sceneIdx, s: state }
+  if (ps) entry.ps = ps
+  pendingUpdates.push(entry)
   scheduleFlush()
 }
 
@@ -455,6 +515,8 @@ function queueFullUpdate(obs: CellObservers) {
   const entry: any = { t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state }
   if (obs.cell.name) entry.n = obs.cell.name
   if (obs.cell.color) entry.c = obs.cell.color
+  if (obs.cell.ps) entry.ps = obs.cell.ps
+  if (obs.cell.hc) entry.hc = obs.cell.hc
   pendingUpdates.push(entry)
   scheduleFlush()
 }
@@ -657,10 +719,12 @@ function sendFullGrid() {
     for (let col = leftTrack; col < rightTrack; col++) {
       const key = cellKey(col, row)
       const obs = cellObservers[key]
-      if (obs && obs.cell.state !== CLIP_EMPTY) {
+      if (obs) {
         const entry: any = { s: obs.cell.state }
         if (obs.cell.name) entry.n = obs.cell.name
         if (obs.cell.color) entry.c = obs.cell.color
+        if (obs.cell.ps) entry.ps = obs.cell.ps
+        if (obs.cell.hc) entry.hc = obs.cell.hc
         rowData.push(entry)
       } else {
         rowData.push({ s: CLIP_EMPTY })
@@ -706,12 +770,7 @@ function sendSceneInfo() {
 // Incoming: clipView
 // ---------------------------------------------------------------------------
 
-function setupWindow(
-  left: number,
-  top: number,
-  right: number,
-  bottom: number
-) {
+function setupWindow(left: number, top: number, right: number, bottom: number) {
   ensureApis()
 
   leftTrack = left
@@ -855,13 +914,13 @@ function sceneLaunch(sceneIdx: number) {
 
 function clipsUpdate(jsonStr: string) {
   ensureApis()
-  var updates = JSON.parse(jsonStr.toString())
+  let updates = JSON.parse(jsonStr.toString())
   if (!Array.isArray(updates)) updates = [updates]
 
-  for (var i = 0; i < updates.length; i++) {
-    var u = updates[i]
-    var trackIdx = parseInt(u.t.toString())
-    var sceneIdx = parseInt(u.sc.toString())
+  for (let i = 0; i < updates.length; i++) {
+    const u = updates[i]
+    const trackIdx = parseInt(u.t.toString())
+    const sceneIdx = parseInt(u.sc.toString())
     if (trackIdx < 0 || trackIdx >= trackPaths.length) continue
     if (sceneIdx < 0 || sceneIdx >= totalScenes) continue
 
