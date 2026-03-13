@@ -299,6 +299,7 @@ function createCellObservers(col, row) {
         hasClipApi: null,
         clipApi: null,
         clipColorApi: null,
+        clipRecordingApi: null,
         playingStatusApi: null,
         controlsOtherClipsApi: null,
         cell: cell,
@@ -402,6 +403,9 @@ function setupClipObserver(obs) {
     cellInitApi.path = clipPath;
     obs.cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
     obs.cell.color = colorHex(cellInitApi.get('color'));
+    if (parseInt(cellInitApi.get('is_recording').toString())) {
+        obs.cell.state = CLIP_RECORDING;
+    }
     if (!obs.clipApi) {
         obs.clipApi = new LiveAPI(function (args) {
             if (!obs.clipApi)
@@ -418,6 +422,29 @@ function setupClipObserver(obs) {
     else {
         obs.clipApi.path = clipPath;
         obs.clipApi.property = 'name';
+    }
+    if (!obs.clipRecordingApi) {
+        obs.clipRecordingApi = new LiveAPI(function (args) {
+            if (!obs.clipRecordingApi)
+                return;
+            if (args[0] !== 'is_recording')
+                return;
+            var recording = !!parseInt(args[1]);
+            if (recording) {
+                obs.cell.state = CLIP_RECORDING;
+            }
+            else {
+                obs.cell.state = deriveCellState(obs.hasClip, obs.trackIdx, obs.sceneIdx);
+            }
+            if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+                queueStateUpdate(obs.trackIdx, obs.sceneIdx, obs.cell.state);
+            }
+        }, clipPath);
+        obs.clipRecordingApi.property = 'is_recording';
+    }
+    else {
+        obs.clipRecordingApi.path = clipPath;
+        obs.clipRecordingApi.property = 'is_recording';
     }
     if (!obs.clipColorApi) {
         obs.clipColorApi = new LiveAPI(function (args) {
@@ -445,6 +472,10 @@ function teardownClipObserver(obs) {
     if (obs.clipColorApi) {
         (0, utils_1.detach)(obs.clipColorApi);
         obs.clipColorApi = null;
+    }
+    if (obs.clipRecordingApi) {
+        (0, utils_1.detach)(obs.clipRecordingApi);
+        obs.clipRecordingApi = null;
     }
 }
 // ---------------------------------------------------------------------------

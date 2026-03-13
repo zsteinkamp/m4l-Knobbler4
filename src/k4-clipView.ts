@@ -52,6 +52,7 @@ type CellObservers = {
   hasClipApi: LiveAPI // observes has_clip on clip_slot
   clipApi: LiveAPI // observes clip name (only when has_clip)
   clipColorApi: LiveAPI // observes clip color (only when has_clip)
+  clipRecordingApi: LiveAPI // observes clip is_recording (only when has_clip)
   playingStatusApi: LiveAPI // observes playing_status (group tracks only)
   controlsOtherClipsApi: LiveAPI // observes controls_other_clips (group tracks only)
   cell: ClipCell
@@ -377,6 +378,7 @@ function createCellObservers(col: number, row: number): CellObservers {
     hasClipApi: null,
     clipApi: null,
     clipColorApi: null,
+    clipRecordingApi: null,
     playingStatusApi: null,
     controlsOtherClipsApi: null,
     cell: cell,
@@ -480,6 +482,9 @@ function setupClipObserver(obs: CellObservers) {
   cellInitApi.path = clipPath
   obs.cell.name = dequote(cellInitApi.get('name').toString())
   obs.cell.color = colorHex(cellInitApi.get('color'))
+  if (parseInt(cellInitApi.get('is_recording').toString())) {
+    obs.cell.state = CLIP_RECORDING
+  }
 
   if (!obs.clipApi) {
     obs.clipApi = new LiveAPI(function (args: any[]) {
@@ -494,6 +499,26 @@ function setupClipObserver(obs: CellObservers) {
   } else {
     obs.clipApi.path = clipPath
     obs.clipApi.property = 'name'
+  }
+
+  if (!obs.clipRecordingApi) {
+    obs.clipRecordingApi = new LiveAPI(function (args: any[]) {
+      if (!obs.clipRecordingApi) return
+      if (args[0] !== 'is_recording') return
+      const recording = !!parseInt(args[1])
+      if (recording) {
+        obs.cell.state = CLIP_RECORDING
+      } else {
+        obs.cell.state = deriveCellState(obs.hasClip, obs.trackIdx, obs.sceneIdx)
+      }
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+        queueStateUpdate(obs.trackIdx, obs.sceneIdx, obs.cell.state)
+      }
+    }, clipPath)
+    obs.clipRecordingApi.property = 'is_recording'
+  } else {
+    obs.clipRecordingApi.path = clipPath
+    obs.clipRecordingApi.property = 'is_recording'
   }
 
   if (!obs.clipColorApi) {
@@ -520,6 +545,10 @@ function teardownClipObserver(obs: CellObservers) {
   if (obs.clipColorApi) {
     detach(obs.clipColorApi)
     obs.clipColorApi = null
+  }
+  if (obs.clipRecordingApi) {
+    detach(obs.clipRecordingApi)
+    obs.clipRecordingApi = null
   }
 }
 
