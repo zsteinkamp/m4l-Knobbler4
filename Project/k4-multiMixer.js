@@ -941,6 +941,10 @@ function anything() {
 function visibleTracks() {
     var d = new Dict('visibleTracksDict');
     trackList = JSON.parse(d.get('tracks').toString());
+    // Clamp leftIndex if track list shrank
+    if (leftIndex >= trackList.length) {
+        leftIndex = Math.max(0, trackList.length - visibleCount);
+    }
     sendReturnTrackColors();
     if (visibleCount > 0) {
         applyWindow();
