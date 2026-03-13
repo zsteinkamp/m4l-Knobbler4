@@ -326,7 +326,25 @@ function toggleGroup(groupId) {
 function gotoTrack(trackIdStr) {
     //log('gotoTrack ' + trackIdStr)
     var trackId = parseInt(trackIdStr);
-    unfoldParentTracks(trackId);
+    // Walk up group_track chain to unfold any collapsed parent groups
+    var util = getUtilApi();
+    util.id = trackId;
+    if (util.id !== 0) {
+        var counter = 0;
+        while (counter < 20) {
+            var groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
+            if (!groupIds.length)
+                break;
+            util.id = groupIds[0];
+            if (util.id === 0)
+                break;
+            var foldState = parseInt(util.get('fold_state').toString());
+            if (foldState === 1) {
+                util.set('fold_state', 0);
+            }
+            counter++;
+        }
+    }
     var api = getLiveSetViewApi();
     api.set('selected_track', ['id', trackId]);
 }

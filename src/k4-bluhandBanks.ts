@@ -364,7 +364,23 @@ function toggleGroup(groupId: number) {
 function gotoTrack(trackIdStr: string) {
   //log('gotoTrack ' + trackIdStr)
   const trackId = parseInt(trackIdStr)
-  unfoldParentTracks(trackId)
+  // Walk up group_track chain to unfold any collapsed parent groups
+  const util = getUtilApi()
+  util.id = trackId
+  if (util.id !== 0) {
+    let counter = 0
+    while (counter < 20) {
+      const groupIds = cleanArr(util.get('group_track'))
+      if (!groupIds.length) break
+      util.id = groupIds[0]
+      if (util.id === 0) break
+      const foldState = parseInt(util.get('fold_state').toString())
+      if (foldState === 1) {
+        util.set('fold_state', 0)
+      }
+      counter++
+    }
+  }
   const api = getLiveSetViewApi()
   api.set('selected_track', ['id', trackId])
 }
