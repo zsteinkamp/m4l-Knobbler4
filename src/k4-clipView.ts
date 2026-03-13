@@ -357,7 +357,7 @@ function updateCellFromTrack(trackIdx: number, sceneIdx: number) {
   const oldState = obs.cell.state
   obs.cell.state = newState
   if (newState !== oldState && isVisible(trackIdx, sceneIdx)) {
-    queueStateUpdate(trackIdx, sceneIdx, newState)
+    queueFullUpdate(obs)
   }
 }
 
@@ -407,7 +407,7 @@ function createCellObservers(col: number, row: number): CellObservers {
       if (newPs === obs.cell.ps) return
       obs.cell.ps = newPs
       if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-        queueStateUpdate(obs.trackIdx, obs.sceneIdx, obs.cell.state, newPs)
+        queueFullUpdate(obs)
       }
     }, slotPath)
     obs.playingStatusApi.property = 'playing_status'
@@ -445,7 +445,7 @@ function createCellObservers(col: number, row: number): CellObservers {
     const oldState = obs.cell.state
     obs.cell.state = newState
     if (newState !== oldState && isVisible(obs.trackIdx, obs.sceneIdx)) {
-      queueStateUpdate(obs.trackIdx, obs.sceneIdx, newState)
+      queueFullUpdate(obs)
     }
   }, slotPath)
   obs.hasClipApi.property = 'has_clip'
@@ -512,7 +512,7 @@ function setupClipObserver(obs: CellObservers) {
         obs.cell.state = deriveCellState(obs.hasClip, obs.trackIdx, obs.sceneIdx)
       }
       if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-        queueStateUpdate(obs.trackIdx, obs.sceneIdx, obs.cell.state)
+        queueFullUpdate(obs)
       }
     }, clipPath)
     obs.clipRecordingApi.property = 'is_recording'
@@ -556,24 +556,14 @@ function teardownClipObserver(obs: CellObservers) {
 // State update & batching
 // ---------------------------------------------------------------------------
 
-function queueStateUpdate(
-  trackIdx: number,
-  sceneIdx: number,
-  state: number,
-  ps?: number
-) {
-  const entry: any = { t: trackIdx, sc: sceneIdx, s: state }
-  if (ps) entry.ps = ps
-  pendingUpdates.push(entry)
-  scheduleFlush()
-}
-
 function queueFullUpdate(obs: CellObservers) {
   const entry: any = { t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state }
   if (obs.cell.name) entry.n = obs.cell.name
   if (obs.cell.color) entry.c = obs.cell.color
-  if (obs.cell.ps) entry.ps = obs.cell.ps
-  if (obs.cell.hc) entry.hc = obs.cell.hc
+  if (trackIsGroup[obs.trackIdx]) {
+    entry.ps = obs.cell.ps
+    entry.hc = obs.cell.hc
+  }
   pendingUpdates.push(entry)
   scheduleFlush()
 }
@@ -781,8 +771,10 @@ function sendFullGrid() {
         const entry: any = { s: obs.cell.state }
         if (obs.cell.name) entry.n = obs.cell.name
         if (obs.cell.color) entry.c = obs.cell.color
-        if (obs.cell.ps) entry.ps = obs.cell.ps
-        if (obs.cell.hc) entry.hc = obs.cell.hc
+        if (trackIsGroup[col]) {
+          entry.ps = obs.cell.ps
+          entry.hc = obs.cell.hc
+        }
         rowData.push(entry)
       } else {
         rowData.push({ s: CLIP_EMPTY })
