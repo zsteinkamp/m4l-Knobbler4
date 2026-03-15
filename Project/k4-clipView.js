@@ -25,6 +25,7 @@ var UPDATE_FLUSH_MS = 50;
 // ---------------------------------------------------------------------------
 var scratchApi = null;
 var cellInitApi = null; // separate scratchpad for createCellObservers (avoids re-entrancy)
+var viewApi = null;
 // Track IDs in display order (visible_tracks, no return/master)
 var trackIds = [];
 var trackPaths = [];
@@ -56,6 +57,13 @@ function ensureApis() {
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     if (!cellInitApi)
         cellInitApi = new LiveAPI(consts_1.noFn, 'live_set');
+    if (!viewApi)
+        viewApi = new LiveAPI(consts_1.noFn, 'live_set view');
+}
+function selectClipSlot(trackIdx, sceneIdx) {
+    viewApi.set('selected_track', ['id', trackIds[trackIdx]]);
+    scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
+    viewApi.set('highlighted_clip_slot', ['id', parseInt(scratchApi.id.toString())]);
 }
 function cellKey(col, row) {
     return col + ',' + row;
@@ -809,6 +817,7 @@ function clipLaunch(jsonStr) {
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
     scratchApi.call('fire', null);
+    selectClipSlot(trackIdx, sceneIdx);
 }
 function clipRecord(jsonStr) {
     ensureApis();
@@ -821,6 +830,7 @@ function clipRecord(jsonStr) {
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
     scratchApi.call('fire', null);
+    selectClipSlot(trackIdx, sceneIdx);
 }
 function clipDelete(jsonStr) {
     ensureApis();

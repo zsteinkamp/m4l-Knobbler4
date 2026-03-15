@@ -84,6 +84,7 @@ type SceneInfo = {
 
 let scratchApi: LiveAPI = null
 let cellInitApi: LiveAPI = null // separate scratchpad for createCellObservers (avoids re-entrancy)
+let viewApi: LiveAPI = null
 
 // Track IDs in display order (visible_tracks, no return/master)
 let trackIds: number[] = []
@@ -121,6 +122,13 @@ let selectedSceneApi: LiveAPI = null
 function ensureApis() {
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
   if (!cellInitApi) cellInitApi = new LiveAPI(noFn, 'live_set')
+  if (!viewApi) viewApi = new LiveAPI(noFn, 'live_set view')
+}
+
+function selectClipSlot(trackIdx: number, sceneIdx: number) {
+  viewApi.set('selected_track', ['id', trackIds[trackIdx]])
+  scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
+  viewApi.set('highlighted_clip_slot', ['id', parseInt(scratchApi.id.toString())])
 }
 
 function cellKey(col: number, row: number): string {
@@ -926,6 +934,7 @@ function clipLaunch(jsonStr: string) {
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
   scratchApi.call('fire', null)
+  selectClipSlot(trackIdx, sceneIdx)
 }
 
 function clipRecord(jsonStr: string) {
@@ -939,6 +948,7 @@ function clipRecord(jsonStr: string) {
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
   scratchApi.call('fire', null)
+  selectClipSlot(trackIdx, sceneIdx)
 }
 
 function clipDelete(jsonStr: string) {
