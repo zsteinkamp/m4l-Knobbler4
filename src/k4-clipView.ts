@@ -1,4 +1,4 @@
-import { cleanArr, detach, dequote, logFactory, osc } from './utils'
+import { cleanArr, detach, dequote, logFactory, osc, sendChunkedData } from './utils'
 import config from './config'
 import {
   noFn,
@@ -32,7 +32,6 @@ const CLIP_ARMED = 5
 const OBSERVER_BUFFER = 2
 const VIEW_DEBOUNCE_MS = 250
 const UPDATE_FLUSH_MS = 50
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -106,6 +105,7 @@ let sceneObservers: Record<number, SceneInfo> = {} // key: sceneIndex
 
 // Debounce
 let viewTask: MaxTask = null
+let sceneInfoTask: MaxTask = null
 
 // Update batching
 let pendingUpdates: { t: number; sc: number; s: number }[] = []
@@ -613,9 +613,7 @@ function createSceneObserver(sceneIdx: number): SceneInfo {
     if (!info.nameApi) return
     if (args[0] !== 'name') return
     info.name = dequote(args[1])
-    if (sceneIdx >= topScene && sceneIdx < bottomScene) {
-      sendSceneInfo()
-    }
+    scheduleSceneInfo()
   }, scenePath)
   info.nameApi.property = 'name'
 
@@ -623,9 +621,7 @@ function createSceneObserver(sceneIdx: number): SceneInfo {
     if (!info.colorApi) return
     if (args[0] !== 'color') return
     info.color = colorHex(args[1])
-    if (sceneIdx >= topScene && sceneIdx < bottomScene) {
-      sendSceneInfo()
-    }
+    scheduleSceneInfo()
   }, scenePath)
   info.colorApi.property = 'color'
 
@@ -813,6 +809,14 @@ function sendTrackInfo() {
   osc('/clips/trackInfo', JSON.stringify({ left: leftTrack, tracks: tracks }))
 }
 
+function scheduleSceneInfo() {
+  if (!sceneInfoTask) {
+    sceneInfoTask = new Task(sendSceneInfo) as MaxTask
+  }
+  sceneInfoTask.cancel()
+  sceneInfoTask.schedule(UPDATE_FLUSH_MS)
+}
+
 function sendSceneInfo() {
   if (totalScenes <= 0) return
 
@@ -831,13 +835,12 @@ function sendSceneInfo() {
       name = dequote(cellInitApi.get('name').toString())
       color = colorHex(cellInitApi.get('color'))
     }
-    scenes.push({
-      n: name,
-      c: color && color !== '000000' ? color : null,
-    })
+    const scene: any = { n: name }
+    if (color && color !== '000000') scene.c = color
+    scenes.push(scene)
   }
 
-  osc('/clips/scenes', JSON.stringify({ top: 0, scenes: scenes }))
+  sendChunkedData('/clips/scenes', scenes)
 }
 
 // ---------------------------------------------------------------------------
@@ -879,6 +882,10 @@ function setupWindow(left: number, top: number, right: number, bottom: number) {
 function refresh() {
   if (leftTrack < 0) return
   setupWindow(leftTrack, topScene, rightTrack, bottomScene)
+}
+
+function requestClipsScenes() {
+  sendSceneInfo()
 }
 
 function clipView(jsonStr: string) {

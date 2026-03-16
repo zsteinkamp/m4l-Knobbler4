@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -122,6 +122,45 @@ function numArrToJson(arr) {
     return '[' + arr.join(',') + ']';
 }
 exports.numArrToJson = numArrToJson;
+var CHUNK_MAX_BYTES = 1024;
+function simpleHash(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return hash;
+}
+function sendChunkedData(prefix, items) {
+    var caps = loadSetting('clientCapabilities');
+    var chunked = caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1;
+    if (chunked) {
+        outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
+        var chunkParts = [];
+        var chunkSize = 2;
+        var allParts = [];
+        for (var i = 0; i < items.length; i++) {
+            var itemJson = JSON.stringify(items[i]);
+            allParts.push(itemJson);
+            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
+            if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
+                chunkParts = [];
+                chunkSize = 2;
+            }
+            chunkParts.push(itemJson);
+            chunkSize += added;
+        }
+        if (chunkParts.length > 0) {
+            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
+        }
+        var checksum = simpleHash('[' + allParts.join(',') + ']');
+        outlet(consts_1.OUTLET_OSC, [prefix + '/end', checksum]);
+    }
+    if (!chunked) {
+        outlet(consts_1.OUTLET_OSC, [prefix, JSON.stringify(items)]);
+    }
+}
+exports.sendChunkedData = sendChunkedData;
 function cleanArr(arr) {
     if (!arr) {
         return [];

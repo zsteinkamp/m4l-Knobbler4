@@ -613,6 +613,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_CLIP_VIEW,
+    prefix: '/requestClipsScenes',
+    handler: bareMsg,
+    msg: 'requestClipsScenes',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
     prefix: '/clipView',
     handler: stdVal,
     msg: 'clipView',

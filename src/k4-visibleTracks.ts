@@ -1,8 +1,8 @@
 import {
   cleanArr,
   colorToString,
-  loadSetting,
   logFactory,
+  sendChunkedData,
   truncate,
 } from './utils'
 import config from './config'
@@ -29,8 +29,6 @@ setinletassist(INLET_MSGS, 'Messages')
 setoutletassist(OUTLET_OSC, 'OSC messages to [udpsend]')
 setoutletassist(OUTLET_TRACK_DATA, 'Track data to mixer/clips')
 
-const CHUNK_MAX_BYTES = 1024
-
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -52,58 +50,6 @@ let trackList: TrackInfo[] = []
 
 function ensureApis() {
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
-}
-
-// ---------------------------------------------------------------------------
-// Client Capabilities
-// ---------------------------------------------------------------------------
-
-function clientHasCapability(cap: string): boolean {
-  const caps = loadSetting('clientCapabilities')
-  if (!caps) return false
-  return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1
-}
-
-// ---------------------------------------------------------------------------
-// Chunked Data
-// ---------------------------------------------------------------------------
-
-function simpleHash(str: string): number {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
-  }
-  return hash
-}
-
-function sendChunkedData(prefix: string, items: any[]) {
-  const chunked = clientHasCapability('cNav')
-  if (chunked) {
-    outlet(OUTLET_OSC, [prefix + '/start', items.length])
-    let chunkParts: string[] = []
-    let chunkSize = 2
-    let allParts: string[] = []
-    for (let i = 0; i < items.length; i++) {
-      const itemJson = JSON.stringify(items[i])
-      allParts.push(itemJson)
-      const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length
-      if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-        outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
-        chunkParts = []
-        chunkSize = 2
-      }
-      chunkParts.push(itemJson)
-      chunkSize += added
-    }
-    if (chunkParts.length > 0) {
-      outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
-    }
-    const checksum = simpleHash('[' + allParts.join(',') + ']')
-    outlet(OUTLET_OSC, [prefix + '/end', checksum])
-  }
-  if (!chunked) {
-    outlet(OUTLET_OSC, [prefix, JSON.stringify(items)])
-  }
 }
 
 // ---------------------------------------------------------------------------

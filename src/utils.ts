@@ -126,6 +126,48 @@ export function numArrToJson(arr: number[]): string {
   return '[' + arr.join(',') + ']'
 }
 
+const CHUNK_MAX_BYTES = 1024
+
+function simpleHash(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+  }
+  return hash
+}
+
+export function sendChunkedData(prefix: string, items: any[]) {
+  const caps = loadSetting('clientCapabilities')
+  const chunked =
+    caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1
+  if (chunked) {
+    outlet(OUTLET_OSC, [prefix + '/start', items.length])
+    let chunkParts: string[] = []
+    let chunkSize = 2
+    let allParts: string[] = []
+    for (let i = 0; i < items.length; i++) {
+      const itemJson = JSON.stringify(items[i])
+      allParts.push(itemJson)
+      const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length
+      if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+        outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
+        chunkParts = []
+        chunkSize = 2
+      }
+      chunkParts.push(itemJson)
+      chunkSize += added
+    }
+    if (chunkParts.length > 0) {
+      outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
+    }
+    const checksum = simpleHash('[' + allParts.join(',') + ']')
+    outlet(OUTLET_OSC, [prefix + '/end', checksum])
+  }
+  if (!chunked) {
+    outlet(OUTLET_OSC, [prefix, JSON.stringify(items)])
+  }
+}
+
 export function cleanArr(arr: IdObserverArg) {
   if (!arr) {
     return []

@@ -43,6 +43,7 @@ var trackPlayObservers = {}; // key: trackIdx
 var sceneObservers = {}; // key: sceneIndex
 // Debounce
 var viewTask = null;
+var sceneInfoTask = null;
 // Update batching
 var pendingUpdates = [];
 var updateFlushTask = null;
@@ -536,9 +537,7 @@ function createSceneObserver(sceneIdx) {
         if (args[0] !== 'name')
             return;
         info.name = (0, utils_1.dequote)(args[1]);
-        if (sceneIdx >= topScene && sceneIdx < bottomScene) {
-            sendSceneInfo();
-        }
+        scheduleSceneInfo();
     }, scenePath);
     info.nameApi.property = 'name';
     info.colorApi = new LiveAPI(function (args) {
@@ -547,9 +546,7 @@ function createSceneObserver(sceneIdx) {
         if (args[0] !== 'color')
             return;
         info.color = colorHex(args[1]);
-        if (sceneIdx >= topScene && sceneIdx < bottomScene) {
-            sendSceneInfo();
-        }
+        scheduleSceneInfo();
     }, scenePath);
     info.colorApi.property = 'color';
     return info;
@@ -713,6 +710,13 @@ function sendTrackInfo() {
     }
     (0, utils_1.osc)('/clips/trackInfo', JSON.stringify({ left: leftTrack, tracks: tracks }));
 }
+function scheduleSceneInfo() {
+    if (!sceneInfoTask) {
+        sceneInfoTask = new Task(sendSceneInfo);
+    }
+    sceneInfoTask.cancel();
+    sceneInfoTask.schedule(UPDATE_FLUSH_MS);
+}
 function sendSceneInfo() {
     if (totalScenes <= 0)
         return;
@@ -731,12 +735,12 @@ function sendSceneInfo() {
             name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
             color = colorHex(cellInitApi.get('color'));
         }
-        scenes.push({
-            n: name,
-            c: color && color !== '000000' ? color : null,
-        });
+        var scene = { n: name };
+        if (color && color !== '000000')
+            scene.c = color;
+        scenes.push(scene);
     }
-    (0, utils_1.osc)('/clips/scenes', JSON.stringify({ top: 0, scenes: scenes }));
+    (0, utils_1.sendChunkedData)('/clips/scenes', scenes);
 }
 // ---------------------------------------------------------------------------
 // Incoming: clipView
@@ -767,6 +771,9 @@ function refresh() {
     if (leftTrack < 0)
         return;
     setupWindow(leftTrack, topScene, rightTrack, bottomScene);
+}
+function requestClipsScenes() {
+    sendSceneInfo();
 }
 function clipView(jsonStr) {
     var parsed = JSON.parse(jsonStr.toString());

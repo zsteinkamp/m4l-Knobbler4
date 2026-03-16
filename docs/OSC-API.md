@@ -617,3 +617,79 @@ Sent out as part of the network startup sequence to detect network loops (e.g. t
 #### /syn {string}
 
 A request for an `/ack` response to facilitate a UX feedback loop when configuring the connections. The value is an optional string containing the client version followed by capability flags (e.g. `1.2.0 batch`). The device stores the client version and capabilities for feature negotiation. Triggers a `/sendState` message internally to push full state to the app.
+
+## Clip View
+
+### Tablet to Knobbler4
+
+#### /clipView {json}
+
+Sets the visible window for the clip grid. The value is a JSON array `[left, top, right, bottom]` where left/right are track indices and top/bottom are scene indices (exclusive). Triggers full grid, track info, scene info, and selected scene responses.
+
+#### /clipLaunch {json}
+
+Launches the clip at the given position. The value is a JSON array `[trackIdx, sceneIdx]`. Also selects the clip slot in Live's session view.
+
+#### /clipRecord {json}
+
+Records into the clip slot at the given position. The value is a JSON array `[trackIdx, sceneIdx]`. Also selects the clip slot in Live's session view.
+
+#### /clipDelete {json}
+
+Deletes the clip at the given position. The value is a JSON array `[trackIdx, sceneIdx]`.
+
+#### /clipStop {json}
+
+Stops the clip on the given track. The value is a JSON array `[trackIdx]`.
+
+#### /clips/update {json}
+
+Renames a clip. The value is a JSON object `{"t": trackIdx, "sc": sceneIdx, "n": "New Name"}`.
+
+#### /sceneLaunch {sceneIdx}
+
+Launches the scene at the given index.
+
+#### /stopAll
+
+Stops all clips.
+
+#### /captureScene
+
+Captures the current state into a new scene (Ableton's Capture and Insert Scene).
+
+#### /requestClipsScenes
+
+Requests a re-send of the full scene list. Used by the app to retry after a chunked data checksum mismatch.
+
+### Knobbler4 to Tablet
+
+#### /clips/grid {json}
+
+The full clip grid for the visible window. JSON object with `left` (first track index), `top` (first scene index), and `clips` (2D array of rows, each containing cell objects). Each cell has:
+- `s` — state: 0=empty, 1=stopped, 2=playing, 3=triggered, 4=recording, 5=armed
+- `n` — clip name (optional, omitted when empty)
+- `c` — clip color as hex string (optional, omitted when empty)
+- `ps` — playing_status for group tracks (0=stopped, 1=playing, 2=recording; only present for group tracks)
+- `hc` — has child clips for group tracks (0 or 1; only present for group tracks)
+
+#### /clips/trackInfo {json}
+
+Track names and colors for the visible window. JSON object with `left` (first track index) and `tracks` (array of `{n: name, c: hexColor}`).
+
+#### /clips/scenes (chunked)
+
+Scene names and colors for all scenes. Uses the chunked data protocol when the client has the `cNav` capability:
+- `/clips/scenes/start <count>` — total number of scenes
+- `/clips/scenes/chunk <jsonArray>` — array of scene objects `{n: name}` with optional `c` (hex color, omitted when black)
+- `/clips/scenes/end <checksum>` — integer checksum for verification
+
+Without `cNav`, sent as a single `/clips/scenes` message with the JSON array.
+
+#### /clips/selectedScene {sceneIdx}
+
+The index of the currently selected scene in Live.
+
+#### /clips/update {json}
+
+Individual cell updates pushed in real-time as clips change. JSON object with `t` (track index), `sc` (scene index), and the same fields as grid cells (`s`, `n`, `c`, `ps`, `hc`).

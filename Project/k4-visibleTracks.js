@@ -11,7 +11,6 @@ var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Messages');
 setoutletassist(OUTLET_OSC, 'OSC messages to [udpsend]');
 setoutletassist(OUTLET_TRACK_DATA, 'Track data to mixer/clips');
-var CHUNK_MAX_BYTES = 1024;
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -22,54 +21,6 @@ var trackList = [];
 function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
-}
-// ---------------------------------------------------------------------------
-// Client Capabilities
-// ---------------------------------------------------------------------------
-function clientHasCapability(cap) {
-    var caps = (0, utils_1.loadSetting)('clientCapabilities');
-    if (!caps)
-        return false;
-    return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1;
-}
-// ---------------------------------------------------------------------------
-// Chunked Data
-// ---------------------------------------------------------------------------
-function simpleHash(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-    }
-    return hash;
-}
-function sendChunkedData(prefix, items) {
-    var chunked = clientHasCapability('cNav');
-    if (chunked) {
-        outlet(OUTLET_OSC, [prefix + '/start', items.length]);
-        var chunkParts = [];
-        var chunkSize = 2;
-        var allParts = [];
-        for (var i = 0; i < items.length; i++) {
-            var itemJson = JSON.stringify(items[i]);
-            allParts.push(itemJson);
-            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
-            if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-                outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
-                chunkParts = [];
-                chunkSize = 2;
-            }
-            chunkParts.push(itemJson);
-            chunkSize += added;
-        }
-        if (chunkParts.length > 0) {
-            outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
-        }
-        var checksum = simpleHash('[' + allParts.join(',') + ']');
-        outlet(OUTLET_OSC, [prefix + '/end', checksum]);
-    }
-    if (!chunked) {
-        outlet(OUTLET_OSC, [prefix, JSON.stringify(items)]);
-    }
 }
 // ---------------------------------------------------------------------------
 // Track List Builder
@@ -131,7 +82,7 @@ function sendVisibleTracks() {
     var items = trackList.map(function (t) {
         return [t.type, t.id, t.name, t.color, null, null, t.parentId];
     });
-    sendChunkedData('/visibleTracks', items);
+    (0, utils_1.sendChunkedData)('/visibleTracks', items);
     // Write to shared dict, then notify mixer/clips
     var d = new Dict(TRACK_DICT_NAME);
     d.set('tracks', JSON.stringify(trackList));
