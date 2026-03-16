@@ -300,7 +300,7 @@ function updateCellFromTrack(trackIdx, sceneIdx) {
 function createCellObservers(col, row) {
     var trackPath = trackPaths[col];
     var slotPath = trackPath + ' clip_slots ' + row;
-    var cell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0 };
+    var cell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 };
     var obs = {
         trackIdx: col,
         sceneIdx: row,
@@ -309,6 +309,7 @@ function createCellObservers(col, row) {
         clipApi: null,
         clipColorApi: null,
         clipRecordingApi: null,
+        hasStopButtonApi: null,
         playingStatusApi: null,
         controlsOtherClipsApi: null,
         cell: cell,
@@ -318,11 +319,27 @@ function createCellObservers(col, row) {
     var hasClip = !!parseInt(cellInitApi.get('has_clip').toString());
     obs.hasClip = hasClip;
     cell.state = deriveCellState(hasClip, col, row);
+    cell.hsb = parseInt(cellInitApi.get('has_stop_button').toString()) ? 1 : 0;
     if (hasClip) {
         cellInitApi.path = slotPath + ' clip';
         cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
         cell.color = colorHex(cellInitApi.get('color'));
     }
+    // has_stop_button observer
+    obs.hasStopButtonApi = new LiveAPI(function (args) {
+        if (!obs.hasStopButtonApi)
+            return;
+        if (args[0] !== 'has_stop_button')
+            return;
+        var newHsb = parseInt(args[1]) ? 1 : 0;
+        if (newHsb === obs.cell.hsb)
+            return;
+        obs.cell.hsb = newHsb;
+        if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+            queueFullUpdate(obs);
+        }
+    }, slotPath);
+    obs.hasStopButtonApi.property = 'has_stop_button';
     // Group track only: playing_status and has_child_clips
     if (trackIsGroup[col]) {
         cellInitApi.path = slotPath;
@@ -394,6 +411,10 @@ function teardownCellObservers(obs) {
     if (obs.hasClipApi) {
         (0, utils_1.detach)(obs.hasClipApi);
         obs.hasClipApi = null;
+    }
+    if (obs.hasStopButtonApi) {
+        (0, utils_1.detach)(obs.hasStopButtonApi);
+        obs.hasStopButtonApi = null;
     }
     if (obs.playingStatusApi) {
         (0, utils_1.detach)(obs.playingStatusApi);
@@ -496,6 +517,7 @@ function queueFullUpdate(obs) {
         entry.n = obs.cell.name;
     if (obs.cell.color)
         entry.c = obs.cell.color;
+    entry.hsb = obs.cell.hsb;
     if (trackIsGroup[obs.trackIdx]) {
         entry.ps = obs.cell.ps;
         entry.hc = obs.cell.hc;
@@ -681,6 +703,7 @@ function sendFullGrid() {
                     entry.n = obs.cell.name;
                 if (obs.cell.color)
                     entry.c = obs.cell.color;
+                entry.hsb = obs.cell.hsb;
                 if (trackIsGroup[col]) {
                     entry.ps = obs.cell.ps;
                     entry.hc = obs.cell.hc;
@@ -850,6 +873,19 @@ function clipDelete(jsonStr) {
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
     scratchApi.call('delete_clip', null);
+}
+function clipSetStopButton(jsonStr) {
+    ensureApis();
+    var parsed = JSON.parse(jsonStr.toString());
+    var trackIdx = parseInt(parsed[0].toString());
+    var sceneIdx = parseInt(parsed[1].toString());
+    var val = parseInt(parsed[2].toString());
+    if (trackIdx < 0 || trackIdx >= trackPaths.length)
+        return;
+    if (sceneIdx < 0 || sceneIdx >= totalScenes)
+        return;
+    scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
+    scratchApi.set('has_stop_button', val ? 1 : 0);
 }
 function clipStop(trackIdx) {
     ensureApis();

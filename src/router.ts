@@ -643,6 +643,12 @@ const ROUTER: RouterItem[] = [
   },
   {
     outlet: OUTLET_CLIP_VIEW,
+    prefix: '/clipSetStopButton',
+    handler: stdVal,
+    msg: 'clipSetStopButton',
+  },
+  {
+    outlet: OUTLET_CLIP_VIEW,
     prefix: '/clipStop',
     handler: stdVal,
     msg: 'clipStop',
