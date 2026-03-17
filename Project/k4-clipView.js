@@ -963,6 +963,39 @@ function sceneLaunch(sceneIdx) {
     scratchApi.path = 'live_set scenes ' + idx;
     scratchApi.call('fire', null);
 }
+function sceneRename(jsonStr) {
+    ensureApis();
+    var parsed = JSON.parse(jsonStr.toString());
+    var idx = parseInt(parsed[0].toString());
+    var name = parsed[1].toString();
+    if (idx < 0 || idx >= totalScenes)
+        return;
+    scratchApi.path = 'live_set scenes ' + idx;
+    scratchApi.set('name', name);
+}
+function clipColor(jsonStr) {
+    ensureApis();
+    var parsed = JSON.parse(jsonStr.toString());
+    var trackIdx = parseInt(parsed[0].toString());
+    var sceneIdx = parseInt(parsed[1].toString());
+    var hexStr = parsed[2].toString();
+    if (trackIdx < 0 || trackIdx >= trackPaths.length)
+        return;
+    if (sceneIdx < 0 || sceneIdx >= totalScenes)
+        return;
+    scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx + ' clip';
+    scratchApi.set('color', parseInt(hexStr, 16));
+}
+function sceneColor(jsonStr) {
+    ensureApis();
+    var parsed = JSON.parse(jsonStr.toString());
+    var idx = parseInt(parsed[0].toString());
+    var hexStr = parsed[1].toString();
+    if (idx < 0 || idx >= totalScenes)
+        return;
+    scratchApi.path = 'live_set scenes ' + idx;
+    scratchApi.set('color', parseInt(hexStr, 16));
+}
 function clipsUpdate(jsonStr) {
     ensureApis();
     var updates = JSON.parse(jsonStr.toString());

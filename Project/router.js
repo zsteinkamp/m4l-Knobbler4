@@ -640,6 +640,24 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_CLIP_VIEW,
+        prefix: '/sceneRename',
+        handler: stdVal,
+        msg: 'sceneRename',
+    },
+    {
+        outlet: OUTLET_CLIP_VIEW,
+        prefix: '/clipColor',
+        handler: stdVal,
+        msg: 'clipColor',
+    },
+    {
+        outlet: OUTLET_CLIP_VIEW,
+        prefix: '/sceneColor',
+        handler: stdVal,
+        msg: 'sceneColor',
+    },
+    {
+        outlet: OUTLET_CLIP_VIEW,
         prefix: '/stopAll',
         handler: bareMsg,
         msg: 'stopAll',

@@ -642,6 +642,14 @@ Deletes the clip at the given position. The value is a JSON array `[trackIdx, sc
 
 Stops the clip on the given track. The value is a JSON array `[trackIdx]`.
 
+#### /clipSetStopButton {json}
+
+Enables or disables the stop button on a clip slot. The value is a JSON array `[trackIdx, sceneIdx, value]` where value is 0 (disable) or 1 (enable).
+
+#### /clipColor {json}
+
+Sets the color of a clip. The value is a JSON array `[trackIdx, sceneIdx, hexColor]` where hexColor is a hex string without leading `#` (e.g. `"FFCC33"`).
+
 #### /clips/update {json}
 
 Renames a clip. The value is a JSON object `{"t": trackIdx, "sc": sceneIdx, "n": "New Name"}`.
@@ -649,6 +657,14 @@ Renames a clip. The value is a JSON object `{"t": trackIdx, "sc": sceneIdx, "n":
 #### /sceneLaunch {sceneIdx}
 
 Launches the scene at the given index.
+
+#### /sceneRename {json}
+
+Renames a scene. The value is a JSON array `[sceneIdx, "New Name"]`.
+
+#### /sceneColor {json}
+
+Sets the color of a scene. The value is a JSON array `[sceneIdx, hexColor]` where hexColor is a hex string without leading `#` (e.g. `"FFCC33"`).
 
 #### /stopAll
 
@@ -670,6 +686,7 @@ The full clip grid for the visible window. JSON object with `left` (first track 
 - `s` — state: 0=empty, 1=stopped, 2=playing, 3=triggered, 4=recording, 5=armed
 - `n` — clip name (optional, omitted when empty)
 - `c` — clip color as hex string (optional, omitted when empty)
+- `hsb` — has stop button (0 or 1)
 - `ps` — playing_status for group tracks (0=stopped, 1=playing, 2=recording; only present for group tracks)
 - `hc` — has child clips for group tracks (0 or 1; only present for group tracks)
 

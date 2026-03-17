@@ -1094,6 +1094,44 @@ function sceneLaunch(sceneIdx: number) {
   scratchApi.call('fire', null)
 }
 
+function sceneRename(jsonStr: string) {
+  ensureApis()
+  const parsed = JSON.parse(jsonStr.toString())
+  const idx = parseInt(parsed[0].toString())
+  const name = parsed[1].toString()
+
+  if (idx < 0 || idx >= totalScenes) return
+
+  scratchApi.path = 'live_set scenes ' + idx
+  scratchApi.set('name', name)
+}
+
+function clipColor(jsonStr: string) {
+  ensureApis()
+  const parsed = JSON.parse(jsonStr.toString())
+  const trackIdx = parseInt(parsed[0].toString())
+  const sceneIdx = parseInt(parsed[1].toString())
+  const hexStr = parsed[2].toString()
+
+  if (trackIdx < 0 || trackIdx >= trackPaths.length) return
+  if (sceneIdx < 0 || sceneIdx >= totalScenes) return
+
+  scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx + ' clip'
+  scratchApi.set('color', parseInt(hexStr, 16))
+}
+
+function sceneColor(jsonStr: string) {
+  ensureApis()
+  const parsed = JSON.parse(jsonStr.toString())
+  const idx = parseInt(parsed[0].toString())
+  const hexStr = parsed[1].toString()
+
+  if (idx < 0 || idx >= totalScenes) return
+
+  scratchApi.path = 'live_set scenes ' + idx
+  scratchApi.set('color', parseInt(hexStr, 16))
+}
+
 function clipsUpdate(jsonStr: string) {
   ensureApis()
   let updates = JSON.parse(jsonStr.toString())
