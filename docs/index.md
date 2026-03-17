@@ -5,59 +5,58 @@
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
 - [Setup and Feature Walkthrough Video (15 min)](https://www.youtube.com/watch?v=m3h8QtVeWb8)
 
-Knobbler keeps you in the creative moment by giving you fingertip access to what matters most in your music.
+Knobbler keeps you in the creative moment by giving you fingertip access to what matters most in your music. Turn your phone or tablet into a powerful, auto-labeling, auto-coloring, multitouch control surface for Ableton Live.
 
-It's an auto-labeling, auto-coloring, bidirectional parameter and navigation control surface that you can customize for each song. Pick back up right where you left off with perfect recall, so you can work on several songs at once, each with their own ideal layout, saved inside the song file itself.
+Every mapping is saved with your Live Set. Pick up right where you left off, work on several songs at once, each with their own ideal layout.
 
-![Knobbler Screenshot](images/ipad-knobbler.png)
+![Knobbler in action](images/tablet-and-phone-1.jpeg)
 
-Knobbler is an iOS and Android app that communicates with a Max for Live device that you add to your Live Set. It requires a compatible phone or tablet (iOS and Android) and a computer running Live 12 Suite or Standard (with Max for Live add-on), able to communicate directly with one another over a wifi network or ethernet network.
+### Features
+
+- **32 assignable faders** across two pages. Auto-labeling, auto-coloring, high-resolution, and always showing you exactly what is happening in your music.
+- **Bluhand** -- a dedicated page with all of the parameters of the currently selected device. Parameter banks are labeled and just a touch away. Store, recall, and randomize **Variations** in Racks.
+- **Full-screen mixer** -- volume, pan, mute, solo, arm, sends, and real-time meters for every track in your set. Scrollable, with send controls for every return track.
+- **Session view clip grid** -- launch, record, rename, and color clips and scenes. Group track folding, real-time playback state, and scene management.
+- **Current parameter display** -- always see the name, value, device, and track of whatever parameter you last touched in Live.
+- **Navigation** -- dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
+- **Device shortcuts** -- eight buttons to jump directly to the most important devices in your Live Set.
+- **Toolbar** -- tap tempo, capture MIDI, transport controls, and more.
+- **Multi-device support** -- use multiple phones and tablets simultaneously with multiple Knobbler instances.
+
+Read more about all of Knobbler's features in the [Features](./features.md) page.
+
+### How It Works
+
+Knobbler is an iOS and Android app that communicates with a Max for Live device in your Live Set. All you need is a compatible phone or tablet and a computer running Live 12 Suite or Standard (with Max for Live), connected over WiFi or ethernet.
 
 ![Big Picture Diagram](images/overview-app-device.png)
 
-### App Download and Pricing
+### Get Knobbler
 
-[Download Knobbler for iPhone and iPad in the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
+**iOS** (iPhone and iPad) -- [Download from the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
 
-* Knobbler on iOS (iPhone and iPad) is a free download with a 30 day unlimited functionality trial. At that point, you choose monthly ($0.99 USD), annual ($9.99 USD), or one-time Lifetime payment ($19.99 USD) to continue using it.
+Free download with a 30-day unlimited trial. Then choose monthly ($0.99), annual ($9.99), or one-time Lifetime ($19.99).
 
-[Check out Knobbler for Android in the Google Play Store](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
+**Android** (phones and tablets) -- [Download from Google Play](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
 
-* Knobbler on Android (phones and tablets) is a one-time $14.99 USD purchase. Due to a technical limitation in the Google Play system, I cannot offer a trial period on Android.
+One-time purchase, $14.99. Due to a Google Play limitation, a trial period is not available on Android.
 
-After getting the app, download the latest Knobbler4 device for Ableton Live. Click the blue device download button at the top or bottom of the page.
-
-
-### Resources
-
-* [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
-* [Knobbler Discord](https://discord.com/channels/1340693019552387072/1433825749055569980)
-* [History of Knobbler](https://steinkamp.us/posts/2025-03-01-knobbler)
-
-### Main Features
-
-- Two pages of **16 assignable, auto-labeling, auto-coloring, high-resolution faders** that always show you exactly what is happening in your music.
-- A page dedicated to **all of the parameters** of the currently selected device. Parameter banks are labeled, and just a touch away.
-- Support for storing, recalling, and generating random **Variations** in Instrument, Audio Effect, and MIDI Racks.
-- Eight **device shortcut buttons** to jump directly to the most important devices in your Live Set.
-- An innovative **navigation system** that lets you dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
-- A **mixer channel strip** for the currently selected track, giving you control over volume, mute, solo, record, send levels, and even the crossfader.
-- **Direct access** to familiar buttons from Live's toolbar, such as tap tempo, capture MIDI, and of course, transport controls.
-- Support for **multiple tablets** with multiple Knobbler device instances.
-
-### Release Notes / Changelog
-
-View the complete release changelog and download old versions on the [GitHub Releases page](https://github.com/zsteinkamp/m4l-Knobbler4/releases).
+**Ableton Live device** -- After getting the app, download the latest Knobbler4 device using the blue download button at the top or bottom of this page.
 
 ### Installation
 
-- Drag the Knobbler-vXX.amxd file (where XX is the most recent version) to the User Library in Ableton Live
-- Now you can add the device to any of your Live Sets
-  - The device is required to communicate with the iOS / Android app
-  - The Main track is a good place for it.
+1. Drag the Knobbler-vXX.amxd file to the User Library in Ableton Live.
+2. Add the device to any Live Set (the Main track is a good place for it).
 
-Next, visit [Setup](./setup.md) or explore Knobbler's [Features](./features.md).
+Next, visit [Setup](./setup.md) to get connected.
+
+### Resources
+
+- [Knobbler Subreddit](https://www.reddit.com/r/knobbler/)
+- [Knobbler Discord](https://discord.com/channels/1340693019552387072/1433825749055569980)
+- [History of Knobbler](https://steinkamp.us/posts/2025-03-01-knobbler)
+- [Release Notes / Changelog](https://github.com/zsteinkamp/m4l-Knobbler4/releases)
 
 ### Content Creators
 
-If you're a content creator and want to use or feature Knobbler in a video or post, please get in touch with me. I'm happy to send you a Promo Code so that you can use/get Knobbler for free. Email me at zack@steinkamp.us. Cheers!
+Want to feature Knobbler in a video or post? Get in touch and I'll send you a Promo Code. Email me at zack@steinkamp.us.
