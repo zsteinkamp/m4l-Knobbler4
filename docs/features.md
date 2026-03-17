@@ -1,5 +1,7 @@
 ## Features
 
+![Knobbler in action](images/features-hero.jpg)
+
 Read all about Knobbler's features in detail here. You can use the navigation on the right to jump to different parts of this long document.
 
 - [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
@@ -248,7 +250,7 @@ The Clips page gives you a full session view clip grid right on your device. Lau
 
 The grid shows all clips across your visible tracks and scenes. Clip colors match what you see in Live, and playback state is shown in real time — playing, triggered, recording, and stopped states are all reflected.
 
-Tap a clip to launch it. Tap an empty slot to record into it. The selected clip slot is highlighted in Live, so you can see exactly where you are.
+Tap a clip to launch it. Long-press to edit the name or color. Tap an empty slot to record into it. The selected clip slot is highlighted in Live, so you can see exactly where you are.
 
 #### Stop Buttons
 
@@ -278,6 +280,8 @@ The multi-track mixer provides a full-screen, horizontally scrollable view of al
 
 Each strip has a volume fader and pan control. Double-tap to reset either to its default value. Volume automation state is shown with a colored indicator, matching the same automation dot colors used on Knobbler knobs (green for controlled, red for recorded automation, grey for overridden).
 
+Tap the volume value to open a dedicated pan and send control window.
+
 #### Mute, Solo, and Record Arm
 
 Toggle mute, solo, and record arm per strip. Record arm respects the exclusive arm preference. Disabling input is also supported for recording automation over existing MIDI clips.
@@ -292,7 +296,7 @@ Assign tracks to crossfader side A or B directly from the mixer.
 
 #### Meters
 
-Output level meters are shown for all visible strips, displaying left channel, right channel, and combined output levels in real time.
+Output level meters are shown for all visible strips, displaying left channel, right channel, and combined output levels in real time. Toggle their display with the Meters button in the toolbar (on the right, looks like a graph).
 
 ### Toolbar
 
@@ -419,3 +423,5 @@ If the Knobbler device that the app is communicating with is too old, a warning 
 ### Multi-Device Support
 
 You can use multiple phones and tablets simultaneously with multiple Knobbler instances. Add as many instances of the Knobbler device as you have devices, and ensure each instance has a unique "Device Port" setting. Each device operates independently — use one for faders, another for the mixer, a phone for clips, or whatever combination suits your workflow.
+
+See [Multiple Tablets](multiple-tablets.md) for more.

@@ -1,24 +1,28 @@
 ### Setup
 
 - Download the latest version of the Knobbler device for Ableton Live (download button above).
-- Get the [Knobbler app for your iPhone or iPad](https://apps.apple.com/us/app/knobbler/id6740183923) or [Android Device](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
-- Open Ableton Live
+- Get the [Knobbler app for your iPhone or iPad](https://apps.apple.com/us/app/knobbler/id6740183923) or [Android device](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative).
+- Open Ableton Live.
 - Add the Knobbler device to a track, perhaps the Main or Master track.
   ![Add Knobbler](images/setup_add_knobbler.png)
-- Open the Knobbler app on your iPhone, iPad, or Android device
+- Ensure "Auto Config" is selected in the Knobbler device. This is the default.
+- Open the Knobbler app on your phone or tablet.
   ![Start the app](images/knobbler-icon-finger.jpg)
-  > - If it's the first time, make sure to allow Knobbler to find devices on your network. This is how it will find its companion device in your Ableton Live set.
+  > If it's the first time, make sure to allow Knobbler to find devices on your network. This is how it will find its companion device in your Ableton Live set.
   >   ![Allow Permissions](images/ipad_allow_network.jpg)
-- Click "Rescan Net" in the Knobbler device in Ableton Live.
-  ![Click Rescan Net](images/discover-rescan.png)
-- Choose your iPad from the drop-down list.
-  ![Click Rescan Net](images/discover-dropdown.png)
-- Back on the iPad, select your computer from the list. "air.local" in the screenshot below.
-  ![Setup Page](images/ipad-setup-page.png)
-  > - If you are seeing the "Nobody Home" message, pull down on the message to refresh. Your computer should show up after that.
-  >   ![Setup Page](images/ipad-setup-nobody.png)
-- You should see a "Connection Success" message. From there, it's time to get to Knobblin'!
-  ![Setup Success](images/ipad-setup-success.png)
+- Go to the Setup tab in the app. Under "Found These Knobblers", tap the entry for your computer.
+  ![Discovery](images/setup-discovery.png)
+  > If you see the "Nobody Home" message, tap **Refresh** to rescan the network. Make sure both your computer and device are on the same WiFi network, and that Ableton Live has Local Network permissions enabled.
+- You should see a "Connection Successful!" message. That's it — the device configures itself automatically. Time to get Knobblin'!
+  ![Connected](images/setup-connected.png)
+
+#### Manual Setup
+
+If Auto Config is not working for your setup, you can configure the connection manually:
+
+1. In the Knobbler device in Ableton Live, switch from "Auto Config" to manual mode.
+2. Click "Rescan Net" and choose your device from the drop-down list, or enter the host/IP and port manually.
+3. In the app's Setup tab, enter your computer's host/IP and device port, or select it from the discovered list.
 
 If you want to use more than one device, then follow these instructions here: [Multiple Devices](./multiple-tablets.md).
 
