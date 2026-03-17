@@ -104,10 +104,16 @@ let settingUp = false // guard against watcher callbacks during setupWindow
 let cellObservers: Record<string, CellObservers> = {} // key: "col,row"
 let trackPlayObservers: Record<number, TrackPlayObservers> = {} // key: trackIdx
 let sceneObservers: Record<number, SceneInfo> = {} // key: sceneIndex
+let sceneCache: { n: string; c: string }[] = [] // cached scene name/color for all scenes
 
 // Debounce
 let viewTask: MaxTask = null
 let sceneInfoTask: MaxTask = null
+
+// Lazy observer creation
+let pendingObserverKeys: string[] = []
+let observerBatchTask: MaxTask = null
+const OBSERVER_BATCH_SIZE = 10
 
 // Update batching
 let pendingUpdates: { t: number; sc: number; s: number }[] = []
@@ -205,6 +211,7 @@ function onSceneCountChange(args: any[]) {
   const newCount = querySceneCount()
   if (newCount !== totalScenes) {
     totalScenes = newCount
+    sceneCache = [] // invalidate cache
     teardownAllCells()
     teardownAllScenes()
     applyWindow()
@@ -375,9 +382,9 @@ function updateCellFromTrack(trackIdx: number, sceneIdx: number) {
 // Cell Observer Creation / Teardown
 // ---------------------------------------------------------------------------
 
-function createCellObservers(col: number, row: number): CellObservers {
-  const trackPath = trackPaths[col]
-  const slotPath = trackPath + ' clip_slots ' + row
+// Read initial cell state using reused scratchpad — no LiveAPI objects created
+function readCellState(col: number, row: number): CellObservers {
+  const slotPath = trackPaths[col] + ' clip_slots ' + row
 
   const cell: ClipCell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 }
 
@@ -395,7 +402,6 @@ function createCellObservers(col: number, row: number): CellObservers {
     cell: cell,
   }
 
-  // Read initial state via cellInitApi (separate from scratchApi to avoid re-entrancy)
   cellInitApi.path = slotPath
   const hasClip = !!parseInt(cellInitApi.get('has_clip').toString())
   obs.hasClip = hasClip
@@ -406,9 +412,26 @@ function createCellObservers(col: number, row: number): CellObservers {
     cellInitApi.path = slotPath + ' clip'
     cell.name = dequote(cellInitApi.get('name').toString())
     cell.color = colorHex(cellInitApi.get('color'))
+    if (parseInt(cellInitApi.get('is_recording').toString())) {
+      cell.state = CLIP_RECORDING
+    }
   }
 
-  // has_stop_button observer
+  if (trackIsGroup[col]) {
+    cellInitApi.path = slotPath
+    cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0
+    cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString()) ? 1 : 0
+  }
+
+  return obs
+}
+
+// Attach LiveAPI observers to a cell (expensive — called lazily in batches)
+function attachCellObservers(obs: CellObservers) {
+  if (obs.hasClipApi) return // already attached
+  const slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx
+
+  // has_stop_button
   obs.hasStopButtonApi = new LiveAPI(function (args: any[]) {
     if (!obs.hasStopButtonApi) return
     if (args[0] !== 'has_stop_button') return
@@ -421,10 +444,8 @@ function createCellObservers(col: number, row: number): CellObservers {
   }, slotPath)
   obs.hasStopButtonApi.property = 'has_stop_button'
 
-  // Group track only: playing_status and has_child_clips
-  if (trackIsGroup[col]) {
-    cellInitApi.path = slotPath
-    cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0
+  // Group track: playing_status and controls_other_clips
+  if (trackIsGroup[obs.trackIdx]) {
     obs.playingStatusApi = new LiveAPI(function (args: any[]) {
       if (!obs.playingStatusApi) return
       if (args[0] !== 'playing_status') return
@@ -437,8 +458,6 @@ function createCellObservers(col: number, row: number): CellObservers {
     }, slotPath)
     obs.playingStatusApi.property = 'playing_status'
 
-    // controls_other_clips: 1 if child tracks have clips in this slot
-    cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString()) ? 1 : 0
     obs.controlsOtherClipsApi = new LiveAPI(function (args: any[]) {
       if (!obs.controlsOtherClipsApi) return
       if (args[0] !== 'controls_other_clips') return
@@ -452,7 +471,7 @@ function createCellObservers(col: number, row: number): CellObservers {
     obs.controlsOtherClipsApi.property = 'controls_other_clips'
   }
 
-  // Observer: has_clip
+  // has_clip
   obs.hasClipApi = new LiveAPI(function (args: any[]) {
     if (!obs.hasClipApi) return
     if (args[0] !== 'has_clip') return
@@ -475,12 +494,10 @@ function createCellObservers(col: number, row: number): CellObservers {
   }, slotPath)
   obs.hasClipApi.property = 'has_clip'
 
-  // Clip name observer (only if has_clip)
-  if (hasClip) {
+  // Clip observers (only if has_clip)
+  if (obs.hasClip) {
     setupClipObserver(obs)
   }
-
-  return obs
 }
 
 function teardownCellObservers(obs: CellObservers) {
@@ -578,6 +595,32 @@ function teardownClipObserver(obs: CellObservers) {
   if (obs.clipRecordingApi) {
     detach(obs.clipRecordingApi)
     obs.clipRecordingApi = null
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Lazy observer creation (batched)
+// ---------------------------------------------------------------------------
+
+function scheduleObserverBatch() {
+  if (!observerBatchTask) {
+    observerBatchTask = new Task(processObserverBatch) as MaxTask
+  }
+  observerBatchTask.schedule(0)
+}
+
+function processObserverBatch() {
+  let count = 0
+  while (pendingObserverKeys.length > 0 && count < OBSERVER_BATCH_SIZE) {
+    const key = pendingObserverKeys.shift()
+    const obs = cellObservers[key]
+    if (obs) {
+      attachCellObservers(obs)
+    }
+    count++
+  }
+  if (pendingObserverKeys.length > 0) {
+    scheduleObserverBatch()
   }
 }
 
@@ -680,6 +723,8 @@ function teardownAllScenes() {
 }
 
 function teardownAll() {
+  if (observerBatchTask) observerBatchTask.cancel()
+  pendingObserverKeys = []
   teardownAllCells()
   teardownAllTrackPlay()
   teardownAllScenes()
@@ -745,7 +790,11 @@ function applyWindow() {
     }
   }
 
-  // --- Cell observers ---
+  // --- Cell state + observers ---
+  // Cancel any pending observer batch from a previous window
+  if (observerBatchTask) observerBatchTask.cancel()
+  pendingObserverKeys = []
+
   const newCellSet: Record<string, boolean> = {}
   for (let col = obsLeft; col < obsRight; col++) {
     for (let row = obsTop; row < obsBottom; row++) {
@@ -761,12 +810,13 @@ function applyWindow() {
     }
   }
 
-  // Add new
+  // Read initial state for new cells (fast — no LiveAPI objects created)
   for (let col = obsLeft; col < obsRight; col++) {
     for (let row = obsTop; row < obsBottom; row++) {
       const key = cellKey(col, row)
       if (!cellObservers[key]) {
-        cellObservers[key] = createCellObservers(col, row)
+        cellObservers[key] = readCellState(col, row)
+        pendingObserverKeys.push(key)
       }
     }
   }
@@ -776,6 +826,11 @@ function applyWindow() {
   sendTrackInfo()
   sendSceneInfo()
   sendSelectedScene()
+
+  // Create observers lazily in batches (after grid is sent)
+  if (pendingObserverKeys.length > 0) {
+    scheduleObserverBatch()
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -840,24 +895,31 @@ function scheduleSceneInfo() {
   sceneInfoTask.schedule(UPDATE_FLUSH_MS)
 }
 
+function buildSceneCache() {
+  sceneCache = []
+  for (let row = 0; row < totalScenes; row++) {
+    cellInitApi.path = 'live_set scenes ' + row
+    sceneCache.push({
+      n: dequote(cellInitApi.get('name').toString()),
+      c: colorHex(cellInitApi.get('color')),
+    })
+  }
+}
+
 function sendSceneInfo() {
   if (totalScenes <= 0) return
 
-  const scenes: any[] = []
+  // Build cache if stale
+  if (sceneCache.length !== totalScenes) {
+    buildSceneCache()
+  }
 
+  const scenes: any[] = []
   for (let row = 0; row < totalScenes; row++) {
-    let name: string
-    let color: string
+    // Use observer data if available, otherwise cached data
     const info = sceneObservers[row]
-    if (info) {
-      name = info.name
-      color = info.color
-    } else {
-      // Not observed — read directly
-      cellInitApi.path = 'live_set scenes ' + row
-      name = dequote(cellInitApi.get('name').toString())
-      color = colorHex(cellInitApi.get('color'))
-    }
+    const name = info ? info.name : sceneCache[row].n
+    const color = info ? info.color : sceneCache[row].c
     const scene: any = { n: name }
     if (color && color !== '000000') scene.c = color
     scenes.push(scene)
