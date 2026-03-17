@@ -242,33 +242,7 @@ All sliders in Knobbler respond to a double-tap by resetting the parameter to it
 
 ### Session View Clips
 
-![Clips Page](images/clips-ipad.png)
-
-The Clips page gives you a full session view clip grid right on your device. Launch, record, rename, and color clips and scenes without touching your mouse.
-
-#### Clip Grid
-
-The grid shows all clips across your visible tracks and scenes. Clip colors match what you see in Live, and playback state is shown in real time — playing, triggered, recording, and stopped states are all reflected.
-
-Tap a clip to launch it. Long-press to edit the name or color. Tap an empty slot to record into it. The selected clip slot is highlighted in Live, so you can see exactly where you are.
-
-#### Stop Buttons
-
-Each track column has a stop button at the bottom. Long-press a clip slot to toggle its individual stop button on or off.
-
-#### Scenes
-
-Scenes are listed on the right edge of the grid. Tap a scene to launch it. Long-press a scene to rename it or change its color.
-
-The scene bar at the top provides an overview of every scene in your set, color-coded for quick orientation.
-
-#### Clip and Scene Colors
-
-You can change the color of any clip or scene directly from the app. Long-press to open the color picker.
-
-#### Scrolling
-
-The grid scrolls both horizontally and vertically to accommodate sets of any size. Group tracks can be folded and unfolded.
+*Coming Soon!* A full session view clip grid right on your device. Launch, record, rename, and color clips and scenes without touching your mouse. Real-time playback state, group track folding, scene management, and more.
 
 ### Multi-Track Mixer
 

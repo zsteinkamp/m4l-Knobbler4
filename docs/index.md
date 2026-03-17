@@ -16,7 +16,7 @@ Every mapping is saved with your Live Set. Pick up right where you left off, wor
 - **32 assignable faders** across two pages. Auto-labeling, auto-coloring, high-resolution, and always showing you exactly what is happening in your music.
 - **Bluhand** -- a dedicated page with all of the parameters of the currently selected device. Parameter banks are labeled and just a touch away. Store, recall, and randomize **Variations** in Racks.
 - **Full-screen mixer** -- volume, pan, mute, solo, arm, sends, and real-time meters for every track in your set. Scrollable, with send controls for every return track.
-- **Session view clip grid** -- launch, record, rename, and color clips and scenes. Group track folding, real-time playback state, and scene management.
+- **Session view clip grid** -- *Coming Soon!* Launch, record, rename, and color clips and scenes.
 - **Current parameter display** -- always see the name, value, device, and track of whatever parameter you last touched in Live.
 - **Navigation** -- dive through your tracks, groups, racks, chains, and devices faster than you can click a mouse.
 - **Device shortcuts** -- eight buttons to jump directly to the most important devices in your Live Set.
