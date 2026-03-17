@@ -10,6 +10,16 @@ This seems to be a bug/problem in the Apple App Store for apps that started out 
 
 After tapping "OK" you will be returned to the product page with the app installed. You will not be charged.
 
+#### I want to switch from my subscription to the Lifetime one-time purchase. How do I do that?
+
+1. Purchase the Lifetime option from your app store ([iOS](https://apps.apple.com/us/app/knobbler/id6740183923) / [Android](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)).
+2. Cancel your existing subscription through your device's subscription settings:
+   - **iOS**: Settings > Apple ID > Subscriptions > Knobbler > Cancel
+   - **Android**: Google Play Store > Profile > Payments & subscriptions > Subscriptions > Knobbler > Cancel
+3. Your subscription will remain active until the end of the current billing period, then Lifetime takes over.
+
+**Important:** You must manually cancel the subscription. Purchasing Lifetime does not automatically stop it, since subscriptions are managed by Apple/Google, not the app.
+
 #### I see a warning in the Knobbler iPad app about a compatible version of the device. Haaalp!
 
 Simply download the latest version of the device and install it as you normally would, by dragging it to the User Library in Ableton Live.
