@@ -28,62 +28,57 @@ let paramSelObj: LiveAPI = null // mode=1, follows selected_parameter
 let paramValObj: LiveAPI = null // observes value on current param
 let trackColorObj: LiveAPI = null // observes color on current track
 let scratchApi: LiveAPI = null // throwaway lookups (device name, track name, etc.)
+let valScratchApi: LiveAPI = null // separate scratchpad for onValueChange
 const pause: PauseState = { paused: false, task: null }
 
 let currentParamId = 0
 let locked = false
 
+function ensureApis() {
+  if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
+  if (!valScratchApi) valScratchApi = new LiveAPI(noFn, 'live_set')
+}
+
 function show() {
   if (active) return
   active = true
-  //log('currentParam show')
 
-  // scratchApi for throwaway lookups — separate instance to avoid re-entrancy
-  if (!scratchApi) {
-    scratchApi = new LiveAPI(noFn, 'live_set')
-  }
+  ensureApis()
 
-  // paramValObj observes value changes on the selected parameter
-  if (!paramValObj) {
-    paramValObj = new LiveAPI(onValueChange, '')
-  }
+  // Tear down and recreate observers fresh each time.
+  // This avoids stale state from detach() leaving objects at id 0.
+  teardownObservers()
 
-  // trackColorObj observes color on the track
-  if (!trackColorObj) {
-    trackColorObj = new LiveAPI(onTrackColorChange, '')
-  }
+  paramValObj = new LiveAPI(onValueChange, '')
+  trackColorObj = new LiveAPI(onTrackColorChange, '')
 
   // paramSelObj follows live_set view selected_parameter (mode=1)
   // Created last because setting property fires the callback immediately
-  if (!paramSelObj) {
-    //log('activating paramSelObj observer')
-    paramSelObj = new LiveAPI(onParamSelected, 'live_set view selected_parameter')
-    paramSelObj.mode = 1
-    paramSelObj.property = 'id'
-  } else {
-    //log('reactivating paramSelObj observer')
-    paramSelObj.property = 'id'
-  }
+  paramSelObj = new LiveAPI(onParamSelected, 'live_set view selected_parameter')
+  paramSelObj.mode = 1
+  paramSelObj.property = 'id'
 }
 
 function hide() {
   if (!active) return
   active = false
-  //log('currentParam hide')
+  teardownObservers()
+  currentParamId = 0
+}
 
+function teardownObservers() {
   if (paramSelObj) {
-    //log('detaching paramSelObj')
     detach(paramSelObj)
+    paramSelObj = null
   }
   if (paramValObj) {
-    //log('detaching paramValObj')
     detach(paramValObj)
+    paramValObj = null
   }
   if (trackColorObj) {
-    //log('detaching trackColorObj')
     detach(trackColorObj)
+    trackColorObj = null
   }
-  currentParamId = 0
 }
 
 function lock(val: number) {
@@ -105,6 +100,8 @@ function onParamSelected() {
 }
 
 function sendAllParamInfo(paramId: number) {
+  ensureApis()
+
   // Point scratchApi at the parameter
   scratchApi.id = paramId
   if (scratchApi.type !== 'DeviceParameter') return
@@ -150,17 +147,19 @@ function sendAllParamInfo(paramId: number) {
     trackColor = '#' + ('000000' + parseInt(scratchApi.get('color').toString()).toString(16)).slice(-6)
 
     // Set up track color observer
-    trackColorObj.property = ''
-    trackColorObj.path = trackMatch[1]
-    trackColorObj.property = 'color'
-    //log('trackColorObj observing color on', trackMatch[1])
+    if (trackColorObj) {
+      trackColorObj.property = ''
+      trackColorObj.path = trackMatch[1]
+      trackColorObj.property = 'color'
+    }
   }
 
   // Set up value observer on the parameter
-  paramValObj.property = ''
-  paramValObj.id = paramId
-  paramValObj.property = 'value'
-  //log('paramValObj observing value on param', paramId)
+  if (paramValObj) {
+    paramValObj.property = ''
+    paramValObj.id = paramId
+    paramValObj.property = 'value'
+  }
 
   // Send all info to the app
   osc('/currentParam/name', paramName)
@@ -176,14 +175,15 @@ function sendAllParamInfo(paramId: number) {
 function onValueChange() {
   if (!active || !currentParamId || pause.paused) return
 
-  scratchApi.id = currentParamId
-  if (scratchApi.type !== 'DeviceParameter') return
+  // Use separate scratchpad to avoid re-entrancy with scratchApi
+  valScratchApi.id = currentParamId
+  if (valScratchApi.type !== 'DeviceParameter') return
 
-  const paramVal = parseFloat(scratchApi.get('value').toString())
-  const paramMin = parseFloat(scratchApi.get('min').toString())
-  const paramMax = parseFloat(scratchApi.get('max').toString())
+  const paramVal = parseFloat(valScratchApi.get('value').toString())
+  const paramMin = parseFloat(valScratchApi.get('min').toString())
+  const paramMax = parseFloat(valScratchApi.get('max').toString())
   const valStr = dequote(
-    (scratchApi.call('str_for_value', paramVal) as any).toString()
+    (valScratchApi.call('str_for_value', paramVal) as any).toString()
   )
 
   const scaledVal =
@@ -194,7 +194,7 @@ function onValueChange() {
 }
 
 function onTrackColorChange() {
-  if (!active || !currentParamId) return
+  if (!active || !currentParamId || !trackColorObj) return
   const color = '#' + ('000000' + parseInt(trackColorObj.get('color').toString()).toString(16)).slice(-6)
   osc('/currentParam/trackColor', color)
 }
@@ -203,6 +203,7 @@ function onTrackColorChange() {
 function currentParamVal(val: number) {
   if (!currentParamId) return
 
+  ensureApis()
   scratchApi.id = currentParamId
   if (scratchApi.type !== 'DeviceParameter') return
 
@@ -224,6 +225,7 @@ function currentParamVal(val: number) {
 function currentParamDefault() {
   if (!currentParamId) return
 
+  ensureApis()
   scratchApi.id = currentParamId
   if (scratchApi.type !== 'DeviceParameter') return
 
