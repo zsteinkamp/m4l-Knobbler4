@@ -97,6 +97,21 @@ function stripPause(strip, key) {
     }
     (0, utils_1.pauseUnpause)(strip.pause[key], consts_1.PAUSE_MS);
 }
+function sendSoloCount() {
+    ensureApis();
+    var count = 0;
+    scratchApi.path = 'live_set';
+    var tracks = (0, utils_1.cleanArr)(scratchApi.get('tracks'));
+    var returns = (0, utils_1.cleanArr)(scratchApi.get('return_tracks'));
+    var all = tracks.concat(returns);
+    for (var i = 0; i < all.length; i++) {
+        scratchApi.id = all[i];
+        if (parseInt(scratchApi.get('solo').toString())) {
+            count++;
+        }
+    }
+    (0, utils_1.osc)('/mixer/soloCount', count);
+}
 function sendReturnTrackColors() {
     var returns = trackList.filter(function (t) {
         return t.type === consts_1.TYPE_RETURN;
@@ -253,6 +268,7 @@ function createStripObservers(trackId, stripIdx) {
         strip.soloApi = new LiveAPI(function (args) {
             if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()));
+                sendSoloCount();
             }
         }, trackPath);
         strip.soloApi.property = 'solo';
@@ -513,6 +529,7 @@ function applyWindow() {
         }
     }
     visibleStateSet = newVisibleSet;
+    sendSoloCount();
 }
 // ---------------------------------------------------------------------------
 // Refresh — called on /btnRefresh to invalidate stale observers
@@ -801,6 +818,7 @@ function toggleSolo(stripIdx) {
     }
     strip.trackApi.set('solo', newState);
     (0, utils_1.osc)(SA_SOLO[strip.stripIndex], newState);
+    sendSoloCount();
 }
 function enableRecord(stripIdx) {
     var strip = getStrip(stripIdx);

@@ -176,6 +176,22 @@ function stripPause(strip: StripObservers, key: string) {
 }
 
 
+function sendSoloCount() {
+  ensureApis()
+  let count = 0
+  scratchApi.path = 'live_set'
+  const tracks = cleanArr(scratchApi.get('tracks'))
+  const returns = cleanArr(scratchApi.get('return_tracks'))
+  const all = tracks.concat(returns)
+  for (let i = 0; i < all.length; i++) {
+    scratchApi.id = all[i]
+    if (parseInt(scratchApi.get('solo').toString())) {
+      count++
+    }
+  }
+  osc('/mixer/soloCount', count)
+}
+
 function sendReturnTrackColors() {
   const returns = trackList.filter(function (t) {
     return t.type === TYPE_RETURN
@@ -347,6 +363,7 @@ function createStripObservers(
     strip.soloApi = new LiveAPI(function (args: any[]) {
       if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
         osc(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()))
+        sendSoloCount()
       }
     }, trackPath)
     strip.soloApi.property = 'solo'
@@ -628,6 +645,7 @@ function applyWindow() {
     }
   }
   visibleStateSet = newVisibleSet
+  sendSoloCount()
 }
 
 // ---------------------------------------------------------------------------
@@ -925,6 +943,7 @@ function toggleSolo(stripIdx: number) {
   }
   strip.trackApi.set('solo', newState)
   osc(SA_SOLO[strip.stripIndex], newState)
+  sendSoloCount()
 }
 
 function enableRecord(stripIdx: number) {
