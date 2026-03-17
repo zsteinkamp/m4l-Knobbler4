@@ -96,7 +96,10 @@ exports.meterVal = meterVal;
 var oscOut = [null, null];
 function osc(addr, val) {
     oscOut[0] = addr;
-    oscOut[1] = val;
+    oscOut[1] =
+        typeof val === 'number' && val !== (val | 0)
+            ? Math.round(val * 1000000) / 1000000
+            : val;
     outlet(consts_1.OUTLET_OSC, oscOut);
 }
 exports.osc = osc;

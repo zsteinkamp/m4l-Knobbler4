@@ -98,7 +98,10 @@ export function meterVal(raw: any): number {
 const oscOut: any[] = [null, null]
 export function osc(addr: string, val: any) {
   oscOut[0] = addr
-  oscOut[1] = val
+  oscOut[1] =
+    typeof val === 'number' && val !== (val | 0)
+      ? Math.round(val * 1000000) / 1000000
+      : val
   outlet(OUTLET_OSC, oscOut)
 }
 

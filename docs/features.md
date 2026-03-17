@@ -2,11 +2,12 @@
 
 Read all about Knobbler's features in detail here. You can use the navigation on the right to jump to different parts of this long document.
 
-- [Feature Walkthrough Video (10 min)](https://www.youtube.com/watch?v=Be4O1vaxjxU)
+- [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
+- [Setup and Feature Walkthrough Video (15 min)](https://www.youtube.com/watch?v=m3h8QtVeWb8)
 
 ### Knobbler Knobs
 
-Knobbler's knobs are pretty self-explanatory. They're very high-resolution (500 steps) and operate at a latency that is lower than MIDI. The full multitouch capabilities of the iPad are at your fingertips.
+Knobbler's knobs are pretty self-explanatory. They're very high-resolution (500 steps) and operate at a latency that is lower than MIDI. The full multitouch capabilities of your device are at your fingertips.
 
 #### Knob States
 
@@ -157,6 +158,8 @@ Regardless of whether you are on a Bluhand or Knobbler page, tapping a shortcut 
 
 The current parameter display shows information about whichever parameter is currently selected in Live. When you click a parameter in Ableton, the app automatically updates to show the parameter name, device name, track name, track color, current value, and the min/max range.
 
+The current parameter display is always visible on the Navigation page, giving you constant feedback as you work.
+
 #### Lock
 
 You can lock the display to a specific parameter so it stays visible even as you click around in Live. Unlock to resume following the selected parameter.
@@ -235,13 +238,41 @@ If you select the Main track, the `A`/`B` buttons are replaced with a crossfader
 
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
 
+### Session View Clips
+
+![Clips Page](images/clips-ipad.png)
+
+The Clips page gives you a full session view clip grid right on your device. Launch, record, rename, and color clips and scenes without touching your mouse.
+
+#### Clip Grid
+
+The grid shows all clips across your visible tracks and scenes. Clip colors match what you see in Live, and playback state is shown in real time — playing, triggered, recording, and stopped states are all reflected.
+
+Tap a clip to launch it. Tap an empty slot to record into it. The selected clip slot is highlighted in Live, so you can see exactly where you are.
+
+#### Stop Buttons
+
+Each track column has a stop button at the bottom. Long-press a clip slot to toggle its individual stop button on or off.
+
+#### Scenes
+
+Scenes are listed on the right edge of the grid. Tap a scene to launch it. Long-press a scene to rename it or change its color.
+
+The scene bar at the top provides an overview of every scene in your set, color-coded for quick orientation.
+
+#### Clip and Scene Colors
+
+You can change the color of any clip or scene directly from the app. Long-press to open the color picker.
+
+#### Scrolling
+
+The grid scrolls both horizontally and vertically to accommodate sets of any size. Group tracks can be folded and unfolded.
+
 ### Multi-Track Mixer
 
-The multi-track mixer provides a full-screen, horizontally scrollable view of all tracks in your Live Set. It gives you hands-on control of volume, pan, mute, solo, record arm, sends, and crossfader assignments across multiple tracks at once.
+![Multi-Track Mixer](images/mixer-ipad.png)
 
-#### Windowed Observers
-
-The mixer uses a windowed approach for performance — only the tracks visible on screen have active observers. As you scroll, observers are automatically created for newly visible strips and torn down for strips that scroll out of view.
+The multi-track mixer provides a full-screen, horizontally scrollable view of all tracks in your Live Set. It gives you hands-on control of volume, pan, mute, solo, record arm, sends, and crossfader assignments across multiple tracks at once. Only the tracks visible on screen are actively monitored, so it stays responsive even with large sets.
 
 #### Volume and Pan
 
@@ -261,7 +292,7 @@ Assign tracks to crossfader side A or B directly from the mixer.
 
 #### Meters
 
-Output level meters can be enabled for all visible strips. Meters display left channel, right channel, and combined output levels, updated at approximately 30ms intervals. Only tracks with audio output show meters.
+Output level meters are shown for all visible strips, displaying left channel, right channel, and combined output levels in real time.
 
 ### Toolbar
 
@@ -347,20 +378,44 @@ Toggles the display of the Navigation widget on the right side of the screen. Yo
 
 ### Setup Page
 
-This is the page where you will tell Knobbler how to find its counterpart on your computer. Knobbler advertises itself on your network, so setup should be easy.
+The Setup page has three sections: Connection, Settings, and Debug.
 
-#### Connections
+#### Connection
 
-You can input an IP address and port number if you like to do things the hard way, or you can select a computer from the list and the host/port will be filled in.
+![Discovery](images/setup-discovery.png)
 
-![Host and Port](images/ipad-setup-success.png)
+Knobbler advertises itself on your local network. Under "Found These Knobblers", tap the entry for your computer and the Host, Device Port, and App Port fields will be filled in automatically. Tap `Refresh` to rescan the network.
 
-Tap the `Clear` button to reset the fields.
+You can also enter the Host or IP and port numbers manually if you prefer.
 
-If no hosts are found on the network running the Knobbler device, a message will be shown that includes a button to download the Knobbler device.
+![Connected](images/setup-connected.png)
 
-![Nobody Home](images/ipad-setup-nobody.png)
+Once connected, you'll see a green "Connection Successful!" banner with the device version number. Tap `Test` to verify the connection, or `Clear` to reset the fields and start over.
+
+If no Knobbler devices are found on the network, a "Nobody Home :(" message is shown with a link to download the Knobbler Max for Live device.
+
+#### Settings
+
+![Settings](images/setup-settings.png)
+
+The Settings tab has options to customize Knobbler's behavior:
+
+- **Track Overview** -- show the colored track overview bar in the mixer
+- **Crossfader (A/B)** -- show crossfader assignment buttons on mixer strips
+- **Auto-Collapse Chains** -- automatically collapse rack chains when navigating away
+- **Level Meters** -- show real-time level meters on mixer strips
+- **Haptic Feedback** -- enable haptic feedback on supported devices
+
+#### Debug
+
+![Debug](images/setup-debug.png)
+
+The Debug tab shows app version info, build number, server details, and subscription status. The OSC Log displays incoming and outgoing messages in real time — useful for troubleshooting connection issues.
 
 #### Version Checks
 
 If the Knobbler device that the app is communicating with is too old, a warning message will be shown. This message also includes a link to download the latest Knobbler device.
+
+### Multi-Device Support
+
+You can use multiple phones and tablets simultaneously with multiple Knobbler instances. Add as many instances of the Knobbler device as you have devices, and ensure each instance has a unique "Device Port" setting. Each device operates independently — use one for faders, another for the mixer, a phone for clips, or whatever combination suits your workflow.
