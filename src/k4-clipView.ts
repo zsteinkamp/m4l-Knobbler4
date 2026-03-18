@@ -981,23 +981,13 @@ function clipView(jsonStr: string) {
   const bottom = parseInt(parsed[3].toString())
 
   if (left === right || top === bottom) {
-    // Zero-size window — teardown
+    // Zero-size window — don't teardown observers so actions still work
+    // when the user returns to the clips page
     if (viewTask) {
       viewTask.cancel()
       viewTask.freepeer()
       viewTask = null
     }
-    teardownAll()
-    if (selectedSceneApi) {
-      detach(selectedSceneApi)
-      selectedSceneApi = null
-    }
-    leftTrack = -1
-    topScene = -1
-    rightTrack = -1
-    bottomScene = -1
-    trackIds = []
-    trackPaths = []
     return
   }
 

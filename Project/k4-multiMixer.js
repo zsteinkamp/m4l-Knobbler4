@@ -558,9 +558,9 @@ function mixerView() {
             mixerViewTask.freepeer();
             mixerViewTask = null;
         }
-        teardownAll();
-        leftIndex = -1;
-        visibleCount = 0;
+        // Don't teardown observers — keep them alive so sliders work immediately
+        // when the user returns to the mixer page. Only stop meters.
+        stopMeterFlush();
         return;
     }
     if (mixerViewTask) {
