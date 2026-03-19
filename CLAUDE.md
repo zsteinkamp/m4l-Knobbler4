@@ -195,3 +195,4 @@ Version numbers are manually updated in the changelog and device itself. Release
 - **OSC Testing**: Use OSC debugging tools or the actual tablet app to test message handling
 - **Debouncing**: When adding new parameter observers, always implement debouncing to prevent feedback loops
 - **Max Console**: Check Max's console window for JavaScript errors and log output during development
+- **LiveAPI `.id` returns a string**: Always use `+obj.id === 0` (unary plus), never `obj.id === 0` (strict equality `"0" === 0` is `false`). Same for `!== 0` checks. When passing `.id` to another LiveAPI's `.id` setter, use `parseInt()`.
