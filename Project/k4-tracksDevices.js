@@ -54,12 +54,10 @@ var state = {
 };
 function onCurrDeviceChange(val) {
     if (val[0] !== 'id') {
-        //log('DEVICE_ID EARLY')
         return;
     }
     var newId = (0, utils_1.cleanArr)(val)[0];
     if (state.currDeviceId === newId) {
-        // same
         return;
     }
     state.currDeviceId = newId;
@@ -80,10 +78,14 @@ function updateDeviceNav() {
     var utilObj = state.api;
     utilObj.path = 'live_set';
     var currDeviceObj = new LiveAPI(consts_1.noFn, 'id ' + state.currDeviceId);
+    if (+currDeviceObj.id === 0)
+        return;
     var currIsSupported = (0, utils_1.isDeviceSupported)(currDeviceObj);
     var parentObj = new LiveAPI(consts_1.noFn, currIsSupported
         ? currDeviceObj.get('canonical_parent')
         : 'id ' + state.currTrackId);
+    if (+parentObj.id === 0)
+        return;
     // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
     var parentChildIds = (0, utils_1.cleanArr)(parentObj.get('devices'));
     // first, self and siblings (with chain children under self)

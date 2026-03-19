@@ -270,6 +270,17 @@ var onTrackChange = function (args) {
     }
     state.lastTrackId = id;
     state.trackLookupObj.id = id;
+    // Re-point vol/pan observers at the new track's mixer device parameters
+    if (state.volObj) {
+        state.volObj.property = '';
+        state.volObj.path = 'live_set view selected_track mixer_device volume';
+        state.volObj.property = 'value';
+    }
+    if (state.panObj) {
+        state.panObj.property = '';
+        state.panObj.path = 'live_set view selected_track mixer_device panning';
+        state.panObj.property = 'value';
+    }
     // track type
     var path = state.trackLookupObj.unquotedpath;
     var trackType = consts_1.TYPE_TRACK;
@@ -353,17 +364,15 @@ function init() {
         state.trackObj.mode = 1;
         state.trackObj.property = 'id';
     }
-    // volume obj
+    // volume obj — re-pointed at the new track's mixer device volume in onTrackChange
     if (!state.volObj) {
-        state.volObj = new LiveAPI(handleVolVal, 'live_set view selected_track mixer_device volume');
-        state.volObj.mode = 1;
+        state.volObj = new LiveAPI(handleVolVal, 'live_set');
         state.volObj.property = 'value';
     }
-    // pan obj
+    // pan obj — re-pointed at the new track's mixer device panning in onTrackChange
     if (!state.panObj) {
-        state.panObj = new LiveAPI(handlePanVal, 'live_set view selected_track mixer_device panning');
+        state.panObj = new LiveAPI(handlePanVal, 'live_set');
         state.panObj.property = 'value';
-        state.panObj.mode = 1;
     }
     // crossfader obj
     if (!state.crossfaderObj) {

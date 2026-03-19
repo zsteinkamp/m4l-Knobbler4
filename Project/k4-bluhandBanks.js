@@ -25,6 +25,7 @@ var paramNameToIdx = null;
 var state = {
     devicePath: null,
     onOffWatcher: null,
+    deviceIdWatcher: null,
     paramsWatcher: null,
     variationsWatcher: null,
     currDeviceId: 0,
@@ -280,7 +281,6 @@ function gotoDevice(deviceIdStr) {
     else {
         gotoTrack(trackId.toString());
     }
-    //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
 function hideChains(deviceId) {
@@ -349,12 +349,10 @@ function gotoTrack(trackIdStr) {
     api.set('selected_track', ['id', trackId]);
 }
 function onVariationChange() {
-    //log('VARIATIONSCHANGE')
     var api = getSelectedDeviceApi();
     if (+api.id === 0) {
         return;
     }
-    //log('VARIATIONSCHANGE2')
     if (!+api.get('can_have_chains')) {
         // only applies to racks
         //log('VARIATIONSCHANGE2 -- NO', api.get('name').toString())
@@ -441,12 +439,31 @@ function cuePointsChange(args) {
     }
     debounceSendCuePoints();
 }
+function onSelectedDeviceIdChange(val) {
+    if (val[0] !== 'id')
+        return;
+    var newId = (0, utils_1.cleanArr)(val)[0];
+    if (newId === 0)
+        return;
+    // Re-point the property observers at the new device
+    if (state.paramsWatcher) {
+        state.paramsWatcher.id = newId;
+    }
+    if (state.variationsWatcher) {
+        state.variationsWatcher.id = newId;
+    }
+}
 function init() {
-    state.paramsWatcher = new LiveAPI(debouncedParameterChange, 'live_set view selected_track view selected_device');
-    state.paramsWatcher.mode = 1;
+    // mode=1 watcher just tracks the device id (safe — getting 'id' on
+    // an invalid object returns 0 without erroring)
+    state.deviceIdWatcher = new LiveAPI(onSelectedDeviceIdChange, 'live_set view selected_track view selected_device');
+    state.deviceIdWatcher.mode = 1;
+    state.deviceIdWatcher.property = 'id';
+    // These observe properties on whichever device the id watcher points them at.
+    // No mode=1 — they don't follow the path themselves.
+    state.paramsWatcher = new LiveAPI(debouncedParameterChange, 'live_set');
     state.paramsWatcher.property = 'parameters';
-    state.variationsWatcher = new LiveAPI(onVariationChange, 'live_set view selected_track view selected_device');
-    state.variationsWatcher.mode = 1;
+    state.variationsWatcher = new LiveAPI(onVariationChange, 'live_set');
     state.variationsWatcher.property = 'variation_count';
     state.cuePointsWatcher = new LiveAPI(cuePointsChange, 'live_set');
     state.cuePointsWatcher.property = 'cue_points';
@@ -479,7 +496,6 @@ function debouncedParameterChange(args) {
     //log('DEBOUNCE IT')
 }
 function onParameterChange(args) {
-    //log('OPC ' + JSON.stringify(args))
     var api = state.paramsWatcher;
     if (+api.id === 0) {
         return;

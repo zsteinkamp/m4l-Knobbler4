@@ -81,12 +81,10 @@ const state = {
 
 function onCurrDeviceChange(val: IdObserverArg) {
   if (val[0] !== 'id') {
-    //log('DEVICE_ID EARLY')
     return
   }
   const newId = cleanArr(val)[0]
   if (state.currDeviceId === newId) {
-    // same
     return
   }
   state.currDeviceId = newId
@@ -111,6 +109,7 @@ function updateDeviceNav() {
   const utilObj = state.api
   utilObj.path = 'live_set'
   const currDeviceObj = new LiveAPI(noFn, 'id ' + state.currDeviceId)
+  if (+currDeviceObj.id === 0) return
   const currIsSupported = isDeviceSupported(currDeviceObj)
 
   const parentObj = new LiveAPI(
@@ -119,6 +118,7 @@ function updateDeviceNav() {
       ? currDeviceObj.get('canonical_parent')
       : 'id ' + state.currTrackId
   )
+  if (+parentObj.id === 0) return
   // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
   const parentChildIds = cleanArr(parentObj.get('devices'))
 
