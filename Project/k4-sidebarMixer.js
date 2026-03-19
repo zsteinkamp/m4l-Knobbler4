@@ -418,17 +418,6 @@ var onTrackChange = function (args) {
     }
     state.lastTrackId = id;
     state.trackLookupObj.id = id;
-    // Re-point vol/pan observers at the new track's mixer device parameters
-    if (state.volObj) {
-        state.volObj.property = '';
-        state.volObj.path = 'live_set view selected_track mixer_device volume';
-        state.volObj.property = 'value';
-    }
-    if (state.panObj) {
-        state.panObj.property = '';
-        state.panObj.path = 'live_set view selected_track mixer_device panning';
-        state.panObj.property = 'value';
-    }
     // track type
     var path = state.trackLookupObj.unquotedpath;
     var trackType = consts_1.TYPE_TRACK;
@@ -556,15 +545,17 @@ function init() {
         state.mixerObj = new LiveAPI(consts_1.noFn, 'live_set view selected_track mixer_device');
         state.mixerObj.mode = 1;
     }
-    // Volume obj — re-pointed at the new track's mixer device volume in onTrackChange
+    // Volume obj (follows selected track)
     if (!state.volObj) {
-        state.volObj = new LiveAPI(handleVolVal, 'live_set');
+        state.volObj = new LiveAPI(handleVolVal, 'live_set view selected_track mixer_device volume');
+        state.volObj.mode = 1;
         state.volObj.property = 'value';
     }
-    // Pan obj — re-pointed at the new track's mixer device panning in onTrackChange
+    // Pan obj (follows selected track)
     if (!state.panObj) {
-        state.panObj = new LiveAPI(handlePanVal, 'live_set');
+        state.panObj = new LiveAPI(handlePanVal, 'live_set view selected_track mixer_device panning');
         state.panObj.property = 'value';
+        state.panObj.mode = 1;
     }
     // Track obj (follows selected track)
     // NOTE: must be created AFTER volObj, panObj, mixerObj because setting
