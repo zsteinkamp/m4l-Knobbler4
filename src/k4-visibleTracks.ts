@@ -47,6 +47,8 @@ type TrackInfo = {
 }
 
 let trackList: TrackInfo[] = []
+let colorObservers: LiveAPI[] = []
+let colorDebounceTask: MaxTask = null
 
 function ensureApis() {
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
@@ -127,6 +129,44 @@ function sendVisibleTracks() {
 }
 
 // ---------------------------------------------------------------------------
+// Color Observers
+// ---------------------------------------------------------------------------
+
+function teardownColorObservers() {
+  for (let i = 0; i < colorObservers.length; i++) {
+    colorObservers[i].property = ''
+    colorObservers[i].id = 0
+  }
+  colorObservers = []
+}
+
+function createColorObservers() {
+  teardownColorObservers()
+  for (let i = 0; i < trackList.length; i++) {
+    const idx = i
+    const obs = new LiveAPI(function (args: any[]) {
+      if (args[0] === 'color') {
+        trackList[idx].color = colorToString(args[1].toString())
+        scheduleColorUpdate()
+      }
+    }, 'live_set')
+    obs.id = trackList[i].id
+    obs.property = 'color'
+    colorObservers.push(obs)
+  }
+}
+
+function scheduleColorUpdate() {
+  if (!colorDebounceTask) {
+    colorDebounceTask = new Task(function () {
+      sendVisibleTracks()
+    }) as MaxTask
+  }
+  colorDebounceTask.cancel()
+  colorDebounceTask.schedule(50)
+}
+
+// ---------------------------------------------------------------------------
 // Watchers
 // ---------------------------------------------------------------------------
 
@@ -134,6 +174,7 @@ function onVisibleTracksChange(args: any[]) {
   if (args[0] !== 'visible_tracks') return
   ensureApis()
   trackList = buildTrackList()
+  createColorObservers()
   sendVisibleTracks()
 }
 
@@ -141,6 +182,7 @@ function onReturnTracksChange(args: any[]) {
   if (args[0] !== 'return_tracks') return
   ensureApis()
   trackList = buildTrackList()
+  createColorObservers()
   sendVisibleTracks()
 }
 
@@ -159,6 +201,7 @@ function requestVisibleTracks() {
 function refresh() {
   ensureApis()
   trackList = buildTrackList()
+  createColorObservers()
   sendVisibleTracks()
 }
 
@@ -175,6 +218,7 @@ function init() {
   }
 
   trackList = buildTrackList()
+  createColorObservers()
   sendVisibleTracks()
 }
 

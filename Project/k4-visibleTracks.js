@@ -18,6 +18,8 @@ var scratchApi = null;
 var visibleTracksWatcher = null;
 var returnTracksWatcher = null;
 var trackList = [];
+var colorObservers = [];
+var colorDebounceTask = null;
 function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
@@ -89,6 +91,43 @@ function sendVisibleTracks() {
     outlet(OUTLET_TRACK_DATA, 'visibleTracks');
 }
 // ---------------------------------------------------------------------------
+// Color Observers
+// ---------------------------------------------------------------------------
+function teardownColorObservers() {
+    for (var i = 0; i < colorObservers.length; i++) {
+        colorObservers[i].property = '';
+        colorObservers[i].id = 0;
+    }
+    colorObservers = [];
+}
+function createColorObservers() {
+    teardownColorObservers();
+    var _loop_1 = function (i) {
+        var idx = i;
+        var obs = new LiveAPI(function (args) {
+            if (args[0] === 'color') {
+                trackList[idx].color = (0, utils_1.colorToString)(args[1].toString());
+                scheduleColorUpdate();
+            }
+        }, 'live_set');
+        obs.id = trackList[i].id;
+        obs.property = 'color';
+        colorObservers.push(obs);
+    };
+    for (var i = 0; i < trackList.length; i++) {
+        _loop_1(i);
+    }
+}
+function scheduleColorUpdate() {
+    if (!colorDebounceTask) {
+        colorDebounceTask = new Task(function () {
+            sendVisibleTracks();
+        });
+    }
+    colorDebounceTask.cancel();
+    colorDebounceTask.schedule(50);
+}
+// ---------------------------------------------------------------------------
 // Watchers
 // ---------------------------------------------------------------------------
 function onVisibleTracksChange(args) {
@@ -96,6 +135,7 @@ function onVisibleTracksChange(args) {
         return;
     ensureApis();
     trackList = buildTrackList();
+    createColorObservers();
     sendVisibleTracks();
 }
 function onReturnTracksChange(args) {
@@ -103,6 +143,7 @@ function onReturnTracksChange(args) {
         return;
     ensureApis();
     trackList = buildTrackList();
+    createColorObservers();
     sendVisibleTracks();
 }
 // ---------------------------------------------------------------------------
@@ -118,6 +159,7 @@ function requestVisibleTracks() {
 function refresh() {
     ensureApis();
     trackList = buildTrackList();
+    createColorObservers();
     sendVisibleTracks();
 }
 function init() {
@@ -131,6 +173,7 @@ function init() {
         returnTracksWatcher.property = 'return_tracks';
     }
     trackList = buildTrackList();
+    createColorObservers();
     sendVisibleTracks();
 }
 log('reloaded k4-visibleTracks');
