@@ -363,7 +363,7 @@ function setPath(slot: number, paramPath: string) {
     paramPath
   )
   // catch bad paths
-  if (testParamObj.id === 0) {
+  if (+testParamObj.id === 0) {
     log(`Invalid path for slot ${slot}: ${paramPath}`)
     return
   }
@@ -574,7 +574,7 @@ function sendVal(slot: number) {
 
   if (
     !paramObj[slot] ||
-    paramObj[slot].id === 0 ||
+    +paramObj[slot].id === 0 ||
     param[slot].val === undefined ||
     param[slot].max === undefined ||
     param[slot].min === undefined ||

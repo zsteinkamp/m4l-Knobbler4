@@ -338,7 +338,7 @@ function setPath(slot, paramPath) {
     }
     var testParamObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
     // catch bad paths
-    if (testParamObj.id === 0) {
+    if (+testParamObj.id === 0) {
         log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
         return;
     }
@@ -502,7 +502,7 @@ function sendVal(slot) {
     //log(`SEND VAL ${slot}`)
     initSlotIfNecessary(slot);
     if (!paramObj[slot] ||
-        paramObj[slot].id === 0 ||
+        +paramObj[slot].id === 0 ||
         param[slot].val === undefined ||
         param[slot].max === undefined ||
         param[slot].min === undefined ||

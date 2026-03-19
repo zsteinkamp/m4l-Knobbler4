@@ -183,7 +183,7 @@ const setSendWatcherIds = (sendIds: number[]) => {
 }
 
 function updateSendsFromMixer() {
-  if (!state.mixerObj || state.mixerObj.id === 0) return
+  if (!state.mixerObj || +state.mixerObj.id === 0) return
   const sendIds = cleanArr(state.mixerObj.get('sends') as any)
   setSendWatcherIds(sendIds)
 }
@@ -217,7 +217,7 @@ function handleSendDefault(slot: number) {
 }
 
 function toggleXFadeA() {
-  if (!state.mixerObj || state.mixerObj.id === 0) {
+  if (!state.mixerObj || +state.mixerObj.id === 0) {
     return
   }
   const currState = parseInt(state.mixerObj.get('crossfade_assign'))
@@ -229,7 +229,7 @@ function toggleXFadeA() {
 }
 
 function toggleXFadeB() {
-  if (!state.mixerObj || state.mixerObj.id === 0) {
+  if (!state.mixerObj || +state.mixerObj.id === 0) {
     return
   }
   const currState = parseInt(state.mixerObj.get('crossfade_assign'))
@@ -268,7 +268,7 @@ function disableRecord() {
 }
 
 function handleRecordInternal(intent: Intent) {
-  if (!state.trackObj || state.trackObj.id === 0) {
+  if (!state.trackObj || +state.trackObj.id === 0) {
     return
   }
   if (intent === Intent.Enable) {
@@ -294,7 +294,7 @@ function handleRecordInternal(intent: Intent) {
 }
 
 function toggleMute() {
-  if (!state.trackObj || state.trackObj.id === 0) {
+  if (!state.trackObj || +state.trackObj.id === 0) {
     return
   }
   const currState = parseInt(state.trackObj.get('mute'))
@@ -304,7 +304,7 @@ function toggleMute() {
 }
 
 function toggleSolo() {
-  if (!state.trackObj || state.trackObj.id === 0) {
+  if (!state.trackObj || +state.trackObj.id === 0) {
     return
   }
   const currState = parseInt(state.trackObj.get('solo'))
@@ -329,7 +329,7 @@ function toggleSolo() {
 }
 
 function handleCrossfader(val: string) {
-  if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
+  if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
     return
   }
   pauseUnpause(state.pause['crossfader'], PAUSE_MS)
@@ -337,7 +337,7 @@ function handleCrossfader(val: string) {
 }
 
 function handleCrossfaderDefault() {
-  if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
+  if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
     return
   }
   state.crossfaderObj.set(
@@ -347,7 +347,7 @@ function handleCrossfaderDefault() {
 }
 
 function handlePan(val: string) {
-  if (!state.panObj || state.panObj.id === 0) {
+  if (!state.panObj || +state.panObj.id === 0) {
     return
   }
   pauseUnpause(state.pause['pan'], PAUSE_MS)
@@ -358,7 +358,7 @@ function handlePan(val: string) {
 }
 
 function handlePanDefault() {
-  if (!state.panObj || state.panObj.id === 0) {
+  if (!state.panObj || +state.panObj.id === 0) {
     return
   }
   const defVal = parseFloat(state.panObj.get('default_value'))
@@ -369,7 +369,7 @@ function handlePanDefault() {
 }
 
 function handleVol(val: string) {
-  if (!state.volObj || state.volObj.id === 0) {
+  if (!state.volObj || +state.volObj.id === 0) {
     return
   }
   pauseUnpause(state.pause['vol'], PAUSE_MS)
@@ -380,7 +380,7 @@ function handleVol(val: string) {
 }
 
 function handleVolDefault() {
-  if (!state.volObj || state.volObj.id === 0) {
+  if (!state.volObj || +state.volObj.id === 0) {
     return
   }
   const defVal = parseFloat(state.volObj.get('default_value'))

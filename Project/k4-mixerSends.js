@@ -68,7 +68,7 @@ function handleSendDefault(slot) {
     state.watchers[idx].set('value', state.watchers[idx].get('default_value'));
 }
 function toggleXFadeA() {
-    if (!state.mixerObj || state.mixerObj.id === 0) {
+    if (!state.mixerObj || +state.mixerObj.id === 0) {
         return;
     }
     var currState = parseInt(state.mixerObj.get('crossfade_assign'));
@@ -82,7 +82,7 @@ function toggleXFadeA() {
     }
 }
 function toggleXFadeB() {
-    if (!state.mixerObj || state.mixerObj.id === 0) {
+    if (!state.mixerObj || +state.mixerObj.id === 0) {
         return;
     }
     var currState = parseInt(state.mixerObj.get('crossfade_assign'));
@@ -119,7 +119,7 @@ function disableRecord() {
     handleRecordInternal(Intent.Disable);
 }
 function handleRecordInternal(intent) {
-    if (!state.trackObj || state.trackObj.id === 0) {
+    if (!state.trackObj || +state.trackObj.id === 0) {
         return;
     }
     if (intent === Intent.Enable) {
@@ -146,14 +146,14 @@ function handleRecordInternal(intent) {
     sendRecordStatus(state.trackObj);
 }
 function toggleMute() {
-    if (!state.trackObj || state.trackObj.id === 0) {
+    if (!state.trackObj || +state.trackObj.id === 0) {
         return;
     }
     var currState = parseInt(state.trackObj.get('mute'));
     state.trackObj.set('mute', currState ? 0 : 1);
 }
 function toggleSolo() {
-    if (!state.trackObj || state.trackObj.id === 0) {
+    if (!state.trackObj || +state.trackObj.id === 0) {
         return;
     }
     var currState = parseInt(state.trackObj.get('solo'));
@@ -178,7 +178,7 @@ function toggleSolo() {
 }
 function handleCrossfader(val) {
     //log('PAN OVJ VAL=' + val + ' type=' + typeof val)
-    if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
+    if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['crossfader'], consts_1.PAUSE_MS);
@@ -186,14 +186,14 @@ function handleCrossfader(val) {
 }
 function handleCrossfaderDefault() {
     //log('PAN OVJ VAL=' + val + ' type=' + typeof val)
-    if (!state.crossfaderObj || state.crossfaderObj.id === 0) {
+    if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
         return;
     }
     state.crossfaderObj.set('value', parseFloat(state.crossfaderObj.get('default_value')));
 }
 function handlePan(val) {
     //log('PAN OVJ VAL=' + val + ' type=' + typeof val)
-    if (!state.panObj || state.panObj.id === 0) {
+    if (!state.panObj || +state.panObj.id === 0) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['pan'], consts_1.PAUSE_MS);
@@ -201,20 +201,20 @@ function handlePan(val) {
 }
 function handlePanDefault() {
     //log('PAN OVJ VAL=' + val + ' type=' + typeof val)
-    if (!state.panObj || state.panObj.id === 0) {
+    if (!state.panObj || +state.panObj.id === 0) {
         return;
     }
     state.panObj.set('value', parseFloat(state.panObj.get('default_value')));
 }
 function handleVol(val) {
-    if (!state.volObj || state.volObj.id === 0) {
+    if (!state.volObj || +state.volObj.id === 0) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['vol'], consts_1.PAUSE_MS);
     state.volObj.set('value', parseFloat(val));
 }
 function handleVolDefault() {
-    if (!state.volObj || state.volObj.id === 0) {
+    if (!state.volObj || +state.volObj.id === 0) {
         return;
     }
     state.volObj.set('value', parseFloat(state.volObj.get('default_value')));

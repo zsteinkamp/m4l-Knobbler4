@@ -255,7 +255,7 @@ function unfoldParentTracks(objId: number) {
   util.id = objId
   //log('GOTO TRACK ' + trackId + ' ' + util.id)
 
-  if (util.id === 0) {
+  if (+util.id === 0) {
     // invalid objId (e.g. deleted object)
     return
   }
@@ -289,7 +289,6 @@ function getParentTrackForDevice(deviceId: number) {
     let counter = 0
     while (counter < 20) {
       util.id = util.get('canonical_parent')[1]
-      //log('PARENT TYPE=' + util.type)
       if (util.type === 'Track') {
         return +util.id
       }
@@ -313,7 +312,6 @@ function gotoDevice(deviceIdStr: string) {
   } else {
     gotoTrack(trackId.toString())
   }
-  //log('GOTO DEVICE ' + deviceId)
   api.call('select_device', ['id', deviceId])
 }
 
@@ -349,8 +347,9 @@ function gotoChain(chainIdStr: string) {
 function toggleGroup(groupId: number) {
   const util = getUtilApi()
   util.id = groupId
-  if (util.id === 0) {
+  if (+util.id === 0) {
     log('ERROR: Invalid id ' + groupId)
+    return
   }
   const isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'))
   if (!isFoldable) {
@@ -362,18 +361,17 @@ function toggleGroup(groupId: number) {
 }
 
 function gotoTrack(trackIdStr: string) {
-  //log('gotoTrack ' + trackIdStr)
   const trackId = parseInt(trackIdStr)
   // Walk up group_track chain to unfold any collapsed parent groups
   const util = getUtilApi()
   util.id = trackId
-  if (util.id !== 0) {
+  if (+util.id !== 0) {
     let counter = 0
     while (counter < 20) {
       const groupIds = cleanArr(util.get('group_track'))
       if (!groupIds.length) break
       util.id = groupIds[0]
-      if (util.id === 0) break
+      if (+util.id === 0) break
       const foldState = parseInt(util.get('fold_state').toString())
       if (foldState === 1) {
         util.set('fold_state', 0)

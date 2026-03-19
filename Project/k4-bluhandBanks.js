@@ -226,7 +226,7 @@ function unfoldParentTracks(objId) {
     var util = getUtilApi();
     util.id = objId;
     //log('GOTO TRACK ' + trackId + ' ' + util.id)
-    if (util.id === 0) {
+    if (+util.id === 0) {
         // invalid objId (e.g. deleted object)
         return;
     }
@@ -257,7 +257,6 @@ function getParentTrackForDevice(deviceId) {
         var counter = 0;
         while (counter < 20) {
             util.id = util.get('canonical_parent')[1];
-            //log('PARENT TYPE=' + util.type)
             if (util.type === 'Track') {
                 return +util.id;
             }
@@ -280,7 +279,6 @@ function gotoDevice(deviceIdStr) {
     else {
         gotoTrack(trackId.toString());
     }
-    //log('GOTO DEVICE ' + deviceId)
     api.call('select_device', ['id', deviceId]);
 }
 function hideChains(deviceId) {
@@ -313,8 +311,9 @@ function gotoChain(chainIdStr) {
 function toggleGroup(groupId) {
     var util = getUtilApi();
     util.id = groupId;
-    if (util.id === 0) {
+    if (+util.id === 0) {
         log('ERROR: Invalid id ' + groupId);
+        return;
     }
     var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
     if (!isFoldable) {
@@ -324,19 +323,18 @@ function toggleGroup(groupId) {
     util.set('fold_state', foldState ? 0 : 1);
 }
 function gotoTrack(trackIdStr) {
-    //log('gotoTrack ' + trackIdStr)
     var trackId = parseInt(trackIdStr);
     // Walk up group_track chain to unfold any collapsed parent groups
     var util = getUtilApi();
     util.id = trackId;
-    if (util.id !== 0) {
+    if (+util.id !== 0) {
         var counter = 0;
         while (counter < 20) {
             var groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
             if (!groupIds.length)
                 break;
             util.id = groupIds[0];
-            if (util.id === 0)
+            if (+util.id === 0)
                 break;
             var foldState = parseInt(util.get('fold_state').toString());
             if (foldState === 1) {
