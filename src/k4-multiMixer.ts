@@ -24,10 +24,14 @@ import {
   DEFAULT_COLOR,
 } from './consts'
 import {
-  getTrackInputStatus,
+  handleExclusiveSolo,
+  handleExclusiveArm,
+  toggleXFade as toggleXFadeShared,
+  enableArm,
+  disableArm,
   disableTrackInput,
-  enableTrackInput,
-} from './toggleInput'
+  getRecordStatus,
+} from './mixerUtils'
 
 autowatch = 1
 inlets = 2
@@ -522,12 +526,8 @@ function sendStripState(n: number, strip: StripObservers) {
   osc(SA_SOLO[n], !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0)
   osc(SA_ARM[n], strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0)
 
-  let inputEnabled = 0
-  if (strip.canBeArmed) {
-    const inputStatus = getTrackInputStatus(strip.trackApi)
-    inputEnabled = inputStatus && inputStatus.inputEnabled ? 1 : 0
-  }
-  osc(SA_INPUT[n], inputEnabled)
+  const recordStatus = getRecordStatus(strip.trackApi)
+  osc(SA_INPUT[n], strip.canBeArmed && recordStatus.inputEnabled ? 1 : 0)
   osc(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0)
 
   if (!strip.isMain) {
@@ -930,16 +930,7 @@ function toggleSolo(stripIdx: number) {
   const newState = curr ? 0 : 1
 
   if (newState) {
-    scratchApi.path = 'live_set'
-    if (parseInt(scratchApi.get('exclusive_solo').toString()) === 1) {
-      const tracks = cleanArr(scratchApi.get('tracks'))
-      const returns = cleanArr(scratchApi.get('return_tracks'))
-      for (const tid of tracks.concat(returns)) {
-        if (tid === strip.trackId) continue
-        scratchApi.id = tid
-        scratchApi.set('solo', 0)
-      }
-    }
+    handleExclusiveSolo(strip.trackId, scratchApi)
   }
   strip.trackApi.set('solo', newState)
   osc(SA_SOLO[strip.stripIndex], newState)
@@ -949,28 +940,14 @@ function toggleSolo(stripIdx: number) {
 function enableRecord(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip || !strip.canBeArmed) return
-  enableTrackInput(strip.trackApi)
-  strip.trackApi.set('arm', 1)
-
-  scratchApi.path = 'live_set'
-  if (parseInt(scratchApi.get('exclusive_arm').toString()) === 1) {
-    const tracks = cleanArr(scratchApi.get('tracks'))
-    for (const tid of tracks) {
-      if (tid === strip.trackId) continue
-      scratchApi.id = tid
-      if (parseInt(scratchApi.get('can_be_armed').toString())) {
-        scratchApi.set('arm', 0)
-      }
-    }
-  }
-
+  enableArm(strip.trackApi, scratchApi)
   sendRecordStatusForStrip(strip)
 }
 
 function disableRecord(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip || !strip.canBeArmed) return
-  strip.trackApi.set('arm', 0)
+  disableArm(strip.trackApi)
   sendRecordStatusForStrip(strip)
 }
 
@@ -983,25 +960,21 @@ function disableInput(stripIdx: number) {
 
 function sendRecordStatusForStrip(strip: StripObservers) {
   const n = strip.stripIndex
-  const armStatus =
-    strip.canBeArmed && parseInt(strip.trackApi.get('arm').toString())
-  const inputStatus = getTrackInputStatus(strip.trackApi)
-  osc(SA_ARM[n], armStatus ? 1 : 0)
-  osc(SA_INPUT[n], inputStatus && inputStatus.inputEnabled ? 1 : 0)
+  const status = getRecordStatus(strip.trackApi)
+  osc(SA_ARM[n], strip.canBeArmed ? status.armStatus : 0)
+  osc(SA_INPUT[n], status.inputEnabled ? 1 : 0)
 }
 
 function toggleXFadeA(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  const curr = parseInt(strip.mixerApi.get('crossfade_assign').toString())
-  strip.mixerApi.set('crossfade_assign', curr === 0 ? 1 : 0)
+  toggleXFadeShared(strip.mixerApi, 0)
 }
 
 function toggleXFadeB(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  const curr = parseInt(strip.mixerApi.get('crossfade_assign').toString())
-  strip.mixerApi.set('crossfade_assign', curr === 2 ? 1 : 2)
+  toggleXFadeShared(strip.mixerApi, 2)
 }
 
 // ---------------------------------------------------------------------------

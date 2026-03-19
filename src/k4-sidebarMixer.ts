@@ -14,10 +14,14 @@ import {
   TYPE_GROUP,
 } from './consts'
 import {
-  getTrackInputStatus,
+  handleExclusiveSolo,
+  handleExclusiveArm,
+  toggleXFade,
+  enableArm,
+  disableArm,
   disableTrackInput,
-  enableTrackInput,
-} from './toggleInput'
+  getRecordStatus,
+} from './mixerUtils'
 
 autowatch = 1
 inlets = 2
@@ -217,41 +221,17 @@ function handleSendDefault(slot: number) {
 }
 
 function toggleXFadeA() {
-  if (!state.mixerObj || +state.mixerObj.id === 0) {
-    return
-  }
-  const currState = parseInt(state.mixerObj.get('crossfade_assign'))
-  if (currState === 0) {
-    state.mixerObj.set('crossfade_assign', 1)
-  } else {
-    state.mixerObj.set('crossfade_assign', 0)
-  }
+  toggleXFade(state.mixerObj, 0)
 }
 
 function toggleXFadeB() {
-  if (!state.mixerObj || +state.mixerObj.id === 0) {
-    return
-  }
-  const currState = parseInt(state.mixerObj.get('crossfade_assign'))
-  if (currState === 2) {
-    state.mixerObj.set('crossfade_assign', 1)
-  } else {
-    state.mixerObj.set('crossfade_assign', 2)
-  }
+  toggleXFade(state.mixerObj, 2)
 }
 
 function sendRecordStatus(lookupObj: LiveAPI) {
-  const armStatus =
-    parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'))
-  const trackInputStatus = getTrackInputStatus(lookupObj)
-  const inputStatus = trackInputStatus && trackInputStatus.inputEnabled
-  osc('/mixer/recordArm', armStatus ? 1 : 0)
-  osc('/mixer/inputEnabled', inputStatus ? 1 : 0)
-}
-
-enum Intent {
-  Enable,
-  Disable,
+  const status = getRecordStatus(lookupObj)
+  osc('/mixer/recordArm', status.armStatus)
+  osc('/mixer/inputEnabled', status.inputEnabled ? 1 : 0)
 }
 
 function disableInput() {
@@ -260,36 +240,14 @@ function disableInput() {
 }
 
 function enableRecord() {
-  handleRecordInternal(Intent.Enable)
+  if (!state.trackObj || +state.trackObj.id === 0) return
+  enableArm(state.trackObj, state.trackLookupObj)
+  sendRecordStatus(state.trackObj)
 }
 
 function disableRecord() {
-  handleRecordInternal(Intent.Disable)
-}
-
-function handleRecordInternal(intent: Intent) {
-  if (!state.trackObj || +state.trackObj.id === 0) {
-    return
-  }
-  if (intent === Intent.Enable) {
-    enableTrackInput(state.trackObj)
-    state.trackObj.set('arm', 1)
-    state.trackLookupObj.path = 'live_set'
-    if (parseInt(state.trackLookupObj.get('exclusive_arm')) === 1) {
-      const tracks = cleanArr(state.trackLookupObj.get('tracks'))
-      for (const trackId of tracks) {
-        if (trackId === parseInt(state.trackObj.id.toString())) {
-          continue
-        }
-        state.trackLookupObj.id = trackId
-        if (parseInt(state.trackLookupObj.get('can_be_armed'))) {
-          state.trackLookupObj.set('arm', 0)
-        }
-      }
-    }
-  } else if (intent === Intent.Disable) {
-    state.trackObj.set('arm', 0)
-  }
+  if (!state.trackObj || +state.trackObj.id === 0) return
+  disableArm(state.trackObj)
   sendRecordStatus(state.trackObj)
 }
 
@@ -311,18 +269,7 @@ function toggleSolo() {
   const newState = currState ? 0 : 1
 
   if (newState) {
-    state.trackLookupObj.path = 'live_set'
-    if (parseInt(state.trackLookupObj.get('exclusive_solo')) === 1) {
-      const tracks = cleanArr(state.trackLookupObj.get('tracks'))
-      const returns = cleanArr(state.trackLookupObj.get('return_tracks'))
-      for (const trackId of [...tracks, ...returns]) {
-        if (trackId === parseInt(state.trackObj.id.toString())) {
-          continue
-        }
-        state.trackLookupObj.id = trackId
-        state.trackLookupObj.set('solo', 0)
-      }
-    }
+    handleExclusiveSolo(parseInt(state.trackObj.id.toString()), state.trackLookupObj)
   }
   state.trackObj.set('solo', newState)
   osc('/mixer/solo', newState)

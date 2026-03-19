@@ -2,7 +2,7 @@
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
-var toggleInput_1 = require("./toggleInput");
+var mixerUtils_1 = require("./mixerUtils");
 autowatch = 1;
 inlets = 2;
 outlets = 1;
@@ -414,12 +414,8 @@ function sendStripState(n, strip) {
     (0, utils_1.osc)(SA_MUTE[n], !strip.isMain ? parseInt(strip.trackApi.get('mute').toString()) : 0);
     (0, utils_1.osc)(SA_SOLO[n], !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0);
     (0, utils_1.osc)(SA_ARM[n], strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0);
-    var inputEnabled = 0;
-    if (strip.canBeArmed) {
-        var inputStatus = (0, toggleInput_1.getTrackInputStatus)(strip.trackApi);
-        inputEnabled = inputStatus && inputStatus.inputEnabled ? 1 : 0;
-    }
-    (0, utils_1.osc)(SA_INPUT[n], inputEnabled);
+    var recordStatus = (0, mixerUtils_1.getRecordStatus)(strip.trackApi);
+    (0, utils_1.osc)(SA_INPUT[n], strip.canBeArmed && recordStatus.inputEnabled ? 1 : 0);
     (0, utils_1.osc)(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0);
     if (!strip.isMain) {
         var xFadeAssign = parseInt(strip.mixerApi.get('crossfade_assign').toString());
@@ -803,18 +799,7 @@ function toggleSolo(stripIdx) {
     var curr = parseInt(strip.trackApi.get('solo').toString());
     var newState = curr ? 0 : 1;
     if (newState) {
-        scratchApi.path = 'live_set';
-        if (parseInt(scratchApi.get('exclusive_solo').toString()) === 1) {
-            var tracks = (0, utils_1.cleanArr)(scratchApi.get('tracks'));
-            var returns = (0, utils_1.cleanArr)(scratchApi.get('return_tracks'));
-            for (var _a = 0, _b = tracks.concat(returns); _a < _b.length; _a++) {
-                var tid = _b[_a];
-                if (tid === strip.trackId)
-                    continue;
-                scratchApi.id = tid;
-                scratchApi.set('solo', 0);
-            }
-        }
+        (0, mixerUtils_1.handleExclusiveSolo)(strip.trackId, scratchApi);
     }
     strip.trackApi.set('solo', newState);
     (0, utils_1.osc)(SA_SOLO[strip.stripIndex], newState);
@@ -824,57 +809,40 @@ function enableRecord(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip || !strip.canBeArmed)
         return;
-    (0, toggleInput_1.enableTrackInput)(strip.trackApi);
-    strip.trackApi.set('arm', 1);
-    scratchApi.path = 'live_set';
-    if (parseInt(scratchApi.get('exclusive_arm').toString()) === 1) {
-        var tracks = (0, utils_1.cleanArr)(scratchApi.get('tracks'));
-        for (var _a = 0, tracks_1 = tracks; _a < tracks_1.length; _a++) {
-            var tid = tracks_1[_a];
-            if (tid === strip.trackId)
-                continue;
-            scratchApi.id = tid;
-            if (parseInt(scratchApi.get('can_be_armed').toString())) {
-                scratchApi.set('arm', 0);
-            }
-        }
-    }
+    (0, mixerUtils_1.enableArm)(strip.trackApi, scratchApi);
     sendRecordStatusForStrip(strip);
 }
 function disableRecord(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip || !strip.canBeArmed)
         return;
-    strip.trackApi.set('arm', 0);
+    (0, mixerUtils_1.disableArm)(strip.trackApi);
     sendRecordStatusForStrip(strip);
 }
 function disableInput(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    (0, toggleInput_1.disableTrackInput)(strip.trackApi);
+    (0, mixerUtils_1.disableTrackInput)(strip.trackApi);
     sendRecordStatusForStrip(strip);
 }
 function sendRecordStatusForStrip(strip) {
     var n = strip.stripIndex;
-    var armStatus = strip.canBeArmed && parseInt(strip.trackApi.get('arm').toString());
-    var inputStatus = (0, toggleInput_1.getTrackInputStatus)(strip.trackApi);
-    (0, utils_1.osc)(SA_ARM[n], armStatus ? 1 : 0);
-    (0, utils_1.osc)(SA_INPUT[n], inputStatus && inputStatus.inputEnabled ? 1 : 0);
+    var status = (0, mixerUtils_1.getRecordStatus)(strip.trackApi);
+    (0, utils_1.osc)(SA_ARM[n], strip.canBeArmed ? status.armStatus : 0);
+    (0, utils_1.osc)(SA_INPUT[n], status.inputEnabled ? 1 : 0);
 }
 function toggleXFadeA(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    var curr = parseInt(strip.mixerApi.get('crossfade_assign').toString());
-    strip.mixerApi.set('crossfade_assign', curr === 0 ? 1 : 0);
+    (0, mixerUtils_1.toggleXFade)(strip.mixerApi, 0);
 }
 function toggleXFadeB(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    var curr = parseInt(strip.mixerApi.get('crossfade_assign').toString());
-    strip.mixerApi.set('crossfade_assign', curr === 2 ? 1 : 2);
+    (0, mixerUtils_1.toggleXFade)(strip.mixerApi, 2);
 }
 // ---------------------------------------------------------------------------
 // anything() dispatcher — receives (subCmd, stripIdx, val) from router

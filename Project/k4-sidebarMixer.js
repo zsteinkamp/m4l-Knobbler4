@@ -1,17 +1,8 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
-var toggleInput_1 = require("./toggleInput");
+var mixerUtils_1 = require("./mixerUtils");
 autowatch = 1;
 inlets = 2;
 outlets = 1;
@@ -203,76 +194,30 @@ function handleSendDefault(slot) {
     state.watchers[idx].set('value', state.watchers[idx].get('default_value'));
 }
 function toggleXFadeA() {
-    if (!state.mixerObj || +state.mixerObj.id === 0) {
-        return;
-    }
-    var currState = parseInt(state.mixerObj.get('crossfade_assign'));
-    if (currState === 0) {
-        state.mixerObj.set('crossfade_assign', 1);
-    }
-    else {
-        state.mixerObj.set('crossfade_assign', 0);
-    }
+    (0, mixerUtils_1.toggleXFade)(state.mixerObj, 0);
 }
 function toggleXFadeB() {
-    if (!state.mixerObj || +state.mixerObj.id === 0) {
-        return;
-    }
-    var currState = parseInt(state.mixerObj.get('crossfade_assign'));
-    if (currState === 2) {
-        state.mixerObj.set('crossfade_assign', 1);
-    }
-    else {
-        state.mixerObj.set('crossfade_assign', 2);
-    }
+    (0, mixerUtils_1.toggleXFade)(state.mixerObj, 2);
 }
 function sendRecordStatus(lookupObj) {
-    var armStatus = parseInt(lookupObj.get('can_be_armed')) && parseInt(lookupObj.get('arm'));
-    var trackInputStatus = (0, toggleInput_1.getTrackInputStatus)(lookupObj);
-    var inputStatus = trackInputStatus && trackInputStatus.inputEnabled;
-    (0, utils_1.osc)('/mixer/recordArm', armStatus ? 1 : 0);
-    (0, utils_1.osc)('/mixer/inputEnabled', inputStatus ? 1 : 0);
+    var status = (0, mixerUtils_1.getRecordStatus)(lookupObj);
+    (0, utils_1.osc)('/mixer/recordArm', status.armStatus);
+    (0, utils_1.osc)('/mixer/inputEnabled', status.inputEnabled ? 1 : 0);
 }
-var Intent;
-(function (Intent) {
-    Intent[Intent["Enable"] = 0] = "Enable";
-    Intent[Intent["Disable"] = 1] = "Disable";
-})(Intent || (Intent = {}));
 function disableInput() {
-    (0, toggleInput_1.disableTrackInput)(state.trackObj);
+    (0, mixerUtils_1.disableTrackInput)(state.trackObj);
     sendRecordStatus(state.trackObj);
 }
 function enableRecord() {
-    handleRecordInternal(Intent.Enable);
+    if (!state.trackObj || +state.trackObj.id === 0)
+        return;
+    (0, mixerUtils_1.enableArm)(state.trackObj, state.trackLookupObj);
+    sendRecordStatus(state.trackObj);
 }
 function disableRecord() {
-    handleRecordInternal(Intent.Disable);
-}
-function handleRecordInternal(intent) {
-    if (!state.trackObj || +state.trackObj.id === 0) {
+    if (!state.trackObj || +state.trackObj.id === 0)
         return;
-    }
-    if (intent === Intent.Enable) {
-        (0, toggleInput_1.enableTrackInput)(state.trackObj);
-        state.trackObj.set('arm', 1);
-        state.trackLookupObj.path = 'live_set';
-        if (parseInt(state.trackLookupObj.get('exclusive_arm')) === 1) {
-            var tracks = (0, utils_1.cleanArr)(state.trackLookupObj.get('tracks'));
-            for (var _i = 0, tracks_1 = tracks; _i < tracks_1.length; _i++) {
-                var trackId = tracks_1[_i];
-                if (trackId === parseInt(state.trackObj.id.toString())) {
-                    continue;
-                }
-                state.trackLookupObj.id = trackId;
-                if (parseInt(state.trackLookupObj.get('can_be_armed'))) {
-                    state.trackLookupObj.set('arm', 0);
-                }
-            }
-        }
-    }
-    else if (intent === Intent.Disable) {
-        state.trackObj.set('arm', 0);
-    }
+    (0, mixerUtils_1.disableArm)(state.trackObj);
     sendRecordStatus(state.trackObj);
 }
 function toggleMute() {
@@ -291,19 +236,7 @@ function toggleSolo() {
     var currState = parseInt(state.trackObj.get('solo'));
     var newState = currState ? 0 : 1;
     if (newState) {
-        state.trackLookupObj.path = 'live_set';
-        if (parseInt(state.trackLookupObj.get('exclusive_solo')) === 1) {
-            var tracks = (0, utils_1.cleanArr)(state.trackLookupObj.get('tracks'));
-            var returns = (0, utils_1.cleanArr)(state.trackLookupObj.get('return_tracks'));
-            for (var _i = 0, _a = __spreadArray(__spreadArray([], tracks, true), returns, true); _i < _a.length; _i++) {
-                var trackId = _a[_i];
-                if (trackId === parseInt(state.trackObj.id.toString())) {
-                    continue;
-                }
-                state.trackLookupObj.id = trackId;
-                state.trackLookupObj.set('solo', 0);
-            }
-        }
+        (0, mixerUtils_1.handleExclusiveSolo)(parseInt(state.trackObj.id.toString()), state.trackLookupObj);
     }
     state.trackObj.set('solo', newState);
     (0, utils_1.osc)('/mixer/solo', newState);
