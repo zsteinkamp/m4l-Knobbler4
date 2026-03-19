@@ -21,11 +21,7 @@ import {
   TYPE_CHAIN,
   TYPE_CHILD_CHAIN,
   TYPE_DEVICE,
-  TYPE_GROUP,
-  TYPE_MAIN,
   TYPE_RACK,
-  TYPE_RETURN,
-  TYPE_TRACK,
   noFn,
 } from './consts'
 
@@ -77,156 +73,11 @@ setoutletassist(OUTLET_MSGS, 'Messages')
 
 const state = {
   api: null as LiveAPI,
-
-  track: {
-    watch: null as LiveAPI,
-    last: null as string,
-    tree: {} as Tree,
-  } as ClassObj,
-  return: {
-    watch: null as LiveAPI,
-    last: null as string,
-    tree: {} as Tree,
-  } as ClassObj,
-  main: {
-    watch: null as LiveAPI,
-    last: null as string,
-    tree: {} as Tree,
-  } as ClassObj,
-  device: {
-    watch: null as LiveAPI,
-    last: null as string,
-  } as ClassObj,
   currDeviceId: null as number,
   currDeviceWatcher: null as LiveAPI,
   currTrackId: null as number,
   currTrackWatcher: null as LiveAPI,
-  currTrackNameWatcher: null as LiveAPI,
-  currTrackColorWatcher: null as LiveAPI,
-  ignoreTrackColorNameChanges: true,
 }
-
-// make a tree so we can get depth
-const getEmptyTreeNode: () => TreeNode = () => {
-  return {
-    children: [],
-    obj: null,
-    parent: null,
-  }
-}
-
-const makeTrackTree = (type: ObjType, typeNum: number, trackIds: IdArr) => {
-  // bootstrap tretrae
-  const tree: Tree = {}
-  tree['0'] = getEmptyTreeNode()
-
-  // iterate over given IDs, already sorted in the right order
-  for (const trackId of trackIds) {
-    if (!trackId) {
-      continue
-    }
-    const trackIdStr = trackId.toString()
-    state.api.id = trackId
-    //log('TRACK ID ' + trackId)
-    if (!tree[trackIdStr]) {
-      tree[trackIdStr] = getEmptyTreeNode()
-    }
-
-    const trackInfo = state.api.info.toString()
-    const isTrack = trackInfo.indexOf('type Track') > -1
-    const isFoldable = isTrack && parseInt(state.api.get('is_foldable'))
-
-    const parentId = cleanArr(state.api.get('group_track'))[0]
-    const parentIdStr = parentId.toString()
-
-    tree[trackIdStr].obj = [
-      /* TYPE   */ isFoldable ? TYPE_GROUP : typeNum,
-      /* ID     */ trackId,
-      /* NAME   */ truncate(state.api.get('name').toString(), MAX_NAME_LEN),
-      /* COLOR  */ colorToString(state.api.get('color').toString()),
-      /* INDENT */ 0, // temporary indent
-      /* USE INDENT */ 0, // temporary indent
-      /* PARENT */ parentId,
-    ] as MaxObjRecord
-
-    //log('PARENT ID ' + parentId)
-    tree[trackIdStr].parent = parentId
-    //log('THREE ' + trackId + ' ' + JSON.stringify(tree[trackIdStr]))
-    if (!tree[parentIdStr]) {
-      tree[parentIdStr] = getEmptyTreeNode()
-    }
-    tree[parentIdStr].children.push(trackId)
-  }
-  // now fixup indents
-  const fixupIndent = (currId: number, indent: number) => {
-    const currIdStr = currId.toString()
-    const treeNode = tree[currIdStr]
-    //log('fixupIndent TREENODE ' + currIdStr + ' ' + JSON.stringify(treeNode))
-    treeNode.obj && (treeNode.obj[FIELD_INDENT] = indent)
-    //log('fixupIndent after ' + currIdStr + ' ' + JSON.stringify(treeNode))
-    for (const childId of treeNode.children) {
-      fixupIndent(childId, indent + 1)
-    }
-  }
-
-  // start with indent==-1 so that the actual output starts at zero (root node
-  // is not included in output)
-  fixupIndent(0, -1)
-  //log('TREE ' + JSON.stringify(tree))
-  return tree
-}
-
-function updateGenericTrack(type: ObjType, val: IdObserverArg) {
-  const stateObj = state[type]
-  if (!stateObj) {
-    return
-  }
-
-  const idArr = cleanArr(val) as IdArr
-  let typeNum = TYPE_TRACK
-  if (type === 'return') {
-    typeNum = TYPE_RETURN
-  } else if (type === 'main') {
-    typeNum = TYPE_MAIN
-  }
-  stateObj.tree = makeTrackTree(type, typeNum, idArr)
-}
-
-function updateTracks(val: IdObserverArg) {
-  if (val[0] !== 'tracks') {
-    //log('TRACKS EARLY')
-    return
-  }
-  //log('HERE TRACKSz ' + JSON.stringify(val))
-  updateGenericTrack('track', val)
-}
-
-function updateReturns(val: IdObserverArg) {
-  //log('HERE RETURNS')
-  if (val[0] !== 'return_tracks') {
-    //log('RETURNS EARLY')
-    return
-  }
-  updateGenericTrack('return', val)
-}
-
-function updateMain(val: IdObserverArg) {
-  //log('HERE MAIN ' + val.toString())
-  if (val[0] !== 'id') {
-    //log('MAIN EARLY')
-    return
-  }
-  updateGenericTrack('main', val)
-}
-
-//function updateDevices(val: IdObserverArg) {
-//  if (val[0] !== 'devices') {
-//    //log('DEVICES EARLY')
-//    return
-//  }
-//  //log('HERE DEVICES ' + JSON.stringify(val))
-//  updateGeneric('device', val)
-//}
 
 function onCurrDeviceChange(val: IdObserverArg) {
   if (val[0] !== 'id') {
@@ -375,190 +226,24 @@ function updateDeviceNav() {
 
 function onCurrTrackChange(val: IdObserverArg) {
   if (val[0] !== 'id' && val[1].toString() !== 'id') {
-    //log('Track change EARLY')
     return
   }
   const newId = cleanArr(val)[0]
   if (state.currTrackId === newId) {
-    //log('Track change SAME')
     return
   }
   if (newId === 0) {
-    //log('Track change ZERO')
     return
   }
   state.currTrackId = newId
-  const currTrackIdStr = state.currTrackId.toString()
 
-  // ignore the burst of name/color changes
-  state.ignoreTrackColorNameChanges = true
-  const t = new Task(() => {
-    state.ignoreTrackColorNameChanges = false
-  })
-  t.schedule(500)
-
-  // color and name watchers
-  if (!state.currTrackColorWatcher) {
-    state.currTrackColorWatcher = new LiveAPI(
-      onCurrTrackColorChange,
-      'id ' + state.currTrackId
-    )
-    state.currTrackColorWatcher.property = 'color'
-  } else {
-    state.currTrackColorWatcher.id = +currTrackIdStr
-  }
-  if (!state.currTrackNameWatcher) {
-    state.currTrackNameWatcher = new LiveAPI(
-      onCurrTrackNameChange,
-      'id ' + state.currTrackId
-    )
-    state.currTrackNameWatcher.property = 'name'
-  } else {
-    state.currTrackNameWatcher.id = +currTrackIdStr
-  }
-  updateTrackNav()
-}
-
-function updateTrackNav() {
-  const currTrackIdStr = state.currTrackId.toString()
-  // Rebuild trees on track nav
-  state.api.path = 'live_set'
-  state.track.tree = makeTrackTree(
-    'track',
-    TYPE_TRACK,
-    cleanArr(state.api.get('tracks'))
-  )
-
-  state.api.path = 'live_set'
-  state.return.tree = makeTrackTree(
-    'return',
-    TYPE_RETURN,
-    cleanArr(state.api.get('return_tracks'))
-  )
-
-  state.api.path = 'live_set'
-  state.main.tree = makeTrackTree(
-    'main',
-    TYPE_MAIN,
-    cleanArr(state.api.get('master_track'))
-  )
-
-  const trackTree = state.track.tree
-  const returnTree = state.return.tree
-  const mainTree = state.main.tree
-
-  const ret: MaxObjRecord[] = []
-  // is the given currTrackId a (return|main) or track?
-  if (returnTree[currTrackIdStr] || mainTree[currTrackIdStr]) {
-    // return or main
-    for (const topLevelTrackId of trackTree['0'].children) {
-      // top-level tracks
-      ret.push(trackTree[topLevelTrackId.toString()].obj)
-    }
-  } else if (trackTree[state.currTrackId.toString()]) {
-    // currTrackId is a track
-    //log('IS TRACK ' + state.currTrackId)
-
-    // child tracks
-    for (const childTrackId of trackTree[state.currTrackId.toString()]
-      .children) {
-      //log(' >>> PUSH CHILD ' + childTrackId)
-      ret.push(trackTree[childTrackId.toString()].obj)
-    }
-    // self and siblings
-    let parentId = trackTree[state.currTrackId.toString()].parent
-    let foundSelf = false
-    let unshiftCount = 0
-    for (const selfOrSiblingTrackId of trackTree[parentId.toString()]
-      .children) {
-      const selfOrSiblingObj = trackTree[selfOrSiblingTrackId.toString()].obj
-      //log(' >>> SIB OBJ ' + JSON.stringify(selfOrSiblingObj))
-      if (foundSelf) {
-        //log('ALREADY FOUND SELF id=' + selfOrSiblingTrackId)
-        ret.push(selfOrSiblingObj)
-      } else {
-        //log('SPLICE unshift=' + unshiftCount + ' id=' + selfOrSiblingTrackId)
-        ret.splice(unshiftCount, 0, selfOrSiblingObj)
-        unshiftCount++
-      }
-      if (selfOrSiblingTrackId === state.currTrackId) {
-        //log('FOUND SELF id=' + selfOrSiblingTrackId)
-        foundSelf = true
-      }
-    }
-    //log('CURRENT STATE 1 ' + JSON.stringify(ret))
-    // walk up hierarchy to root
-    let lastTrackAncestorId = null
-    const currentTrackParentId = parentId
-    //log('OUTSIDE parentId=' + parentId)
-    while (parentId) {
-      const parentNode = trackTree[parentId.toString()]
-      //log('INSIDE parentNode=' + JSON.stringify(parentNode))
-      if (parentNode.parent === 0) {
-        // got to the top level -- we will add all top-level tracks below
-        //log('INSIDE BREAK')
-        lastTrackAncestorId = parentId
-        break
-      }
-      const parentObj = parentNode.obj
-      //log('UNSHIFT HERE ' + JSON.stringify(parentObj))
-      ret.unshift(parentObj)
-      if (parentObj) {
-        //log(' >>> PARENT OBJ ' + JSON.stringify(parentObj))
-        lastTrackAncestorId = parentId
-        parentId = trackTree[parentId.toString()].parent
-      }
-    }
-    //log('CURRENT STATE 2 ' + JSON.stringify(ret))
-    // now get top-level tracks
-    if (currentTrackParentId) {
-      let foundAncestor = false
-      unshiftCount = 0
-      for (const topLevelTrackId of trackTree['0'].children) {
-        const topLevelObj = trackTree[topLevelTrackId.toString()].obj
-        if (foundAncestor) {
-          ret.push(topLevelObj)
-          //log('INSIDE PUSH ' + JSON.stringify(topLevelObj))
-        } else {
-          ret.splice(unshiftCount, 0, topLevelObj)
-          unshiftCount++
-          //log('INSIDE SPLICE ' + JSON.stringify(topLevelObj))
-        }
-        //log(
-        //  'INSIDE TEST FOUND ANCESTOR ' +
-        //    JSON.stringify({ topLevelTrackId, lastTrackAncestorId })
-        //)
-        if (lastTrackAncestorId === topLevelTrackId) {
-          //log('INSIDE TEST FOUND ANCESTOR TRUE')
-          foundAncestor = true
-        }
-      }
-    }
-  } else {
-    log('DERP')
-    return
-  }
-  // returns
-  for (const returnTrackId of returnTree[0].children) {
-    ret.push(returnTree[returnTrackId.toString()].obj)
-  }
-  // main
-  const mainId = mainTree['0'].children[0]
-  ret.push(mainTree[mainId.toString()].obj)
-
-  //log('/nav/tracks=' + JSON.stringify(ret))
-  sendNavData('/nav/tracks', ret)
-  //log('NEW CURR TRACK ID =' + state.currTrackId)
   outlet(OUTLET_OSC, ['/nav/currTrackId', state.currTrackId])
 
   // ensure a device is selected if one exists
   state.api.path = 'live_set view selected_track view selected_device'
-  //log('HERE ' + state.api.id)
   if (+state.api.id === 0) {
     state.api.path = 'live_set view selected_track'
-    //log('TACKNAME ' + state.api.get('name'))
     const devices = cleanArr(state.api.get('devices'))
-    //log('DEVICES ' + devices)
     if (devices.length > 0) {
       state.api.path = 'live_set view'
       state.api.call('select_device', 'id ' + devices[0])
@@ -566,66 +251,13 @@ function updateTrackNav() {
   }
 }
 
-function refreshNav() {
-  updateTrackNav()
-  updateDeviceNav()
-}
-
-function onCurrTrackColorChange(args: IArguments) {
-  if (state.ignoreTrackColorNameChanges) {
-    return
-  }
-  if (args[0] !== 'color') {
-    return
-  }
-  //log('CURR TRACK COLOR CHANGE ' + args)
-  refreshNav()
-}
-function onCurrTrackNameChange(args: IArguments) {
-  if (state.ignoreTrackColorNameChanges) {
-    return
-  }
-  if (args[0] !== 'name') {
-    return
-  }
-  //log('CURR TRACK NAME CHANGE ' + args)
-  updateTrackNav()
-}
-
 function init() {
-  //log('TRACKS DEVICES INIT')
   saveSetting('clientVersion', '')
   saveSetting('clientCapabilities', '')
-  state.track = { watch: null, tree: {}, last: null }
-  state.return = { watch: null, tree: {}, last: null }
-  state.main = { watch: null, tree: {}, last: null }
-  //state.device = { watch: null, last: null }
   state.currDeviceId = null
   state.currTrackId = null
 
-  // general purpose API obj to do lookups, etc
   state.api = new LiveAPI(noFn, 'live_set')
-
-  // set up watchers for each type, calls function to assemble and send OSC
-  // messages with the type lists when changes
-  state.track.watch = new LiveAPI(updateTracks, 'live_set')
-  state.track.watch.property = 'tracks'
-
-  state.return.watch = new LiveAPI(updateReturns, 'live_set')
-  state.return.watch.property = 'return_tracks'
-
-  state.main.watch = new LiveAPI(updateMain, 'live_set master_track')
-  state.main.watch.property = 'id'
-
-  //state.device.watch = new LiveAPI(
-  //  updateDevices,
-  //  'live_set view selected_track'
-  //)
-  //state.device.watch.mode = 1 // follow path, not object
-  //state.device.watch.property = 'devices'
-
-  state.currTrackColorWatcher = null
-  state.currTrackNameWatcher = null
 
   state.currTrackWatcher = new LiveAPI(
     onCurrTrackChange,

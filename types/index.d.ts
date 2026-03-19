@@ -36,19 +36,5 @@ type IdObserverArg = [
   number,
 ]
 type IdArr = number[]
-type ObjType = 'track' | 'return' | 'main' | 'device'
-
-type TreeNode = {
-  obj: MaxObjRecord
-  parent: number
-  children: IdArr
-}
-
-type Tree = Record<string, TreeNode>
-type ClassObj = {
-  watch: LiveAPI
-  last: string
-  tree: Tree
-}
 
 type MaxTask = Task & { freepeer: () => void }
