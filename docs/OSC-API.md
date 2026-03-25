@@ -166,22 +166,6 @@ Updates the device name displayed beneath the shortcut button N.
 
 Live object ID number for the currently selected track.
 
-#### /nav/tracks
-
-JSON-stringified array of track array objects. See the source file `src/consts.ts` to see the field ID definitions. e.g.
-
-```
-[
-  [0,3,"1-MIDI","FFF034",0],
-  [0,10,"2-MIDI","99724B",0],
-  [0,11,"3-Audio","F7F47C",0],
-  [0,12,"4-Audio","FFA529",0],
-  [2,13,"A-Reverb","10A4EE",0],
-  [2,14,"B-Delay","00BFAF",0],
-  [3,15,"Main","19E9FF",0]
-]
-```
-
 #### /nav/currDeviceId {integer}
 
 Live object ID number for the currently selected device.
@@ -276,6 +260,10 @@ Indicates if the A or B crossfader buttons are selected for the given track.
 #### /mixer/solo { 0 | 1 }
 
 Indicates the Solo state of the track.
+
+#### /mixer/soloCount {integer}
+
+The number of tracks currently soloed across the entire set. Useful for showing a global solo indicator.
 
 #### /mixer/mute { 0 | 1 }
 
@@ -568,7 +556,7 @@ Jumps to the next cue point.
 
 #### /ack {string}
 
-Response to a `/syn` message to facilitate connection setup. The value is a string containing the device version number followed by capability flags (e.g. `52 mxr`). The `mxr` capability indicates support for the multi-track mixer.
+Response to a `/syn` message to facilitate connection setup. The value is a string containing the device version number followed by capability flags (e.g. `53 mxr`). The `mxr` capability indicates support for the multi-track mixer.
 
 #### /page/X
 
@@ -580,7 +568,7 @@ Sent when one of the tabs in the Max for Live device is clicked. `X` can be:
 
 #### /pong {string}
 
-Response to a `/ping` message to keep the network connection "warmed up". Like `/ack`, the value contains the device version and capability flags (e.g. `52 mxr`).
+Response to a `/ping` message to keep the network connection "warmed up". Like `/ack`, the value contains the device version and capability flags (e.g. `53 mxr`).
 
 #### /batch {JSON string}
 

@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2026-03-20 [v53](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v53/Knobbler4-v53.amxd) - Full-screen multi-track mixer with per-strip observers and output meters; Clip view with grid state, scene management, clip launching/recording/deleting, and color editing; Current parameter display with lock/unlock; Sidebar mixer with real-time volume/pan strings; Auto-config for streamlined setup; OSC message batching for improved network performance; Solo count reporting; Live track color sync in nav and mixer; Fix LiveAPI .id string comparison bugs that caused console errors on track/device changes; Many stability and performance improvements.
 - 2026-02-14 [v51](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v51/Knobbler4-v51.amxd) - Support join/split to/from X-Y pads; Introduce settingsDict for persistent storage; Chunked nav protocol for large Live sets (100+ tracks); Capability-based client feature negotiation via /syn and /ping.
 - 2026-02-03 [v50](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v50/Knobbler4-v50.amxd) - Add /undo and /redo OSC commands to trigger undo/redo actions in Live.
 - 2026-01-30 [v49](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v49/Knobbler4-v49.amxd) - Handle /playCuePoint message from forthcoming app release to move to a cue point and start playing.
