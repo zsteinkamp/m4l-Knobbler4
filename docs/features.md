@@ -242,7 +242,7 @@ All sliders in Knobbler respond to a double-tap by resetting the parameter to it
 
 ### Session View Clips
 
-*Coming Soon!* A full session view clip grid right on your device. Launch, record, rename, and color clips and scenes without touching your mouse. Real-time playback state, group track folding, scene management, and more.
+A full session view clip grid right on your device. Launch, record, rename, and color clips and scenes without touching your mouse. Real-time playback state, group track folding, scene management, and more.
 
 ### Multi-Track Mixer
 

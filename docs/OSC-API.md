@@ -608,4 +608,84 @@ A request for an `/ack` response to facilitate a UX feedback loop when configuri
 
 ## Clip View
 
-*Coming Soon!* The Clip View API will provide full session view clip grid control including clip launching, recording, scene management, and real-time state updates.
+The Clip View provides session view clip grid control including clip launching, recording, scene management, and real-time state updates. The device uses a windowed approach — observers are only active for the visible portion of the grid.
+
+### Tablet to Knobbler4
+
+#### /clipView {JSON array}
+
+Sets the visible window for the clip grid. The value is a JSON array `[left, top, right, bottom]` representing track and scene indices. Sending triggers observer setup for the visible range. Debounced at 250ms.
+
+#### /requestClipsScenes
+
+Requests the full scene list. Triggers a `/clips/scenes` chunked response.
+
+#### /clipLaunch {JSON array}
+
+Launch a clip: `[trackIdx, sceneIdx]`. Fires the clip slot and selects it in Live.
+
+#### /clipRecord {JSON array}
+
+Record into a clip slot: `[trackIdx, sceneIdx]`. Fires the clip slot for recording and selects it.
+
+#### /clipDelete {JSON array}
+
+Delete a clip: `[trackIdx, sceneIdx]`.
+
+#### /clipSetStopButton {JSON array}
+
+Set the stop button for a clip slot: `[trackIdx, sceneIdx, val]`.
+
+#### /clipStop {trackIdx}
+
+Stop all clips on the given track.
+
+#### /stopAll
+
+Stop all clips in the Live set.
+
+#### /sceneLaunch {sceneIdx}
+
+Launch a scene by index.
+
+#### /sceneRename {JSON array}
+
+Rename a scene: `[sceneIdx, name]`.
+
+#### /sceneColor {JSON array}
+
+Set a scene's color: `[sceneIdx, hexStr]`.
+
+#### /clipColor {JSON array}
+
+Set a clip's color: `[trackIdx, sceneIdx, hexStr]`.
+
+#### /clipsUpdate {JSON array}
+
+Bulk update clip properties. Array of `{t, sc, n?}` objects. Currently supports setting clip name.
+
+#### /captureScene
+
+Capture and insert a new scene (equivalent to Live's "Capture and Insert Scene" command).
+
+### Knobbler4 to Tablet
+
+#### /clips/grid {JSON object}
+
+Full grid snapshot: `{ left, top, clips: rows }`. Each cell is `{s, n?, c?, hsb, ps?, hc?}` where `s` is the clip state, `n` is the clip name, `c` is the color, `hsb` is has_stop_button, `ps` is playing_status (group tracks only), and `hc` is has_child_clips (group tracks only).
+
+#### /clips/update {JSON array}
+
+Batched cell state updates: `[{t, sc, s, n?, c?, hsb, ps?, hc?}]`. Sent when individual cells change state.
+
+#### /clips/scenes
+
+Sent as chunked data (`/clips/scenes/chunk`). Array of `{n, c?}` objects for all scenes, where `n` is the scene name and `c` is the optional color.
+
+#### /clips/selectedScene {integer}
+
+The index of the currently selected scene.
+
+#### /clips/trackInfo {JSON object}
+
+Track info updates. Either a full batch `{ left, tracks: [{n, c}] }` or an individual update `{ t, n?, c? }` for name or color changes.
