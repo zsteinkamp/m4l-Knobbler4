@@ -387,6 +387,8 @@ const handleSendVal = (idx: number, val: IdObserverArg) => {
 // Track change handler
 // ---------------------------------------------------------------------------
 
+let trackChangeDebounce: MaxTask = null
+
 const onTrackChange = (args: IdObserverArg) => {
   if (!state.trackObj) {
     return
@@ -401,6 +403,17 @@ const onTrackChange = (args: IdObserverArg) => {
     return
   }
   state.lastTrackId = id
+
+  if (trackChangeDebounce) {
+    trackChangeDebounce.cancel()
+  }
+  trackChangeDebounce = new Task(function () {
+    handleTrackChange(id)
+  }) as MaxTask
+  trackChangeDebounce.schedule(40)
+}
+
+function handleTrackChange(id: number) {
   state.trackLookupObj.id = id
 
   // track type

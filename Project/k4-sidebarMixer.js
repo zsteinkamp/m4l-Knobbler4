@@ -338,6 +338,7 @@ var handleSendVal = function (idx, val) {
 // ---------------------------------------------------------------------------
 // Track change handler
 // ---------------------------------------------------------------------------
+var trackChangeDebounce = null;
 var onTrackChange = function (args) {
     if (!state.trackObj) {
         return;
@@ -350,6 +351,15 @@ var onTrackChange = function (args) {
         return;
     }
     state.lastTrackId = id;
+    if (trackChangeDebounce) {
+        trackChangeDebounce.cancel();
+    }
+    trackChangeDebounce = new Task(function () {
+        handleTrackChange(id);
+    });
+    trackChangeDebounce.schedule(40);
+};
+function handleTrackChange(id) {
     state.trackLookupObj.id = id;
     // track type
     var path = state.trackLookupObj.unquotedpath;
@@ -417,7 +427,7 @@ var onTrackChange = function (args) {
     (0, utils_1.osc)('/mixer/panStr', panStr ? panStr.toString() : '');
     // sends
     updateSendsFromMixer();
-};
+}
 var onReturnsChange = function (args) {
     if (!state.returnsObj || args[0] !== 'return_tracks') {
         return;

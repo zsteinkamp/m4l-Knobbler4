@@ -88,6 +88,8 @@ function lock(val: number) {
   }
 }
 
+let paramSelectDebounce: MaxTask = null
+
 function onParamSelected() {
   if (!active || locked || !paramSelObj) return
   const paramId = parseInt(paramSelObj.id as any)
@@ -96,7 +98,14 @@ function onParamSelected() {
     return
   }
   currentParamId = paramId
-  sendAllParamInfo(paramId)
+
+  if (paramSelectDebounce) {
+    paramSelectDebounce.cancel()
+  }
+  paramSelectDebounce = new Task(function () {
+    sendAllParamInfo(currentParamId)
+  }) as MaxTask
+  paramSelectDebounce.schedule(40)
 }
 
 function sendAllParamInfo(paramId: number) {

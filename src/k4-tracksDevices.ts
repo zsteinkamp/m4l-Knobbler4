@@ -79,19 +79,25 @@ const state = {
   currTrackWatcher: null as LiveAPI,
 }
 
+let deviceChangeDebounce: MaxTask = null
+
 function onCurrDeviceChange(val: IdObserverArg) {
   if (val[0] !== 'id') {
-    //log('DEVICE_ID EARLY')
     return
   }
   const newId = cleanArr(val)[0]
   if (state.currDeviceId === newId) {
-    // same
     return
   }
   state.currDeviceId = newId
 
-  updateDeviceNav()
+  if (deviceChangeDebounce) {
+    deviceChangeDebounce.cancel()
+  }
+  deviceChangeDebounce = new Task(function () {
+    updateDeviceNav()
+  }) as MaxTask
+  deviceChangeDebounce.schedule(40)
 }
 
 function updateDeviceNav() {
@@ -224,6 +230,8 @@ function updateDeviceNav() {
   sendNavData('/nav/devices', ret)
 }
 
+let trackChangeDebounce: MaxTask = null
+
 function onCurrTrackChange(val: IdObserverArg) {
   if (val[0] !== 'id' && val[1].toString() !== 'id') {
     return
@@ -237,18 +245,24 @@ function onCurrTrackChange(val: IdObserverArg) {
   }
   state.currTrackId = newId
 
-  outlet(OUTLET_OSC, ['/nav/currTrackId', state.currTrackId])
-
-  // ensure a device is selected if one exists
-  state.api.path = 'live_set view selected_track view selected_device'
-  if (+state.api.id === 0) {
-    state.api.path = 'live_set view selected_track'
-    const devices = cleanArr(state.api.get('devices'))
-    if (devices.length > 0) {
-      state.api.path = 'live_set view'
-      state.api.call('select_device', 'id ' + devices[0])
-    }
+  if (trackChangeDebounce) {
+    trackChangeDebounce.cancel()
   }
+  trackChangeDebounce = new Task(function () {
+    outlet(OUTLET_OSC, ['/nav/currTrackId', state.currTrackId])
+
+    // ensure a device is selected if one exists
+    state.api.path = 'live_set view selected_track view selected_device'
+    if (+state.api.id === 0) {
+      state.api.path = 'live_set view selected_track'
+      const devices = cleanArr(state.api.get('devices'))
+      if (devices.length > 0) {
+        state.api.path = 'live_set view'
+        state.api.call('select_device', 'id ' + devices[0])
+      }
+    }
+  }) as MaxTask
+  trackChangeDebounce.schedule(40)
 }
 
 function init() {

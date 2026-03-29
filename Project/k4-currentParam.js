@@ -69,6 +69,7 @@ function lock(val) {
         onParamSelected();
     }
 }
+var paramSelectDebounce = null;
 function onParamSelected() {
     if (!active || locked || !paramSelObj)
         return;
@@ -78,7 +79,13 @@ function onParamSelected() {
         return;
     }
     currentParamId = paramId;
-    sendAllParamInfo(paramId);
+    if (paramSelectDebounce) {
+        paramSelectDebounce.cancel();
+    }
+    paramSelectDebounce = new Task(function () {
+        sendAllParamInfo(currentParamId);
+    });
+    paramSelectDebounce.schedule(40);
 }
 function sendAllParamInfo(paramId) {
     ensureApis();

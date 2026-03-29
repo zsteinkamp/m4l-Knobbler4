@@ -52,18 +52,23 @@ var state = {
     currTrackId: null,
     currTrackWatcher: null,
 };
+var deviceChangeDebounce = null;
 function onCurrDeviceChange(val) {
     if (val[0] !== 'id') {
-        //log('DEVICE_ID EARLY')
         return;
     }
     var newId = (0, utils_1.cleanArr)(val)[0];
     if (state.currDeviceId === newId) {
-        // same
         return;
     }
     state.currDeviceId = newId;
-    updateDeviceNav();
+    if (deviceChangeDebounce) {
+        deviceChangeDebounce.cancel();
+    }
+    deviceChangeDebounce = new Task(function () {
+        updateDeviceNav();
+    });
+    deviceChangeDebounce.schedule(40);
 }
 function updateDeviceNav() {
     //log('DEVICE ID=' + state.currDeviceId + ' TRACKID=' + state.currTrackId)
@@ -183,6 +188,7 @@ function updateDeviceNav() {
     //log('/nav/devices=' + JSON.stringify(ret))
     sendNavData('/nav/devices', ret);
 }
+var trackChangeDebounce = null;
 function onCurrTrackChange(val) {
     if (val[0] !== 'id' && val[1].toString() !== 'id') {
         return;
@@ -195,17 +201,23 @@ function onCurrTrackChange(val) {
         return;
     }
     state.currTrackId = newId;
-    outlet(consts_1.OUTLET_OSC, ['/nav/currTrackId', state.currTrackId]);
-    // ensure a device is selected if one exists
-    state.api.path = 'live_set view selected_track view selected_device';
-    if (+state.api.id === 0) {
-        state.api.path = 'live_set view selected_track';
-        var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
-        if (devices.length > 0) {
-            state.api.path = 'live_set view';
-            state.api.call('select_device', 'id ' + devices[0]);
-        }
+    if (trackChangeDebounce) {
+        trackChangeDebounce.cancel();
     }
+    trackChangeDebounce = new Task(function () {
+        outlet(consts_1.OUTLET_OSC, ['/nav/currTrackId', state.currTrackId]);
+        // ensure a device is selected if one exists
+        state.api.path = 'live_set view selected_track view selected_device';
+        if (+state.api.id === 0) {
+            state.api.path = 'live_set view selected_track';
+            var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
+            if (devices.length > 0) {
+                state.api.path = 'live_set view';
+                state.api.call('select_device', 'id ' + devices[0]);
+            }
+        }
+    });
+    trackChangeDebounce.schedule(40);
 }
 function init() {
     (0, utils_1.saveSetting)('clientVersion', '');
