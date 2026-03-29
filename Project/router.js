@@ -514,6 +514,12 @@ var ROUTER = [
     },
     {
         outlet: OUTLET_PAGE,
+        prefix: '/page/session',
+        handler: pageHandler,
+        msg: 'session',
+    },
+    {
+        outlet: OUTLET_PAGE,
         prefix: '/page/clips',
         handler: pageHandler,
         msg: 'clips',

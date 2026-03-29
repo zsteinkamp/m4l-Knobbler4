@@ -152,7 +152,7 @@ function sidebarMeters(val: number) {
 function page() {
   const pageName = arguments[0].toString()
   const wasMixerPage = state.onMixerPage
-  state.onMixerPage = pageName === 'mixer'
+  state.onMixerPage = pageName === 'mixer' || pageName === 'session'
 
   if (!state.onMixerPage && wasMixerPage) {
     if (state.metersEnabled && state.hasOutput) startMeterFlush()
