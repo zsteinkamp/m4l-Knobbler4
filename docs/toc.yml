@@ -4,6 +4,8 @@
   title: Feature Walkthrough
 - fname: setup.md
   title: Setup
+- fname: tips.md
+  title: Knobbler Tips
 - fname: troubleshooting.md
   title: Troubleshooting
 - fname: multiple-tablets.md
