@@ -23,7 +23,7 @@ Every mapping is saved with your Live Set. Pick up right where you left off, wor
 - **Toolbar** -- tap tempo, capture MIDI, transport controls, and more.
 - **Multi-device support** -- use multiple phones and tablets simultaneously with multiple Knobbler instances.
 
-Read more about all of Knobbler's features in the [Features](./features.md) page.
+Read more about all of Knobbler's features in the [Features](./features.md) page, and check out [Knobbler Tips](./tips.md) for getting the most out of it.
 
 ### How It Works
 
