@@ -8,7 +8,9 @@
     "allowUnreachableCode": true,
     "sourceMap": false,
     "lib": ["es5"],
+    "skipLibCheck": true,
     "outDir": "Project"
   },
-  "include": ["src/*.ts", "types/*.d.ts"]
+  "include": ["src/*.ts", "types/*.d.ts"],
+  "exclude": ["src/*.test.ts"]
 }
