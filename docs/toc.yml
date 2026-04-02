@@ -6,6 +6,8 @@
   title: Setup
 - fname: tips.md
   title: Knobbler Tips
+- fname: gallery.md
+  title: Gallery
 - fname: troubleshooting.md
   title: Troubleshooting
 - fname: multiple-tablets.md

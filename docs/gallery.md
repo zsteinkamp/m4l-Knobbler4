@@ -1,0 +1,51 @@
+## Gallery
+
+Knobbler in the wild — studios, stages, and setups from the community.
+
+### Session View
+
+![Session view with clips and mixer on iPad](images/gallery/session-view.jpg)
+
+The combined Session page — clips grid and multi-track mixer with real-time meters, all at your fingertips.
+
+### Clips in Action
+
+![Launching clips on iPad with Ableton in the background](images/gallery/clips-in-action.jpg)
+
+Launching and managing clips directly from the iPad, with Ableton's arrangement visible on the monitor behind.
+
+### Clip Grid
+
+![Full clip grid on iPad](images/gallery/clips-ipad.png)
+
+The full clip grid with sidebar mixer strip, scene list, and navigation panel.
+
+### Multi-Device Setup
+
+![Multiple tablets and phone running Knobbler](images/gallery/multi-device-setup.webp)
+
+Two iPads and a phone running Knobbler simultaneously — mixer on one, parameters on the other, and phone for quick access.
+
+### Mixer on Phone
+
+![Mixer view on iPhone](images/gallery/mixer-phone.jpg)
+
+The full multi-track mixer fits right in your hand.
+
+### X-Y Pads on Phone
+
+![X-Y pads on phone in landscape](images/gallery/xy-pads-phone.png)
+
+Joined X-Y pads on the Knobbler page in landscape mode — great for filter sweeps and effects control.
+
+### The Battle Station
+
+![Full studio setup with Knobbler](images/gallery/battle-station.jpg)
+
+A complete production setup — monitor, iPad, phone, and Push all working together with Knobbler tying it all together.
+
+### Arena Soundcheck
+
+![Knobbler at an arena soundcheck](images/gallery/arena-soundcheck.webp)
+
+Knobbler user JuanChis running soundcheck at an arena show.
