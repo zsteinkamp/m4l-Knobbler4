@@ -9,7 +9,17 @@ Knobbler keeps you in the creative moment by giving you fingertip access to what
 
 Every mapping is saved with your Live Set. Pick up right where you left off, work on several songs at once, each with their own ideal layout.
 
-![Knobbler in action](images/tablet-and-phone-1.jpeg)
+### People Are Saying...
+
+> It really is an exemplary piece of design that fuels, rather than distracts from, the creative process. — **steve99**
+
+> Knobbler is by far the best app I've paid for in a very long time. It brings out everything Live has to offer without requiring yet another slab of controller plastic on my desk. — **u/FaderJockey2600**
+
+[More testimonials →](./testimonials.md)
+
+<img src="images/gallery/session-view.jpg" alt="Session view on iPad" style="max-height: 200px"> <img src="images/gallery/mixer-phone.jpg" alt="Mixer on phone" style="max-height: 200px">
+
+[More photos →](./gallery.md)
 
 ### Features
 
