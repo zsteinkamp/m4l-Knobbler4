@@ -56,9 +56,9 @@ npx prettier --write src/**/*.ts
 
 ### TypeScript → Max/MSP Compilation Pipeline
 
-TypeScript source files in `src/` compile to JavaScript in `Project/` directory. The compiled `.js` files are loaded by `[v8]` objects in Max patches. TypeScript provides type safety and IDE support while Max's V8 JavaScript engine executes the compiled CommonJS output.
+TypeScript source files in `src/` compile to JavaScript in `Project/` directory. The compiled `.js` files are loaded by `[js]` objects in Max patches. TypeScript provides type safety and IDE support while Max's JavaScript engine executes the compiled CommonJS output.
 
-**Key compilation setting**: `tsconfig.json` targets ES2022 with CommonJS modules, output to `Project/` directory.
+**Key compilation setting**: `tsconfig.json` targets ES5 with CommonJS modules, output to `Project/` directory.
 
 ### Core Module Responsibilities
 
@@ -80,7 +80,7 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 
 **`knobbler4.ts`** - Main entry point wrapper
 
-- Sets up Max [v8] object with 1 inlet and 2 outlets
+- Sets up Max [js] object with 1 inlet and 2 outlets
 - Delegates all operations to `knobblerCore`
 - Minimal glue layer between Max and core functionality
 
@@ -157,7 +157,7 @@ Tablet (OSC) → [udpreceive] → router.js (dispatch by prefix)
 2. **LiveAPI Observer Pattern**: Extensive use of Ableton LiveAPI observers to watch for changes and push updates to controller in real-time
 3. **32-Slot Parallel Arrays**: Core parameter mapping uses indexed parallel arrays for efficient slot management
 4. **Debouncing Strategy**: Multiple debouncing approaches prevent infinite loops when values change from OSC input vs. direct manipulation in Live
-5. **Module Export Pattern**: Entry-point TypeScript files define `var module: any = { exports: {} }` before imports (so [v8]'s `require()` can find `module`), and use `export = {}` at the bottom to suppress `Object.defineProperty(exports, ...)` boilerplate
+5. **Module Export Pattern**: TypeScript files use `const module = {}; export = {}` pattern to ensure valid CommonJS for Max's JavaScript engine
 
 ## OSC Protocol
 

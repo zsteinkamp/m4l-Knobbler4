@@ -1,6 +1,3 @@
-// [v8] entry points need `module` defined before any require() calls
-var module: any = { exports: {} }
-
 import { cleanArr, detach, dequote, logFactory, osc, sendChunkedData } from './utils'
 import config from './config'
 import {
@@ -1018,7 +1015,7 @@ function clipLaunch(jsonStr: string) {
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
-  scratchApi.call('fire')
+  scratchApi.call('fire', null)
   selectClipSlot(trackIdx, sceneIdx)
 }
 
@@ -1032,7 +1029,7 @@ function clipRecord(jsonStr: string) {
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
-  scratchApi.call('fire')
+  scratchApi.call('fire', null)
   selectClipSlot(trackIdx, sceneIdx)
 }
 
@@ -1046,7 +1043,7 @@ function clipDelete(jsonStr: string) {
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
-  scratchApi.call('delete_clip')
+  scratchApi.call('delete_clip', null)
 }
 
 function clipSetStopButton(jsonStr: string) {
@@ -1069,13 +1066,13 @@ function clipStop(trackIdx: number) {
   if (idx < 0 || idx >= trackPaths.length) return
 
   scratchApi.path = trackPaths[idx]
-  scratchApi.call('stop_all_clips')
+  scratchApi.call('stop_all_clips', null)
 }
 
 function stopAll() {
   ensureApis()
   scratchApi.path = 'live_set'
-  scratchApi.call('stop_all_clips')
+  scratchApi.call('stop_all_clips', null)
 }
 
 function sceneLaunch(sceneIdx: number) {
@@ -1084,7 +1081,7 @@ function sceneLaunch(sceneIdx: number) {
   if (idx < 0 || idx >= totalScenes) return
 
   scratchApi.path = 'live_set scenes ' + idx
-  scratchApi.call('fire')
+  scratchApi.call('fire', null)
 }
 
 function sceneRename(jsonStr: string) {
@@ -1147,9 +1144,12 @@ function clipsUpdate(jsonStr: string) {
 function captureScene() {
   ensureApis()
   scratchApi.path = 'live_set'
-  scratchApi.call('capture_and_insert_scene')
+  scratchApi.call('capture_and_insert_scene', null)
 }
 
 log('reloaded k4-clipView')
 
+// NOTE: This section must appear in any .ts file that is directly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
 export = {}

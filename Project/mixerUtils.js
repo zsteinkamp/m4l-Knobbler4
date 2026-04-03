@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRecordStatus = exports.disableTrackInput = exports.disableArm = exports.enableArm = exports.toggleXFade = exports.handleExclusiveArm = exports.handleExclusiveSolo = void 0;
-const utils_1 = require("./utils");
-const toggleInput_1 = require("./toggleInput");
+var utils_1 = require("./utils");
+var toggleInput_1 = require("./toggleInput");
 Object.defineProperty(exports, "disableTrackInput", { enumerable: true, get: function () { return toggleInput_1.disableTrackInput; } });
 /**
  * If exclusive_solo is enabled, unsolo all tracks except `trackId`.
@@ -11,9 +11,10 @@ Object.defineProperty(exports, "disableTrackInput", { enumerable: true, get: fun
 function handleExclusiveSolo(trackId, lookupApi) {
     lookupApi.path = 'live_set';
     if (parseInt(lookupApi.get('exclusive_solo')) === 1) {
-        const tracks = (0, utils_1.cleanArr)(lookupApi.get('tracks'));
-        const returns = (0, utils_1.cleanArr)(lookupApi.get('return_tracks'));
-        for (const tid of tracks.concat(returns)) {
+        var tracks = (0, utils_1.cleanArr)(lookupApi.get('tracks'));
+        var returns = (0, utils_1.cleanArr)(lookupApi.get('return_tracks'));
+        for (var _i = 0, _a = tracks.concat(returns); _i < _a.length; _i++) {
+            var tid = _a[_i];
             if (tid === trackId)
                 continue;
             lookupApi.id = tid;
@@ -29,8 +30,9 @@ exports.handleExclusiveSolo = handleExclusiveSolo;
 function handleExclusiveArm(trackId, lookupApi) {
     lookupApi.path = 'live_set';
     if (parseInt(lookupApi.get('exclusive_arm')) === 1) {
-        const tracks = (0, utils_1.cleanArr)(lookupApi.get('tracks'));
-        for (const tid of tracks) {
+        var tracks = (0, utils_1.cleanArr)(lookupApi.get('tracks'));
+        for (var _i = 0, tracks_1 = tracks; _i < tracks_1.length; _i++) {
+            var tid = tracks_1[_i];
             if (tid === trackId)
                 continue;
             lookupApi.id = tid;
@@ -47,7 +49,7 @@ exports.handleExclusiveArm = handleExclusiveArm;
 function toggleXFade(mixerApi, side) {
     if (!mixerApi || +mixerApi.id === 0)
         return;
-    const curr = parseInt(mixerApi.get('crossfade_assign'));
+    var curr = parseInt(mixerApi.get('crossfade_assign'));
     mixerApi.set('crossfade_assign', curr === side ? 1 : side);
 }
 exports.toggleXFade = toggleXFade;
@@ -71,8 +73,8 @@ exports.disableArm = disableArm;
  * Returns { armStatus: number, inputEnabled: boolean } for a track.
  */
 function getRecordStatus(trackApi) {
-    const armStatus = parseInt(trackApi.get('can_be_armed')) && parseInt(trackApi.get('arm'));
-    const trackInputStatus = (0, toggleInput_1.getTrackInputStatus)(trackApi);
+    var armStatus = parseInt(trackApi.get('can_be_armed')) && parseInt(trackApi.get('arm'));
+    var trackInputStatus = (0, toggleInput_1.getTrackInputStatus)(trackApi);
     return {
         armStatus: armStatus ? 1 : 0,
         inputEnabled: !!(trackInputStatus && trackInputStatus.inputEnabled),

@@ -672,6 +672,8 @@ function val(slot: number, val: number) {
   }
 }
 
+const module = {}
+
 export {
   bkMap,
   clearCustomName,

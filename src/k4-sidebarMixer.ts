@@ -1,6 +1,3 @@
-// [v8] entry points need `module` defined before any require() calls
-var module: any = { exports: {} }
-
 import { cleanArr, colorToString, loadSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
 import config from './config'
 import {
@@ -608,4 +605,7 @@ function init() {
 
 log('reloaded k4-sidebarMixer')
 
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
 export = {}

@@ -1,62 +1,60 @@
 "use strict";
-// [v8] entry points need `module` defined before any require() calls
-var module = { exports: {} };
-const utils_1 = require("./utils");
-const config_1 = require("./config");
-const consts_1 = require("./consts");
+var utils_1 = require("./utils");
+var config_1 = require("./config");
+var consts_1 = require("./consts");
 autowatch = 1;
 inlets = 1;
 outlets = 1;
-const log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Messages from router');
 setoutletassist(consts_1.OUTLET_OSC, 'OSC messages to [udpsend]');
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const CLIP_EMPTY = 0;
-const CLIP_STOPPED = 1;
-const CLIP_PLAYING = 2;
-const CLIP_TRIGGERED = 3;
-const CLIP_RECORDING = 4;
-const CLIP_ARMED = 5;
-const OBSERVER_BUFFER = 2;
-const VIEW_DEBOUNCE_MS = 250;
-const UPDATE_FLUSH_MS = 50;
+var CLIP_EMPTY = 0;
+var CLIP_STOPPED = 1;
+var CLIP_PLAYING = 2;
+var CLIP_TRIGGERED = 3;
+var CLIP_RECORDING = 4;
+var CLIP_ARMED = 5;
+var OBSERVER_BUFFER = 2;
+var VIEW_DEBOUNCE_MS = 250;
+var UPDATE_FLUSH_MS = 50;
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
-let scratchApi = null;
-let cellInitApi = null; // separate scratchpad for createCellObservers (avoids re-entrancy)
-let viewApi = null;
+var scratchApi = null;
+var cellInitApi = null; // separate scratchpad for createCellObservers (avoids re-entrancy)
+var viewApi = null;
 // Track IDs in display order (visible_tracks, no return/master)
-let trackIds = [];
-let trackPaths = [];
-let trackIsGroup = [];
+var trackIds = [];
+var trackPaths = [];
+var trackIsGroup = [];
 // Visible window (track and scene ranges)
-let leftTrack = -1;
-let topScene = -1;
-let rightTrack = -1; // exclusive
-let bottomScene = -1; // exclusive
-let totalScenes = 0;
-let settingUp = false; // guard against watcher callbacks during setupWindow
+var leftTrack = -1;
+var topScene = -1;
+var rightTrack = -1; // exclusive
+var bottomScene = -1; // exclusive
+var totalScenes = 0;
+var settingUp = false; // guard against watcher callbacks during setupWindow
 // Observer management
-let cellObservers = {}; // key: "col,row"
-let trackPlayObservers = {}; // key: trackIdx
-let sceneObservers = {}; // key: sceneIndex
-let sceneCache = []; // cached scene name/color for all scenes
+var cellObservers = {}; // key: "col,row"
+var trackPlayObservers = {}; // key: trackIdx
+var sceneObservers = {}; // key: sceneIndex
+var sceneCache = []; // cached scene name/color for all scenes
 // Debounce
-let viewTask = null;
-let sceneInfoTask = null;
+var viewTask = null;
+var sceneInfoTask = null;
 // Lazy observer creation
-let pendingObserverKeys = [];
-let observerBatchTask = null;
-const OBSERVER_BATCH_SIZE = 10;
+var pendingObserverKeys = [];
+var observerBatchTask = null;
+var OBSERVER_BATCH_SIZE = 10;
 // Update batching
-let pendingUpdates = [];
-let updateFlushTask = null;
+var pendingUpdates = [];
+var updateFlushTask = null;
 // Watchers
-let sceneCountWatcher = null;
-let selectedSceneApi = null;
+var sceneCountWatcher = null;
+var selectedSceneApi = null;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -84,7 +82,7 @@ function colorHex(raw) {
 }
 // Derive cell state from has_clip + track-level playing/fired/arm info
 function deriveCellState(hasClip, trackIdx, sceneIdx) {
-    const tObs = trackPlayObservers[trackIdx];
+    var tObs = trackPlayObservers[trackIdx];
     if (!hasClip) {
         return tObs && tObs.armed ? CLIP_ARMED : CLIP_EMPTY;
     }
@@ -100,14 +98,14 @@ function deriveCellState(hasClip, trackIdx, sceneIdx) {
 // Track List
 // ---------------------------------------------------------------------------
 function visibleTracks() {
-    const d = new Dict('visibleTracksDict');
-    const raw = d.get('tracks');
-    const tracks = JSON.parse(raw.toString());
+    var d = new Dict('visibleTracksDict');
+    var raw = d.get('tracks');
+    var tracks = JSON.parse(raw.toString());
     trackIds = [];
     trackPaths = [];
     trackIsGroup = [];
-    for (let i = 0; i < tracks.length; i++) {
-        const t = tracks[i];
+    for (var i = 0; i < tracks.length; i++) {
+        var t = tracks[i];
         if (t.type === consts_1.TYPE_RETURN || t.type === consts_1.TYPE_MAIN)
             continue;
         trackIds.push(t.id);
@@ -125,7 +123,7 @@ function visibleTracks() {
 // ---------------------------------------------------------------------------
 function querySceneCount() {
     scratchApi.path = 'live_set';
-    const sceneIds = (0, utils_1.cleanArr)(scratchApi.get('scenes'));
+    var sceneIds = (0, utils_1.cleanArr)(scratchApi.get('scenes'));
     return sceneIds.length;
 }
 function onSceneCountChange(args) {
@@ -134,7 +132,7 @@ function onSceneCountChange(args) {
     if (leftTrack < 0 || settingUp)
         return;
     ensureApis();
-    const newCount = querySceneCount();
+    var newCount = querySceneCount();
     if (newCount !== totalScenes) {
         totalScenes = newCount;
         sceneCache = []; // invalidate cache
@@ -154,17 +152,17 @@ function onSelectedSceneChange() {
 function sendSelectedScene() {
     if (!selectedSceneApi)
         return;
-    const path = selectedSceneApi.unquotedpath;
-    const match = path.match(/scenes (\d+)/);
-    const idx = match ? parseInt(match[1]) : -1;
+    var path = selectedSceneApi.unquotedpath;
+    var match = path.match(/scenes (\d+)/);
+    var idx = match ? parseInt(match[1]) : -1;
     (0, utils_1.osc)('/clips/selectedScene', idx);
 }
 // ---------------------------------------------------------------------------
 // Track Play Observers (playing_slot_index + fired_slot_index per track)
 // ---------------------------------------------------------------------------
 function createTrackPlayObservers(trackIdx) {
-    const trackPath = trackPaths[trackIdx];
-    const tObs = {
+    var trackPath = trackPaths[trackIdx];
+    var tObs = {
         trackIdx: trackIdx,
         playingSlotApi: null,
         firedSlotApi: null,
@@ -179,7 +177,7 @@ function createTrackPlayObservers(trackIdx) {
     cellInitApi.path = trackPath;
     tObs.playingSlot = parseInt(cellInitApi.get('playing_slot_index').toString());
     tObs.firedSlot = parseInt(cellInitApi.get('fired_slot_index').toString());
-    const canBeArmed = !!parseInt(cellInitApi.get('can_be_armed').toString());
+    var canBeArmed = !!parseInt(cellInitApi.get('can_be_armed').toString());
     if (canBeArmed) {
         tObs.armed = !!parseInt(cellInitApi.get('arm').toString());
     }
@@ -189,8 +187,8 @@ function createTrackPlayObservers(trackIdx) {
             return;
         if (args[0] !== 'playing_slot_index')
             return;
-        const newSlot = parseInt(args[1]);
-        const oldSlot = tObs.playingSlot;
+        var newSlot = parseInt(args[1]);
+        var oldSlot = tObs.playingSlot;
         tObs.playingSlot = newSlot;
         // Update old slot (was playing, now stopped or empty)
         if (oldSlot >= 0)
@@ -206,8 +204,8 @@ function createTrackPlayObservers(trackIdx) {
             return;
         if (args[0] !== 'fired_slot_index')
             return;
-        const newSlot = parseInt(args[1]);
-        const oldSlot = tObs.firedSlot;
+        var newSlot = parseInt(args[1]);
+        var oldSlot = tObs.firedSlot;
         tObs.firedSlot = newSlot;
         // Update old triggered slot (no longer triggered)
         if (oldSlot >= 0)
@@ -224,7 +222,7 @@ function createTrackPlayObservers(trackIdx) {
                 return;
             if (args[0] !== 'arm')
                 return;
-            const newArmed = !!parseInt(args[1]);
+            var newArmed = !!parseInt(args[1]);
             if (newArmed === tObs.armed)
                 return;
             tObs.armed = newArmed;
@@ -276,27 +274,27 @@ function teardownTrackPlayObservers(tObs) {
     }
 }
 function teardownAllTrackPlay() {
-    for (const key in trackPlayObservers) {
+    for (var key in trackPlayObservers) {
         teardownTrackPlayObservers(trackPlayObservers[key]);
     }
     trackPlayObservers = {};
 }
 // Called when arm changes — update all cells on this track in the observer window
 function updateAllCellsOnTrack(trackIdx) {
-    const obsTop = Math.max(0, topScene - OBSERVER_BUFFER);
-    const obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER);
-    for (let row = obsTop; row < obsBottom; row++) {
+    var obsTop = Math.max(0, topScene - OBSERVER_BUFFER);
+    var obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER);
+    for (var row = obsTop; row < obsBottom; row++) {
         updateCellFromTrack(trackIdx, row);
     }
 }
 // Called when playing_slot_index or fired_slot_index changes on a track
 function updateCellFromTrack(trackIdx, sceneIdx) {
-    const key = cellKey(trackIdx, sceneIdx);
-    const obs = cellObservers[key];
+    var key = cellKey(trackIdx, sceneIdx);
+    var obs = cellObservers[key];
     if (!obs)
         return;
-    const newState = deriveCellState(obs.hasClip, trackIdx, sceneIdx);
-    const oldState = obs.cell.state;
+    var newState = deriveCellState(obs.hasClip, trackIdx, sceneIdx);
+    var oldState = obs.cell.state;
     obs.cell.state = newState;
     if (newState !== oldState && isVisible(trackIdx, sceneIdx)) {
         queueFullUpdate(obs);
@@ -307,9 +305,9 @@ function updateCellFromTrack(trackIdx, sceneIdx) {
 // ---------------------------------------------------------------------------
 // Read initial cell state using reused scratchpad — no LiveAPI objects created
 function readCellState(col, row) {
-    const slotPath = trackPaths[col] + ' clip_slots ' + row;
-    const cell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 };
-    const obs = {
+    var slotPath = trackPaths[col] + ' clip_slots ' + row;
+    var cell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 };
+    var obs = {
         trackIdx: col,
         sceneIdx: row,
         hasClip: false,
@@ -323,7 +321,7 @@ function readCellState(col, row) {
         cell: cell,
     };
     cellInitApi.path = slotPath;
-    const hasClip = !!parseInt(cellInitApi.get('has_clip').toString());
+    var hasClip = !!parseInt(cellInitApi.get('has_clip').toString());
     obs.hasClip = hasClip;
     cell.state = deriveCellState(hasClip, col, row);
     cell.hsb = parseInt(cellInitApi.get('has_stop_button').toString()) ? 1 : 0;
@@ -346,14 +344,14 @@ function readCellState(col, row) {
 function attachCellObservers(obs) {
     if (obs.hasClipApi)
         return; // already attached
-    const slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx;
+    var slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx;
     // has_stop_button
     obs.hasStopButtonApi = new LiveAPI(function (args) {
         if (!obs.hasStopButtonApi)
             return;
         if (args[0] !== 'has_stop_button')
             return;
-        const newHsb = parseInt(args[1]) ? 1 : 0;
+        var newHsb = parseInt(args[1]) ? 1 : 0;
         if (newHsb === obs.cell.hsb)
             return;
         obs.cell.hsb = newHsb;
@@ -369,7 +367,7 @@ function attachCellObservers(obs) {
                 return;
             if (args[0] !== 'playing_status')
                 return;
-            const newPs = parseInt(args[1]) || 0;
+            var newPs = parseInt(args[1]) || 0;
             if (newPs === obs.cell.ps)
                 return;
             obs.cell.ps = newPs;
@@ -383,7 +381,7 @@ function attachCellObservers(obs) {
                 return;
             if (args[0] !== 'controls_other_clips')
                 return;
-            const newHc = parseInt(args[1]) ? 1 : 0;
+            var newHc = parseInt(args[1]) ? 1 : 0;
             if (newHc === obs.cell.hc)
                 return;
             obs.cell.hc = newHc;
@@ -399,7 +397,7 @@ function attachCellObservers(obs) {
             return;
         if (args[0] !== 'has_clip')
             return;
-        const newHasClip = !!parseInt(args[1]);
+        var newHasClip = !!parseInt(args[1]);
         if (newHasClip === obs.hasClip)
             return;
         obs.hasClip = newHasClip;
@@ -411,8 +409,8 @@ function attachCellObservers(obs) {
             obs.cell.name = '';
             obs.cell.color = '';
         }
-        const newState = deriveCellState(newHasClip, obs.trackIdx, obs.sceneIdx);
-        const oldState = obs.cell.state;
+        var newState = deriveCellState(newHasClip, obs.trackIdx, obs.sceneIdx);
+        var oldState = obs.cell.state;
         obs.cell.state = newState;
         if (newState !== oldState && isVisible(obs.trackIdx, obs.sceneIdx)) {
             queueFullUpdate(obs);
@@ -444,8 +442,8 @@ function teardownCellObservers(obs) {
     teardownClipObserver(obs);
 }
 function setupClipObserver(obs) {
-    const slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx;
-    const clipPath = slotPath + ' clip';
+    var slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx;
+    var clipPath = slotPath + ' clip';
     // Read clip info via cellInitApi (not scratchApi — this can be called from observer callbacks)
     cellInitApi.path = clipPath;
     obs.cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
@@ -476,7 +474,7 @@ function setupClipObserver(obs) {
                 return;
             if (args[0] !== 'is_recording')
                 return;
-            const recording = !!parseInt(args[1]);
+            var recording = !!parseInt(args[1]);
             if (recording) {
                 obs.cell.state = CLIP_RECORDING;
             }
@@ -535,10 +533,10 @@ function scheduleObserverBatch() {
     observerBatchTask.schedule(0);
 }
 function processObserverBatch() {
-    let count = 0;
+    var count = 0;
     while (pendingObserverKeys.length > 0 && count < OBSERVER_BATCH_SIZE) {
-        const key = pendingObserverKeys.shift();
-        const obs = cellObservers[key];
+        var key = pendingObserverKeys.shift();
+        var obs = cellObservers[key];
         if (obs) {
             attachCellObservers(obs);
         }
@@ -552,7 +550,7 @@ function processObserverBatch() {
 // State update & batching
 // ---------------------------------------------------------------------------
 function queueFullUpdate(obs) {
-    const entry = { t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state };
+    var entry = { t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state };
     if (obs.cell.name)
         entry.n = obs.cell.name;
     if (obs.cell.color)
@@ -582,11 +580,11 @@ function flushUpdates() {
 // Scene Observer Creation / Teardown
 // ---------------------------------------------------------------------------
 function createSceneObserver(sceneIdx) {
-    const scenePath = 'live_set scenes ' + sceneIdx;
+    var scenePath = 'live_set scenes ' + sceneIdx;
     cellInitApi.path = scenePath;
-    const name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
-    const color = colorHex(cellInitApi.get('color'));
-    const info = {
+    var name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
+    var color = colorHex(cellInitApi.get('color'));
+    var info = {
         sceneIdx: sceneIdx,
         nameApi: null,
         colorApi: null,
@@ -627,13 +625,13 @@ function teardownSceneObserver(info) {
 // Teardown helpers
 // ---------------------------------------------------------------------------
 function teardownAllCells() {
-    for (const key in cellObservers) {
+    for (var key in cellObservers) {
         teardownCellObservers(cellObservers[key]);
     }
     cellObservers = {};
 }
 function teardownAllScenes() {
-    for (const key in sceneObservers) {
+    for (var key in sceneObservers) {
         teardownSceneObserver(sceneObservers[parseInt(key)]);
     }
     sceneObservers = {};
@@ -656,44 +654,44 @@ function teardownAll() {
 function applyWindow() {
     if (leftTrack < 0 || topScene < 0)
         return;
-    const obsLeft = Math.max(0, leftTrack - OBSERVER_BUFFER);
-    const obsRight = Math.min(trackIds.length, rightTrack + OBSERVER_BUFFER);
-    const obsTop = Math.max(0, topScene - OBSERVER_BUFFER);
-    const obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER);
+    var obsLeft = Math.max(0, leftTrack - OBSERVER_BUFFER);
+    var obsRight = Math.min(trackIds.length, rightTrack + OBSERVER_BUFFER);
+    var obsTop = Math.max(0, topScene - OBSERVER_BUFFER);
+    var obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER);
     // --- Track play observers (one per track in observer window) ---
-    const newTrackSet = {};
-    for (let col = obsLeft; col < obsRight; col++) {
+    var newTrackSet = {};
+    for (var col = obsLeft; col < obsRight; col++) {
         newTrackSet[col] = true;
     }
     // Remove old
-    for (const key in trackPlayObservers) {
-        const idx = parseInt(key);
+    for (var key in trackPlayObservers) {
+        var idx = parseInt(key);
         if (!newTrackSet[idx]) {
             teardownTrackPlayObservers(trackPlayObservers[idx]);
             delete trackPlayObservers[idx];
         }
     }
     // Add new — create BEFORE cell observers so deriveCellState can use them
-    for (let col = obsLeft; col < obsRight; col++) {
+    for (var col = obsLeft; col < obsRight; col++) {
         if (!trackPlayObservers[col]) {
             trackPlayObservers[col] = createTrackPlayObservers(col);
         }
     }
     // --- Scene observers (visible window + buffer only) ---
-    const newSceneSet = {};
-    for (let s = obsTop; s < obsBottom; s++) {
+    var newSceneSet = {};
+    for (var s = obsTop; s < obsBottom; s++) {
         newSceneSet[s] = true;
     }
     // Remove old
-    for (const key in sceneObservers) {
-        const idx = parseInt(key);
+    for (var key in sceneObservers) {
+        var idx = parseInt(key);
         if (!newSceneSet[idx]) {
             teardownSceneObserver(sceneObservers[idx]);
             delete sceneObservers[idx];
         }
     }
     // Add new
-    for (let s = obsTop; s < obsBottom; s++) {
+    for (var s = obsTop; s < obsBottom; s++) {
         if (!sceneObservers[s]) {
             sceneObservers[s] = createSceneObserver(s);
         }
@@ -703,23 +701,23 @@ function applyWindow() {
     if (observerBatchTask)
         observerBatchTask.cancel();
     pendingObserverKeys = [];
-    const newCellSet = {};
-    for (let col = obsLeft; col < obsRight; col++) {
-        for (let row = obsTop; row < obsBottom; row++) {
+    var newCellSet = {};
+    for (var col = obsLeft; col < obsRight; col++) {
+        for (var row = obsTop; row < obsBottom; row++) {
             newCellSet[cellKey(col, row)] = true;
         }
     }
     // Remove old
-    for (const key in cellObservers) {
+    for (var key in cellObservers) {
         if (!newCellSet[key]) {
             teardownCellObservers(cellObservers[key]);
             delete cellObservers[key];
         }
     }
     // Read initial state for new cells (fast — no LiveAPI objects created)
-    for (let col = obsLeft; col < obsRight; col++) {
-        for (let row = obsTop; row < obsBottom; row++) {
-            const key = cellKey(col, row);
+    for (var col = obsLeft; col < obsRight; col++) {
+        for (var row = obsTop; row < obsBottom; row++) {
+            var key = cellKey(col, row);
             if (!cellObservers[key]) {
                 cellObservers[key] = readCellState(col, row);
                 pendingObserverKeys.push(key);
@@ -742,15 +740,15 @@ function applyWindow() {
 function sendFullGrid() {
     if (leftTrack < 0 || topScene < 0)
         return;
-    const visBottom = Math.min(bottomScene, totalScenes);
-    const rows = [];
-    for (let row = topScene; row < visBottom; row++) {
-        const rowData = [];
-        for (let col = leftTrack; col < rightTrack; col++) {
-            const key = cellKey(col, row);
-            const obs = cellObservers[key];
+    var visBottom = Math.min(bottomScene, totalScenes);
+    var rows = [];
+    for (var row = topScene; row < visBottom; row++) {
+        var rowData = [];
+        for (var col = leftTrack; col < rightTrack; col++) {
+            var key = cellKey(col, row);
+            var obs = cellObservers[key];
             if (obs) {
-                const entry = { s: obs.cell.state };
+                var entry = { s: obs.cell.state };
                 if (obs.cell.name)
                     entry.n = obs.cell.name;
                 if (obs.cell.color)
@@ -773,8 +771,8 @@ function sendFullGrid() {
 function sendTrackInfo() {
     if (leftTrack < 0)
         return;
-    const tracks = [];
-    for (let col = leftTrack; col < rightTrack; col++) {
+    var tracks = [];
+    for (var col = leftTrack; col < rightTrack; col++) {
         if (col < trackPaths.length) {
             cellInitApi.path = trackPaths[col];
             tracks.push({
@@ -794,7 +792,7 @@ function scheduleSceneInfo() {
 }
 function buildSceneCache() {
     sceneCache = [];
-    for (let row = 0; row < totalScenes; row++) {
+    for (var row = 0; row < totalScenes; row++) {
         cellInitApi.path = 'live_set scenes ' + row;
         sceneCache.push({
             n: (0, utils_1.dequote)(cellInitApi.get('name').toString()),
@@ -809,13 +807,13 @@ function sendSceneInfo() {
     if (sceneCache.length !== totalScenes) {
         buildSceneCache();
     }
-    const scenes = [];
-    for (let row = 0; row < totalScenes; row++) {
+    var scenes = [];
+    for (var row = 0; row < totalScenes; row++) {
         // Use observer data if available, otherwise cached data
-        const info = sceneObservers[row];
-        const name = info ? info.name : sceneCache[row].n;
-        const color = info ? info.color : sceneCache[row].c;
-        const scene = { n: name };
+        var info = sceneObservers[row];
+        var name = info ? info.name : sceneCache[row].n;
+        var color = info ? info.color : sceneCache[row].c;
+        var scene = { n: name };
         if (color && color !== '000000')
             scene.c = color;
         scenes.push(scene);
@@ -856,11 +854,11 @@ function requestClipsScenes() {
     sendSceneInfo();
 }
 function clipView(jsonStr) {
-    const parsed = JSON.parse(jsonStr.toString());
-    const left = parseInt(parsed[0].toString());
-    const top = parseInt(parsed[1].toString());
-    const right = parseInt(parsed[2].toString());
-    const bottom = parseInt(parsed[3].toString());
+    var parsed = JSON.parse(jsonStr.toString());
+    var left = parseInt(parsed[0].toString());
+    var top = parseInt(parsed[1].toString());
+    var right = parseInt(parsed[2].toString());
+    var bottom = parseInt(parsed[3].toString());
     if (left === right || top === bottom) {
         // Zero-size window — don't teardown observers so actions still work
         // when the user returns to the clips page
@@ -885,48 +883,48 @@ function clipView(jsonStr) {
 // ---------------------------------------------------------------------------
 function clipLaunch(jsonStr) {
     ensureApis();
-    const parsed = JSON.parse(jsonStr.toString());
-    const trackIdx = parseInt(parsed[0].toString());
-    const sceneIdx = parseInt(parsed[1].toString());
+    var parsed = JSON.parse(jsonStr.toString());
+    var trackIdx = parseInt(parsed[0].toString());
+    var sceneIdx = parseInt(parsed[1].toString());
     if (trackIdx < 0 || trackIdx >= trackPaths.length)
         return;
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
-    scratchApi.call('fire');
+    scratchApi.call('fire', null);
     selectClipSlot(trackIdx, sceneIdx);
 }
 function clipRecord(jsonStr) {
     ensureApis();
-    const parsed = JSON.parse(jsonStr.toString());
-    const trackIdx = parseInt(parsed[0].toString());
-    const sceneIdx = parseInt(parsed[1].toString());
+    var parsed = JSON.parse(jsonStr.toString());
+    var trackIdx = parseInt(parsed[0].toString());
+    var sceneIdx = parseInt(parsed[1].toString());
     if (trackIdx < 0 || trackIdx >= trackPaths.length)
         return;
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
-    scratchApi.call('fire');
+    scratchApi.call('fire', null);
     selectClipSlot(trackIdx, sceneIdx);
 }
 function clipDelete(jsonStr) {
     ensureApis();
-    const parsed = JSON.parse(jsonStr.toString());
-    const trackIdx = parseInt(parsed[0].toString());
-    const sceneIdx = parseInt(parsed[1].toString());
+    var parsed = JSON.parse(jsonStr.toString());
+    var trackIdx = parseInt(parsed[0].toString());
+    var sceneIdx = parseInt(parsed[1].toString());
     if (trackIdx < 0 || trackIdx >= trackPaths.length)
         return;
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
-    scratchApi.call('delete_clip');
+    scratchApi.call('delete_clip', null);
 }
 function clipSetStopButton(jsonStr) {
     ensureApis();
-    const parsed = JSON.parse(jsonStr.toString());
-    const trackIdx = parseInt(parsed[0].toString());
-    const sceneIdx = parseInt(parsed[1].toString());
-    const val = parseInt(parsed[2].toString());
+    var parsed = JSON.parse(jsonStr.toString());
+    var trackIdx = parseInt(parsed[0].toString());
+    var sceneIdx = parseInt(parsed[1].toString());
+    var val = parseInt(parsed[2].toString());
     if (trackIdx < 0 || trackIdx >= trackPaths.length)
         return;
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
@@ -936,30 +934,30 @@ function clipSetStopButton(jsonStr) {
 }
 function clipStop(trackIdx) {
     ensureApis();
-    const idx = parseInt(trackIdx.toString());
+    var idx = parseInt(trackIdx.toString());
     if (idx < 0 || idx >= trackPaths.length)
         return;
     scratchApi.path = trackPaths[idx];
-    scratchApi.call('stop_all_clips');
+    scratchApi.call('stop_all_clips', null);
 }
 function stopAll() {
     ensureApis();
     scratchApi.path = 'live_set';
-    scratchApi.call('stop_all_clips');
+    scratchApi.call('stop_all_clips', null);
 }
 function sceneLaunch(sceneIdx) {
     ensureApis();
-    const idx = parseInt(sceneIdx.toString());
+    var idx = parseInt(sceneIdx.toString());
     if (idx < 0 || idx >= totalScenes)
         return;
     scratchApi.path = 'live_set scenes ' + idx;
-    scratchApi.call('fire');
+    scratchApi.call('fire', null);
 }
 function sceneRename(jsonStr) {
     ensureApis();
-    const parsed = JSON.parse(jsonStr.toString());
-    const idx = parseInt(parsed[0].toString());
-    const name = parsed[1].toString();
+    var parsed = JSON.parse(jsonStr.toString());
+    var idx = parseInt(parsed[0].toString());
+    var name = parsed[1].toString();
     if (idx < 0 || idx >= totalScenes)
         return;
     scratchApi.path = 'live_set scenes ' + idx;
@@ -967,10 +965,10 @@ function sceneRename(jsonStr) {
 }
 function clipColor(jsonStr) {
     ensureApis();
-    const parsed = JSON.parse(jsonStr.toString());
-    const trackIdx = parseInt(parsed[0].toString());
-    const sceneIdx = parseInt(parsed[1].toString());
-    const hexStr = parsed[2].toString();
+    var parsed = JSON.parse(jsonStr.toString());
+    var trackIdx = parseInt(parsed[0].toString());
+    var sceneIdx = parseInt(parsed[1].toString());
+    var hexStr = parsed[2].toString();
     if (trackIdx < 0 || trackIdx >= trackPaths.length)
         return;
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
@@ -980,9 +978,9 @@ function clipColor(jsonStr) {
 }
 function sceneColor(jsonStr) {
     ensureApis();
-    const parsed = JSON.parse(jsonStr.toString());
-    const idx = parseInt(parsed[0].toString());
-    const hexStr = parsed[1].toString();
+    var parsed = JSON.parse(jsonStr.toString());
+    var idx = parseInt(parsed[0].toString());
+    var hexStr = parsed[1].toString();
     if (idx < 0 || idx >= totalScenes)
         return;
     scratchApi.path = 'live_set scenes ' + idx;
@@ -990,13 +988,13 @@ function sceneColor(jsonStr) {
 }
 function clipsUpdate(jsonStr) {
     ensureApis();
-    let updates = JSON.parse(jsonStr.toString());
+    var updates = JSON.parse(jsonStr.toString());
     if (!Array.isArray(updates))
         updates = [updates];
-    for (let i = 0; i < updates.length; i++) {
-        const u = updates[i];
-        const trackIdx = parseInt(u.t.toString());
-        const sceneIdx = parseInt(u.sc.toString());
+    for (var i = 0; i < updates.length; i++) {
+        var u = updates[i];
+        var trackIdx = parseInt(u.t.toString());
+        var sceneIdx = parseInt(u.sc.toString());
         if (trackIdx < 0 || trackIdx >= trackPaths.length)
             continue;
         if (sceneIdx < 0 || sceneIdx >= totalScenes)
@@ -1011,7 +1009,10 @@ function clipsUpdate(jsonStr) {
 function captureScene() {
     ensureApis();
     scratchApi.path = 'live_set';
-    scratchApi.call('capture_and_insert_scene');
+    scratchApi.call('capture_and_insert_scene', null);
 }
 log('reloaded k4-clipView');
+// NOTE: This section must appear in any .ts file that is directly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+var module = {};
 module.exports = {};

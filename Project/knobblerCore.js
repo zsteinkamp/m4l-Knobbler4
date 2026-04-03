@@ -1,21 +1,30 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
-const utils_1 = require("./utils");
-const consts_1 = require("./consts");
-const config_1 = require("./config");
-const log = (0, utils_1.logFactory)(config_1.default);
+var utils_1 = require("./utils");
+var consts_1 = require("./consts");
+var config_1 = require("./config");
+var log = (0, utils_1.logFactory)(config_1.default);
 // Pre-computed OSC address strings (indexed 1–32)
-const ADDR_VAL = [];
-const ADDR_VALSTR = [];
-const ADDR_VALCOLOR = [];
-const ADDR_PARAM = [];
-const ADDR_PARAM_AUTO = [];
-const ADDR_DEVICE = [];
-const ADDR_TRACK = [];
-const ADDR_QUANT = [];
-const ADDR_QUANT_ITEMS = [];
-for (let _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
+var ADDR_VAL = [];
+var ADDR_VALSTR = [];
+var ADDR_VALCOLOR = [];
+var ADDR_PARAM = [];
+var ADDR_PARAM_AUTO = [];
+var ADDR_DEVICE = [];
+var ADDR_TRACK = [];
+var ADDR_QUANT = [];
+var ADDR_QUANT_ITEMS = [];
+for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
     ADDR_VAL[_i] = '/val' + _i;
     ADDR_VALSTR[_i] = '/valStr' + _i;
     ADDR_VALCOLOR[_i] = '/val' + _i + 'color';
@@ -28,31 +37,31 @@ for (let _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
 }
 // Module-level scratchpad for one-off lookups (reuse via .path is fastest)
 // Initialized in initAll() to avoid "Live API is not initialized" at load time
-let scratchApi = null;
+var scratchApi = null;
 // Set true by initAll() (gated by live.thisdevice). Bpatcher parameters
 // can fire setMin/setMax/setPath before the API is ready — queue those.
-let apiReady = false;
-let pendingCalls = [];
+var apiReady = false;
+var pendingCalls = [];
 // slot arrays
-const paramObj = [];
-const paramNameObj = [];
-const automationStateObj = [];
-const deviceObj = [];
-const trackObj = [];
-const parentNameObj = [];
-const parentColorObj = [];
-const param = [];
-const outMin = [];
-const outMax = [];
-const deviceCheckerTask = [];
+var paramObj = [];
+var paramNameObj = [];
+var automationStateObj = [];
+var deviceObj = [];
+var trackObj = [];
+var parentNameObj = [];
+var parentColorObj = [];
+var param = [];
+var outMin = [];
+var outMax = [];
+var deviceCheckerTask = [];
 // other vars
-const allowMapping = [];
-const allowUpdateFromOsc = [];
+var allowMapping = [];
+var allowUpdateFromOsc = [];
 // XY pad pairs - stores left indices of active pairs
-let xyPairs = [];
-const XY_PAIRS_KEY = 'xyPairs';
+var xyPairs = [];
+var XY_PAIRS_KEY = 'xyPairs';
 function isSlotInPair(slot) {
-    for (let i = 0; i < xyPairs.length; i++) {
+    for (var i = 0; i < xyPairs.length; i++) {
         if (xyPairs[i] === slot || xyPairs[i] + 1 === slot) {
             return xyPairs[i];
         }
@@ -63,7 +72,7 @@ function saveXYPairs() {
     (0, utils_1.saveSetting)(XY_PAIRS_KEY, xyPairs);
 }
 function loadXYPairs() {
-    const val = (0, utils_1.loadSetting)(XY_PAIRS_KEY);
+    var val = (0, utils_1.loadSetting)(XY_PAIRS_KEY);
     if (val && typeof val === 'object') {
         xyPairs = val.filter(function (n) {
             return typeof n === 'number' && !isNaN(n);
@@ -93,7 +102,7 @@ function xyJoin(leftIdx) {
 }
 exports.xyJoin = xyJoin;
 function xySplit(leftIdx) {
-    const idx = xyPairs.indexOf(leftIdx);
+    var idx = xyPairs.indexOf(leftIdx);
     if (idx === -1) {
         return;
     }
@@ -105,7 +114,7 @@ exports.xySplit = xySplit;
 function unmap(slot) {
     //log(`UNMAP ${slot}`)
     // if slot is part of a pair, remove that pair
-    const pairLeft = isSlotInPair(slot);
+    var pairLeft = isSlotInPair(slot);
     if (pairLeft !== null) {
         xySplit(pairLeft);
     }
@@ -115,7 +124,7 @@ function unmap(slot) {
 exports.unmap = unmap;
 function sendMsg(slot, msg) {
     //log(`${slot} - ${msg.join(' ')}`)
-    outlet(consts_1.OUTLET_MSGS, [slot, ...msg]);
+    outlet(consts_1.OUTLET_MSGS, __spreadArray([slot], msg, true));
 }
 function setPathParam(slot, path) {
     if (path) {
@@ -139,8 +148,8 @@ function initAll() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     apiReady = true;
-    for (let i = 1; i <= consts_1.MAX_SLOTS; i++) {
-        initSlotIfNecessary(i);
+    for (var i_1 = 1; i_1 <= consts_1.MAX_SLOTS; i_1++) {
+        initSlotIfNecessary(i_1);
     }
     // Replay calls that arrived before the API was ready
     var queued = pendingCalls;
@@ -235,7 +244,7 @@ function setDefault(slot) {
     if (!allowUpdateFromOsc[slot]) {
         return;
     }
-    let defaultValue = paramObj[slot].get('default_value');
+    var defaultValue = paramObj[slot].get('default_value');
     if (typeof defaultValue !== 'object') {
         return;
     }
@@ -327,17 +336,17 @@ function setPath(slot, paramPath) {
         //log(`skipping ${slot}: ${paramPath}`)
         return;
     }
-    const testParamObj = new LiveAPI((iargs) => paramValueCallback(slot, iargs), paramPath);
+    var testParamObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
     // catch bad paths
     if (+testParamObj.id === 0) {
-        log(`Invalid path for slot ${slot}: ${paramPath}`);
+        log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
         return;
     }
     testParamObj.property = 'value';
     paramObj[slot] = testParamObj;
-    paramNameObj[slot] = new LiveAPI((iargs) => paramNameCallback(slot, iargs), paramPath);
+    paramNameObj[slot] = new LiveAPI(function (iargs) { return paramNameCallback(slot, iargs); }, paramPath);
     paramNameObj[slot].property = 'name';
-    automationStateObj[slot] = new LiveAPI((iargs) => automationStateCallback(slot, iargs), paramPath);
+    automationStateObj[slot] = new LiveAPI(function (iargs) { return automationStateCallback(slot, iargs); }, paramPath);
     automationStateObj[slot].property = 'automation_state';
     param[slot].id = paramObj[slot].id;
     param[slot].path = paramObj[slot].unquotedpath;
@@ -353,15 +362,15 @@ function setPath(slot, paramPath) {
         parseInt(paramObj[slot].get('is_quantized')) > 0
             ? paramObj[slot].get('value_items')
             : '';
-    deviceObj[slot] = new LiveAPI((iargs) => deviceNameCallback(slot, iargs), paramObj[slot] && paramObj[slot].get('canonical_parent'));
-    const devicePath = deviceObj[slot].unquotedpath;
+    deviceObj[slot] = new LiveAPI(function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'));
+    var devicePath = deviceObj[slot].unquotedpath;
     // poll to see if the mapped device is still present
     if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
         deviceCheckerTask[slot].cancel();
         deviceCheckerTask[slot].freepeer();
         deviceCheckerTask[slot] = null;
     }
-    deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot));
+    deviceCheckerTask[slot] = new Task(function () { return checkDevicePresent(slot); });
     deviceCheckerTask[slot].interval = 1000; // every second
     deviceCheckerTask[slot].repeat(-1);
     // Only get the device name if it has the name property
@@ -372,23 +381,23 @@ function setPath(slot, paramPath) {
     else if (param[slot].path.match(/mixer_device/)) {
         param[slot].deviceName = 'Mixer';
     }
-    const parentId = deviceObj[slot].get('canonical_parent');
+    var parentId = deviceObj[slot].get('canonical_parent');
     // parent name
-    parentNameObj[slot] = new LiveAPI((iargs) => parentNameCallback(slot, iargs), parentId);
+    parentNameObj[slot] = new LiveAPI(function (iargs) { return parentNameCallback(slot, iargs); }, parentId);
     parentNameObj[slot].property = 'name';
     param[slot].parentName = parentNameObj[slot].get('name');
     // parent color
-    parentColorObj[slot] = new LiveAPI((iargs) => parentColorCallback(slot, iargs), parentId);
+    parentColorObj[slot] = new LiveAPI(function (iargs) { return parentColorCallback(slot, iargs); }, parentId);
     parentColorObj[slot].property = 'color';
     param[slot].trackColor =
         (0, utils_1.colorToString)(parentColorObj[slot].get('color')) + 'FF';
     // Try to get the track name
-    const matches = devicePath.match(/^live_set tracks \d+/) ||
+    var matches = devicePath.match(/^live_set tracks \d+/) ||
         devicePath.match(/^live_set return_tracks \d+/) ||
         devicePath.match(/^live_set master_track/);
     if (matches) {
         //log(matches[0])
-        trackObj[slot] = new LiveAPI((iargs) => trackNameCallback(slot, iargs), matches[0]);
+        trackObj[slot] = new LiveAPI(function (iargs) { return trackNameCallback(slot, iargs); }, matches[0]);
     }
     //log("PARAM DATA", JSON.stringify(param), "\n");
     sendMsg(slot, ['mapped', true]);
@@ -396,7 +405,7 @@ function setPath(slot, paramPath) {
     // Defer outputting the new param val because the controller
     // will not process it since it was just sending other vals
     // that triggered the mapping.
-    const sendValTask = new Task(function () {
+    var sendValTask = new Task(function () {
         sendVal(slot);
     });
     (0, utils_1.debouncedTask)('sendVal', slot, sendValTask, 333);
@@ -409,7 +418,7 @@ function refresh() {
         pendingCalls.push(function () { refresh(); });
         return;
     }
-    for (let i = 1; i <= consts_1.MAX_SLOTS; i++) {
+    for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         refreshSlotUI(i);
     }
     loadXYPairs();
@@ -442,7 +451,7 @@ function sendQuant(slot) {
 function sendParamName(slot) {
     //log(`SEND PARAM NAME ${slot}`)
     initSlotIfNecessary(slot);
-    const paramName = (0, utils_1.dequote)(((param[slot] && (param[slot].customName || param[slot].name)) ||
+    var paramName = (0, utils_1.dequote)(((param[slot] && (param[slot].customName || param[slot].name)) ||
         consts_1.nullString).toString());
     sendMsg(slot, ['param', paramName]);
     //log('SEND PARAM NAME ' + slot + '=' + paramName)
@@ -450,14 +459,14 @@ function sendParamName(slot) {
 }
 function sendAutomationState(slot) {
     initSlotIfNecessary(slot);
-    const automationState = parseInt((paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0);
+    var automationState = parseInt((paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0);
     //log('PAYLOAD ' + ADDR_PARAM_AUTO[slot] + ' ' + automationState)
     (0, utils_1.osc)(ADDR_PARAM_AUTO[slot], automationState);
 }
 function sendDeviceName(slot) {
     //log(`SEND DEVICE NAME ${slot}`)
     initSlotIfNecessary(slot);
-    const deviceName = param[slot].deviceName
+    var deviceName = param[slot].deviceName
         ? (0, utils_1.dequote)(param[slot].deviceName.toString())
         : consts_1.nullString;
     sendMsg(slot, ['device', deviceName]);
@@ -466,7 +475,7 @@ function sendDeviceName(slot) {
 function sendTrackName(slot) {
     //log(`SEND TRACK NAME ${slot}`)
     initSlotIfNecessary(slot);
-    const trackName = param[slot].parentName
+    var trackName = param[slot].parentName
         ? (0, utils_1.dequote)(param[slot].parentName.toString())
         : consts_1.nullString;
     sendMsg(slot, ['track', trackName]);
@@ -475,7 +484,7 @@ function sendTrackName(slot) {
 function sendColor(slot) {
     //log(`SEND COLOR ${slot}`)
     initSlotIfNecessary(slot);
-    let trackColor = param[slot].trackColor
+    var trackColor = param[slot].trackColor
         ? (0, utils_1.dequote)(param[slot].trackColor.toString())
         : consts_1.DEFAULT_COLOR_FF;
     (0, utils_1.osc)(ADDR_VALCOLOR[slot], trackColor);
@@ -483,10 +492,10 @@ function sendColor(slot) {
     if (trackColor === consts_1.DEFAULT_COLOR_FF) {
         trackColor = '000000FF';
     }
-    const red = parseInt(trackColor.substring(0, 2), 16) / 255.0 || 0;
-    const grn = parseInt(trackColor.substring(2, 4), 16) / 255.0 || 0;
-    const blu = parseInt(trackColor.substring(4, 6), 16) / 255.0 || 0;
-    const alp = parseInt(trackColor.substring(6, 8), 16) / 255.0 || 0;
+    var red = parseInt(trackColor.substring(0, 2), 16) / 255.0 || 0;
+    var grn = parseInt(trackColor.substring(2, 4), 16) / 255.0 || 0;
+    var blu = parseInt(trackColor.substring(4, 6), 16) / 255.0 || 0;
+    var alp = parseInt(trackColor.substring(6, 8), 16) / 255.0 || 0;
     sendMsg(slot, ['color', red, grn, blu, alp]);
 }
 function sendVal(slot) {
@@ -503,10 +512,10 @@ function sendVal(slot) {
         return;
     }
     // the value, expressed as a proportion between the param min and max
-    const valProp = (param[slot].val - param[slot].min) / (param[slot].max - param[slot].min);
+    var valProp = (param[slot].val - param[slot].min) / (param[slot].max - param[slot].min);
     //log('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
     // scale the param proportion value to the output min/max proportion
-    let scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot]);
+    var scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot]);
     scaledValProp = Math.min(scaledValProp, 1);
     scaledValProp = Math.max(scaledValProp, 0);
     //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
@@ -521,13 +530,13 @@ function val(slot, val) {
     if (paramObj[slot]) {
         if (allowUpdateFromOsc[slot]) {
             // scale the 0..1 value to the param's min/max range
-            const scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
+            var scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
             param[slot].val =
                 (param[slot].max - param[slot].min) * scaledVal + param[slot].min;
             // prevent updates from params directly being sent to OSC for 500ms
             if (param[slot].allowParamValueUpdates) {
                 param[slot].allowParamValueUpdates = false;
-                const allowUpdatesTask = new Task(function () {
+                var allowUpdatesTask = new Task(function () {
                     param[slot].allowParamValueUpdates = true;
                 });
                 (0, utils_1.debouncedTask)('allowUpdates', slot, allowUpdatesTask, 500);
@@ -549,14 +558,14 @@ function val(slot, val) {
         if (allowMapping[slot]) {
             // debounce mapping, since moving the CC will trigger many message
             allowMapping[slot] = false;
-            const allowMappingTask = new Task(function () {
+            var allowMappingTask = new Task(function () {
                 allowMapping[slot] = true;
             });
             (0, utils_1.debouncedTask)('allowMapping', slot, allowMappingTask, 1000);
             // wait 500ms before paying attention to values again after mapping
             if (allowUpdateFromOsc[slot]) {
                 allowUpdateFromOsc[slot] = false;
-                const allowUpdateFromOscTask = new Task(function () {
+                var allowUpdateFromOscTask = new Task(function () {
                     allowUpdateFromOsc[slot] = true;
                 });
                 (0, utils_1.debouncedTask)('allowUpdateFromOsc', slot, allowUpdateFromOscTask, 500);
@@ -577,3 +586,4 @@ function val(slot, val) {
     }
 }
 exports.val = val;
+var module = {};

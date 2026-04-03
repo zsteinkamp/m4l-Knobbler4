@@ -1,25 +1,24 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const utils_1 = require("./utils");
-const config_1 = require("./config");
+var utils_1 = require("./utils");
+var config_1 = require("./config");
 autowatch = 1;
 inlets = 1;
 outlets = 1;
-const log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(0, 'OSC messages to rate-limit');
 setoutletassist(0, 'Rate-limited OSC messages to [udpsend]');
-let intervalMs = 30;
-const entries = {};
+var intervalMs = 30;
+var entries = {};
 // Reusable 2-element output array to avoid allocations in send()
-const outMsg = ['', ''];
+var outMsg = ['', ''];
 function setThrottleInterval(ms) {
     intervalMs = ms;
     log('throttle interval set to', ms, 'ms');
 }
-const BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/batch'];
+var BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/batch'];
 function shouldBypass(address) {
-    for (let i = 0; i < BYPASS_SUFFIXES.length; i++) {
-        const suffix = BYPASS_SUFFIXES[i];
+    for (var i = 0; i < BYPASS_SUFFIXES.length; i++) {
+        var suffix = BYPASS_SUFFIXES[i];
         if (address.length >= suffix.length &&
             address.indexOf(suffix, address.length - suffix.length) !== -1) {
             return true;
@@ -28,17 +27,17 @@ function shouldBypass(address) {
     return false;
 }
 function anything(val) {
-    const address = messagename;
+    var address = messagename;
     if (shouldBypass(address)) {
         outMsg[0] = address;
         outMsg[1] = val;
         outlet(0, outMsg);
         return;
     }
-    const now = Date.now();
-    const entry = entries[address];
+    var now = Date.now();
+    var entry = entries[address];
     if (!entry) {
-        const e = {
+        var e = {
             address: address,
             arg: val,
             lastSentTime: now,
@@ -68,7 +67,7 @@ function anything(val) {
     // Too soon — store latest value and schedule deferred send
     entry.arg = val;
     if (!entry.task) {
-        const delay = entry.lastSentTime + intervalMs - now;
+        var delay = entry.lastSentTime + intervalMs - now;
         entry.task = new Task(entry.deferredFn);
         entry.task.schedule(delay);
     }
@@ -83,3 +82,7 @@ function makeDeferred(entry) {
     };
 }
 log('reloaded k4-oscThrottle');
+// NOTE: This section must appear in any .ts file that is directly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+var module = {};
+module.exports = {};

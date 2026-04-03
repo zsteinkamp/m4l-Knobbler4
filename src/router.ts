@@ -1,6 +1,3 @@
-// [v8] entry points need `module` defined before any require() calls
-var module: any = { exports: {} }
-
 import config from './config'
 import { logFactory, saveSetting } from './utils'
 
@@ -742,4 +739,7 @@ function anything(val: any) {
 
 log('reloaded router')
 
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
 export = {}

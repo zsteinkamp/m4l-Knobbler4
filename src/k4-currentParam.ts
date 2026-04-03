@@ -1,6 +1,3 @@
-// [v8] entry points need `module` defined before any require() calls
-var module: any = { exports: {} }
-
 import config from './config'
 import {
   detach,
@@ -264,4 +261,7 @@ function refresh() {
 
 log('reloaded k4-currentParam')
 
+// NOTE: This section must appear in any .ts file that is directly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
 export = {}

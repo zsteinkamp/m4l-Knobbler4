@@ -1,24 +1,22 @@
 "use strict";
-// [v8] entry points need `module` defined before any require() calls
-var module = { exports: {} };
-const utils_1 = require("./utils");
-const config_1 = require("./config");
+var utils_1 = require("./utils");
+var config_1 = require("./config");
 autowatch = 1;
 inlets = 1;
 outlets = 1;
-const log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(0, 'OSC messages to batch');
 setoutletassist(0, 'Batched OSC messages to [udpsend]');
-const OSC_FLUSH_MS = 10;
-const OSC_MAX_BYTES = 1024;
-const BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/meters'];
-let batchEnabled = false;
-let oscBuffer = {};
-let oscBufferSize = 0;
-let oscBufferBytes = 2; // opening/closing braces: {}
-let oscFlushTask = null;
-let oscFlushPending = false;
-const batchOut = ['/batch', null];
+var OSC_FLUSH_MS = 10;
+var OSC_MAX_BYTES = 1024;
+var BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/meters'];
+var batchEnabled = false;
+var oscBuffer = {};
+var oscBufferSize = 0;
+var oscBufferBytes = 2; // opening/closing braces: {}
+var oscFlushTask = null;
+var oscFlushPending = false;
+var batchOut = ['/batch', null];
 function oscValBytes(val) {
     if (val === null)
         return 4; // "null"
@@ -87,4 +85,7 @@ function flushOscBuffer() {
     oscFlushPending = false;
 }
 log('reloaded k4-oscBatch');
+// NOTE: This section must appear in any .ts file that is directly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+var module = {};
 module.exports = {};

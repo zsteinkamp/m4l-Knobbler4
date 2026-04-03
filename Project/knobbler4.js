@@ -1,14 +1,12 @@
 "use strict";
-// [v8] entry points need `module` defined before any require() calls
-var module = { exports: {} };
-const utils_1 = require("./utils");
-const config_1 = require("./config");
-const consts_1 = require("./consts");
-const KnobblerCore = require("./knobblerCore");
+var utils_1 = require("./utils");
+var config_1 = require("./config");
+var consts_1 = require("./consts");
+var KnobblerCore = require("./knobblerCore");
 autowatch = 1;
 inlets = 1;
 outlets = 2;
-const log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages');
 setinletassist(consts_1.OUTLET_MSGS, 'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1');
@@ -59,4 +57,7 @@ function xySplit(slot) {
     KnobblerCore.xySplit(slot);
 }
 log('reloaded knobbler4');
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+var module = {};
 module.exports = {};

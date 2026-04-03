@@ -1,6 +1,3 @@
-// [v8] entry points need `module` defined before any require() calls
-var module: any = { exports: {} }
-
 import { cleanArr, isDeviceSupported, logFactory } from './utils'
 import config from './config'
 import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
@@ -124,7 +121,7 @@ function getBankParamArr(
   if (MAX_DEVICES.indexOf(deviceType) > -1) {
     // Max device, look for live.banks
     const bankCount =
-      (deviceObj.call('get_bank_count') as unknown as number) || 0
+      (deviceObj.call('get_bank_count', null) as unknown as number) || 0
 
     if (bankCount > 0) {
       return getMaxBanksParamArr(bankCount, deviceObj)
@@ -630,7 +627,7 @@ function variationNew() {
     // only applies to racks
     return
   }
-  api.call('store_variation')
+  api.call('store_variation', null)
   const numVariations = +api.get('variation_count') || 1
   api.set('selected_variation_index', numVariations - 1)
   onVariationChange()
@@ -645,7 +642,7 @@ function variationDelete(idx: number) {
     return
   }
   api.set('selected_variation_index', idx)
-  api.call('delete_selected_variation')
+  api.call('delete_selected_variation', null)
 }
 function variationRecall(idx: number) {
   const api = getSelectedDeviceApi()
@@ -657,7 +654,7 @@ function variationRecall(idx: number) {
     return
   }
   api.set('selected_variation_index', idx)
-  api.call('recall_selected_variation')
+  api.call('recall_selected_variation', null)
   onVariationChange()
 }
 function randomMacros() {
@@ -669,7 +666,7 @@ function randomMacros() {
     // only applies to racks
     return
   }
-  api.call('randomize_macros')
+  api.call('randomize_macros', null)
 }
 
 function gotoBank(idx: number) {
@@ -732,7 +729,7 @@ function toggleMetronome() {
 }
 function tapTempo() {
   const api = getLiveSetApi()
-  api.call('tap_tempo')
+  api.call('tap_tempo', null)
 }
 function setTempo(val: number) {
   const api = getLiveSetApi()
@@ -744,12 +741,12 @@ function playCuePoint(val: number) {
   //log('PLAY CUE POINT ' + val + ' ' + api.id)
   if (api.id) {
     //log('JUMP ' + val + ' ' + api.id)
-    api.call('jump')
+    api.call('jump', null)
     const ctlApi = getLiveSetApi()
     const isPlaying = parseInt(ctlApi.get('is_playing'))
     //log('PLAY ' + isPlaying)
     if (!isPlaying) {
-      ctlApi.call('start_playing')
+      ctlApi.call('start_playing', null)
     }
   }
 }
@@ -758,20 +755,20 @@ function gotoCuePoint(val: number) {
   //log('GOTO CUE POINT ' + val + ' ' + api.id)
   if (api.id) {
     //log('JUMP ' + val + ' ' + api.id)
-    api.call('jump')
+    api.call('jump', null)
   }
 }
 function btnSkipPrev() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('jump_to_prev_cue')
+  ctlApi.call('jump_to_prev_cue', null)
 }
 function btnSkipNext() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('jump_to_next_cue')
+  ctlApi.call('jump_to_next_cue', null)
 }
 function btnReEnableAutomation() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('re_enable_automation')
+  ctlApi.call('re_enable_automation', null)
 }
 function btnLoop() {
   const ctlApi = getLiveSetApi()
@@ -780,7 +777,7 @@ function btnLoop() {
 }
 function btnCaptureMidi() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('capture_midi')
+  ctlApi.call('capture_midi', null)
 }
 function btnArrangementOverdub() {
   const ctlApi = getLiveSetApi()
@@ -819,23 +816,26 @@ function ctlRec() {
 }
 function ctlPlay() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('start_playing')
+  ctlApi.call('start_playing', null)
 }
 function ctlStop() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('stop_playing')
+  ctlApi.call('stop_playing', null)
 }
 
 function undo() {
   const api = getLiveSetApi()
-  api.call('undo')
+  api.call('undo', null)
 }
 
 function redo() {
   const api = getLiveSetApi()
-  api.call('redo')
+  api.call('redo', null)
 }
 
 log('reloaded k4-bluhandBanks')
 
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
 export = {}

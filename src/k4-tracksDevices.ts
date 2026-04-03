@@ -1,6 +1,3 @@
-// [v8] entry points need `module` defined before any require() calls
-var module: any = { exports: {} }
-
 autowatch = 1
 inlets = 1
 outlets = 2
@@ -293,4 +290,7 @@ function init() {
 
 log('reloaded k4-tracksDevices')
 
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+const module = {}
 export = {}

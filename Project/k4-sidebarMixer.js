@@ -1,19 +1,17 @@
 "use strict";
-// [v8] entry points need `module` defined before any require() calls
-var module = { exports: {} };
-const utils_1 = require("./utils");
-const config_1 = require("./config");
-const consts_1 = require("./consts");
-const mixerUtils_1 = require("./mixerUtils");
+var utils_1 = require("./utils");
+var config_1 = require("./config");
+var consts_1 = require("./consts");
+var mixerUtils_1 = require("./mixerUtils");
 autowatch = 1;
 inlets = 2;
 outlets = 1;
-const log = (0, utils_1.logFactory)(config_1.default);
-const INLET_PAGE = 1;
+var log = (0, utils_1.logFactory)(config_1.default);
+var INLET_PAGE = 1;
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(INLET_PAGE, 'Page change messages');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
-const state = {
+var state = {
     trackLookupObj: null,
     returnTrackColors: [],
     returnsObj: null,
@@ -48,7 +46,7 @@ function ensureMeterObservers() {
         return;
     state.meterLeftObj = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_left') {
-            const v = (0, utils_1.meterVal)(args[1]);
+            var v = (0, utils_1.meterVal)(args[1]);
             if (v !== state.meterBuffer[0]) {
                 state.meterBuffer[0] = v;
                 state.meterDirty = true;
@@ -57,7 +55,7 @@ function ensureMeterObservers() {
     }, 'live_set');
     state.meterRightObj = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_right') {
-            const v = (0, utils_1.meterVal)(args[1]);
+            var v = (0, utils_1.meterVal)(args[1]);
             if (v !== state.meterBuffer[1]) {
                 state.meterBuffer[1] = v;
                 state.meterDirty = true;
@@ -66,7 +64,7 @@ function ensureMeterObservers() {
     }, 'live_set');
     state.meterLevelObj = new LiveAPI(function (args) {
         if (args[0] === 'output_meter_level') {
-            const v = (0, utils_1.meterVal)(args[1]);
+            var v = (0, utils_1.meterVal)(args[1]);
             if (v !== state.meterBuffer[2]) {
                 state.meterBuffer[2] = v;
                 state.meterDirty = true;
@@ -114,7 +112,7 @@ function stopMeterFlush() {
     state.meterFlushTask = null;
 }
 function sidebarMeters(val) {
-    const enabled = !!parseInt(val.toString());
+    var enabled = !!parseInt(val.toString());
     state.metersEnabled = enabled;
     (0, utils_1.osc)('/sidebarMeters', state.metersEnabled ? 1 : 0);
     if (state.metersEnabled && state.hasOutput && state.trackLookupObj) {
@@ -128,8 +126,8 @@ function sidebarMeters(val) {
     }
 }
 function page() {
-    const pageName = arguments[0].toString();
-    const wasMixerPage = state.onMixerPage;
+    var pageName = arguments[0].toString();
+    var wasMixerPage = state.onMixerPage;
     state.onMixerPage = pageName === 'mixer' || pageName === 'session';
     if (!state.onMixerPage && wasMixerPage) {
         if (state.metersEnabled && state.hasOutput)
@@ -142,8 +140,8 @@ function page() {
 // ---------------------------------------------------------------------------
 // Send watcher management
 // ---------------------------------------------------------------------------
-const setSendWatcherIds = (sendIds) => {
-    for (let i = 0; i < consts_1.MAX_SENDS; i++) {
+var setSendWatcherIds = function (sendIds) {
+    for (var i = 0; i < consts_1.MAX_SENDS; i++) {
         if (!state.watchers[i])
             continue;
         state.watchers[i].property = '';
@@ -168,10 +166,10 @@ const setSendWatcherIds = (sendIds) => {
 function updateSendsFromMixer() {
     if (!state.mixerObj || +state.mixerObj.id === 0)
         return;
-    const sendIds = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
+    var sendIds = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
     setSendWatcherIds(sendIds);
 }
-const sendReturnTrackColors = () => {
+var sendReturnTrackColors = function () {
     outlet(consts_1.OUTLET_OSC, [
         '/mixer/returnTrackColors',
         JSON.stringify(state.returnTrackColors),
@@ -181,7 +179,7 @@ const sendReturnTrackColors = () => {
 // Command handlers (called by Max message dispatch)
 // ---------------------------------------------------------------------------
 function updateSendVal(slot, val) {
-    const idx = slot - 1;
+    var idx = slot - 1;
     if (!state.watchers[idx]) {
         return;
     }
@@ -189,7 +187,7 @@ function updateSendVal(slot, val) {
     state.watchers[idx].set('value', val);
 }
 function handleSendDefault(slot) {
-    const idx = slot - 1;
+    var idx = slot - 1;
     if (!state.watchers[idx]) {
         return;
     }
@@ -202,7 +200,7 @@ function toggleXFadeB() {
     (0, mixerUtils_1.toggleXFade)(state.mixerObj, 2);
 }
 function sendRecordStatus(lookupObj) {
-    const status = (0, mixerUtils_1.getRecordStatus)(lookupObj);
+    var status = (0, mixerUtils_1.getRecordStatus)(lookupObj);
     (0, utils_1.osc)('/mixer/recordArm', status.armStatus);
     (0, utils_1.osc)('/mixer/inputEnabled', status.inputEnabled ? 1 : 0);
 }
@@ -226,8 +224,8 @@ function toggleMute() {
     if (!state.trackObj || +state.trackObj.id === 0) {
         return;
     }
-    const currState = parseInt(state.trackObj.get('mute'));
-    const newState = currState ? 0 : 1;
+    var currState = parseInt(state.trackObj.get('mute'));
+    var newState = currState ? 0 : 1;
     state.trackObj.set('mute', newState);
     (0, utils_1.osc)('/mixer/mute', newState);
 }
@@ -235,8 +233,8 @@ function toggleSolo() {
     if (!state.trackObj || +state.trackObj.id === 0) {
         return;
     }
-    const currState = parseInt(state.trackObj.get('solo'));
-    const newState = currState ? 0 : 1;
+    var currState = parseInt(state.trackObj.get('solo'));
+    var newState = currState ? 0 : 1;
     if (newState) {
         (0, mixerUtils_1.handleExclusiveSolo)(parseInt(state.trackObj.id.toString()), state.trackLookupObj);
     }
@@ -261,19 +259,19 @@ function handlePan(val) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['pan'], consts_1.PAUSE_MS);
-    const fVal = parseFloat(val);
+    var fVal = parseFloat(val);
     state.panObj.set('value', fVal);
-    const str = state.panObj.call('str_for_value', fVal);
+    var str = state.panObj.call('str_for_value', fVal);
     (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
 }
 function handlePanDefault() {
     if (!state.panObj || +state.panObj.id === 0) {
         return;
     }
-    const defVal = parseFloat(state.panObj.get('default_value'));
+    var defVal = parseFloat(state.panObj.get('default_value'));
     state.panObj.set('value', defVal);
     (0, utils_1.osc)('/mixer/pan', defVal);
-    const str = state.panObj.call('str_for_value', defVal);
+    var str = state.panObj.call('str_for_value', defVal);
     (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
 }
 function handleVol(val) {
@@ -281,47 +279,47 @@ function handleVol(val) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['vol'], consts_1.PAUSE_MS);
-    const fVal = parseFloat(val);
+    var fVal = parseFloat(val);
     state.volObj.set('value', fVal);
-    const str = state.volObj.call('str_for_value', fVal);
+    var str = state.volObj.call('str_for_value', fVal);
     (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
 }
 function handleVolDefault() {
     if (!state.volObj || +state.volObj.id === 0) {
         return;
     }
-    const defVal = parseFloat(state.volObj.get('default_value'));
+    var defVal = parseFloat(state.volObj.get('default_value'));
     state.volObj.set('value', defVal);
     (0, utils_1.osc)('/mixer/vol', defVal);
-    const str = state.volObj.call('str_for_value', defVal);
+    var str = state.volObj.call('str_for_value', defVal);
     (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
 }
 // ---------------------------------------------------------------------------
 // Observer callbacks
 // ---------------------------------------------------------------------------
-const handleVolVal = (val) => {
+var handleVolVal = function (val) {
     if (val[0] !== 'value') {
         return;
     }
     if (!state.pause.vol.paused) {
-        const fVal = parseFloat(val[1].toString()) || 0;
+        var fVal = parseFloat(val[1].toString()) || 0;
         (0, utils_1.osc)('/mixer/vol', fVal);
-        const str = state.volObj.call('str_for_value', fVal);
+        var str = state.volObj.call('str_for_value', fVal);
         (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
     }
 };
-const handlePanVal = (val) => {
+var handlePanVal = function (val) {
     if (val[0] !== 'value') {
         return;
     }
     if (!state.pause.pan.paused) {
-        const fVal = parseFloat(val[1].toString()) || 0;
+        var fVal = parseFloat(val[1].toString()) || 0;
         (0, utils_1.osc)('/mixer/pan', fVal);
-        const str = state.panObj.call('str_for_value', fVal);
+        var str = state.panObj.call('str_for_value', fVal);
         (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
     }
 };
-const handleCrossfaderVal = (val) => {
+var handleCrossfaderVal = function (val) {
     if (val[0] !== 'value') {
         return;
     }
@@ -329,7 +327,7 @@ const handleCrossfaderVal = (val) => {
         (0, utils_1.osc)('/mixer/crossfader', val[1] || 0);
     }
 };
-const handleSendVal = (idx, val) => {
+var handleSendVal = function (idx, val) {
     if (val[0] !== 'value') {
         return;
     }
@@ -340,15 +338,15 @@ const handleSendVal = (idx, val) => {
 // ---------------------------------------------------------------------------
 // Track change handler
 // ---------------------------------------------------------------------------
-let trackChangeDebounce = null;
-const onTrackChange = (args) => {
+var trackChangeDebounce = null;
+var onTrackChange = function (args) {
     if (!state.trackObj) {
         return;
     }
     if (args[1].toString() !== 'id') {
         return;
     }
-    const id = (0, utils_1.cleanArr)(args)[0];
+    var id = (0, utils_1.cleanArr)(args)[0];
     if (id === state.lastTrackId) {
         return;
     }
@@ -364,9 +362,9 @@ const onTrackChange = (args) => {
 function handleTrackChange(id) {
     state.trackLookupObj.id = id;
     // track type
-    const path = state.trackLookupObj.unquotedpath;
-    let trackType = consts_1.TYPE_TRACK;
-    let isMain = false;
+    var path = state.trackLookupObj.unquotedpath;
+    var trackType = consts_1.TYPE_TRACK;
+    var isMain = false;
     if (path.indexOf('live_set master_track') === 0) {
         trackType = consts_1.TYPE_MAIN;
         isMain = true;
@@ -390,7 +388,7 @@ function handleTrackChange(id) {
         (0, utils_1.osc)('/mixer/solo', 0);
     }
     // has_audio_output
-    const trackInfo = state.trackLookupObj.info.toString();
+    var trackInfo = state.trackLookupObj.info.toString();
     state.hasOutput =
         trackInfo.indexOf('has_audio_output') > -1
             ? !!parseInt(state.trackLookupObj.get('has_audio_output'))
@@ -408,7 +406,7 @@ function handleTrackChange(id) {
     }
     // crossfade assign
     if (!isMain) {
-        const xfade = parseInt(state.mixerObj.get('crossfade_assign'));
+        var xfade = parseInt(state.mixerObj.get('crossfade_assign'));
         (0, utils_1.osc)('/mixer/xFadeA', xfade === 0 ? 1 : 0);
         (0, utils_1.osc)('/mixer/xFadeB', xfade === 2 ? 1 : 0);
     }
@@ -419,23 +417,23 @@ function handleTrackChange(id) {
     // track color
     (0, utils_1.osc)('/mixer/trackColor', parseInt(state.trackLookupObj.get('color')));
     // vol/pan str
-    const volVal = parseFloat(state.volObj.get('value')) || 0;
+    var volVal = parseFloat(state.volObj.get('value')) || 0;
     (0, utils_1.osc)('/mixer/vol', volVal);
-    const volStr = state.volObj.call('str_for_value', volVal);
+    var volStr = state.volObj.call('str_for_value', volVal);
     (0, utils_1.osc)('/mixer/volStr', volStr ? volStr.toString() : '');
-    const panVal = parseFloat(state.panObj.get('value')) || 0;
+    var panVal = parseFloat(state.panObj.get('value')) || 0;
     (0, utils_1.osc)('/mixer/pan', panVal);
-    const panStr = state.panObj.call('str_for_value', panVal);
+    var panStr = state.panObj.call('str_for_value', panVal);
     (0, utils_1.osc)('/mixer/panStr', panStr ? panStr.toString() : '');
     // sends
     updateSendsFromMixer();
 }
-const onReturnsChange = (args) => {
+var onReturnsChange = function (args) {
     if (!state.returnsObj || args[0] !== 'return_tracks') {
         return;
     }
-    const returnIds = (0, utils_1.cleanArr)(args);
-    for (let i = 0; i < consts_1.MAX_SENDS; i++) {
+    var returnIds = (0, utils_1.cleanArr)(args);
+    for (var i = 0; i < consts_1.MAX_SENDS; i++) {
         var color = consts_1.DEFAULT_COLOR;
         if (returnIds[i]) {
             state.trackLookupObj.id = returnIds[i];
@@ -466,11 +464,14 @@ function init() {
     if (state.watchers.length === consts_1.MAX_SENDS) {
         return;
     }
-    // Send watchers
-    for (let i = 0; i < consts_1.MAX_SENDS; i++) {
-        const watcher = new LiveAPI((val) => handleSendVal(i, val), 'live_set');
+    var _loop_1 = function (i) {
+        var watcher = new LiveAPI(function (val) { return handleSendVal(i, val); }, 'live_set');
         state.watchers.push(watcher);
         watcher.property = 'value';
+    };
+    // Send watchers
+    for (var i = 0; i < consts_1.MAX_SENDS; i++) {
+        _loop_1(i);
     }
     // Lookup obj for querying track properties on change
     if (!state.trackLookupObj) {
@@ -519,4 +520,7 @@ function init() {
     (0, utils_1.osc)('/sidebarMeters', state.metersEnabled ? 1 : 0);
 }
 log('reloaded k4-sidebarMixer');
+// NOTE: This section must appear in any .ts file that is directuly used by a
+// [js] or [jsui] object so that tsc generates valid JS for Max.
+var module = {};
 module.exports = {};

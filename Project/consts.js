@@ -15,7 +15,7 @@ exports.TYPE_RACK = 6;
 exports.TYPE_CHILD_CHAIN = 7;
 exports.DEFAULT_COLOR = '990000';
 exports.DEFAULT_COLOR_FF = exports.DEFAULT_COLOR + 'FF';
-const noFn = () => { };
+var noFn = function () { };
 exports.noFn = noFn;
 exports.MAX_NAME_LEN = 32;
 exports.MAX_SENDS = 12;

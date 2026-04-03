@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = exports.detach = void 0;
-const consts_1 = require("./consts");
+var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
 // (which can crash SpiderMonkey via JS_EncodeString null pointer).
@@ -12,16 +12,21 @@ function detach(api) {
     api.id = 0;
 }
 exports.detach = detach;
-function logFactory({ outputLogs = true }) {
-    function log(...args) {
+function logFactory(_a) {
+    var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
+    function log() {
+        var args = [];
+        for (var _a = 0; _a < arguments.length; _a++) {
+            args[_a] = arguments[_a];
+        }
         post(args
-            .map((a) => {
+            .map(function (a) {
             return typeof a === 'string' ? a : JSON.stringify(a);
         })
             .join(' '), '\n');
     }
     if (!outputLogs) {
-        return () => { };
+        return function () { };
     }
     return log;
 }
@@ -39,9 +44,9 @@ function colorToString(colorVal) {
     if (!colorVal) {
         return consts_1.DEFAULT_COLOR;
     }
-    let retString = parseInt(colorVal.toString()).toString(16).toUpperCase();
-    const strlen = retString.length;
-    for (let i = 0; i < 6 - strlen; i++) {
+    var retString = parseInt(colorVal.toString()).toString(16).toUpperCase();
+    var strlen = retString.length;
+    for (var i = 0; i < 6 - strlen; i++) {
         retString = '0' + retString;
     }
     return retString;
@@ -59,7 +64,7 @@ function isDeviceSupported(obj) {
     return !!obj.info.match(/property/);
 }
 exports.isDeviceSupported = isDeviceSupported;
-const tasks = {};
+var tasks = {};
 function debouncedTask(key, slot, task, delayMs) {
     if (!tasks[key]) {
         tasks[key] = [];
@@ -73,14 +78,14 @@ function debouncedTask(key, slot, task, delayMs) {
     tasks[key][slot].schedule(delayMs);
 }
 exports.debouncedTask = debouncedTask;
-const SETTINGS_DICT_NAME = 'settingsDict';
+var SETTINGS_DICT_NAME = 'settingsDict';
 function saveSetting(key, value) {
-    const d = new Dict(SETTINGS_DICT_NAME);
+    var d = new Dict(SETTINGS_DICT_NAME);
     d.set(key, value);
 }
 exports.saveSetting = saveSetting;
 function loadSetting(key) {
-    const d = new Dict(SETTINGS_DICT_NAME);
+    var d = new Dict(SETTINGS_DICT_NAME);
     return d.get(key);
 }
 exports.loadSetting = loadSetting;
@@ -88,7 +93,7 @@ function meterVal(raw) {
     return Math.round((parseFloat(raw) || 0) * 100) / 100;
 }
 exports.meterVal = meterVal;
-const oscOut = [null, null];
+var oscOut = [null, null];
 function osc(addr, val) {
     oscOut[0] = addr;
     oscOut[1] =
@@ -103,7 +108,7 @@ function pauseUnpause(p, delayMs) {
         p.task.cancel();
     }
     else {
-        p.task = new Task(() => {
+        p.task = new Task(function () {
             p.paused = false;
         });
     }
@@ -113,33 +118,33 @@ function pauseUnpause(p, delayMs) {
 exports.pauseUnpause = pauseUnpause;
 // Pre-computed OSC address strings for sends
 exports.SEND_ADDR = [];
-for (let _i = 0; _i < consts_1.MAX_SENDS; _i++) {
+for (var _i = 0; _i < consts_1.MAX_SENDS; _i++) {
     exports.SEND_ADDR[_i] = '/mixer/send' + (_i + 1);
 }
 function numArrToJson(arr) {
     return '[' + arr.join(',') + ']';
 }
 exports.numArrToJson = numArrToJson;
-const CHUNK_MAX_BYTES = 1024;
+var CHUNK_MAX_BYTES = 1024;
 function simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
         hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
     }
     return hash;
 }
 function sendChunkedData(prefix, items) {
-    const caps = loadSetting('clientCapabilities');
-    const chunked = caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1;
+    var caps = loadSetting('clientCapabilities');
+    var chunked = caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1;
     if (chunked) {
         outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
-        let chunkParts = [];
-        let chunkSize = 2;
-        let allParts = [];
-        for (let i = 0; i < items.length; i++) {
-            const itemJson = JSON.stringify(items[i]);
+        var chunkParts = [];
+        var chunkSize = 2;
+        var allParts = [];
+        for (var i = 0; i < items.length; i++) {
+            var itemJson = JSON.stringify(items[i]);
             allParts.push(itemJson);
-            const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
+            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
             if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
                 outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
                 chunkParts = [];
@@ -151,7 +156,7 @@ function sendChunkedData(prefix, items) {
         if (chunkParts.length > 0) {
             outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
         }
-        const checksum = simpleHash('[' + allParts.join(',') + ']');
+        var checksum = simpleHash('[' + allParts.join(',') + ']');
         outlet(consts_1.OUTLET_OSC, [prefix + '/end', checksum]);
     }
     if (!chunked) {
@@ -163,7 +168,7 @@ function cleanArr(arr) {
     if (!arr) {
         return [];
     }
-    return arr.filter((e) => {
+    return arr.filter(function (e) {
         return parseInt(e).toString() === e.toString();
     });
 }
