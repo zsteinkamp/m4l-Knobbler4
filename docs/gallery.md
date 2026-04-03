@@ -42,10 +42,8 @@ Joined X-Y pads on the Knobbler page in landscape mode — great for filter swee
 
 ![Full studio setup with Knobbler](images/gallery/battle-station.jpg)
 
-A complete production setup — monitor, iPad, phone, and Push all working together with Knobbler tying it all together.
+My personal setup — Knobbler front and center on a 13" iPad and Push working together.
 
-### Arena Soundcheck
+### Your Photo Here
 
-![Knobbler at an arena soundcheck](images/gallery/arena-soundcheck.webp)
-
-Knobbler user JuanChis running soundcheck at an arena show.
+If you've got a great shot of Knobbler in the wild, send it to me! [zack@steinkamp.us](mailto:zack@steinkamp.us).
