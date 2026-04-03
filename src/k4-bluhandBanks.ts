@@ -121,7 +121,7 @@ function getBankParamArr(
   if (MAX_DEVICES.indexOf(deviceType) > -1) {
     // Max device, look for live.banks
     const bankCount =
-      (deviceObj.call('get_bank_count', null) as unknown as number) || 0
+      (deviceObj.call('get_bank_count') as unknown as number) || 0
 
     if (bankCount > 0) {
       return getMaxBanksParamArr(bankCount, deviceObj)
@@ -627,7 +627,7 @@ function variationNew() {
     // only applies to racks
     return
   }
-  api.call('store_variation', null)
+  api.call('store_variation')
   const numVariations = +api.get('variation_count') || 1
   api.set('selected_variation_index', numVariations - 1)
   onVariationChange()
@@ -642,7 +642,7 @@ function variationDelete(idx: number) {
     return
   }
   api.set('selected_variation_index', idx)
-  api.call('delete_selected_variation', null)
+  api.call('delete_selected_variation')
 }
 function variationRecall(idx: number) {
   const api = getSelectedDeviceApi()
@@ -654,7 +654,7 @@ function variationRecall(idx: number) {
     return
   }
   api.set('selected_variation_index', idx)
-  api.call('recall_selected_variation', null)
+  api.call('recall_selected_variation')
   onVariationChange()
 }
 function randomMacros() {
@@ -666,7 +666,7 @@ function randomMacros() {
     // only applies to racks
     return
   }
-  api.call('randomize_macros', null)
+  api.call('randomize_macros')
 }
 
 function gotoBank(idx: number) {
@@ -729,7 +729,7 @@ function toggleMetronome() {
 }
 function tapTempo() {
   const api = getLiveSetApi()
-  api.call('tap_tempo', null)
+  api.call('tap_tempo')
 }
 function setTempo(val: number) {
   const api = getLiveSetApi()
@@ -741,12 +741,12 @@ function playCuePoint(val: number) {
   //log('PLAY CUE POINT ' + val + ' ' + api.id)
   if (api.id) {
     //log('JUMP ' + val + ' ' + api.id)
-    api.call('jump', null)
+    api.call('jump')
     const ctlApi = getLiveSetApi()
     const isPlaying = parseInt(ctlApi.get('is_playing'))
     //log('PLAY ' + isPlaying)
     if (!isPlaying) {
-      ctlApi.call('start_playing', null)
+      ctlApi.call('start_playing')
     }
   }
 }
@@ -755,20 +755,20 @@ function gotoCuePoint(val: number) {
   //log('GOTO CUE POINT ' + val + ' ' + api.id)
   if (api.id) {
     //log('JUMP ' + val + ' ' + api.id)
-    api.call('jump', null)
+    api.call('jump')
   }
 }
 function btnSkipPrev() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('jump_to_prev_cue', null)
+  ctlApi.call('jump_to_prev_cue')
 }
 function btnSkipNext() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('jump_to_next_cue', null)
+  ctlApi.call('jump_to_next_cue')
 }
 function btnReEnableAutomation() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('re_enable_automation', null)
+  ctlApi.call('re_enable_automation')
 }
 function btnLoop() {
   const ctlApi = getLiveSetApi()
@@ -777,7 +777,7 @@ function btnLoop() {
 }
 function btnCaptureMidi() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('capture_midi', null)
+  ctlApi.call('capture_midi')
 }
 function btnArrangementOverdub() {
   const ctlApi = getLiveSetApi()
@@ -816,21 +816,21 @@ function ctlRec() {
 }
 function ctlPlay() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('start_playing', null)
+  ctlApi.call('start_playing')
 }
 function ctlStop() {
   const ctlApi = getLiveSetApi()
-  ctlApi.call('stop_playing', null)
+  ctlApi.call('stop_playing')
 }
 
 function undo() {
   const api = getLiveSetApi()
-  api.call('undo', null)
+  api.call('undo')
 }
 
 function redo() {
   const api = getLiveSetApi()
-  api.call('redo', null)
+  api.call('redo')
 }
 
 log('reloaded k4-bluhandBanks')

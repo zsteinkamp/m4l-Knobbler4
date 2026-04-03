@@ -1015,7 +1015,7 @@ function clipLaunch(jsonStr: string) {
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
-  scratchApi.call('fire', null)
+  scratchApi.call('fire')
   selectClipSlot(trackIdx, sceneIdx)
 }
 
@@ -1029,7 +1029,7 @@ function clipRecord(jsonStr: string) {
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
-  scratchApi.call('fire', null)
+  scratchApi.call('fire')
   selectClipSlot(trackIdx, sceneIdx)
 }
 
@@ -1043,7 +1043,7 @@ function clipDelete(jsonStr: string) {
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
-  scratchApi.call('delete_clip', null)
+  scratchApi.call('delete_clip')
 }
 
 function clipSetStopButton(jsonStr: string) {
@@ -1066,13 +1066,13 @@ function clipStop(trackIdx: number) {
   if (idx < 0 || idx >= trackPaths.length) return
 
   scratchApi.path = trackPaths[idx]
-  scratchApi.call('stop_all_clips', null)
+  scratchApi.call('stop_all_clips')
 }
 
 function stopAll() {
   ensureApis()
   scratchApi.path = 'live_set'
-  scratchApi.call('stop_all_clips', null)
+  scratchApi.call('stop_all_clips')
 }
 
 function sceneLaunch(sceneIdx: number) {
@@ -1081,7 +1081,7 @@ function sceneLaunch(sceneIdx: number) {
   if (idx < 0 || idx >= totalScenes) return
 
   scratchApi.path = 'live_set scenes ' + idx
-  scratchApi.call('fire', null)
+  scratchApi.call('fire')
 }
 
 function sceneRename(jsonStr: string) {
@@ -1144,7 +1144,7 @@ function clipsUpdate(jsonStr: string) {
 function captureScene() {
   ensureApis()
   scratchApi.path = 'live_set'
-  scratchApi.call('capture_and_insert_scene', null)
+  scratchApi.call('capture_and_insert_scene')
 }
 
 log('reloaded k4-clipView')

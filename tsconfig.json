@@ -12,5 +12,5 @@
     "outDir": "Project"
   },
   "include": ["src/*.ts", "types/*.d.ts"],
-  "exclude": ["src/*.test.ts"]
+  "exclude": ["src/*.test.ts", "src/k4-perfTest.ts"]
 }

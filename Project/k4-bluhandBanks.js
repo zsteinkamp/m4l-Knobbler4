@@ -104,7 +104,7 @@ function getBasicParamArr(paramIds) {
 function getBankParamArr(paramIds, deviceType, deviceObj) {
     if (deviceParams_1.MAX_DEVICES.indexOf(deviceType) > -1) {
         // Max device, look for live.banks
-        var bankCount = deviceObj.call('get_bank_count', null) || 0;
+        var bankCount = deviceObj.call('get_bank_count') || 0;
         if (bankCount > 0) {
             return getMaxBanksParamArr(bankCount, deviceObj);
         }
@@ -555,7 +555,7 @@ function variationNew() {
         // only applies to racks
         return;
     }
-    api.call('store_variation', null);
+    api.call('store_variation');
     var numVariations = +api.get('variation_count') || 1;
     api.set('selected_variation_index', numVariations - 1);
     onVariationChange();
@@ -570,7 +570,7 @@ function variationDelete(idx) {
         return;
     }
     api.set('selected_variation_index', idx);
-    api.call('delete_selected_variation', null);
+    api.call('delete_selected_variation');
 }
 function variationRecall(idx) {
     var api = getSelectedDeviceApi();
@@ -582,7 +582,7 @@ function variationRecall(idx) {
         return;
     }
     api.set('selected_variation_index', idx);
-    api.call('recall_selected_variation', null);
+    api.call('recall_selected_variation');
     onVariationChange();
 }
 function randomMacros() {
@@ -594,7 +594,7 @@ function randomMacros() {
         // only applies to racks
         return;
     }
-    api.call('randomize_macros', null);
+    api.call('randomize_macros');
 }
 function gotoBank(idx) {
     //log('HERE ' + idx)
@@ -651,7 +651,7 @@ function toggleMetronome() {
 }
 function tapTempo() {
     var api = getLiveSetApi();
-    api.call('tap_tempo', null);
+    api.call('tap_tempo');
 }
 function setTempo(val) {
     var api = getLiveSetApi();
@@ -662,12 +662,12 @@ function playCuePoint(val) {
     //log('PLAY CUE POINT ' + val + ' ' + api.id)
     if (api.id) {
         //log('JUMP ' + val + ' ' + api.id)
-        api.call('jump', null);
+        api.call('jump');
         var ctlApi = getLiveSetApi();
         var isPlaying = parseInt(ctlApi.get('is_playing'));
         //log('PLAY ' + isPlaying)
         if (!isPlaying) {
-            ctlApi.call('start_playing', null);
+            ctlApi.call('start_playing');
         }
     }
 }
@@ -676,20 +676,20 @@ function gotoCuePoint(val) {
     //log('GOTO CUE POINT ' + val + ' ' + api.id)
     if (api.id) {
         //log('JUMP ' + val + ' ' + api.id)
-        api.call('jump', null);
+        api.call('jump');
     }
 }
 function btnSkipPrev() {
     var ctlApi = getLiveSetApi();
-    ctlApi.call('jump_to_prev_cue', null);
+    ctlApi.call('jump_to_prev_cue');
 }
 function btnSkipNext() {
     var ctlApi = getLiveSetApi();
-    ctlApi.call('jump_to_next_cue', null);
+    ctlApi.call('jump_to_next_cue');
 }
 function btnReEnableAutomation() {
     var ctlApi = getLiveSetApi();
-    ctlApi.call('re_enable_automation', null);
+    ctlApi.call('re_enable_automation');
 }
 function btnLoop() {
     var ctlApi = getLiveSetApi();
@@ -698,7 +698,7 @@ function btnLoop() {
 }
 function btnCaptureMidi() {
     var ctlApi = getLiveSetApi();
-    ctlApi.call('capture_midi', null);
+    ctlApi.call('capture_midi');
 }
 function btnArrangementOverdub() {
     var ctlApi = getLiveSetApi();
@@ -735,19 +735,19 @@ function ctlRec() {
 }
 function ctlPlay() {
     var ctlApi = getLiveSetApi();
-    ctlApi.call('start_playing', null);
+    ctlApi.call('start_playing');
 }
 function ctlStop() {
     var ctlApi = getLiveSetApi();
-    ctlApi.call('stop_playing', null);
+    ctlApi.call('stop_playing');
 }
 function undo() {
     var api = getLiveSetApi();
-    api.call('undo', null);
+    api.call('undo');
 }
 function redo() {
     var api = getLiveSetApi();
-    api.call('redo', null);
+    api.call('redo');
 }
 log('reloaded k4-bluhandBanks');
 // NOTE: This section must appear in any .ts file that is directuly used by a

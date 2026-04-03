@@ -891,7 +891,7 @@ function clipLaunch(jsonStr) {
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
-    scratchApi.call('fire', null);
+    scratchApi.call('fire');
     selectClipSlot(trackIdx, sceneIdx);
 }
 function clipRecord(jsonStr) {
@@ -904,7 +904,7 @@ function clipRecord(jsonStr) {
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
-    scratchApi.call('fire', null);
+    scratchApi.call('fire');
     selectClipSlot(trackIdx, sceneIdx);
 }
 function clipDelete(jsonStr) {
@@ -917,7 +917,7 @@ function clipDelete(jsonStr) {
     if (sceneIdx < 0 || sceneIdx >= totalScenes)
         return;
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
-    scratchApi.call('delete_clip', null);
+    scratchApi.call('delete_clip');
 }
 function clipSetStopButton(jsonStr) {
     ensureApis();
@@ -938,12 +938,12 @@ function clipStop(trackIdx) {
     if (idx < 0 || idx >= trackPaths.length)
         return;
     scratchApi.path = trackPaths[idx];
-    scratchApi.call('stop_all_clips', null);
+    scratchApi.call('stop_all_clips');
 }
 function stopAll() {
     ensureApis();
     scratchApi.path = 'live_set';
-    scratchApi.call('stop_all_clips', null);
+    scratchApi.call('stop_all_clips');
 }
 function sceneLaunch(sceneIdx) {
     ensureApis();
@@ -951,7 +951,7 @@ function sceneLaunch(sceneIdx) {
     if (idx < 0 || idx >= totalScenes)
         return;
     scratchApi.path = 'live_set scenes ' + idx;
-    scratchApi.call('fire', null);
+    scratchApi.call('fire');
 }
 function sceneRename(jsonStr) {
     ensureApis();
@@ -1009,7 +1009,7 @@ function clipsUpdate(jsonStr) {
 function captureScene() {
     ensureApis();
     scratchApi.path = 'live_set';
-    scratchApi.call('capture_and_insert_scene', null);
+    scratchApi.call('capture_and_insert_scene');
 }
 log('reloaded k4-clipView');
 // NOTE: This section must appear in any .ts file that is directly used by a
