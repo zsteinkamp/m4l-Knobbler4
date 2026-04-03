@@ -22,9 +22,9 @@ The full clip grid with sidebar mixer strip, scene list, and navigation panel.
 
 ### Multi-Device Setup
 
-![Multiple tablets and phone running Knobbler](images/gallery/multi-device-setup.webp)
+![Two iPads running Knobbler side by side](images/gallery/multi-device-setup.jpg)
 
-Two iPads and a phone running Knobbler simultaneously — mixer on one, parameters on the other, and phone for quick access.
+Two iPads running Knobbler side by side — Knobbler sliders on one, Bluhand device parameters on the other, with Ableton on the monitor above.
 
 ### Mixer on Phone
 
