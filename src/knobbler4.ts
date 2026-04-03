@@ -1,3 +1,6 @@
+// [v8] entry points need `module` defined before any require() calls
+var module: any = { exports: {} }
+
 import { logFactory } from './utils'
 import config from './config'
 import { INLET_MSGS, OUTLET_OSC, OUTLET_MSGS } from './consts'
@@ -65,7 +68,4 @@ function xySplit(slot: number) {
 
 log('reloaded knobbler4')
 
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
 export = {}

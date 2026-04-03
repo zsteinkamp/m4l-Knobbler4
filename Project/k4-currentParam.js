@@ -1,25 +1,27 @@
 "use strict";
-var config_1 = require("./config");
-var utils_1 = require("./utils");
-var consts_1 = require("./consts");
+// [v8] entry points need `module` defined before any require() calls
+var module = { exports: {} };
+const config_1 = require("./config");
+const utils_1 = require("./utils");
+const consts_1 = require("./consts");
 autowatch = 1;
 inlets = 1;
 outlets = 1;
-var log = (0, utils_1.logFactory)(config_1.default);
+const log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Messages from router');
 setoutletassist(consts_1.OUTLET_OSC, 'OSC messages to [udpsend]');
 // Extract track path from a device canonical path
 // e.g. "live_set tracks 3 devices 1" → "live_set tracks 3"
-var TRACK_PATH_RE = /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/;
-var active = false;
-var paramSelObj = null; // mode=1, follows selected_parameter
-var paramValObj = null; // observes value on current param
-var trackColorObj = null; // observes color on current track
-var scratchApi = null; // throwaway lookups (device name, track name, etc.)
-var valScratchApi = null; // separate scratchpad for onValueChange
-var pause = { paused: false, task: null };
-var currentParamId = 0;
-var locked = false;
+const TRACK_PATH_RE = /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/;
+let active = false;
+let paramSelObj = null; // mode=1, follows selected_parameter
+let paramValObj = null; // observes value on current param
+let trackColorObj = null; // observes color on current track
+let scratchApi = null; // throwaway lookups (device name, track name, etc.)
+let valScratchApi = null; // separate scratchpad for onValueChange
+const pause = { paused: false, task: null };
+let currentParamId = 0;
+let locked = false;
 function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
@@ -69,11 +71,11 @@ function lock(val) {
         onParamSelected();
     }
 }
-var paramSelectDebounce = null;
+let paramSelectDebounce = null;
 function onParamSelected() {
     if (!active || locked || !paramSelObj)
         return;
-    var paramId = parseInt(paramSelObj.id);
+    const paramId = parseInt(paramSelObj.id);
     if (!paramId || paramId === 0) {
         currentParamId = 0;
         return;
@@ -93,21 +95,21 @@ function sendAllParamInfo(paramId) {
     scratchApi.id = paramId;
     if (scratchApi.type !== 'DeviceParameter')
         return;
-    var paramName = (0, utils_1.dequote)(scratchApi.get('name').toString());
-    var paramMin = parseFloat(scratchApi.get('min').toString());
-    var paramMax = parseFloat(scratchApi.get('max').toString());
-    var paramVal = parseFloat(scratchApi.get('value').toString());
+    const paramName = (0, utils_1.dequote)(scratchApi.get('name').toString());
+    const paramMin = parseFloat(scratchApi.get('min').toString());
+    const paramMax = parseFloat(scratchApi.get('max').toString());
+    const paramVal = parseFloat(scratchApi.get('value').toString());
     // Get the min/max display strings
-    var minStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramMin).toString());
-    var maxStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramMax).toString());
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramVal).toString());
+    const minStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramMin).toString());
+    const maxStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramMax).toString());
+    const valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramVal).toString());
     // Scale value to 0-1
-    var scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
+    const scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
     // Navigate to the parent device
-    var paramPath = scratchApi.unquotedpath;
-    var devicePath = paramPath.replace(/ parameters \d+$/, '');
+    const paramPath = scratchApi.unquotedpath;
+    const devicePath = paramPath.replace(/ parameters \d+$/, '');
     scratchApi.path = devicePath;
-    var deviceName = '';
+    let deviceName = '';
     if (scratchApi.type === 'MixerDevice') {
         deviceName = 'Mixer';
     }
@@ -115,9 +117,9 @@ function sendAllParamInfo(paramId) {
         deviceName = (0, utils_1.dequote)(scratchApi.get('name').toString());
     }
     // Navigate to the track
-    var trackMatch = devicePath.match(TRACK_PATH_RE);
-    var trackName = '';
-    var trackColor = '#000000';
+    const trackMatch = devicePath.match(TRACK_PATH_RE);
+    let trackName = '';
+    let trackColor = '#000000';
     if (trackMatch) {
         scratchApi.path = trackMatch[1];
         trackName = (0, utils_1.dequote)(scratchApi.get('name').toString());
@@ -152,18 +154,18 @@ function onValueChange() {
     valScratchApi.id = currentParamId;
     if (valScratchApi.type !== 'DeviceParameter')
         return;
-    var paramVal = parseFloat(valScratchApi.get('value').toString());
-    var paramMin = parseFloat(valScratchApi.get('min').toString());
-    var paramMax = parseFloat(valScratchApi.get('max').toString());
-    var valStr = (0, utils_1.dequote)(valScratchApi.call('str_for_value', paramVal).toString());
-    var scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
+    const paramVal = parseFloat(valScratchApi.get('value').toString());
+    const paramMin = parseFloat(valScratchApi.get('min').toString());
+    const paramMax = parseFloat(valScratchApi.get('max').toString());
+    const valStr = (0, utils_1.dequote)(valScratchApi.call('str_for_value', paramVal).toString());
+    const scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
     (0, utils_1.osc)('/currentParam/val', scaledVal);
     (0, utils_1.osc)('/currentParam/valStr', valStr);
 }
 function onTrackColorChange() {
     if (!active || !currentParamId || !trackColorObj)
         return;
-    var color = '#' + ('000000' + parseInt(trackColorObj.get('color').toString()).toString(16)).slice(-6);
+    const color = '#' + ('000000' + parseInt(trackColorObj.get('color').toString()).toString(16)).slice(-6);
     (0, utils_1.osc)('/currentParam/trackColor', color);
 }
 // Called from router when user moves the current param slider
@@ -174,13 +176,13 @@ function currentParamVal(val) {
     scratchApi.id = currentParamId;
     if (scratchApi.type !== 'DeviceParameter')
         return;
-    var paramMin = parseFloat(scratchApi.get('min').toString());
-    var paramMax = parseFloat(scratchApi.get('max').toString());
+    const paramMin = parseFloat(scratchApi.get('min').toString());
+    const paramMax = parseFloat(scratchApi.get('max').toString());
     // Scale from 0-1 to param range
-    var rawVal = paramMin + val * (paramMax - paramMin);
+    const rawVal = paramMin + val * (paramMax - paramMin);
     (0, utils_1.pauseUnpause)(pause, consts_1.PAUSE_MS);
     scratchApi.set('value', rawVal);
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', rawVal).toString());
+    const valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', rawVal).toString());
     (0, utils_1.osc)('/currentParam/valStr', valStr);
 }
 // Called from router when user taps "default" button
@@ -191,13 +193,13 @@ function currentParamDefault() {
     scratchApi.id = currentParamId;
     if (scratchApi.type !== 'DeviceParameter')
         return;
-    var defaultVal = parseFloat(scratchApi.get('default_value').toString());
-    var paramMin = parseFloat(scratchApi.get('min').toString());
-    var paramMax = parseFloat(scratchApi.get('max').toString());
+    const defaultVal = parseFloat(scratchApi.get('default_value').toString());
+    const paramMin = parseFloat(scratchApi.get('min').toString());
+    const paramMax = parseFloat(scratchApi.get('max').toString());
     (0, utils_1.pauseUnpause)(pause, consts_1.PAUSE_MS);
     scratchApi.set('value', defaultVal);
-    var scaledVal = paramMax > paramMin ? (defaultVal - paramMin) / (paramMax - paramMin) : 0;
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', defaultVal).toString());
+    const scaledVal = paramMax > paramMin ? (defaultVal - paramMin) / (paramMax - paramMin) : 0;
+    const valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', defaultVal).toString());
     (0, utils_1.osc)('/currentParam/val', scaledVal);
     (0, utils_1.osc)('/currentParam/valStr', valStr);
 }
@@ -207,7 +209,4 @@ function refresh() {
     sendAllParamInfo(currentParamId);
 }
 log('reloaded k4-currentParam');
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
 module.exports = {};

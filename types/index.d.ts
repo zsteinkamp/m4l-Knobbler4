@@ -38,3 +38,8 @@ type IdObserverArg = [
 type IdArr = number[]
 
 type MaxTask = Task & { freepeer: () => void }
+
+// Fix @types/maxmsp: args should be optional per the docs
+interface LiveAPI {
+  call(func: string, args?: any): void
+}

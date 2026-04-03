@@ -1,3 +1,6 @@
+// [v8] entry points need `module` defined before any require() calls
+var module: any = { exports: {} }
+
 import {
   cleanArr,
   colorToString,
@@ -224,7 +227,4 @@ function init() {
 
 log('reloaded k4-visibleTracks')
 
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
 export = {}

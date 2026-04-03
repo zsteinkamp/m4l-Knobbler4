@@ -1,3 +1,6 @@
+// [v8] entry points need `module` defined before any require() calls
+var module: any = { exports: {} }
+
 import { loadSetting, logFactory } from './utils'
 import config from './config'
 
@@ -102,7 +105,4 @@ function flushOscBuffer() {
 
 log('reloaded k4-oscBatch')
 
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
 export = {}

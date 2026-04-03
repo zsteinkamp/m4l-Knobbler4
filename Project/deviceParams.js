@@ -2,7 +2,7 @@
 // from https://github.com/gluon/AbletonLive12_MIDIRemoteScripts/blob/main/_Generic/Devices.py
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAX_DEVICES = exports.BANK_NAME_DICT = exports.DEVICE_BOB_DICT = exports.DEVICE_DICT = void 0;
-var RCK_BANK1 = [
+const RCK_BANK1 = [
     'Macro 1',
     'Macro 2',
     'Macro 3',
@@ -12,7 +12,7 @@ var RCK_BANK1 = [
     'Macro 7',
     'Macro 8',
 ];
-var RCK_BANK2 = [
+const RCK_BANK2 = [
     'Macro 9',
     'Macro 10',
     'Macro 11',
@@ -22,10 +22,10 @@ var RCK_BANK2 = [
     'Macro 15',
     'Macro 16',
 ];
-var RCK_BANKS = [RCK_BANK1, RCK_BANK2];
-var RCK_BOBS = [RCK_BANK1];
-var RCK_BNK_NAMES = ['Macros', 'Macros 2'];
-var ALG_BANK1 = [
+const RCK_BANKS = [RCK_BANK1, RCK_BANK2];
+const RCK_BOBS = [RCK_BANK1];
+const RCK_BNK_NAMES = ['Macros', 'Macros 2'];
+const ALG_BANK1 = [
     'OSC1 Level',
     'OSC1 Octave',
     'OSC1 Semi',
@@ -35,7 +35,7 @@ var ALG_BANK1 = [
     'OSC2 Semi',
     'OSC2 Shape',
 ];
-var ALG_BANK2 = [
+const ALG_BANK2 = [
     'OSC1 Balance',
     'F1 Freq',
     'F1 Resonance',
@@ -45,7 +45,7 @@ var ALG_BANK2 = [
     'F2 Resonance',
     'F2 Type',
 ];
-var ALG_BANK3 = [
+const ALG_BANK3 = [
     'FEG1 Attack',
     'FEG1 Decay',
     'FEG1 Sustain',
@@ -55,7 +55,7 @@ var ALG_BANK3 = [
     'FEG2 Sustain',
     'FEG2 Rel',
 ];
-var ALG_BANK4 = [
+const ALG_BANK4 = [
     'F1 On/Off',
     'F1 Freq < LFO',
     'F1 Freq < Env',
@@ -65,7 +65,7 @@ var ALG_BANK4 = [
     'F2 Freq < Env',
     'F2 Res < LFO',
 ];
-var ALG_BANK5 = [
+const ALG_BANK5 = [
     'AEG1 Attack',
     'AEG1 Decay',
     'AEG1 Sustain',
@@ -75,7 +75,7 @@ var ALG_BANK5 = [
     'AEG2 Sustain',
     'AEG2 Rel',
 ];
-var ALG_BANK6 = [
+const ALG_BANK6 = [
     'AMP1 Level',
     'AMP1 Pan',
     'LFO1 Shape',
@@ -85,7 +85,7 @@ var ALG_BANK6 = [
     'LFO2 Shape',
     'LFO2 Speed',
 ];
-var ALG_BANK7 = [
+const ALG_BANK7 = [
     'Volume',
     'Noise On/Off',
     'Noise Level',
@@ -95,7 +95,7 @@ var ALG_BANK7 = [
     'Vib On/Off',
     'Vib Amount',
 ];
-var ALG_BOB = [
+const ALG_BOB = [
     'F1 Freq',
     'F1 Resonance',
     'OSC1 Shape',
@@ -105,7 +105,7 @@ var ALG_BOB = [
     'OSC2 Detune',
     'Volume',
 ];
-var ALG_BANKS = [
+const ALG_BANKS = [
     ALG_BANK1,
     ALG_BANK2,
     ALG_BANK3,
@@ -114,8 +114,8 @@ var ALG_BANKS = [
     ALG_BANK6,
     ALG_BANK7,
 ];
-var ALG_BOBS = [ALG_BOB];
-var ALG_BNK_NAMES = [
+const ALG_BOBS = [ALG_BOB];
+const ALG_BNK_NAMES = [
     'Oscillators',
     'Filters',
     'Filter Envelopes',
@@ -124,7 +124,7 @@ var ALG_BNK_NAMES = [
     'Mix',
     'Output',
 ];
-var COL_BANK1 = [
+const COL_BANK1 = [
     'Mallet On/Off',
     'Mallet Volume',
     'Mallet Noise Amount',
@@ -134,7 +134,7 @@ var COL_BANK1 = [
     '',
     '',
 ];
-var COL_BANK2 = [
+const COL_BANK2 = [
     'Noise Volume',
     'Noise Filter Type',
     'Noise Filter Freq',
@@ -144,7 +144,7 @@ var COL_BANK2 = [
     'Noise Sustain',
     'Noise Release',
 ];
-var COL_BANK3 = [
+const COL_BANK3 = [
     'Res 1 Decay',
     'Res 1 Material',
     'Res 1 Type',
@@ -154,7 +154,7 @@ var COL_BANK3 = [
     'Res 1 Pitch Env.',
     'Res 1 Pitch Env. Time',
 ];
-var COL_BANK4 = [
+const COL_BANK4 = [
     'Res 1 Listening L',
     'Res 1 Listening R',
     'Res 1 Hit',
@@ -164,7 +164,7 @@ var COL_BANK4 = [
     'Res 1 Opening',
     'Res 1 Ratio',
 ];
-var COL_BANK5 = [
+const COL_BANK5 = [
     'Res 2 Decay',
     'Res 2 Material',
     'Res 2 Type',
@@ -174,7 +174,7 @@ var COL_BANK5 = [
     'Res 2 Pitch Env.',
     'Res 2 Pitch Env. Time',
 ];
-var COL_BANK6 = [
+const COL_BANK6 = [
     'Res 2 Listening L',
     'Res 2 Listening R',
     'Res 2 Hit',
@@ -184,7 +184,7 @@ var COL_BANK6 = [
     'Res 2 Opening',
     'Res 2 Ratio',
 ];
-var COL_BOB = [
+const COL_BOB = [
     'Res 1 Brightness',
     'Res 1 Type',
     'Mallet Stiffness',
@@ -194,7 +194,7 @@ var COL_BOB = [
     'Res 1 Tune',
     'Volume',
 ];
-var COL_BANKS = [
+const COL_BANKS = [
     COL_BANK1,
     COL_BANK2,
     COL_BANK3,
@@ -202,8 +202,8 @@ var COL_BANKS = [
     COL_BANK5,
     COL_BANK6,
 ];
-var COL_BOBS = [COL_BOB];
-var COL_BNK_NAMES = [
+const COL_BOBS = [COL_BOB];
+const COL_BNK_NAMES = [
     'Mallet',
     'Noise',
     'Resonator 1, Set A',
@@ -211,7 +211,7 @@ var COL_BNK_NAMES = [
     'Resonator 2, Set A',
     'Resonator 2, Set B',
 ];
-var ELC_BANK1 = [
+const ELC_BANK1 = [
     'M Stiffness',
     'M Force',
     'Noise Pitch',
@@ -221,7 +221,7 @@ var ELC_BANK1 = [
     'F Tine Decay',
     'F Tine Vol',
 ];
-var ELC_BANK2 = [
+const ELC_BANK2 = [
     'F Tone Decay',
     'F Tone Vol',
     'F Release',
@@ -231,7 +231,7 @@ var ELC_BANK2 = [
     '',
     '',
 ];
-var ELC_BANK3 = [
+const ELC_BANK3 = [
     'P Symmetry',
     'P Distance',
     'P Amp In',
@@ -241,7 +241,7 @@ var ELC_BANK3 = [
     '',
     '',
 ];
-var ELC_BANK4 = [
+const ELC_BANK4 = [
     'M Stiff < Vel',
     'M Stiff < Key',
     'M Force < Vel',
@@ -251,7 +251,7 @@ var ELC_BANK4 = [
     'P Amp < Key',
     '',
 ];
-var ELC_BANK5 = [
+const ELC_BANK5 = [
     'Volume',
     'Voices',
     'Semitone',
@@ -261,7 +261,7 @@ var ELC_BANK5 = [
     'Note PB Range',
     '',
 ];
-var ELC_BOB = [
+const ELC_BOB = [
     'M Stiffness',
     'M Force',
     'Noise Amount',
@@ -271,16 +271,16 @@ var ELC_BOB = [
     'P Symmetry',
     'Volume',
 ];
-var ELC_BANKS = [ELC_BANK1, ELC_BANK2, ELC_BANK3, ELC_BANK4, ELC_BANK5];
-var ELC_BOBS = [ELC_BOB];
-var ELC_BNK_NAMES = [
+const ELC_BANKS = [ELC_BANK1, ELC_BANK2, ELC_BANK3, ELC_BANK4, ELC_BANK5];
+const ELC_BOBS = [ELC_BOB];
+const ELC_BNK_NAMES = [
     'Mallet and Tine',
     'Tone and Damper',
     'Pickup',
     'Modulation',
     'Global',
 ];
-var IMP_BANK1 = [
+const IMP_BANK1 = [
     '1 Start',
     '1 Transpose',
     '1 Stretch Factor',
@@ -290,7 +290,7 @@ var IMP_BANK1 = [
     '1 Pan',
     '1 Volume',
 ];
-var IMP_BANK2 = [
+const IMP_BANK2 = [
     '2 Start',
     '2 Transpose',
     '2 Stretch Factor',
@@ -300,7 +300,7 @@ var IMP_BANK2 = [
     '2 Pan',
     '2 Volume',
 ];
-var IMP_BANK3 = [
+const IMP_BANK3 = [
     '3 Start',
     '3 Transpose',
     '3 Stretch Factor',
@@ -310,7 +310,7 @@ var IMP_BANK3 = [
     '3 Pan',
     '3 Volume',
 ];
-var IMP_BANK4 = [
+const IMP_BANK4 = [
     '4 Start',
     '4 Transpose',
     '4 Stretch Factor',
@@ -320,7 +320,7 @@ var IMP_BANK4 = [
     '4 Pan',
     '4 Volume',
 ];
-var IMP_BANK5 = [
+const IMP_BANK5 = [
     '5 Start',
     '5 Transpose',
     '5 Stretch Factor',
@@ -330,7 +330,7 @@ var IMP_BANK5 = [
     '5 Pan',
     '5 Volume',
 ];
-var IMP_BANK6 = [
+const IMP_BANK6 = [
     '6 Start',
     '6 Transpose',
     '6 Stretch Factor',
@@ -340,7 +340,7 @@ var IMP_BANK6 = [
     '6 Pan',
     '6 Volume',
 ];
-var IMP_BANK7 = [
+const IMP_BANK7 = [
     '7 Start',
     '7 Transpose',
     '7 Stretch Factor',
@@ -350,7 +350,7 @@ var IMP_BANK7 = [
     '7 Pan',
     '7 Volume',
 ];
-var IMP_BANK8 = [
+const IMP_BANK8 = [
     '8 Start',
     '8 Transpose',
     '8 Stretch Factor',
@@ -360,7 +360,7 @@ var IMP_BANK8 = [
     '8 Pan',
     '8 Volume',
 ];
-var IMP_BOB = [
+const IMP_BOB = [
     'Global Time',
     'Global Transpose',
     '1 Transpose',
@@ -370,7 +370,7 @@ var IMP_BOB = [
     '5 Transpose',
     '6 Transpose',
 ];
-var IMP_BANKS = [
+const IMP_BANKS = [
     IMP_BANK1,
     IMP_BANK2,
     IMP_BANK3,
@@ -380,8 +380,8 @@ var IMP_BANKS = [
     IMP_BANK7,
     IMP_BANK8,
 ];
-var IMP_BOBS = [IMP_BOB];
-var IMP_BNK_NAMES = [
+const IMP_BOBS = [IMP_BOB];
+const IMP_BNK_NAMES = [
     'Pad 1',
     'Pad 2',
     'Pad 3',
@@ -391,7 +391,7 @@ var IMP_BNK_NAMES = [
     'Pad 7',
     'Pad 8',
 ];
-var OPR_BANK1 = [
+const OPR_BANK1 = [
     'Ae Attack',
     'Ae Decay',
     'Ae Sustain',
@@ -401,7 +401,7 @@ var OPR_BANK1 = [
     'Osc-A Lev < Vel',
     'Osc-A Level',
 ];
-var OPR_BANK2 = [
+const OPR_BANK2 = [
     'Be Attack',
     'Be Decay',
     'Be Sustain',
@@ -411,7 +411,7 @@ var OPR_BANK2 = [
     'Osc-B Lev < Vel',
     'Osc-B Level',
 ];
-var OPR_BANK3 = [
+const OPR_BANK3 = [
     'Ce Attack',
     'Ce Decay',
     'Ce Sustain',
@@ -421,7 +421,7 @@ var OPR_BANK3 = [
     'Osc-C Lev < Vel',
     'Osc-C Level',
 ];
-var OPR_BANK4 = [
+const OPR_BANK4 = [
     'De Attack',
     'De Decay',
     'De Sustain',
@@ -431,7 +431,7 @@ var OPR_BANK4 = [
     'Osc-D Lev < Vel',
     'Osc-D Level',
 ];
-var OPR_BANK5 = [
+const OPR_BANK5 = [
     'Le Attack',
     'Le Decay',
     'Le Sustain',
@@ -441,7 +441,7 @@ var OPR_BANK5 = [
     'LFO Type',
     'LFO R < K',
 ];
-var OPR_BANK6 = [
+const OPR_BANK6 = [
     'Fe Attack',
     'Fe Decay',
     'Fe Sustain',
@@ -451,7 +451,7 @@ var OPR_BANK6 = [
     'Fe R < Vel',
     'Fe Amount',
 ];
-var OPR_BANK7 = [
+const OPR_BANK7 = [
     'Pe Attack',
     'Pe Decay',
     'Pe Sustain',
@@ -461,7 +461,7 @@ var OPR_BANK7 = [
     'Pe Amount',
     'Spread',
 ];
-var OPR_BANK8 = [
+const OPR_BANK8 = [
     'Time < Key',
     'Panorama',
     'Pan < Key',
@@ -471,7 +471,7 @@ var OPR_BANK8 = [
     'Tone',
     'Volume',
 ];
-var OPR_BOB = [
+const OPR_BOB = [
     'Filter Freq',
     'Filter Res',
     'A Coarse',
@@ -481,7 +481,7 @@ var OPR_BOB = [
     'Osc-B Level',
     'Volume',
 ];
-var OPR_BANKS = [
+const OPR_BANKS = [
     OPR_BANK1,
     OPR_BANK2,
     OPR_BANK3,
@@ -491,8 +491,8 @@ var OPR_BANKS = [
     OPR_BANK7,
     OPR_BANK8,
 ];
-var OPR_BOBS = [OPR_BOB];
-var OPR_BNK_NAMES = [
+const OPR_BOBS = [OPR_BOB];
+const OPR_BNK_NAMES = [
     'Oscillator A',
     'Oscillator B',
     'Oscillator C',
@@ -502,7 +502,7 @@ var OPR_BNK_NAMES = [
     'Pitch Modulation',
     'Routing',
 ];
-var SAM_BANK1 = [
+const SAM_BANK1 = [
     'Volume',
     'Ve Attack',
     'Ve Decay',
@@ -512,7 +512,7 @@ var SAM_BANK1 = [
     'Ve R < Vel',
     'Time',
 ];
-var SAM_BANK2 = [
+const SAM_BANK2 = [
     'Filter Type',
     'Filter Morph',
     'Filter Freq',
@@ -522,7 +522,7 @@ var SAM_BANK2 = [
     'Fe < Env',
     'Shaper Amt',
 ];
-var SAM_BANK3 = [
+const SAM_BANK3 = [
     'Fe Attack',
     'Fe Decay',
     'Fe Sustain',
@@ -532,7 +532,7 @@ var SAM_BANK3 = [
     'Fe Loop',
     'Fe Retrig',
 ];
-var SAM_BANK4 = [
+const SAM_BANK4 = [
     'L 1 Wave',
     'L 1 Sync',
     'L 1 Sync Rate',
@@ -542,7 +542,7 @@ var SAM_BANK4 = [
     'Pan < LFO',
     'Pitch < LFO',
 ];
-var SAM_BANK5 = [
+const SAM_BANK5 = [
     'L 2 Wave',
     'L 2 Sync',
     'L 2 Sync Rate',
@@ -552,7 +552,7 @@ var SAM_BANK5 = [
     'L 2 Spin',
     'L 2 Phase',
 ];
-var SAM_BANK6 = [
+const SAM_BANK6 = [
     'L 3 Wave',
     'L 3 Sync',
     'L 3 Sync Rate',
@@ -562,7 +562,7 @@ var SAM_BANK6 = [
     'L 3 Spin',
     'L 3 Phase',
 ];
-var SAM_BANK7 = [
+const SAM_BANK7 = [
     'O Mode',
     'O Volume',
     'O Coarse',
@@ -572,7 +572,7 @@ var SAM_BANK7 = [
     'Oe Sustain',
     'Oe Release',
 ];
-var SAM_BANK8 = [
+const SAM_BANK8 = [
     'Transpose',
     'Spread',
     'Pe < Env',
@@ -582,7 +582,7 @@ var SAM_BANK8 = [
     'Pe Sustain',
     'Pe Release',
 ];
-var SAM_BOB = [
+const SAM_BOB = [
     'Filter Freq',
     'Filter Res',
     'Fe < Env',
@@ -592,7 +592,7 @@ var SAM_BOB = [
     'Transpose',
     'Volume',
 ];
-var SAM_BANKS = [
+const SAM_BANKS = [
     SAM_BANK1,
     SAM_BANK2,
     SAM_BANK3,
@@ -602,8 +602,8 @@ var SAM_BANKS = [
     SAM_BANK7,
     SAM_BANK8,
 ];
-var SAM_BOBS = [SAM_BOB];
-var SAM_BNK_NAMES = [
+const SAM_BOBS = [SAM_BOB];
+const SAM_BNK_NAMES = [
     'Volume',
     'Filter',
     'Filter Envelope',
@@ -613,7 +613,7 @@ var SAM_BNK_NAMES = [
     'Oscillator',
     'Pitch',
 ];
-var SIM_BANK1 = [
+const SIM_BANK1 = [
     'Ve Attack',
     'Ve Decay',
     'Ve Sustain',
@@ -623,7 +623,7 @@ var SIM_BANK1 = [
     'S Length',
     'S Loop Fade',
 ];
-var SIM_BANK2 = [
+const SIM_BANK2 = [
     'Fe Attack',
     'Fe Decay',
     'Fe Sustain',
@@ -633,7 +633,7 @@ var SIM_BANK2 = [
     'Filt < Vel',
     'Fe < Env',
 ];
-var SIM_BANK3 = [
+const SIM_BANK3 = [
     'L Attack',
     'L Rate',
     'L R < Key',
@@ -643,7 +643,7 @@ var SIM_BANK3 = [
     'Pitch < LFO',
     'Pan < LFO',
 ];
-var SIM_BANK4 = [
+const SIM_BANK4 = [
     'Pe Attack',
     'Pe Decay',
     'Pe Sustain',
@@ -653,7 +653,7 @@ var SIM_BANK4 = [
     'Pan',
     'Volume',
 ];
-var SIM_BOB = [
+const SIM_BOB = [
     'Filter Freq',
     'Filter Res',
     'S Start',
@@ -663,10 +663,10 @@ var SIM_BOB = [
     'Transpose',
     'Volume',
 ];
-var SIM_BANKS = [SIM_BANK1, SIM_BANK2, SIM_BANK3, SIM_BANK4];
-var SIM_BOBS = [SIM_BOB];
-var SIM_BNK_NAMES = ['Amplitude', 'Filter', 'LFO', 'Pitch Modifiers'];
-var TNS_BANK1 = [
+const SIM_BANKS = [SIM_BANK1, SIM_BANK2, SIM_BANK3, SIM_BANK4];
+const SIM_BOBS = [SIM_BOB];
+const SIM_BNK_NAMES = ['Amplitude', 'Filter', 'LFO', 'Pitch Modifiers'];
+const TNS_BANK1 = [
     'Exciter Type',
     'String Decay',
     'Str Inharmon',
@@ -676,7 +676,7 @@ var TNS_BANK1 = [
     'Exc Velocity',
     'E Pos',
 ];
-var TNS_BANK2 = [
+const TNS_BANK2 = [
     'Damper On',
     'Damper Mass',
     'D Stiffness',
@@ -686,7 +686,7 @@ var TNS_BANK2 = [
     'D Pos < Vel',
     'D Pos Abs',
 ];
-var TNS_BANK3 = [
+const TNS_BANK3 = [
     'Term On/Off',
     'Term Mass',
     'Term Fng Stiff',
@@ -696,7 +696,7 @@ var TNS_BANK3 = [
     'T Mass < Vel',
     'T Mass < Key',
 ];
-var TNS_BANK4 = [
+const TNS_BANK4 = [
     'Body On/Off',
     'Body Type',
     'Body Size',
@@ -706,7 +706,7 @@ var TNS_BANK4 = [
     'Body Mix',
     'Volume',
 ];
-var TNS_BANK5 = [
+const TNS_BANK5 = [
     'Vibrato On/Off',
     'Vib Delay',
     'Vib Fade-In',
@@ -716,7 +716,7 @@ var TNS_BANK5 = [
     'Vib Error',
     'Volume',
 ];
-var TNS_BANK6 = [
+const TNS_BANK6 = [
     'Filter On/Off',
     'Filter Type',
     'Filter Freq',
@@ -726,7 +726,7 @@ var TNS_BANK6 = [
     'Reso < Env',
     'Reso < LFO',
 ];
-var TNS_BANK7 = [
+const TNS_BANK7 = [
     'FEG On/Off',
     'FEG Attack',
     'FEG Decay',
@@ -736,7 +736,7 @@ var TNS_BANK7 = [
     'LFO Shape',
     'LFO Speed',
 ];
-var TNS_BANK8 = [
+const TNS_BANK8 = [
     'Unison On/Off',
     'Uni Detune',
     'Porta On/Off',
@@ -746,7 +746,7 @@ var TNS_BANK8 = [
     'Semitone',
     'Volume',
 ];
-var TNS_BOB = [
+const TNS_BOB = [
     'Filter Freq',
     'Filter Reso',
     'Filter Type',
@@ -756,7 +756,7 @@ var TNS_BOB = [
     'Str Damping',
     'Volume',
 ];
-var TNS_BANKS = [
+const TNS_BANKS = [
     TNS_BANK1,
     TNS_BANK2,
     TNS_BANK3,
@@ -766,8 +766,8 @@ var TNS_BANKS = [
     TNS_BANK7,
     TNS_BANK8,
 ];
-var TNS_BOBS = [TNS_BOB];
-var TNS_BNK_NAMES = [
+const TNS_BOBS = [TNS_BOB];
+const TNS_BNK_NAMES = [
     'Exciter and String',
     'Damper',
     'Termination and Pickup',
@@ -777,7 +777,7 @@ var TNS_BNK_NAMES = [
     'Envelope and LFO',
     'Global',
 ];
-var WVT_BANK1 = [
+const WVT_BANK1 = [
     'Osc 1 Transp',
     'Osc 1 Detune',
     'Osc 1 Pos',
@@ -787,7 +787,7 @@ var WVT_BANK1 = [
     'Osc 1 Gain',
     'Osc 1 On',
 ];
-var WVT_BANK2 = [
+const WVT_BANK2 = [
     'Osc 2 Transp',
     'Osc 2 Detune',
     'Osc 2 Pos',
@@ -797,7 +797,7 @@ var WVT_BANK2 = [
     'Osc 2 Gain',
     'Osc 2 On',
 ];
-var WVT_BANK3 = [
+const WVT_BANK3 = [
     'Filter 1 On',
     'Filter 1 Freq',
     'Filter 1 Res',
@@ -807,7 +807,7 @@ var WVT_BANK3 = [
     'Filter 1 LP/HP',
     'Filter 1 BP/NO/Morph',
 ];
-var WVT_BANK4 = [
+const WVT_BANK4 = [
     'Filter 2 On',
     'Filter 2 Freq',
     'Filter 2 Res',
@@ -817,7 +817,7 @@ var WVT_BANK4 = [
     'Filter 2 LP/HP',
     'Filter 2 BP/NO/Morph',
 ];
-var WVT_BANK5 = [
+const WVT_BANK5 = [
     'Amp Attack',
     'Amp Decay',
     'Amp Sustain',
@@ -827,7 +827,7 @@ var WVT_BANK5 = [
     'Amp R Slope',
     'Amp Loop Mode',
 ];
-var WVT_BANK6 = [
+const WVT_BANK6 = [
     'Env 2 Attack',
     'Env 2 Decay',
     'Env 2 Sustain',
@@ -837,7 +837,7 @@ var WVT_BANK6 = [
     'Env 3 Sustain',
     'Env 3 Release',
 ];
-var WVT_BANK7 = [
+const WVT_BANK7 = [
     'LFO 1 Amount',
     'LFO 1 Rate',
     'LFO 1 S. Rate',
@@ -847,7 +847,7 @@ var WVT_BANK7 = [
     'LFO 2 S. Rate',
     'LFO 2 Sync',
 ];
-var WVT_BANK8 = [
+const WVT_BANK8 = [
     'Time',
     'Global Mod Amount',
     'Unison Amount',
@@ -857,7 +857,7 @@ var WVT_BANK8 = [
     'Sub Transpose',
     'Volume',
 ];
-var WVT_BOB = [
+const WVT_BOB = [
     'Osc 1 Pos',
     'Osc 1 Transp',
     'Osc 2 Pos',
@@ -867,7 +867,7 @@ var WVT_BOB = [
     'Global Mod Amount',
     'Volume',
 ];
-var WVT_BANKS = [
+const WVT_BANKS = [
     WVT_BANK1,
     WVT_BANK2,
     WVT_BANK3,
@@ -877,8 +877,8 @@ var WVT_BANKS = [
     WVT_BANK7,
     WVT_BANK8,
 ];
-var WVT_BOBS = [WVT_BOB];
-var WVT_BANK_NAMES = [
+const WVT_BOBS = [WVT_BOB];
+const WVT_BANK_NAMES = [
     'Oscillator 1',
     'Oscillator 2',
     'Filter 1',
@@ -888,7 +888,7 @@ var WVT_BANK_NAMES = [
     'LFO 1/2',
     'Global',
 ];
-var ARP_BANK1 = [
+const ARP_BANK1 = [
     'Style',
     'Groove',
     'Offset',
@@ -898,7 +898,7 @@ var ARP_BANK1 = [
     'Repeats',
     'Gate',
 ];
-var ARP_BANK2 = [
+const ARP_BANK2 = [
     'Tranpose Mode',
     'Tranpose Key',
     'Transp. Steps',
@@ -908,7 +908,7 @@ var ARP_BANK2 = [
     'Velocity On',
     'Vel. Retrigger',
 ];
-var ARP_BOB = [
+const ARP_BOB = [
     'Synced Rate',
     'Free Rate',
     'Transp. Steps',
@@ -918,10 +918,10 @@ var ARP_BOB = [
     'Velocity Decay',
     'Velocity Target',
 ];
-var ARP_BANKS = [ARP_BANK1, ARP_BANK2];
-var ARP_BOBS = [ARP_BOB];
-var ARP_BNK_NAMES = ['Style', 'Pitch/Velocity'];
-var CRD_BANK1 = [
+const ARP_BANKS = [ARP_BANK1, ARP_BANK2];
+const ARP_BOBS = [ARP_BOB];
+const ARP_BNK_NAMES = ['Style', 'Pitch/Velocity'];
+const CRD_BANK1 = [
     'Shift1',
     'Shift2',
     'Shift3',
@@ -931,7 +931,7 @@ var CRD_BANK1 = [
     '',
     '',
 ];
-var CRD_BANK2 = [
+const CRD_BANK2 = [
     'Velocity1',
     'Velocity2',
     'Velocity3',
@@ -941,7 +941,7 @@ var CRD_BANK2 = [
     '',
     '',
 ];
-var CRD_BOB = [
+const CRD_BOB = [
     'Shift1',
     'Shift2',
     'Shift3',
@@ -951,10 +951,10 @@ var CRD_BOB = [
     'Shift6',
     'Velocity6',
 ];
-var CRD_BANKS = [CRD_BANK1, CRD_BANK2];
-var CRD_BOBS = [CRD_BOB];
-var CRD_BNK_NAMES = ['Shift', 'Shift %'];
-var NTL_BANK1 = [
+const CRD_BANKS = [CRD_BANK1, CRD_BANK2];
+const CRD_BOBS = [CRD_BOB];
+const CRD_BNK_NAMES = ['Shift', 'Shift %'];
+const NTL_BANK1 = [
     'Sync On',
     'Time Length',
     'Synced Length',
@@ -964,18 +964,18 @@ var NTL_BANK1 = [
     'Decay Key Scale',
     'Latch',
 ];
-var NTL_BANKS = [NTL_BANK1];
-var NTL_BOBS = [NTL_BANK1];
-var PIT_BANK1 = ['Pitch', 'Range', 'Lowest', '', '', '', '', ''];
-var PIT_BANKS = [PIT_BANK1];
-var PIT_BOBS = [PIT_BANK1];
-var RND_BANK1 = ['Chance', 'Choices', 'Interval', 'Sign', '', '', '', ''];
-var RND_BANKS = [RND_BANK1];
-var RND_BOBS = [RND_BANK1];
-var SCL_BANK1 = ['Base', 'Transpose', 'Range', 'Lowest', '', '', '', ''];
-var SCL_BANKS = [SCL_BANK1];
-var SCL_BOBS = [SCL_BANK1];
-var VEL_BANK1 = [
+const NTL_BANKS = [NTL_BANK1];
+const NTL_BOBS = [NTL_BANK1];
+const PIT_BANK1 = ['Pitch', 'Range', 'Lowest', '', '', '', '', ''];
+const PIT_BANKS = [PIT_BANK1];
+const PIT_BOBS = [PIT_BANK1];
+const RND_BANK1 = ['Chance', 'Choices', 'Interval', 'Sign', '', '', '', ''];
+const RND_BANKS = [RND_BANK1];
+const RND_BOBS = [RND_BANK1];
+const SCL_BANK1 = ['Base', 'Transpose', 'Range', 'Lowest', '', '', '', ''];
+const SCL_BANKS = [SCL_BANK1];
+const SCL_BOBS = [SCL_BANK1];
+const VEL_BANK1 = [
     'Drive',
     'Compand',
     'Random',
@@ -985,9 +985,9 @@ var VEL_BANK1 = [
     'Range',
     'Lowest',
 ];
-var VEL_BANKS = [VEL_BANK1];
-var VEL_BOBS = [VEL_BANK1];
-var AMP_BANK1 = [
+const VEL_BANKS = [VEL_BANK1];
+const VEL_BOBS = [VEL_BANK1];
+const AMP_BANK1 = [
     'Amp Type',
     'Bass',
     'Middle',
@@ -997,11 +997,11 @@ var AMP_BANK1 = [
     'Volume',
     'Dry/Wet',
 ];
-var AMP_BANK2 = ['Dual Mono', '', '', '', '', '', '', ''];
-var AMP_BANKS = [AMP_BANK1, AMP_BANK2];
-var AMP_BOBS = [AMP_BANK1];
-var AMP_BNK_NAMES = ['Global', 'Dual Mono'];
-var AFL_BANK1 = [
+const AMP_BANK2 = ['Dual Mono', '', '', '', '', '', '', ''];
+const AMP_BANKS = [AMP_BANK1, AMP_BANK2];
+const AMP_BOBS = [AMP_BANK1];
+const AMP_BNK_NAMES = ['Global', 'Dual Mono'];
+const AFL_BANK1 = [
     'Frequency',
     'Resonance',
     'Env. Attack',
@@ -1011,7 +1011,7 @@ var AFL_BANK1 = [
     'LFO Frequency',
     'LFO Phase',
 ];
-var AFL_BANK2 = [
+const AFL_BANK2 = [
     'Filter Type',
     'LFO Quantize On',
     'LFO Quantize Rate',
@@ -1021,8 +1021,8 @@ var AFL_BANK2 = [
     'LFO Sync Rate',
     'LFO Offset',
 ];
-var AFL_BANK3 = ['', '', '', '', '', 'S/C On', 'S/C Mix', 'S/C Gain'];
-var AFL_BOB = [
+const AFL_BANK3 = ['', '', '', '', '', 'S/C On', 'S/C Mix', 'S/C Gain'];
+const AFL_BOB = [
     'Frequency',
     'Resonance',
     'Filter Type',
@@ -1032,10 +1032,10 @@ var AFL_BOB = [
     'LFO Frequency',
     'LFO Phase',
 ];
-var AFL_BANKS = [AFL_BANK1, AFL_BANK2, AFL_BANK3];
-var AFL_BOBS = [AFL_BOB];
-var AFL_BNK_NAMES = ['Filter', 'Filter Extra', 'Side Chain'];
-var APN_BANK1 = [
+const AFL_BANKS = [AFL_BANK1, AFL_BANK2, AFL_BANK3];
+const AFL_BOBS = [AFL_BOB];
+const AFL_BNK_NAMES = ['Filter', 'Filter Extra', 'Side Chain'];
+const APN_BANK1 = [
     'Frequency',
     'Phase',
     'Shape',
@@ -1045,9 +1045,9 @@ var APN_BANK1 = [
     'Width [Random]',
     'Amount',
 ];
-var APN_BANKS = [APN_BANK1];
-var APN_BOBS = [APN_BANK1];
-var BRP_BANK1 = [
+const APN_BANKS = [APN_BANK1];
+const APN_BOBS = [APN_BANK1];
+const BRP_BANK1 = [
     'Interval',
     'Offset',
     'Grid',
@@ -1057,7 +1057,7 @@ var BRP_BANK1 = [
     'Volume',
     'Decay',
 ];
-var BRP_BANK2 = [
+const BRP_BANK2 = [
     'Chance',
     'Gate',
     'Pitch',
@@ -1067,7 +1067,7 @@ var BRP_BANK2 = [
     'Volume',
     'Decay',
 ];
-var BRP_BOB = [
+const BRP_BOB = [
     'Grid',
     'Interval',
     'Offset',
@@ -1077,10 +1077,10 @@ var BRP_BOB = [
     'Variation',
     'Chance',
 ];
-var BRP_BANKS = [BRP_BANK1, BRP_BANK2];
-var BRP_BOBS = [BRP_BOB];
-var BRP_BNK_NAMES = ['Repeat Rate', 'Gate/Pitch'];
-var CAB_BANK1 = [
+const BRP_BANKS = [BRP_BANK1, BRP_BANK2];
+const BRP_BOBS = [BRP_BOB];
+const BRP_BNK_NAMES = ['Repeat Rate', 'Gate/Pitch'];
+const CAB_BANK1 = [
     'Cabinet Type',
     'Microphone Position',
     'Microphone Type',
@@ -1090,9 +1090,9 @@ var CAB_BANK1 = [
     '',
     'Dry/Wet',
 ];
-var CAB_BANKS = [CAB_BANK1];
-var CAB_BOBS = [CAB_BANK1];
-var CHR_BANK1 = [
+const CAB_BANKS = [CAB_BANK1];
+const CAB_BOBS = [CAB_BANK1];
+const CHR_BANK1 = [
     'LFO Amount',
     'LFO Rate',
     'Delay 1 Time',
@@ -1102,9 +1102,9 @@ var CHR_BANK1 = [
     'Feedback',
     'Dry/Wet',
 ];
-var CHR_BANKS = [CHR_BANK1];
-var CHR_BOBS = [CHR_BANK1];
-var CP3_BANK1 = [
+const CHR_BANKS = [CHR_BANK1];
+const CHR_BOBS = [CHR_BANK1];
+const CP3_BANK1 = [
     'Threshold',
     'Ratio',
     'Attack',
@@ -1114,7 +1114,7 @@ var CP3_BANK1 = [
     'Knee',
     'Model',
 ];
-var CP3_BANK2 = [
+const CP3_BANK2 = [
     'Threshold',
     'Expansion Ratio',
     'LookAhead',
@@ -1124,7 +1124,7 @@ var CP3_BANK2 = [
     'Dry/Wet',
     'Output Gain',
 ];
-var CP3_BANK3 = [
+const CP3_BANK3 = [
     'S/C EQ On',
     'S/C EQ Type',
     'S/C EQ Freq',
@@ -1134,7 +1134,7 @@ var CP3_BANK3 = [
     'S/C Mix',
     'S/C Gain',
 ];
-var CP3_BOB = [
+const CP3_BOB = [
     'Threshold',
     'Ratio',
     'Attack',
@@ -1144,10 +1144,10 @@ var CP3_BOB = [
     'Dry/Wet',
     'Output Gain',
 ];
-var CP3_BANKS = [CP3_BANK1, CP3_BANK2, CP3_BANK3];
-var CP3_BOBS = [CP3_BOB];
-var CP3_BNK_NAMES = ['Compression', 'Output', 'Side Chain'];
-var CRP_BANK1 = [
+const CP3_BANKS = [CP3_BANK1, CP3_BANK2, CP3_BANK3];
+const CP3_BOBS = [CP3_BOB];
+const CP3_BNK_NAMES = ['Compression', 'Output', 'Side Chain'];
+const CRP_BANK1 = [
     'Decay',
     'Material',
     'Mid Freq',
@@ -1157,7 +1157,7 @@ var CRP_BANK1 = [
     'Gain',
     'Dry Wet',
 ];
-var CRP_BANK2 = [
+const CRP_BANK2 = [
     'Listening L',
     'Listening R',
     'Hit',
@@ -1167,7 +1167,7 @@ var CRP_BANK2 = [
     'Opening',
     'Ratio',
 ];
-var CRP_BANK3 = [
+const CRP_BANK3 = [
     'Resonance Type',
     'Tune',
     'Transpose',
@@ -1177,7 +1177,7 @@ var CRP_BANK3 = [
     'Note Off',
     'Off Decay',
 ];
-var CRP_BOB = [
+const CRP_BOB = [
     'Brightness',
     'Resonance Type',
     'Material',
@@ -1187,10 +1187,10 @@ var CRP_BOB = [
     'Tune',
     'Dry Wet',
 ];
-var CRP_BANKS = [CRP_BANK1, CRP_BANK2, CRP_BANK3];
-var CRP_BOBS = [CRP_BOB];
-var CRP_BNK_NAMES = ['Amount', 'Body', 'Tune'];
-var DRB_BANK1 = [
+const CRP_BANKS = [CRP_BANK1, CRP_BANK2, CRP_BANK3];
+const CRP_BOBS = [CRP_BOB];
+const CRP_BNK_NAMES = ['Amount', 'Body', 'Tune'];
+const DRB_BANK1 = [
     'Drive',
     'Drive Type',
     'Transients',
@@ -1200,7 +1200,7 @@ var DRB_BANK1 = [
     'Boom Decay',
     'Boom Audition',
 ];
-var DRB_BANK2 = [
+const DRB_BANK2 = [
     'Trim',
     'Output Gain',
     'Dry/Wet',
@@ -1210,7 +1210,7 @@ var DRB_BANK2 = [
     '',
     '',
 ];
-var DRB_BOB = [
+const DRB_BOB = [
     'Drive',
     'Drive Type',
     'Crunch',
@@ -1220,10 +1220,10 @@ var DRB_BOB = [
     'Output Gain',
     'Dry/Wet',
 ];
-var DRB_BANKS = [DRB_BANK1, DRB_BANK2];
-var DRB_BOBS = [DRB_BOB];
-var DRB_BANK_NAMES = ['Drive', 'Gain'];
-var DTB_BANK1 = [
+const DRB_BANKS = [DRB_BANK1, DRB_BANK2];
+const DRB_BOBS = [DRB_BOB];
+const DRB_BANK_NAMES = ['Drive', 'Gain'];
+const DTB_BANK1 = [
     'Drive',
     'Bias',
     'Envelope',
@@ -1233,9 +1233,9 @@ var DTB_BANK1 = [
     'Output',
     'Dry/Wet',
 ];
-var DTB_BANKS = [DTB_BANK1];
-var DTB_BOBS = [DTB_BANK1];
-var ECH_BANK1 = [
+const DTB_BANKS = [DTB_BANK1];
+const DTB_BOBS = [DTB_BANK1];
+const ECH_BANK1 = [
     'L Division',
     'R Division',
     'L Sync Mode',
@@ -1245,7 +1245,7 @@ var ECH_BANK1 = [
     'L Sync',
     'R Sync',
 ];
-var ECH_BANK2 = [
+const ECH_BANK2 = [
     'L Time',
     'R Time',
     'L Offset',
@@ -1255,7 +1255,7 @@ var ECH_BANK2 = [
     '',
     '',
 ];
-var ECH_BANK3 = [
+const ECH_BANK3 = [
     'Gate On',
     'Gate Thr',
     'Gate Release',
@@ -1265,7 +1265,7 @@ var ECH_BANK3 = [
     'Env Mix',
     '',
 ];
-var ECH_BANK4 = [
+const ECH_BANK4 = [
     'Noise On',
     'Noise Amt',
     'Noise Mrph',
@@ -1275,7 +1275,7 @@ var ECH_BANK4 = [
     'Repitch',
     '',
 ];
-var ECH_BANK5 = [
+const ECH_BANK5 = [
     'Feedback',
     'Feedback Inv',
     'Input Gain',
@@ -1285,7 +1285,7 @@ var ECH_BANK5 = [
     '',
     '',
 ];
-var ECH_BANK6 = [
+const ECH_BANK6 = [
     'Filter On',
     'HP Freq',
     'HP Res',
@@ -1295,7 +1295,7 @@ var ECH_BANK6 = [
     '',
     '',
 ];
-var ECH_BANK7 = [
+const ECH_BANK7 = [
     'Reverb Level',
     'Reverb Decay',
     'Reverb Loc',
@@ -1305,7 +1305,7 @@ var ECH_BANK7 = [
     '',
     '',
 ];
-var ECH_BANK8 = [
+const ECH_BANK8 = [
     'Mod Wave',
     'Mod Sync',
     'Mod Rate',
@@ -1315,7 +1315,7 @@ var ECH_BANK8 = [
     'Flt < Mod',
     'Mod 4x',
 ];
-var ECH_BOB = [
+const ECH_BOB = [
     'L Division',
     'R Division',
     'L Time',
@@ -1325,7 +1325,7 @@ var ECH_BOB = [
     'Stereo Width',
     'Dry Wet',
 ];
-var ECH_BANKS = [
+const ECH_BANKS = [
     ECH_BANK1,
     ECH_BANK2,
     ECH_BANK3,
@@ -1335,8 +1335,8 @@ var ECH_BANKS = [
     ECH_BANK7,
     ECH_BANK8,
 ];
-var ECH_BOBS = [ECH_BOB];
-var ECH_BANK_NAMES = [
+const ECH_BOBS = [ECH_BOB];
+const ECH_BANK_NAMES = [
     'Sync',
     'Time',
     'Gate/Ducking',
@@ -1346,7 +1346,7 @@ var ECH_BANK_NAMES = [
     'Reverb',
     'Modulation',
 ];
-var EQ8_BANK1 = [
+const EQ8_BANK1 = [
     '1 Filter On A',
     '2 Filter On A',
     '3 Filter On A',
@@ -1356,7 +1356,7 @@ var EQ8_BANK1 = [
     '7 Filter On A',
     '8 Filter On A',
 ];
-var EQ8_BANK2 = [
+const EQ8_BANK2 = [
     '1 Frequency A',
     '2 Frequency A',
     '3 Frequency A',
@@ -1366,7 +1366,7 @@ var EQ8_BANK2 = [
     '7 Frequency A',
     '8 Frequency A',
 ];
-var EQ8_BANK3 = [
+const EQ8_BANK3 = [
     '1 Gain A',
     '2 Gain A',
     '3 Gain A',
@@ -1376,7 +1376,7 @@ var EQ8_BANK3 = [
     '7 Gain A',
     '8 Gain A',
 ];
-var EQ8_BANK4 = [
+const EQ8_BANK4 = [
     '1 Resonance A',
     '2 Resonance A',
     '3 Resonance A',
@@ -1386,7 +1386,7 @@ var EQ8_BANK4 = [
     '7 Resonance A',
     '8 Resonance A',
 ];
-var EQ8_BANK5 = [
+const EQ8_BANK5 = [
     '1 Filter Type A',
     '2 Filter Type A',
     '3 Filter Type A',
@@ -1396,8 +1396,8 @@ var EQ8_BANK5 = [
     '7 Filter Type A',
     '8 Filter Type A',
 ];
-var EQ8_BANK6 = ['Adaptive Q', '', '', '', '', '', 'Scale', 'Output Gain'];
-var EQ8_BANK7 = [
+const EQ8_BANK6 = ['Adaptive Q', '', '', '', '', '', 'Scale', 'Output Gain'];
+const EQ8_BANK7 = [
     '3 Gain A',
     '3 Frequency A',
     '3 Resonance A',
@@ -1407,7 +1407,7 @@ var EQ8_BANK7 = [
     '5 Gain A',
     '5 Frequency A',
 ];
-var EQ8_BOB = [
+const EQ8_BOB = [
     '1 Frequency A',
     '1 Gain A',
     '2 Frequency A',
@@ -1417,7 +1417,7 @@ var EQ8_BOB = [
     '4 Frequency A',
     '4 Gain A',
 ];
-var EQ8_BANKS = [
+const EQ8_BANKS = [
     EQ8_BANK1,
     EQ8_BANK2,
     EQ8_BANK3,
@@ -1426,8 +1426,8 @@ var EQ8_BANKS = [
     EQ8_BANK6,
     EQ8_BANK7,
 ];
-var EQ8_BOBS = [EQ8_BOB];
-var EQ8_BNK_NAMES = [
+const EQ8_BOBS = [EQ8_BOB];
+const EQ8_BNK_NAMES = [
     'Band On/Off',
     'Frequency',
     'Gain',
@@ -1436,7 +1436,7 @@ var EQ8_BNK_NAMES = [
     'Output',
     'EQs 3-5',
 ];
-var EQ3_BANK1 = [
+const EQ3_BANK1 = [
     'GainLo',
     'GainMid',
     'GainHi',
@@ -1446,12 +1446,12 @@ var EQ3_BANK1 = [
     'HighOn',
     'FreqHi',
 ];
-var EQ3_BANKS = [EQ3_BANK1];
-var EQ3_BOBS = [EQ3_BANK1];
-var ERO_BANK1 = ['Frequency', 'Width', 'Mode', 'Amount', '', '', '', ''];
-var ERO_BANKS = [ERO_BANK1];
-var ERO_BOBS = [ERO_BANK1];
-var FLD_BANK1 = [
+const EQ3_BANKS = [EQ3_BANK1];
+const EQ3_BOBS = [EQ3_BANK1];
+const ERO_BANK1 = ['Frequency', 'Width', 'Mode', 'Amount', '', '', '', ''];
+const ERO_BANKS = [ERO_BANK1];
+const ERO_BOBS = [ERO_BANK1];
+const FLD_BANK1 = [
     '1 Filter Freq',
     '1 Filter Width',
     '1 Beat Delay',
@@ -1461,7 +1461,7 @@ var FLD_BANK1 = [
     '1 Volume',
     'Dry',
 ];
-var FLD_BANK2 = [
+const FLD_BANK2 = [
     '2 Filter Freq',
     '2 Filter Width',
     '2 Beat Delay',
@@ -1471,7 +1471,7 @@ var FLD_BANK2 = [
     '2 Volume',
     'Dry',
 ];
-var FLD_BANK3 = [
+const FLD_BANK3 = [
     '3 Filter Freq',
     '3 Filter Width',
     '3 Beat Delay',
@@ -1481,7 +1481,7 @@ var FLD_BANK3 = [
     '3 Volume',
     'Dry',
 ];
-var FLD_BOB = [
+const FLD_BOB = [
     '2 Filter Freq',
     '2 Filter Width',
     '2 Beat Delay',
@@ -1491,10 +1491,10 @@ var FLD_BOB = [
     '2 Volume',
     'Dry',
 ];
-var FLD_BANKS = [FLD_BANK1, FLD_BANK2, FLD_BANK3];
-var FLD_BOBS = [FLD_BOB];
-var FLD_BNK_NAMES = ['Input L Filter', 'Input L+R Filter', 'Input R Filter'];
-var FLG_BANK1 = [
+const FLD_BANKS = [FLD_BANK1, FLD_BANK2, FLD_BANK3];
+const FLD_BOBS = [FLD_BOB];
+const FLD_BNK_NAMES = ['Input L Filter', 'Input L+R Filter', 'Input R Filter'];
+const FLG_BANK1 = [
     'Hi Pass',
     'Dry/Wet',
     'Delay Time',
@@ -1504,7 +1504,7 @@ var FLG_BANK1 = [
     'Env. Release',
     '',
 ];
-var FLG_BANK2 = [
+const FLG_BANK2 = [
     'LFO Amount',
     'Frequency',
     'LFO Phase',
@@ -1514,7 +1514,7 @@ var FLG_BANK2 = [
     'LFO Width [Random]',
     'LFO Waveform',
 ];
-var FLG_BOB = [
+const FLG_BOB = [
     'Hi Pass',
     'Delay Time',
     'Frequency',
@@ -1524,10 +1524,10 @@ var FLG_BOB = [
     'Feedback',
     'Dry/Wet',
 ];
-var FLG_BANKS = [FLG_BANK1, FLG_BANK2];
-var FLG_BOBS = [FLG_BOB];
-var FLG_BNK_NAMES = ['Frequency Controls', 'LFO / S&H'];
-var FRS_BANK1 = [
+const FLG_BANKS = [FLG_BANK1, FLG_BANK2];
+const FLG_BOBS = [FLG_BOB];
+const FLG_BNK_NAMES = ['Frequency Controls', 'LFO / S&H'];
+const FRS_BANK1 = [
     'Coarse',
     'Fine',
     'Mode',
@@ -1537,9 +1537,9 @@ var FRS_BANK1 = [
     'Wide',
     'Dry/Wet',
 ];
-var FRS_BANKS = [FRS_BANK1];
-var FRS_BOBS = [FRS_BANK1];
-var GTE_BANK1 = [
+const FRS_BANKS = [FRS_BANK1];
+const FRS_BOBS = [FRS_BANK1];
+const GTE_BANK1 = [
     'Threshold',
     'Return',
     'FlipMode',
@@ -1549,7 +1549,7 @@ var GTE_BANK1 = [
     'Release',
     'Floor',
 ];
-var GTE_BANK2 = [
+const GTE_BANK2 = [
     'S/C EQ On',
     'S/C EQ Type',
     'S/C EQ Freq',
@@ -1559,10 +1559,10 @@ var GTE_BANK2 = [
     'S/C Mix',
     'S/C Gain',
 ];
-var GTE_BANKS = [GTE_BANK1, GTE_BANK2];
-var GTE_BOBS = [GTE_BANK1];
-var GTE_BNK_NAMES = ['Gate', 'Side Chain'];
-var GLU_BANK1 = [
+const GTE_BANKS = [GTE_BANK1, GTE_BANK2];
+const GTE_BOBS = [GTE_BANK1];
+const GTE_BNK_NAMES = ['Gate', 'Side Chain'];
+const GLU_BANK1 = [
     'Threshold',
     'Ratio',
     'Attack',
@@ -1572,7 +1572,7 @@ var GLU_BANK1 = [
     'Dry/Wet',
     'Makeup',
 ];
-var GLU_BANK2 = [
+const GLU_BANK2 = [
     'S/C EQ On',
     'S/C EQ Type',
     'S/C EQ Freq',
@@ -1582,7 +1582,7 @@ var GLU_BANK2 = [
     'S/C Mix',
     'S/C Gain',
 ];
-var GLU_BOB = [
+const GLU_BOB = [
     'Threshold',
     'Ratio',
     'Attack',
@@ -1592,10 +1592,10 @@ var GLU_BOB = [
     'Makeup',
     'Dry/Wet',
 ];
-var GLU_BANKS = [GLU_BANK1, GLU_BANK2];
-var GLU_BOBS = [GLU_BOB];
-var GLU_BNK_NAMES = ['Compression', 'Side Chain'];
-var GRD_BANK1 = [
+const GLU_BANKS = [GLU_BANK1, GLU_BANK2];
+const GLU_BOBS = [GLU_BOB];
+const GLU_BNK_NAMES = ['Compression', 'Side Chain'];
+const GRD_BANK1 = [
     'Frequency',
     'Pitch',
     'Time Delay',
@@ -1605,9 +1605,9 @@ var GRD_BANK1 = [
     'Feedback',
     'DryWet',
 ];
-var GRD_BANKS = [GRD_BANK1];
-var GRD_BOBS = [GRD_BANK1];
-var LPR_BANK1 = [
+const GRD_BANKS = [GRD_BANK1];
+const GRD_BOBS = [GRD_BANK1];
+const LPR_BANK1 = [
     'State',
     'Speed',
     'Reverse',
@@ -1617,9 +1617,9 @@ var LPR_BANK1 = [
     'Tempo Control',
     'Feedback',
 ];
-var LPR_BANKS = [LPR_BANK1];
-var LPR_BOBS = [LPR_BANK1];
-var MBD_BANK1 = [
+const LPR_BANKS = [LPR_BANK1];
+const LPR_BOBS = [LPR_BANK1];
+const MBD_BANK1 = [
     'Master Output',
     'Amount',
     'Time Scaling',
@@ -1629,7 +1629,7 @@ var MBD_BANK1 = [
     'Band Activator [Mid]',
     'Band Activator [Low]',
 ];
-var MBD_BANK2 = [
+const MBD_BANK2 = [
     'Input Gain [Low]',
     'Below Threshold [Low]',
     'Below Ratio [Low]',
@@ -1639,7 +1639,7 @@ var MBD_BANK2 = [
     'Release Time [Low]',
     'Output Gain [Low]',
 ];
-var MBD_BANK3 = [
+const MBD_BANK3 = [
     'Input Gain [Mid]',
     'Below Threshold [Mid]',
     'Below Ratio [Mid]',
@@ -1649,7 +1649,7 @@ var MBD_BANK3 = [
     'Release Time [Mid]',
     'Output Gain [Mid]',
 ];
-var MBD_BANK4 = [
+const MBD_BANK4 = [
     'Input Gain [High]',
     'Below Threshold [High]',
     'Below Ratio [High]',
@@ -1659,7 +1659,7 @@ var MBD_BANK4 = [
     'Release Time [High]',
     'Output Gain [High]',
 ];
-var MBD_BANK5 = [
+const MBD_BANK5 = [
     'Low-Mid Crossover',
     'Mid-High Crossover',
     '',
@@ -1669,8 +1669,8 @@ var MBD_BANK5 = [
     '',
     '',
 ];
-var MBD_BANK6 = ['', '', '', '', '', 'S/C On', 'S/C Mix', 'S/C Gain'];
-var MBD_BOB = [
+const MBD_BANK6 = ['', '', '', '', '', 'S/C On', 'S/C Mix', 'S/C Gain'];
+const MBD_BOB = [
     'Above Threshold [Low]',
     'Above Ratio [Low]',
     'Above Threshold [Mid]',
@@ -1680,7 +1680,7 @@ var MBD_BOB = [
     'Master Output',
     'Amount',
 ];
-var MBD_BANKS = [
+const MBD_BANKS = [
     MBD_BANK1,
     MBD_BANK2,
     MBD_BANK3,
@@ -1688,8 +1688,8 @@ var MBD_BANKS = [
     MBD_BANK5,
     MBD_BANK6,
 ];
-var MBD_BOBS = [MBD_BOB];
-var MBD_BNK_NAMES = [
+const MBD_BOBS = [MBD_BOB];
+const MBD_BNK_NAMES = [
     'Global',
     'Low Band',
     'Mid Band',
@@ -1697,7 +1697,7 @@ var MBD_BNK_NAMES = [
     'Split Frequencies',
     'Side Chain',
 ];
-var OVR_BANK1 = [
+const OVR_BANK1 = [
     'Filter Freq',
     'Filter Width',
     'Drive',
@@ -1707,9 +1707,9 @@ var OVR_BANK1 = [
     '',
     'Dry/Wet',
 ];
-var OVR_BANKS = [OVR_BANK1];
-var OVR_BOBS = [OVR_BANK1];
-var PDL_BANK1 = [
+const OVR_BANKS = [OVR_BANK1];
+const OVR_BOBS = [OVR_BANK1];
+const PDL_BANK1 = [
     'Type',
     'Gain',
     'Output',
@@ -1719,11 +1719,11 @@ var PDL_BANK1 = [
     'Sub',
     'Dry/Wet',
 ];
-var PDL_BANK2 = ['Mid Freq', '', '', '', '', '', '', ''];
-var PDL_BANKS = [PDL_BANK1, PDL_BANK2];
-var PDL_BOBS = [PDL_BANK1];
-var PDL_BANK_NAMES = ['General', 'Eq'];
-var PHS_BANK1 = [
+const PDL_BANK2 = ['Mid Freq', '', '', '', '', '', '', ''];
+const PDL_BANKS = [PDL_BANK1, PDL_BANK2];
+const PDL_BOBS = [PDL_BANK1];
+const PDL_BANK_NAMES = ['General', 'Eq'];
+const PHS_BANK1 = [
     'Poles',
     'Color',
     'Dry/Wet',
@@ -1733,7 +1733,7 @@ var PHS_BANK1 = [
     'Env. Release',
     'Feedback',
 ];
-var PHS_BANK2 = [
+const PHS_BANK2 = [
     'LFO Amount',
     'LFO Frequency',
     'LFO Phase',
@@ -1743,7 +1743,7 @@ var PHS_BANK2 = [
     'LFO Spin',
     'LFO Waveform',
 ];
-var PHS_BOB = [
+const PHS_BOB = [
     'Frequency',
     'Feedback',
     'Poles',
@@ -1753,10 +1753,10 @@ var PHS_BOB = [
     'LFO Frequency',
     'Dry/Wet',
 ];
-var PHS_BANKS = [PHS_BANK1, PHS_BANK2];
-var PHS_BOBS = [PHS_BOB];
-var PHS_BNK_NAMES = ['Frequency Controls', 'LFO / S&H'];
-var PPG_BANK1 = [
+const PHS_BANKS = [PHS_BANK1, PHS_BANK2];
+const PHS_BOBS = [PHS_BOB];
+const PHS_BNK_NAMES = ['Frequency Controls', 'LFO / S&H'];
+const PPG_BANK1 = [
     'Filter Freq',
     'Filter Width',
     'Time Delay',
@@ -1766,9 +1766,9 @@ var PPG_BANK1 = [
     'Feedback',
     'Dry/Wet',
 ];
-var PPG_BANKS = [PPG_BANK1];
-var PPG_BOBS = [PPG_BANK1];
-var RDX_BANK1 = [
+const PPG_BANKS = [PPG_BANK1];
+const PPG_BOBS = [PPG_BANK1];
+const RDX_BANK1 = [
     'Bit Depth',
     'Sample Mode',
     'Sample Hard',
@@ -1778,9 +1778,9 @@ var RDX_BANK1 = [
     '',
     '',
 ];
-var RDX_BANKS = [RDX_BANK1];
-var RDX_BOBS = [RDX_BANK1];
-var RSN_BANK1 = [
+const RDX_BANKS = [RDX_BANK1];
+const RDX_BOBS = [RDX_BANK1];
+const RSN_BANK1 = [
     'Frequency',
     'Width',
     'Global Gain',
@@ -1790,7 +1790,7 @@ var RSN_BANK1 = [
     'Color',
     'I Gain',
 ];
-var RSN_BANK2 = [
+const RSN_BANK2 = [
     'II Gain',
     'III Gain',
     'IV Gain',
@@ -1800,7 +1800,7 @@ var RSN_BANK2 = [
     'IV Pitch',
     'V Pitch',
 ];
-var RSN_BOB = [
+const RSN_BOB = [
     'Decay',
     'I Note',
     'II Pitch',
@@ -1810,10 +1810,10 @@ var RSN_BOB = [
     'Global Gain',
     'Dry/Wet',
 ];
-var RSN_BANKS = [RSN_BANK1, RSN_BANK2];
-var RSN_BOBS = [RSN_BOB];
-var RSN_BNK_NAMES = ['General / Mode I', 'Modes II-IV'];
-var RVB_BANK1 = [
+const RSN_BANKS = [RSN_BANK1, RSN_BANK2];
+const RSN_BOBS = [RSN_BOB];
+const RSN_BNK_NAMES = ['General / Mode I', 'Modes II-IV'];
+const RVB_BANK1 = [
     'In Filter Freq',
     'In Filter Width',
     'Predelay',
@@ -1823,7 +1823,7 @@ var RVB_BANK1 = [
     'ER Shape',
     'Decay Time',
 ];
-var RVB_BANK2 = [
+const RVB_BANK2 = [
     'HiFilter Freq',
     'LowShelf Freq',
     'Chorus Rate',
@@ -1833,7 +1833,7 @@ var RVB_BANK2 = [
     'Chorus Amount',
     'Scale',
 ];
-var RVB_BANK3 = [
+const RVB_BANK3 = [
     'Decay Time',
     'Freeze On',
     'Room Size',
@@ -1843,7 +1843,7 @@ var RVB_BANK3 = [
     'Dry/Wet',
     'Density',
 ];
-var RVB_BOB = [
+const RVB_BOB = [
     'Decay Time',
     'Room Size',
     'Predelay',
@@ -1853,10 +1853,10 @@ var RVB_BOB = [
     'Stereo Image',
     'Dry/Wet',
 ];
-var RVB_BANKS = [RVB_BANK1, RVB_BANK2, RVB_BANK3];
-var RVB_BOBS = [RVB_BOB];
-var RVB_BNK_NAMES = ['Reflections', 'Diffusion Network', 'Global'];
-var SAT_BANK1 = [
+const RVB_BANKS = [RVB_BANK1, RVB_BANK2, RVB_BANK3];
+const RVB_BOBS = [RVB_BOB];
+const RVB_BNK_NAMES = ['Reflections', 'Diffusion Network', 'Global'];
+const SAT_BANK1 = [
     'Drive',
     'Base',
     'Frequency',
@@ -1866,7 +1866,7 @@ var SAT_BANK1 = [
     'Dry/Wet',
     'Type',
 ];
-var SAT_BANK2 = [
+const SAT_BANK2 = [
     'WS Drive',
     'WS Lin',
     'WS Curve',
@@ -1876,7 +1876,7 @@ var SAT_BANK2 = [
     'Dry/Wet',
     '',
 ];
-var SAT_BOB = [
+const SAT_BOB = [
     'Drive',
     'Type',
     'Base',
@@ -1886,10 +1886,10 @@ var SAT_BOB = [
     'Output',
     'Dry/Wet',
 ];
-var SAT_BANKS = [SAT_BANK1, SAT_BANK2];
-var SAT_BOBS = [SAT_BOB];
-var SAT_BNK_NAMES = ['General Controls', 'Waveshaper Controls'];
-var SMD_BANK1 = [
+const SAT_BANKS = [SAT_BANK1, SAT_BANK2];
+const SAT_BOBS = [SAT_BOB];
+const SAT_BNK_NAMES = ['General Controls', 'Waveshaper Controls'];
+const SMD_BANK1 = [
     'L Beat Delay',
     'L Beat Swing',
     'L Time Delay',
@@ -1899,9 +1899,9 @@ var SMD_BANK1 = [
     'Feedback',
     'Dry/Wet',
 ];
-var SMD_BANKS = [SMD_BANK1];
-var SMD_BOBS = [SMD_BANK1];
-var UTL_BANK1 = [
+const SMD_BANKS = [SMD_BANK1];
+const SMD_BOBS = [SMD_BANK1];
+const UTL_BANK1 = [
     'Left Inv',
     'Right Inv',
     'Channel Mode',
@@ -1911,11 +1911,11 @@ var UTL_BANK1 = [
     'Gain',
     'Mute',
 ];
-var UTL_BANK2 = ['Bass Mono', 'Bass Freq', 'DC Filter', '', '', '', '', ''];
-var UTL_BANKS = [UTL_BANK1, UTL_BANK2];
-var UTL_BOBS = [UTL_BANK1];
-var UTL_BNK_NAMES = ['General Controls', 'Low Frequency'];
-var VDS_BANK1 = [
+const UTL_BANK2 = ['Bass Mono', 'Bass Freq', 'DC Filter', '', '', '', '', ''];
+const UTL_BANKS = [UTL_BANK1, UTL_BANK2];
+const UTL_BOBS = [UTL_BANK1];
+const UTL_BNK_NAMES = ['General Controls', 'Low Frequency'];
+const VDS_BANK1 = [
     'Tracing Freq.',
     'Tracing Width',
     'Tracing Drive',
@@ -1925,9 +1925,9 @@ var VDS_BANK1 = [
     'Pinch Drive',
     'Crackle Volume',
 ];
-var VDS_BANKS = [VDS_BANK1];
-var VDS_BOBS = [VDS_BANK1];
-var VOC_BANK1 = [
+const VDS_BANKS = [VDS_BANK1];
+const VDS_BOBS = [VDS_BANK1];
+const VOC_BANK1 = [
     'Formant Shift',
     'Attack Time',
     'Release Time',
@@ -1937,7 +1937,7 @@ var VOC_BANK1 = [
     'Envelope Depth',
     'Dry/Wet',
 ];
-var VOC_BANK2 = [
+const VOC_BANK2 = [
     'Filter Bandwidth',
     'Upper Filter Band',
     'Lower Filter Band',
@@ -1947,7 +1947,7 @@ var VOC_BANK2 = [
     'Unvoiced Speed',
     'Enhance',
 ];
-var VOC_BANK3 = [
+const VOC_BANK3 = [
     'Noise Rate',
     'Noise Crackle',
     'Upper Pitch Detection',
@@ -1957,7 +1957,7 @@ var VOC_BANK3 = [
     'Ext. In Gain',
     '',
 ];
-var VOC_BOB = [
+const VOC_BOB = [
     'Formant Shift',
     'Attack Time',
     'Release Time',
@@ -1967,9 +1967,9 @@ var VOC_BOB = [
     'Envelope Depth',
     'Dry/Wet',
 ];
-var VOC_BANKS = [VOC_BANK1, VOC_BANK2, VOC_BANK3];
-var VOC_BOBS = [VOC_BOB];
-var VOC_BNK_NAMES = ['Global', 'Filters/Voicing', 'Carrier'];
+const VOC_BANKS = [VOC_BANK1, VOC_BANK2, VOC_BANK3];
+const VOC_BOBS = [VOC_BOB];
+const VOC_BNK_NAMES = ['Global', 'Filters/Voicing', 'Carrier'];
 exports.DEVICE_DICT = {
     //AudioEffectGroupDevice: RCK_BANKS,
     //MidiEffectGroupDevice: RCK_BANKS,

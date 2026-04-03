@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toggleTrackInput = exports.enableTrackInput = exports.disableTrackInput = exports.getTrackInputStatus = void 0;
-var utils_1 = require("./utils");
-var config_1 = require("./config");
-var origInputs = {};
-var log = (0, utils_1.logFactory)(config_1.default);
+const utils_1 = require("./utils");
+const config_1 = require("./config");
+const origInputs = {};
+const log = (0, utils_1.logFactory)(config_1.default);
 function getTrackInputStatus(currTrack) {
     var airt = null;
-    var currentInput = null;
-    var noInput = null;
-    var allInputs = null;
-    var inputEnabled = false;
+    let currentInput = null;
+    let noInput = null;
+    let allInputs = null;
+    let inputEnabled = false;
     //log(
     //  'GET INPUT STATUS ' + currTrack.type + ' ' + currTrack.get('can_be_armed')
     //)
@@ -22,7 +22,7 @@ function getTrackInputStatus(currTrack) {
         noInput = airt[airt.length - 1]; // "No Input" is the last available input routing type
         inputEnabled = currentInput.display_name !== noInput.display_name;
     }
-    var ret = {
+    const ret = {
         currentInput: currentInput,
         noInput: noInput,
         inputEnabled: inputEnabled,
@@ -40,8 +40,8 @@ var Intent;
 })(Intent || (Intent = {}));
 function changeInternal(trackObj, intent) {
     //log('CHANGE INTERNAL id=' + trackObj.id + ' ' + intent)
-    var ret = null;
-    var trackStatus = getTrackInputStatus(trackObj);
+    let ret = null;
+    const trackStatus = getTrackInputStatus(trackObj);
     if (trackStatus.inputEnabled) {
         if (intent === Intent.Disable || intent === Intent.Toggle) {
             origInputs[trackObj.id] = trackStatus.currentInput;

@@ -1,31 +1,33 @@
 "use strict";
-var config_1 = require("./config");
-var utils_1 = require("./utils");
+// [v8] entry points need `module` defined before any require() calls
+var module = { exports: {} };
+const config_1 = require("./config");
+const utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
 outlets = 15;
-var log = (0, utils_1.logFactory)(config_1.default);
-var deviceVersion = '';
+const log = (0, utils_1.logFactory)(config_1.default);
+let deviceVersion = '';
 function setDeviceVersion(ver) {
     deviceVersion = ver.toString();
     outlet(OUTLET_OSC, ['/deviceVersion', deviceVersion]);
 }
-var INLET_OSC = 0;
-var OUTLET_KNOBBLER = 0;
-var OUTLET_BLUHAND = 1;
-var OUTLET_PRESETS = 2;
-var OUTLET_LOOP = 3;
-var OUTLET_REFRESH = 4;
-var OUTLET_ACK = 5;
-var OUTLET_MIXER = 6;
-var OUTLET_PAGE = 7;
-var OUTLET_CURRPARAM = 8;
-var OUTLET_OSC = 9;
-var OUTLET_UNKNOWN = 10;
-var OUTLET_MULTI_MIXER = 11;
-var OUTLET_CLIP_VIEW = 12;
-var OUTLET_UDPSEND = 13;
-var OUTLET_VISIBLE_TRACKS = 14;
+const INLET_OSC = 0;
+const OUTLET_KNOBBLER = 0;
+const OUTLET_BLUHAND = 1;
+const OUTLET_PRESETS = 2;
+const OUTLET_LOOP = 3;
+const OUTLET_REFRESH = 4;
+const OUTLET_ACK = 5;
+const OUTLET_MIXER = 6;
+const OUTLET_PAGE = 7;
+const OUTLET_CURRPARAM = 8;
+const OUTLET_OSC = 9;
+const OUTLET_UNKNOWN = 10;
+const OUTLET_MULTI_MIXER = 11;
+const OUTLET_CLIP_VIEW = 12;
+const OUTLET_UDPSEND = 13;
+const OUTLET_VISIBLE_TRACKS = 14;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -43,7 +45,7 @@ setoutletassist(OUTLET_CLIP_VIEW, 'Messages for Clip View');
 setoutletassist(OUTLET_UDPSEND, 'host/port messages for [udpsend]');
 setoutletassist(OUTLET_VISIBLE_TRACKS, 'Messages for Visible Tracks');
 function getSlotNum(router, msg) {
-    var matches = msg.substring(router.prefix.length).match(/^\d+/);
+    const matches = msg.substring(router.prefix.length).match(/^\d+/);
     if (matches) {
         return parseInt(matches[0]);
     }
@@ -52,7 +54,7 @@ function getSlotNum(router, msg) {
 // HANDLERS
 function synAckHandler(router, _, val) {
     if (val) {
-        var parts = val.toString().split(' ');
+        const parts = val.toString().split(' ');
         (0, utils_1.saveSetting)('clientVersion', parts[0]);
         (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
     }
@@ -77,20 +79,20 @@ function stdVal(router, _, val) {
 }
 // emits a message followed by a slot number
 function stdSlot(router, msg) {
-    var slot = getSlotNum(router, msg);
+    const slot = getSlotNum(router, msg);
     //log(`STDSLOT: outlet=${router.outlet} msg=${[router.msg, slot]}`)
     outlet(router.outlet, router.msg, slot);
 }
 // emits a message followed by a slot number followed by a value
 function stdSlotVal(router, msg, val) {
-    var slot = getSlotNum(router, msg);
+    const slot = getSlotNum(router, msg);
     //log(`STDSLOTVAL: outlet=${router.outlet} msg=${[router.msg, slot, val]}`)
     outlet(router.outlet, router.msg, slot, val);
 }
 // /connect <ip>:<port> — configure [udpsend] target
 function connectHandler(_router, _msg, val) {
     //log(`connectHandler val: ${val}`)
-    var parts = val.toString().split(':');
+    const parts = val.toString().split(':');
     if (parts.length === 2) {
         outlet(OUTLET_UDPSEND, 'host', parts[0]);
         outlet(OUTLET_UDPSEND, 'port', parseInt(parts[1]));
@@ -98,12 +100,12 @@ function connectHandler(_router, _msg, val) {
 }
 // parses /mixer/{n}/{subCmd} and emits (subCmd, stripIdx, val)
 function multiMixerHandler(router, msg, val) {
-    var parts = msg.split('/'); // ['', 'mixer', '2', 'vol']
-    var stripIdx = parseInt(parts[2]);
-    var subCmd = parts[3];
+    const parts = msg.split('/'); // ['', 'mixer', '2', 'vol']
+    const stripIdx = parseInt(parts[2]);
+    const subCmd = parts[3];
     outlet(router.outlet, subCmd, stripIdx, val);
 }
-var ROUTER = [
+const ROUTER = [
     {
         outlet: OUTLET_OSC,
         prefix: '/syn',
@@ -699,13 +701,12 @@ var ROUTER = [
         msg: '',
     },
 ];
-ROUTER.sort(function (a, b) {
+ROUTER.sort((a, b) => {
     return a.prefix.length > b.prefix.length ? -1 : 1;
 });
 function anything(val) {
     //log(`message: ${messagename} val: ${val}`)
-    for (var _i = 0, ROUTER_1 = ROUTER; _i < ROUTER_1.length; _i++) {
-        var router = ROUTER_1[_i];
+    for (const router of ROUTER) {
         if (messagename.indexOf(router.prefix) === 0) {
             // found the right router, now pass to the handler
             return router.handler(router, messagename, val);
@@ -714,7 +715,4 @@ function anything(val) {
     return outlet(OUTLET_UNKNOWN, [messagename, val]);
 }
 log('reloaded router');
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
 module.exports = {};

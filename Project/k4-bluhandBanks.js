@@ -1,28 +1,21 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var utils_1 = require("./utils");
-var config_1 = require("./config");
-var consts_1 = require("./consts");
-var k4_deviceParamMaps_1 = require("./k4-deviceParamMaps");
-var deprecatedMethods_1 = require("./deprecatedMethods");
-var deviceParams_1 = require("./deviceParams");
+// [v8] entry points need `module` defined before any require() calls
+var module = { exports: {} };
+const utils_1 = require("./utils");
+const config_1 = require("./config");
+const consts_1 = require("./consts");
+const k4_deviceParamMaps_1 = require("./k4-deviceParamMaps");
+const deprecatedMethods_1 = require("./deprecatedMethods");
+const deviceParams_1 = require("./deviceParams");
 autowatch = 1;
 inlets = 1;
 outlets = 2;
-var log = (0, utils_1.logFactory)(config_1.default);
+const log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setinletassist(consts_1.OUTLET_MSGS, 'Output messages to the [poly finger] instances to set their parameter index');
-var paramNameToIdx = null;
-var state = {
+let paramNameToIdx = null;
+const state = {
     devicePath: null,
     onOffWatcher: null,
     paramsWatcher: null,
@@ -37,24 +30,24 @@ var state = {
     cuePointTimes: [],
 };
 function getMaxBanksParamArr(bankCount, deviceObj) {
-    var rawBanks = [];
+    const rawBanks = [];
     //log('BANK_COUNT ' + bankCount)
-    for (var i = 0; i < bankCount; i++) {
-        var bankName = deviceObj.call('get_bank_name', i);
-        var bankParams = deviceObj.call('get_bank_parameters', i);
+    for (let i = 0; i < bankCount; i++) {
+        const bankName = deviceObj.call('get_bank_name', i);
+        const bankParams = deviceObj.call('get_bank_parameters', i);
         //log(
         //  ' BANK ROW ' + JSON.stringify({ name: bankName, paramIdxArr: bankParams })
         //)
         rawBanks.push({ name: bankName, paramIdxArr: bankParams });
     }
-    var ret = [];
-    for (var i = 0; rawBanks[i]; i++) {
-        var oddBank = rawBanks[i];
-        var evenBank = rawBanks[++i];
+    const ret = [];
+    for (let i = 0; rawBanks[i]; i++) {
+        const oddBank = rawBanks[i];
+        const evenBank = rawBanks[++i];
         if (oddBank && evenBank) {
             ret.push({
                 name: oddBank.name + ' / ' + evenBank.name,
-                paramIdxArr: __spreadArray(__spreadArray([], oddBank.paramIdxArr, true), evenBank.paramIdxArr, true),
+                paramIdxArr: [...oddBank.paramIdxArr, ...evenBank.paramIdxArr],
             });
         }
         else {
@@ -65,17 +58,17 @@ function getMaxBanksParamArr(bankCount, deviceObj) {
 }
 function getBasicParamArr(paramIds) {
     //log('GET BASIC ' + paramIds.join(','))
-    var ret = [];
-    var currBank = 0;
-    var blankRow = function () {
+    const ret = [];
+    let currBank = 0;
+    const blankRow = () => {
         return {
             name: 'Page ' + ++currBank,
             paramIdxArr: [],
         };
     };
-    var currRow = null;
-    var idx = 0;
-    paramIds.forEach(function (paramId) {
+    let currRow = null;
+    let idx = 0;
+    paramIds.forEach((paramId) => {
         // set up a new row for the first one
         if (idx % 16 === 0) {
             if (currRow) {
@@ -104,7 +97,7 @@ function getBasicParamArr(paramIds) {
 function getBankParamArr(paramIds, deviceType, deviceObj) {
     if (deviceParams_1.MAX_DEVICES.indexOf(deviceType) > -1) {
         // Max device, look for live.banks
-        var bankCount = deviceObj.call('get_bank_count', null) || 0;
+        const bankCount = deviceObj.call('get_bank_count') || 0;
         if (bankCount > 0) {
             return getMaxBanksParamArr(bankCount, deviceObj);
         }
@@ -112,51 +105,50 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     // deviceParamMap is custom or crafted parameter organization
     //log('BBANKS ' + deviceType)
     //log('BBANKS INFO ' + deviceObj.info.toString())
-    var deviceParamMap = (0, k4_deviceParamMaps_1.deviceParamMapFor)(deviceType);
+    const deviceParamMap = (0, k4_deviceParamMaps_1.deviceParamMapFor)(deviceType);
     if (!deviceParamMap) {
-        var paramArr = getBasicParamArr(paramIds);
+        const paramArr = getBasicParamArr(paramIds);
         // nothing to customize, return the basic array
         //log('BASIC RETURN ' + JSON.stringify(paramArr))
         return paramArr;
     }
     //log('OUT HERE')
-    var ret = [];
+    const ret = [];
     // cache id to name mapping because it is super slow with giant devices like
     // Operator and honestly it should just be a compile-time step of the data
     // files that need this information. frankly this is stupid and should be
     // burned.
-    var lookupCacheKey = deviceObj.id;
+    const lookupCacheKey = deviceObj.id;
     paramNameToIdx = state.nameLookupCache[lookupCacheKey];
     if (!paramNameToIdx) {
         //log('CACHE MISS ' + lookupCacheKey)
         paramNameToIdx = {};
         // more "bespoke" setups get this
-        var param_1 = getUtilApi();
-        paramIds.forEach(function (paramId, idx) {
+        const param = getUtilApi();
+        paramIds.forEach((paramId, idx) => {
             if (paramId <= 0) {
                 return;
             }
-            param_1.id = paramId;
-            paramNameToIdx[param_1.get('name').toString()] = idx;
+            param.id = paramId;
+            paramNameToIdx[param.get('name').toString()] = idx;
             //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
         });
         state.nameLookupCache[lookupCacheKey] = paramNameToIdx;
     }
-    deviceParamMap.forEach(function (nameBank, idx) {
-        var row = {
+    deviceParamMap.forEach((nameBank, idx) => {
+        const row = {
             name: nameBank.name,
             paramIdxArr: [],
         };
-        nameBank.paramNames.forEach(function (paramName) {
-            var found = false;
-            var pIdx = null;
+        nameBank.paramNames.forEach((paramName) => {
+            let found = false;
+            let pIdx = null;
             if (typeof paramName === 'number') {
                 // can specify a param index instead of a name in the data structure
                 row.paramIdxArr.push(paramName);
                 return;
             }
-            for (var _i = 0, _a = paramName.toString().split('|'); _i < _a.length; _i++) {
-                var singleName = _a[_i];
+            for (const singleName of paramName.toString().split('|')) {
                 // can have multiple options pipe-separated (e.g. for meld)
                 pIdx = paramNameToIdx[singleName];
                 //log('IS IT ' + pIdx)
@@ -186,14 +178,14 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     return ret;
 }
 function sendBankNames() {
-    var currBankIdx = state.currBank - 1;
-    var banks = state.bankParamArr.map(function (bank, idx) {
+    const currBankIdx = state.currBank - 1;
+    const banks = state.bankParamArr.map((bank, idx) => {
         return { name: bank.name, sel: idx === currBankIdx };
     });
     //log('BANKS: ' + JSON.stringify(banks))
     outlet(consts_1.OUTLET_OSC, ['/bBanks', JSON.stringify(banks)]);
 }
-var sendCurrBankTask = null;
+let sendCurrBankTask = null;
 function debounceSendCurrBank() {
     if (sendCurrBankTask) {
         sendCurrBankTask.cancel();
@@ -203,19 +195,19 @@ function debounceSendCurrBank() {
 }
 function sendCurrBank() {
     //log('SEND CURR BANK ' + JSON.stringify(state))
-    var currBankIdx = Math.max(0, state.currBank - 1);
+    const currBankIdx = Math.max(0, state.currBank - 1);
     if (!state.bankParamArr || !state.bankParamArr[currBankIdx]) {
         //log('EARLY ' + JSON.stringify(state.bankParamArr) + ' ' + currBankIdx)
         sendBankNames();
         return;
     }
-    var bluBank = state.bankParamArr[currBankIdx];
+    const bluBank = state.bankParamArr[currBankIdx];
     outlet(consts_1.OUTLET_OSC, ['/bTxtCurrBank', bluBank.name]);
     while (bluBank.paramIdxArr.length < 16) {
         bluBank.paramIdxArr.push(-1);
     }
     //log('MADE IT ' + JSON.stringify(bluBank))
-    bluBank.paramIdxArr.forEach(function (paramIdx, idx) {
+    bluBank.paramIdxArr.forEach((paramIdx, idx) => {
         outlet(consts_1.OUTLET_MSGS, ['target', idx + 1]);
         outlet(consts_1.OUTLET_MSGS, ['paramIdx', paramIdx]);
         //log(JSON.stringify({ str: 'MSG', target: idx + 1, paramIdx }))
@@ -223,7 +215,7 @@ function sendCurrBank() {
     sendBankNames();
 }
 function unfoldParentTracks(objId) {
-    var util = getUtilApi();
+    const util = getUtilApi();
     util.id = objId;
     //log('GOTO TRACK ' + trackId + ' ' + util.id)
     if (+util.id === 0) {
@@ -232,12 +224,12 @@ function unfoldParentTracks(objId) {
     }
     // first we need to surf up the hierarchy to make sure we are not in a
     // collapsed group
-    var counter = 0;
+    let counter = 0;
     while (counter < 20) {
-        var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
+        const isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
         //log(util.id + ' isFoldable=' + util.get('is_foldable'))
         if (isFoldable) {
-            var foldState = parseInt(util.get('fold_state'));
+            const foldState = parseInt(util.get('fold_state'));
             if (foldState === 1) {
                 // need to unfold
                 util.set('fold_state', 0);
@@ -252,9 +244,9 @@ function unfoldParentTracks(objId) {
     }
 }
 function getParentTrackForDevice(deviceId) {
-    var util = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
+    const util = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
     if ((0, utils_1.isDeviceSupported)(util)) {
-        var counter = 0;
+        let counter = 0;
         while (counter < 20) {
             util.id = util.get('canonical_parent')[1];
             if (util.type === 'Track') {
@@ -266,13 +258,13 @@ function getParentTrackForDevice(deviceId) {
     return 0;
 }
 function gotoDevice(deviceIdStr) {
-    var deviceId = parseInt(deviceIdStr);
+    const deviceId = parseInt(deviceIdStr);
     if (deviceId === 0) {
         return;
     }
-    var api = getLiveSetViewApi();
+    const api = getLiveSetViewApi();
     // make sure the track is selected
-    var trackId = getParentTrackForDevice(deviceId);
+    const trackId = getParentTrackForDevice(deviceId);
     if (trackId === 0) {
         log('no track for device ' + deviceId);
     }
@@ -283,7 +275,7 @@ function gotoDevice(deviceIdStr) {
 }
 function hideChains(deviceId) {
     //log('HIDE CHAINS ' + JSON.stringify(deviceId))
-    var obj = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
+    const obj = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
     if (+obj.id === 0) {
         return;
     }
@@ -294,13 +286,13 @@ function hideChains(deviceId) {
     }
 }
 function gotoChain(chainIdStr) {
-    var chainId = parseInt(chainIdStr);
+    const chainId = parseInt(chainIdStr);
     //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
     unfoldParentTracks(chainId);
-    var viewApi = getLiveSetViewApi();
-    var api = getUtilApi();
+    const viewApi = getLiveSetViewApi();
+    const api = getUtilApi();
     api.id = chainId;
-    var devices = (0, utils_1.cleanArr)(api.get('devices'));
+    const devices = (0, utils_1.cleanArr)(api.get('devices'));
     if (devices && devices[0]) {
         viewApi.call('select_device', ['id', devices[0]]);
         return;
@@ -309,46 +301,46 @@ function gotoChain(chainIdStr) {
 // Toggle Group Fold State
 // Long press on group item in nav calls this.
 function toggleGroup(groupId) {
-    var util = getUtilApi();
+    const util = getUtilApi();
     util.id = groupId;
     if (+util.id === 0) {
         log('ERROR: Invalid id ' + groupId);
         return;
     }
-    var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
+    const isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
     if (!isFoldable) {
         log('ERROR: Not foldable ' + groupId);
     }
-    var foldState = parseInt(util.get('fold_state'));
+    const foldState = parseInt(util.get('fold_state'));
     util.set('fold_state', foldState ? 0 : 1);
 }
 function gotoTrack(trackIdStr) {
-    var trackId = parseInt(trackIdStr);
+    const trackId = parseInt(trackIdStr);
     // Walk up group_track chain to unfold any collapsed parent groups
-    var util = getUtilApi();
+    const util = getUtilApi();
     util.id = trackId;
     if (+util.id !== 0) {
-        var counter = 0;
+        let counter = 0;
         while (counter < 20) {
-            var groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
+            const groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
             if (!groupIds.length)
                 break;
             util.id = groupIds[0];
             if (+util.id === 0)
                 break;
-            var foldState = parseInt(util.get('fold_state').toString());
+            const foldState = parseInt(util.get('fold_state').toString());
             if (foldState === 1) {
                 util.set('fold_state', 0);
             }
             counter++;
         }
     }
-    var api = getLiveSetViewApi();
+    const api = getLiveSetViewApi();
     api.set('selected_track', ['id', trackId]);
 }
 function onVariationChange() {
     //log('VARIATIONSCHANGE')
-    var api = getSelectedDeviceApi();
+    const api = getSelectedDeviceApi();
     if (+api.id === 0) {
         return;
     }
@@ -360,45 +352,45 @@ function onVariationChange() {
     }
     //log('VARIATIONSCHANGE3')
     // send variation stuff
-    var varCount = +api.get('variation_count');
-    var varSelected = +api.get('selected_variation_index');
+    const varCount = +api.get('variation_count');
+    const varSelected = +api.get('selected_variation_index');
     outlet(consts_1.OUTLET_OSC, [
         '/blu/variations',
         '{"count":' + varCount + ',"selected":' + varSelected + '}',
     ]);
 }
 function sendCuePoints() {
-    var api = getUtilApi();
+    const api = getUtilApi();
     api.goto('live_set');
-    var numerator = parseFloat(api.get('signature_numerator').toString());
+    let numerator = parseFloat(api.get('signature_numerator').toString());
     if (typeof numerator !== 'number' || numerator <= 0) {
         // Fallback default if something goes wrong with the API call
         numerator = 4;
         // Optional: print warning to Max console
         log('Warning: Could not retrieve time signature. Defaulting to 4/4.');
     }
-    var result = state.cuePointNames.map(function (cuePoint, idx) {
-        var cuePointTime = parseFloat(cuePoint.get('time'));
-        var rawBarIndex = Math.floor(cuePointTime / numerator);
+    const result = state.cuePointNames.map((cuePoint, idx) => {
+        const cuePointTime = parseFloat(cuePoint.get('time'));
+        const rawBarIndex = Math.floor(cuePointTime / numerator);
         // Calculate remaining beats into the current bar (0-indexed)
-        var rawBeatIndex = cuePointTime % numerator;
-        var displayBar = rawBarIndex + 1;
-        var displayBeat = rawBeatIndex + 1;
+        const rawBeatIndex = cuePointTime % numerator;
+        const displayBar = rawBarIndex + 1;
+        let displayBeat = rawBeatIndex + 1;
         displayBeat = Math.floor(displayBeat);
-        var displaySixteenths = Math.floor((cuePointTime % 1.0) * 4) + 1;
-        var disp = displayBar + '.' + displayBeat + '.' + displaySixteenths;
+        const displaySixteenths = Math.floor((cuePointTime % 1.0) * 4) + 1;
+        const disp = displayBar + '.' + displayBeat + '.' + displaySixteenths;
         //log(cuePointTime, displayTicks, displayBeat, disp)
         return {
-            idx: idx,
+            idx,
             name: cuePoint.get('name').toString(),
             time: cuePointTime,
-            disp: disp,
+            disp,
         };
     });
     //log('CUE POINTS', result)
     outlet(consts_1.OUTLET_OSC, ['/cuePoints', JSON.stringify(result)]);
 }
-var sendCuePointsTask = null;
+let sendCuePointsTask = null;
 function debounceSendCuePoints() {
     if (sendCuePointsTask) {
         sendCuePointsTask.cancel();
@@ -422,18 +414,17 @@ function cuePointsChange(args) {
     if (args[0] !== 'cue_points') {
         return;
     }
-    var cuePointIds = (0, utils_1.cleanArr)(arrayfromargs(args));
+    const cuePointIds = (0, utils_1.cleanArr)(arrayfromargs(args));
     //log('cuePointIds', cuePointIds)
     state.cuePointNames = [];
     state.cuePointTimes = [];
-    for (var _i = 0, cuePointIds_1 = cuePointIds; _i < cuePointIds_1.length; _i++) {
-        var cuePointId = cuePointIds_1[_i];
+    for (const cuePointId of cuePointIds) {
         // name watcher
-        var nameApi = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId);
+        const nameApi = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId);
         nameApi.property = 'name';
         state.cuePointNames.push(nameApi);
         // time watcher
-        var timeApi = new LiveAPI(onCuePointTimeChange, 'id ' + cuePointId);
+        const timeApi = new LiveAPI(onCuePointTimeChange, 'id ' + cuePointId);
         timeApi.property = 'time';
         state.cuePointTimes.push(timeApi);
     }
@@ -453,16 +444,16 @@ function toggleOnOff() {
     if (!state.onOffWatcher) {
         return;
     }
-    var currVal = parseInt(state.onOffWatcher.get('value'));
+    const currVal = parseInt(state.onOffWatcher.get('value'));
     state.onOffWatcher.set('value', currVal ? 0 : 1);
 }
 function updateDeviceOnOff(iargs) {
-    var args = arrayfromargs(iargs);
+    const args = arrayfromargs(iargs);
     if (args[0] === 'value') {
         outlet(consts_1.OUTLET_OSC, ['/bOnOff', parseInt(args[1])]);
     }
 }
-var pcDebounce = null;
+let pcDebounce = null;
 function debouncedParameterChange(args) {
     if (args[0].toString() !== 'parameters') {
         return;
@@ -470,7 +461,7 @@ function debouncedParameterChange(args) {
     if (pcDebounce) {
         pcDebounce.cancel();
     }
-    pcDebounce = new Task(function () {
+    pcDebounce = new Task(() => {
         onParameterChange(args);
     });
     pcDebounce.schedule(20);
@@ -478,14 +469,14 @@ function debouncedParameterChange(args) {
 }
 function onParameterChange(args) {
     //log('OPC ' + JSON.stringify(args))
-    var api = state.paramsWatcher;
+    const api = state.paramsWatcher;
     if (+api.id === 0) {
         return;
     }
     //log(api.info)
-    var isSupported = (0, utils_1.isDeviceSupported)(api);
-    var deviceType = isSupported ? api.get('class_name').toString() : api.type;
-    var paramIds = isSupported ? (0, utils_1.cleanArr)(api.get('parameters')) : [];
+    const isSupported = (0, utils_1.isDeviceSupported)(api);
+    const deviceType = isSupported ? api.get('class_name').toString() : api.type;
+    let paramIds = isSupported ? (0, utils_1.cleanArr)(api.get('parameters')) : [];
     //log('DT', { deviceType })
     //if (deviceType === 'PluginDevice') {
     //  //log('POOPP', { paramIds })
@@ -497,7 +488,7 @@ function onParameterChange(args) {
         state.onOffWatcher && (state.onOffWatcher.id = 0);
     }
     else {
-        var onOffParamId = paramIds.shift(); // remove device on/off
+        const onOffParamId = paramIds.shift(); // remove device on/off
         if (!state.onOffWatcher) {
             state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId);
             state.onOffWatcher.property = 'value';
@@ -506,23 +497,28 @@ function onParameterChange(args) {
             state.onOffWatcher.id = onOffParamId;
         }
     }
-    var canHaveChains = (0, utils_1.isDeviceSupported)(api) && parseInt(api.get('can_have_chains'));
+    const canHaveChains = (0, utils_1.isDeviceSupported)(api) && parseInt(api.get('can_have_chains'));
     //log('CAN_HAVE_CHAINS: ' + canHaveChains)
     if (canHaveChains) {
         // see if we should slice off some macros
-        var numMacros = parseInt(api.get('visible_macro_count'));
+        const numMacros = parseInt(api.get('visible_macro_count'));
         if (numMacros) {
             //log('GonNNA SlIcE ' + numMacros)
             paramIds = paramIds.slice(0, numMacros);
             if (numMacros > 1) {
                 // put filler in the macros to look more like the
                 // even 2-row split that Live shows
-                var halfMacros = numMacros / 2;
-                var filler = Array(8 - halfMacros);
-                for (var i = 0; i < filler.length; i++) {
+                const halfMacros = numMacros / 2;
+                const filler = Array(8 - halfMacros);
+                for (let i = 0; i < filler.length; i++) {
                     filler[i] = 0;
                 }
-                paramIds = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], paramIds.slice(0, halfMacros), true), filler, true), paramIds.slice(halfMacros, numMacros), true), filler, true);
+                paramIds = [
+                    ...paramIds.slice(0, halfMacros),
+                    ...filler,
+                    ...paramIds.slice(halfMacros, numMacros),
+                    ...filler,
+                ];
             }
         }
     }
@@ -547,7 +543,7 @@ function onParameterChange(args) {
     debounceSendCurrBank();
 }
 function variationNew() {
-    var api = getSelectedDeviceApi();
+    const api = getSelectedDeviceApi();
     if (+api.id === 0) {
         return;
     }
@@ -555,13 +551,13 @@ function variationNew() {
         // only applies to racks
         return;
     }
-    api.call('store_variation', null);
-    var numVariations = +api.get('variation_count') || 1;
+    api.call('store_variation');
+    const numVariations = +api.get('variation_count') || 1;
     api.set('selected_variation_index', numVariations - 1);
     onVariationChange();
 }
 function variationDelete(idx) {
-    var api = getSelectedDeviceApi();
+    const api = getSelectedDeviceApi();
     if (+api.id === 0) {
         return;
     }
@@ -570,10 +566,10 @@ function variationDelete(idx) {
         return;
     }
     api.set('selected_variation_index', idx);
-    api.call('delete_selected_variation', null);
+    api.call('delete_selected_variation');
 }
 function variationRecall(idx) {
-    var api = getSelectedDeviceApi();
+    const api = getSelectedDeviceApi();
     if (+api.id === 0) {
         return;
     }
@@ -582,11 +578,11 @@ function variationRecall(idx) {
         return;
     }
     api.set('selected_variation_index', idx);
-    api.call('recall_selected_variation', null);
+    api.call('recall_selected_variation');
     onVariationChange();
 }
 function randomMacros() {
-    var api = getSelectedDeviceApi();
+    const api = getSelectedDeviceApi();
     if (+api.id === 0) {
         return;
     }
@@ -594,7 +590,7 @@ function randomMacros() {
         // only applies to racks
         return;
     }
-    api.call('randomize_macros', null);
+    api.call('randomize_macros');
 }
 function gotoBank(idx) {
     //log('HERE ' + idx)
@@ -615,14 +611,14 @@ function bankPrev() {
     }
     sendCurrBank();
 }
-var utilApi = null;
+let utilApi = null;
 function getUtilApi() {
     if (!utilApi) {
         utilApi = new LiveAPI(consts_1.noFn, 'live_set');
     }
     return utilApi;
 }
-var selectedDeviceApi = null;
+let selectedDeviceApi = null;
 function getSelectedDeviceApi() {
     if (!selectedDeviceApi) {
         selectedDeviceApi = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
@@ -630,14 +626,14 @@ function getSelectedDeviceApi() {
     }
     return selectedDeviceApi;
 }
-var liveSetViewApi = null;
+let liveSetViewApi = null;
 function getLiveSetViewApi() {
     if (!liveSetViewApi) {
         liveSetViewApi = new LiveAPI(consts_1.noFn, 'live_set view');
     }
     return liveSetViewApi;
 }
-var liveSetApi = null;
+let liveSetApi = null;
 function getLiveSetApi() {
     if (!liveSetApi) {
         liveSetApi = new LiveAPI(consts_1.noFn, 'live_set');
@@ -645,69 +641,69 @@ function getLiveSetApi() {
     return liveSetApi;
 }
 function toggleMetronome() {
-    var api = getLiveSetApi();
-    var metroVal = parseInt(api.get('metronome'));
+    const api = getLiveSetApi();
+    const metroVal = parseInt(api.get('metronome'));
     api.set('metronome', metroVal ? 0 : 1);
 }
 function tapTempo() {
-    var api = getLiveSetApi();
-    api.call('tap_tempo', null);
+    const api = getLiveSetApi();
+    api.call('tap_tempo');
 }
 function setTempo(val) {
-    var api = getLiveSetApi();
+    const api = getLiveSetApi();
     api.set('tempo', val);
 }
 function playCuePoint(val) {
-    var api = new LiveAPI(null, 'live_set cue_points ' + val);
+    const api = new LiveAPI(null, 'live_set cue_points ' + val);
     //log('PLAY CUE POINT ' + val + ' ' + api.id)
     if (api.id) {
         //log('JUMP ' + val + ' ' + api.id)
-        api.call('jump', null);
-        var ctlApi = getLiveSetApi();
-        var isPlaying = parseInt(ctlApi.get('is_playing'));
+        api.call('jump');
+        const ctlApi = getLiveSetApi();
+        const isPlaying = parseInt(ctlApi.get('is_playing'));
         //log('PLAY ' + isPlaying)
         if (!isPlaying) {
-            ctlApi.call('start_playing', null);
+            ctlApi.call('start_playing');
         }
     }
 }
 function gotoCuePoint(val) {
-    var api = new LiveAPI(null, 'live_set cue_points ' + val);
+    const api = new LiveAPI(null, 'live_set cue_points ' + val);
     //log('GOTO CUE POINT ' + val + ' ' + api.id)
     if (api.id) {
         //log('JUMP ' + val + ' ' + api.id)
-        api.call('jump', null);
+        api.call('jump');
     }
 }
 function btnSkipPrev() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('jump_to_prev_cue', null);
+    const ctlApi = getLiveSetApi();
+    ctlApi.call('jump_to_prev_cue');
 }
 function btnSkipNext() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('jump_to_next_cue', null);
+    const ctlApi = getLiveSetApi();
+    ctlApi.call('jump_to_next_cue');
 }
 function btnReEnableAutomation() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('re_enable_automation', null);
+    const ctlApi = getLiveSetApi();
+    ctlApi.call('re_enable_automation');
 }
 function btnLoop() {
-    var ctlApi = getLiveSetApi();
-    var isLoop = parseInt(ctlApi.get('loop'));
+    const ctlApi = getLiveSetApi();
+    const isLoop = parseInt(ctlApi.get('loop'));
     ctlApi.set('loop', isLoop ? 0 : 1);
 }
 function btnCaptureMidi() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('capture_midi', null);
+    const ctlApi = getLiveSetApi();
+    ctlApi.call('capture_midi');
 }
 function btnArrangementOverdub() {
-    var ctlApi = getLiveSetApi();
-    var isOverdub = parseInt(ctlApi.get('arrangement_overdub'));
+    const ctlApi = getLiveSetApi();
+    const isOverdub = parseInt(ctlApi.get('arrangement_overdub'));
     ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1);
 }
 function btnSessionRecord() {
-    var ctlApi = getLiveSetApi();
-    var isRecord = parseInt(ctlApi.get('session_record'));
+    const ctlApi = getLiveSetApi();
+    const isRecord = parseInt(ctlApi.get('session_record'));
     ctlApi.set('session_record', isRecord ? 0 : 1);
 }
 function trackDelta(delta) {
@@ -729,28 +725,25 @@ function devNext() {
     deviceDelta(1);
 }
 function ctlRec() {
-    var ctlApi = getLiveSetApi();
-    var currMode = parseInt(ctlApi.get('record_mode'));
+    const ctlApi = getLiveSetApi();
+    const currMode = parseInt(ctlApi.get('record_mode'));
     ctlApi.set('record_mode', currMode === 1 ? 0 : 1);
 }
 function ctlPlay() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('start_playing', null);
+    const ctlApi = getLiveSetApi();
+    ctlApi.call('start_playing');
 }
 function ctlStop() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('stop_playing', null);
+    const ctlApi = getLiveSetApi();
+    ctlApi.call('stop_playing');
 }
 function undo() {
-    var api = getLiveSetApi();
-    api.call('undo', null);
+    const api = getLiveSetApi();
+    api.call('undo');
 }
 function redo() {
-    var api = getLiveSetApi();
-    api.call('redo', null);
+    const api = getLiveSetApi();
+    api.call('redo');
 }
 log('reloaded k4-bluhandBanks');
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
 module.exports = {};

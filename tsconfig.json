@@ -2,12 +2,12 @@
   "compileOnSave": true,
   "compilerOptions": {
     "module": "CommonJS",
-    "target": "ES5",
+    "target": "ES2022",
     "strict": false,
     "noImplicitAny": true,
     "allowUnreachableCode": true,
     "sourceMap": false,
-    "lib": ["es5"],
+    "lib": ["ES2022"],
     "skipLibCheck": true,
     "outDir": "Project"
   },
