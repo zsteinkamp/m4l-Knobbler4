@@ -159,6 +159,18 @@ I have filed a support ticket with Ableton about this, and for now unfortunately
 Try turning off GPU rendering in Live's settings. There appears to be a bug related to that in the latest versions of Ableton Live.
 
 
+#### The Knobbler app can't connect, or was working but stopped responding.
+
+Make sure Ableton Live's Audio Engine is turned on. When the engine is off, Live stops processing all Max for Live devices, including Knobbler. You can tell it's off if you see an orange **OFF** button in the upper-right area of Live's interface:
+
+![Audio Engine Off](images/audio-engine-off.png)
+
+To turn it back on, click that **OFF** button, or go to the CPU meter dropdown menu and check **Audio Engine On**:
+
+![Audio Engine On](images/audio-engine-on.png)
+
+The keyboard shortcut is also shown in the menu (on Mac it is **&#x2303;&#x2325;&#x21E7;E**). Once the engine is back on, Knobbler will resume normal operation.
+
 #### HALP! Nothing above covers what I'm experiencing!
 
 Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, screenshots (there are never too many screenshots), events from your childhood that relate, etc. zack@steinkamp.us
