@@ -460,6 +460,9 @@ function refresh() {
     state.lastTrackId = 0;
     init();
 }
+function setDictPrefix(prefix) {
+    (0, utils_1.setDictPrefix)(prefix);
+}
 function init() {
     if (state.watchers.length === consts_1.MAX_SENDS) {
         return;
@@ -516,7 +519,7 @@ function init() {
         state.crossfaderObj.mode = 1;
     }
     // Restore meters state from settings dict
-    state.metersEnabled = !!(0, utils_1.loadSetting)('metersEnabled');
+    state.metersEnabled = !!(0, utils_1.loadInstanceSetting)('metersEnabled');
     (0, utils_1.osc)('/sidebarMeters', state.metersEnabled ? 1 : 0);
 }
 log('reloaded k4-sidebarMixer');

@@ -3,6 +3,7 @@ import {
   colorToString,
   logFactory,
   sendChunkedData,
+  setVisibleTracks,
   truncate,
 } from './utils'
 import config from './config'
@@ -113,8 +114,6 @@ function buildTrackList(): TrackInfo[] {
 // Send
 // ---------------------------------------------------------------------------
 
-const TRACK_DICT_NAME = 'visibleTracksDict'
-
 function sendVisibleTracks() {
   // Send to app via chunked OSC
   const items = trackList.map(function (t) {
@@ -123,8 +122,7 @@ function sendVisibleTracks() {
   sendChunkedData('/visibleTracks', items)
 
   // Write to shared dict, then notify mixer/clips
-  const d = new Dict(TRACK_DICT_NAME)
-  d.set('tracks', JSON.stringify(trackList))
+  setVisibleTracks(JSON.stringify(trackList))
   outlet(OUTLET_TRACK_DATA, 'visibleTracks')
 }
 

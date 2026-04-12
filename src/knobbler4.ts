@@ -1,4 +1,4 @@
-import { logFactory } from './utils'
+import { logFactory, setDictPrefix as _setDictPrefix } from './utils'
 import config from './config'
 import { INLET_MSGS, OUTLET_OSC, OUTLET_MSGS } from './consts'
 import * as KnobblerCore from './knobblerCore'
@@ -16,6 +16,10 @@ setinletassist(
   'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1'
 )
 
+function setDictPrefix(prefix: any) {
+  _setDictPrefix(prefix)
+  KnobblerCore.setDictPrefix(prefix)
+}
 function initAll() {
   KnobblerCore.initAll()
 }

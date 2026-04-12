@@ -9,8 +9,9 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
+exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDictPrefix = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
 var utils_1 = require("./utils");
+Object.defineProperty(exports, "setDictPrefix", { enumerable: true, get: function () { return utils_1.setDictPrefix; } });
 var consts_1 = require("./consts");
 var config_1 = require("./config");
 var log = (0, utils_1.logFactory)(config_1.default);
@@ -69,10 +70,11 @@ function isSlotInPair(slot) {
     return null;
 }
 function saveXYPairs() {
-    (0, utils_1.saveSetting)(XY_PAIRS_KEY, xyPairs);
+    (0, utils_1.saveInstanceSetting)(XY_PAIRS_KEY, xyPairs);
 }
 function loadXYPairs() {
-    var val = (0, utils_1.loadSetting)(XY_PAIRS_KEY);
+    var val = (0, utils_1.loadInstanceSetting)(XY_PAIRS_KEY);
+    //log('LOAD XY PAIRS val=' + JSON.stringify(val))
     if (val && typeof val === 'object') {
         xyPairs = val.filter(function (n) {
             return typeof n === 'number' && !isNaN(n);
@@ -418,11 +420,11 @@ function refresh() {
         pendingCalls.push(function () { refresh(); });
         return;
     }
+    loadXYPairs();
+    sendXYPairs();
     for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
         refreshSlotUI(i);
     }
-    loadXYPairs();
-    sendXYPairs();
 }
 exports.refresh = refresh;
 function refreshSlotUI(slot) {

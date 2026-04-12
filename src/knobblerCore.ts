@@ -4,10 +4,13 @@ import {
   dequote,
   detach,
   isValidPath,
+  loadInstanceSetting,
   loadSetting,
+  setDictPrefix,
   logFactory,
   numArrToJson,
   osc,
+  saveInstanceSetting,
   saveSetting,
 } from './utils'
 import {
@@ -81,11 +84,12 @@ function isSlotInPair(slot: number): number | null {
 }
 
 function saveXYPairs() {
-  saveSetting(XY_PAIRS_KEY, xyPairs)
+  saveInstanceSetting(XY_PAIRS_KEY, xyPairs)
 }
 
 function loadXYPairs() {
-  const val = loadSetting(XY_PAIRS_KEY)
+  const val = loadInstanceSetting(XY_PAIRS_KEY)
+  //log('LOAD XY PAIRS val=' + JSON.stringify(val))
   if (val && typeof val === 'object') {
     xyPairs = (val as number[]).filter(function (n) {
       return typeof n === 'number' && !isNaN(n)
@@ -474,11 +478,11 @@ function refresh() {
     pendingCalls.push(function () { refresh() })
     return
   }
+  loadXYPairs()
+  sendXYPairs()
   for (let i = 1; i <= MAX_SLOTS; i++) {
     refreshSlotUI(i)
   }
-  loadXYPairs()
-  sendXYPairs()
 }
 
 function refreshSlotUI(slot: number) {
@@ -683,6 +687,7 @@ export {
   refresh,
   setCustomName,
   setDefault,
+  setDictPrefix,
   setMax,
   setMin,
   setPath,

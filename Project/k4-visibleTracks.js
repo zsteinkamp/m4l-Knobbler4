@@ -78,7 +78,6 @@ function buildTrackList() {
 // ---------------------------------------------------------------------------
 // Send
 // ---------------------------------------------------------------------------
-var TRACK_DICT_NAME = 'visibleTracksDict';
 function sendVisibleTracks() {
     // Send to app via chunked OSC
     var items = trackList.map(function (t) {
@@ -86,8 +85,7 @@ function sendVisibleTracks() {
     });
     (0, utils_1.sendChunkedData)('/visibleTracks', items);
     // Write to shared dict, then notify mixer/clips
-    var d = new Dict(TRACK_DICT_NAME);
-    d.set('tracks', JSON.stringify(trackList));
+    (0, utils_1.setVisibleTracks)(JSON.stringify(trackList));
     outlet(OUTLET_TRACK_DATA, 'visibleTracks');
 }
 // ---------------------------------------------------------------------------

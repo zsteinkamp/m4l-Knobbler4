@@ -98,8 +98,9 @@ function deriveCellState(hasClip, trackIdx, sceneIdx) {
 // Track List
 // ---------------------------------------------------------------------------
 function visibleTracks() {
-    var d = new Dict('visibleTracksDict');
-    var raw = d.get('tracks');
+    var raw = (0, utils_1.getVisibleTracks)();
+    if (!raw)
+        return;
     var tracks = JSON.parse(raw.toString());
     trackIds = [];
     trackPaths = [];

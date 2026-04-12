@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.loadSetting = exports.saveSetting = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -78,17 +78,36 @@ function debouncedTask(key, slot, task, delayMs) {
     tasks[key][slot].schedule(delayMs);
 }
 exports.debouncedTask = debouncedTask;
-var SETTINGS_DICT_NAME = 'settingsDict';
+var _settingsDict = new Dict('settingsDict');
+var _instancePrefix = '';
+function setDictPrefix(prefix) {
+    _instancePrefix = String(prefix) + '_';
+}
+exports.setDictPrefix = setDictPrefix;
 function saveSetting(key, value) {
-    var d = new Dict(SETTINGS_DICT_NAME);
-    d.set(key, value);
+    _settingsDict.set(key, value);
 }
 exports.saveSetting = saveSetting;
 function loadSetting(key) {
-    var d = new Dict(SETTINGS_DICT_NAME);
-    return d.get(key);
+    return _settingsDict.get(key);
 }
 exports.loadSetting = loadSetting;
+function saveInstanceSetting(key, value) {
+    _settingsDict.set(_instancePrefix + key, value);
+}
+exports.saveInstanceSetting = saveInstanceSetting;
+function loadInstanceSetting(key) {
+    return _settingsDict.get(_instancePrefix + key);
+}
+exports.loadInstanceSetting = loadInstanceSetting;
+function getVisibleTracks() {
+    return _settingsDict.get('visibleTracks');
+}
+exports.getVisibleTracks = getVisibleTracks;
+function setVisibleTracks(value) {
+    _settingsDict.set('visibleTracks', value);
+}
+exports.setVisibleTracks = setVisibleTracks;
 function meterVal(raw) {
     return Math.round((parseFloat(raw) || 0) * 100) / 100;
 }

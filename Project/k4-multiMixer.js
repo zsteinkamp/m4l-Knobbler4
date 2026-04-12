@@ -573,7 +573,7 @@ function mixerMeters(val) {
     if (enabled === metersEnabled)
         return;
     metersEnabled = enabled;
-    (0, utils_1.saveSetting)('metersEnabled', metersEnabled ? 1 : 0);
+    (0, utils_1.saveInstanceSetting)('metersEnabled', metersEnabled ? 1 : 0);
     sendMetersState();
     if (metersEnabled) {
         // Only create meter observers for visible tracks, not buffer
@@ -629,9 +629,12 @@ function page() {
         stopMeterFlush();
     }
 }
+function setDictPrefix(prefix) {
+    (0, utils_1.setDictPrefix)(prefix);
+}
 function init() {
     ensureApis();
-    metersEnabled = !!(0, utils_1.loadSetting)('metersEnabled');
+    metersEnabled = !!(0, utils_1.loadInstanceSetting)('metersEnabled');
     sendMetersState();
     setupWindow(0, DEFAULT_VISIBLE_COUNT);
 }
@@ -925,8 +928,10 @@ function anything() {
         sendDefault12(stripIdx);
 }
 function visibleTracks() {
-    var d = new Dict('visibleTracksDict');
-    trackList = JSON.parse(d.get('tracks').toString());
+    var raw = (0, utils_1.getVisibleTracks)();
+    if (!raw)
+        return;
+    trackList = JSON.parse(raw.toString());
     // Clamp leftIndex if track list shrank
     if (leftIndex >= trackList.length) {
         leftIndex = Math.max(0, trackList.length - visibleCount);

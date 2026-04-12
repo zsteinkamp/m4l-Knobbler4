@@ -2,9 +2,11 @@ import {
   cleanArr,
   colorToString,
   detach,
-  loadSetting,
+  getVisibleTracks,
+  loadInstanceSetting,
   numArrToJson,
-  saveSetting,
+  saveInstanceSetting,
+  setDictPrefix as _setDictPrefix,
   logFactory,
   meterVal,
   osc,
@@ -700,7 +702,7 @@ function mixerMeters(val: number) {
   const enabled = !!parseInt(val.toString())
   if (enabled === metersEnabled) return
   metersEnabled = enabled
-  saveSetting('metersEnabled', metersEnabled ? 1 : 0)
+  saveInstanceSetting('metersEnabled', metersEnabled ? 1 : 0)
   sendMetersState()
 
   if (metersEnabled) {
@@ -756,9 +758,13 @@ function page() {
   }
 }
 
+function setDictPrefix(prefix: any) {
+  _setDictPrefix(prefix)
+}
+
 function init() {
   ensureApis()
-  metersEnabled = !!loadSetting('metersEnabled')
+  metersEnabled = !!loadInstanceSetting('metersEnabled')
   sendMetersState()
   setupWindow(0, DEFAULT_VISIBLE_COUNT)
 }
@@ -1026,8 +1032,9 @@ function anything() {
 }
 
 function visibleTracks() {
-  const d = new Dict('visibleTracksDict')
-  trackList = JSON.parse(d.get('tracks').toString())
+  const raw = getVisibleTracks()
+  if (!raw) return
+  trackList = JSON.parse(raw.toString())
   // Clamp leftIndex if track list shrank
   if (leftIndex >= trackList.length) {
     leftIndex = Math.max(0, trackList.length - visibleCount)

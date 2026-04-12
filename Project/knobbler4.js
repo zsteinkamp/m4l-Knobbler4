@@ -10,6 +10,10 @@ var log = (0, utils_1.logFactory)(config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages');
 setinletassist(consts_1.OUTLET_MSGS, 'Output messages for other devices or bpatchers. Example: 5-SLOT mapped 1');
+function setDictPrefix(prefix) {
+    (0, utils_1.setDictPrefix)(prefix);
+    KnobblerCore.setDictPrefix(prefix);
+}
 function initAll() {
     KnobblerCore.initAll();
 }

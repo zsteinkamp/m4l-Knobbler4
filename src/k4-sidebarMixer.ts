@@ -1,4 +1,4 @@
-import { cleanArr, colorToString, loadSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR } from './utils'
+import { cleanArr, colorToString, loadInstanceSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR, setDictPrefix as _setDictPrefix } from './utils'
 import config from './config'
 import {
   noFn,
@@ -522,6 +522,10 @@ function refresh() {
   init()
 }
 
+function setDictPrefix(prefix: any) {
+  _setDictPrefix(prefix)
+}
+
 function init() {
   if (state.watchers.length === MAX_SENDS) {
     return
@@ -599,7 +603,7 @@ function init() {
   }
 
   // Restore meters state from settings dict
-  state.metersEnabled = !!loadSetting('metersEnabled')
+  state.metersEnabled = !!loadInstanceSetting('metersEnabled')
   osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
 }
 

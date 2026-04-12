@@ -79,16 +79,35 @@ export function debouncedTask(
   tasks[key][slot].schedule(delayMs)
 }
 
-const SETTINGS_DICT_NAME = 'settingsDict'
+const _settingsDict: any = new Dict('settingsDict')
+let _instancePrefix = ''
+
+export function setDictPrefix(prefix: any) {
+  _instancePrefix = String(prefix) + '_'
+}
 
 export function saveSetting(key: string, value: any) {
-  const d = new Dict(SETTINGS_DICT_NAME)
-  d.set(key, value)
+  _settingsDict.set(key, value)
 }
 
 export function loadSetting(key: string): any {
-  const d = new Dict(SETTINGS_DICT_NAME)
-  return d.get(key)
+  return _settingsDict.get(key)
+}
+
+export function saveInstanceSetting(key: string, value: any) {
+  _settingsDict.set(_instancePrefix + key, value)
+}
+
+export function loadInstanceSetting(key: string): any {
+  return _settingsDict.get(_instancePrefix + key)
+}
+
+export function getVisibleTracks(): string {
+  return _settingsDict.get('visibleTracks')
+}
+
+export function setVisibleTracks(value: string) {
+  _settingsDict.set('visibleTracks', value)
 }
 
 export function meterVal(raw: any): number {

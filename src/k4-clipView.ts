@@ -1,4 +1,4 @@
-import { cleanArr, detach, dequote, logFactory, osc, sendChunkedData } from './utils'
+import { cleanArr, detach, dequote, getVisibleTracks, logFactory, osc, sendChunkedData } from './utils'
 import config from './config'
 import {
   noFn,
@@ -175,8 +175,8 @@ function deriveCellState(
 // ---------------------------------------------------------------------------
 
 function visibleTracks() {
-  const d = new Dict('visibleTracksDict')
-  const raw = d.get('tracks')
+  const raw = getVisibleTracks()
+  if (!raw) return
   const tracks = JSON.parse(raw.toString())
   trackIds = []
   trackPaths = []
