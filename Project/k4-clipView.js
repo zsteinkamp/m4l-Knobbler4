@@ -17,7 +17,6 @@ var CLIP_PLAYING = 2;
 var CLIP_TRIGGERED = 3;
 var CLIP_RECORDING = 4;
 var CLIP_ARMED = 5;
-var OBSERVER_BUFFER = 2;
 var VIEW_DEBOUNCE_MS = 250;
 var UPDATE_FLUSH_MS = 50;
 // ---------------------------------------------------------------------------
@@ -280,12 +279,13 @@ function teardownAllTrackPlay() {
     }
     trackPlayObservers = {};
 }
-// Called when arm changes — update all cells on this track in the observer window
+// Called when arm changes — update all cells on this track that have observers
 function updateAllCellsOnTrack(trackIdx) {
-    var obsTop = Math.max(0, topScene - OBSERVER_BUFFER);
-    var obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER);
-    for (var row = obsTop; row < obsBottom; row++) {
-        updateCellFromTrack(trackIdx, row);
+    for (var key in cellObservers) {
+        var obs = cellObservers[key];
+        if (obs.trackIdx === trackIdx) {
+            updateCellFromTrack(trackIdx, obs.sceneIdx);
+        }
     }
 }
 // Called when playing_slot_index or fired_slot_index changes on a track
@@ -655,69 +655,24 @@ function teardownAll() {
 function applyWindow() {
     if (leftTrack < 0 || topScene < 0)
         return;
-    var obsLeft = Math.max(0, leftTrack - OBSERVER_BUFFER);
-    var obsRight = Math.min(trackIds.length, rightTrack + OBSERVER_BUFFER);
-    var obsTop = Math.max(0, topScene - OBSERVER_BUFFER);
-    var obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER);
-    // --- Track play observers (one per track in observer window) ---
-    var newTrackSet = {};
-    for (var col = obsLeft; col < obsRight; col++) {
-        newTrackSet[col] = true;
-    }
-    // Remove old
-    for (var key in trackPlayObservers) {
-        var idx = parseInt(key);
-        if (!newTrackSet[idx]) {
-            teardownTrackPlayObservers(trackPlayObservers[idx]);
-            delete trackPlayObservers[idx];
-        }
-    }
-    // Add new — create BEFORE cell observers so deriveCellState can use them
-    for (var col = obsLeft; col < obsRight; col++) {
+    // --- Track play observers — create BEFORE cell observers so deriveCellState can use them ---
+    for (var col = leftTrack; col < rightTrack; col++) {
         if (!trackPlayObservers[col]) {
             trackPlayObservers[col] = createTrackPlayObservers(col);
         }
     }
-    // --- Scene observers (visible window + buffer only) ---
-    var newSceneSet = {};
-    for (var s = obsTop; s < obsBottom; s++) {
-        newSceneSet[s] = true;
-    }
-    // Remove old
-    for (var key in sceneObservers) {
-        var idx = parseInt(key);
-        if (!newSceneSet[idx]) {
-            teardownSceneObserver(sceneObservers[idx]);
-            delete sceneObservers[idx];
-        }
-    }
-    // Add new
-    for (var s = obsTop; s < obsBottom; s++) {
+    // --- Scene observers ---
+    for (var s = topScene; s < bottomScene; s++) {
         if (!sceneObservers[s]) {
             sceneObservers[s] = createSceneObserver(s);
         }
     }
     // --- Cell state + observers ---
-    // Cancel any pending observer batch from a previous window
     if (observerBatchTask)
         observerBatchTask.cancel();
     pendingObserverKeys = [];
-    var newCellSet = {};
-    for (var col = obsLeft; col < obsRight; col++) {
-        for (var row = obsTop; row < obsBottom; row++) {
-            newCellSet[cellKey(col, row)] = true;
-        }
-    }
-    // Remove old
-    for (var key in cellObservers) {
-        if (!newCellSet[key]) {
-            teardownCellObservers(cellObservers[key]);
-            delete cellObservers[key];
-        }
-    }
-    // Read initial state for new cells (fast — no LiveAPI objects created)
-    for (var col = obsLeft; col < obsRight; col++) {
-        for (var row = obsTop; row < obsBottom; row++) {
+    for (var col = leftTrack; col < rightTrack; col++) {
+        for (var row = topScene; row < bottomScene; row++) {
             var key = cellKey(col, row);
             if (!cellObservers[key]) {
                 cellObservers[key] = readCellState(col, row);
@@ -725,12 +680,10 @@ function applyWindow() {
             }
         }
     }
-    // Send full grid, track info, and scene info for visible range
     sendFullGrid();
     sendTrackInfo();
     sendSceneInfo();
     sendSelectedScene();
-    // Create observers lazily in batches (after grid is sent)
     if (pendingObserverKeys.length > 0) {
         scheduleObserverBatch();
     }

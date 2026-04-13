@@ -29,7 +29,6 @@ const CLIP_TRIGGERED = 3
 const CLIP_RECORDING = 4
 const CLIP_ARMED = 5
 
-const OBSERVER_BUFFER = 2
 const VIEW_DEBOUNCE_MS = 250
 const UPDATE_FLUSH_MS = 50
 // ---------------------------------------------------------------------------
@@ -356,12 +355,13 @@ function teardownAllTrackPlay() {
   trackPlayObservers = {}
 }
 
-// Called when arm changes — update all cells on this track in the observer window
+// Called when arm changes — update all cells on this track that have observers
 function updateAllCellsOnTrack(trackIdx: number) {
-  const obsTop = Math.max(0, topScene - OBSERVER_BUFFER)
-  const obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER)
-  for (let row = obsTop; row < obsBottom; row++) {
-    updateCellFromTrack(trackIdx, row)
+  for (const key in cellObservers) {
+    const obs = cellObservers[key]
+    if (obs.trackIdx === trackIdx) {
+      updateCellFromTrack(trackIdx, obs.sceneIdx)
+    }
   }
 }
 
@@ -741,78 +741,26 @@ function teardownAll() {
 function applyWindow() {
   if (leftTrack < 0 || topScene < 0) return
 
-  const obsLeft = Math.max(0, leftTrack - OBSERVER_BUFFER)
-  const obsRight = Math.min(trackIds.length, rightTrack + OBSERVER_BUFFER)
-  const obsTop = Math.max(0, topScene - OBSERVER_BUFFER)
-  const obsBottom = Math.min(totalScenes, bottomScene + OBSERVER_BUFFER)
-
-  // --- Track play observers (one per track in observer window) ---
-  const newTrackSet: Record<number, boolean> = {}
-  for (let col = obsLeft; col < obsRight; col++) {
-    newTrackSet[col] = true
-  }
-
-  // Remove old
-  for (const key in trackPlayObservers) {
-    const idx = parseInt(key)
-    if (!newTrackSet[idx]) {
-      teardownTrackPlayObservers(trackPlayObservers[idx])
-      delete trackPlayObservers[idx]
-    }
-  }
-
-  // Add new — create BEFORE cell observers so deriveCellState can use them
-  for (let col = obsLeft; col < obsRight; col++) {
+  // --- Track play observers — create BEFORE cell observers so deriveCellState can use them ---
+  for (let col = leftTrack; col < rightTrack; col++) {
     if (!trackPlayObservers[col]) {
       trackPlayObservers[col] = createTrackPlayObservers(col)
     }
   }
 
-  // --- Scene observers (visible window + buffer only) ---
-  const newSceneSet: Record<number, boolean> = {}
-  for (let s = obsTop; s < obsBottom; s++) {
-    newSceneSet[s] = true
-  }
-
-  // Remove old
-  for (const key in sceneObservers) {
-    const idx = parseInt(key)
-    if (!newSceneSet[idx]) {
-      teardownSceneObserver(sceneObservers[idx])
-      delete sceneObservers[idx]
-    }
-  }
-
-  // Add new
-  for (let s = obsTop; s < obsBottom; s++) {
+  // --- Scene observers ---
+  for (let s = topScene; s < bottomScene; s++) {
     if (!sceneObservers[s]) {
       sceneObservers[s] = createSceneObserver(s)
     }
   }
 
   // --- Cell state + observers ---
-  // Cancel any pending observer batch from a previous window
   if (observerBatchTask) observerBatchTask.cancel()
   pendingObserverKeys = []
 
-  const newCellSet: Record<string, boolean> = {}
-  for (let col = obsLeft; col < obsRight; col++) {
-    for (let row = obsTop; row < obsBottom; row++) {
-      newCellSet[cellKey(col, row)] = true
-    }
-  }
-
-  // Remove old
-  for (const key in cellObservers) {
-    if (!newCellSet[key]) {
-      teardownCellObservers(cellObservers[key])
-      delete cellObservers[key]
-    }
-  }
-
-  // Read initial state for new cells (fast — no LiveAPI objects created)
-  for (let col = obsLeft; col < obsRight; col++) {
-    for (let row = obsTop; row < obsBottom; row++) {
+  for (let col = leftTrack; col < rightTrack; col++) {
+    for (let row = topScene; row < bottomScene; row++) {
       const key = cellKey(col, row)
       if (!cellObservers[key]) {
         cellObservers[key] = readCellState(col, row)
@@ -821,13 +769,11 @@ function applyWindow() {
     }
   }
 
-  // Send full grid, track info, and scene info for visible range
   sendFullGrid()
   sendTrackInfo()
   sendSceneInfo()
   sendSelectedScene()
 
-  // Create observers lazily in batches (after grid is sent)
   if (pendingObserverKeys.length > 0) {
     scheduleObserverBatch()
   }

@@ -23,7 +23,6 @@ function ensureApis() {
 }
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
-var OBSERVER_BUFFER = 2;
 // Pre-computed OSC address strings for mixer strips
 var SA_VOL = [];
 var SA_VOLSTR = [];
@@ -71,10 +70,8 @@ for (var _i = 0; _i < MAX_STRIP_IDX; _i++) {
 var trackList = [];
 var leftIndex = -1;
 var visibleCount = 0;
-// Observers keyed by track ID — survives window slides if the track stays visible
+// Observers keyed by track ID — accumulate over session, never torn down on scroll
 var observersByTrackId = {};
-// Observer slots: track IDs in the wider observer window (visible + buffer)
-var observerSlots = [];
 // Track IDs for which sendStripState has been called in the current visible window.
 // Rebuilt each applyWindow so strips leaving the visible range get state re-sent
 // if they scroll back in (observer callbacks don't fire while !isVisible).
@@ -383,7 +380,6 @@ function teardownAll() {
         teardownStripObservers(observersByTrackId[trackIdStr]);
     }
     observersByTrackId = {};
-    observerSlots = [];
     visibleStateSet = {};
     trackList = [];
     meterBuffer = [];
@@ -433,14 +429,7 @@ function applyWindow() {
     if (leftIndex < 0 || visibleCount <= 0) {
         return;
     }
-    // Compute wider observer window (visible + buffer on each side)
-    var obsLeft = Math.max(0, leftIndex - OBSERVER_BUFFER);
-    var obsRight = Math.min(trackList.length, leftIndex + visibleCount + OBSERVER_BUFFER);
-    // Build new observer slots for the wider window
-    var newSlots = [];
-    for (var i = obsLeft; i < obsRight; i++) {
-        newSlots.push(trackList[i].id);
-    }
+    var visRight = Math.min(leftIndex + visibleCount, trackList.length);
     // Resize meter buffer if track count changed
     var requiredLen = trackList.length * 3;
     if (meterBuffer.length !== requiredLen) {
@@ -454,51 +443,28 @@ function applyWindow() {
         if (wasRunning && metersEnabled)
             startMeterFlush();
     }
-    // Compute keep/remove/add sets
-    var oldSet = {};
-    for (var i = 0; i < observerSlots.length; i++) {
-        oldSet[observerSlots[i]] = true;
-    }
-    var newSet = {};
-    for (var i = 0; i < newSlots.length; i++) {
-        newSet[newSlots[i]] = true;
-    }
-    // Remove: in old but not in new
-    for (var i = 0; i < observerSlots.length; i++) {
-        var tid = observerSlots[i];
-        if (!newSet[tid] && observersByTrackId[tid]) {
-            teardownStripObservers(observersByTrackId[tid]);
-            delete observersByTrackId[tid];
+    // Create observers for visible tracks that don't have them yet
+    for (var i = leftIndex; i < visRight; i++) {
+        var tid = trackList[i].id;
+        if (!observersByTrackId[tid]) {
+            observersByTrackId[tid] = createStripObservers(tid, i);
         }
     }
-    // Add: in new but not in old
-    for (var i = 0; i < newSlots.length; i++) {
-        var tid = newSlots[i];
-        if (!oldSet[tid]) {
-            observersByTrackId[tid] = createStripObservers(tid, obsLeft + i);
-        }
-    }
-    // Update strip indices for all observers (positions may have shifted)
-    for (var i = 0; i < newSlots.length; i++) {
-        var tid = newSlots[i];
+    // Update strip indices for all visible observers (positions may have shifted)
+    for (var i = leftIndex; i < visRight; i++) {
+        var tid = trackList[i].id;
         if (observersByTrackId[tid]) {
-            observersByTrackId[tid].stripIndex = obsLeft + i;
+            observersByTrackId[tid].stripIndex = i;
         }
     }
-    observerSlots = newSlots;
-    // Manage meter observers for visible tracks only (not buffer)
-    var visRight = Math.min(leftIndex + visibleCount, trackList.length);
+    // Manage meter observers for visible tracks only
     if (metersEnabled) {
-        // Teardown meters on buffer-only tracks
-        for (var i = obsLeft; i < leftIndex; i++) {
-            var tid = trackList[i].id;
-            if (observersByTrackId[tid])
-                teardownMeterObservers(observersByTrackId[tid]);
-        }
-        for (var i = visRight; i < obsRight; i++) {
-            var tid = trackList[i].id;
-            if (observersByTrackId[tid])
-                teardownMeterObservers(observersByTrackId[tid]);
+        // Teardown meters on non-visible tracks that have them
+        for (var tidStr in observersByTrackId) {
+            var strip = observersByTrackId[tidStr];
+            if (!isVisible(strip) && strip.meterLeftApi) {
+                teardownMeterObservers(strip);
+            }
         }
         // Create meters on visible tracks that don't have them
         for (var i = leftIndex; i < visRight; i++) {
@@ -512,7 +478,7 @@ function applyWindow() {
             startMeterFlush();
     }
     // Send state for strips that are newly visible (weren't in the previous visible set).
-    // This catches both newly created strips and buffer-zone strips scrolling into view.
+    // This catches both newly created strips and existing strips scrolling into view.
     var newVisibleSet = {};
     for (var i = leftIndex; i < visRight; i++) {
         var tid = trackList[i].id;
@@ -585,7 +551,7 @@ function mixerMeters(val) {
                 createMeterObservers(strip, strip.trackApi.unquotedpath);
             }
         }
-        if (onMixerPage && observerSlots.length > 0)
+        if (onMixerPage && visibleCount > 0)
             startMeterFlush();
     }
     else {
@@ -622,7 +588,7 @@ function page() {
     var wasMixerPage = onMixerPage;
     onMixerPage = pageName === 'mixer' || pageName === 'session';
     if (onMixerPage && !wasMixerPage) {
-        if (metersEnabled && observerSlots.length > 0)
+        if (metersEnabled && visibleCount > 0)
             startMeterFlush();
     }
     else if (!onMixerPage && wasMixerPage) {
