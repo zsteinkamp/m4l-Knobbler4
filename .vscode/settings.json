@@ -9,9 +9,6 @@
   "[typescript]": {
     "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
   },
-  "cSpell.words": [
-    "Bluhand",
-    "playhead",
-    "Unmapping"
-  ] // set as "true" to run 'prettier' last not first
+  "cSpell.words": ["Bluhand", "playhead", "Unmapping"],
+  "js/ts.tsdk.path": "node_modules/typescript/lib" // set as "true" to run 'prettier' last not first
 }
