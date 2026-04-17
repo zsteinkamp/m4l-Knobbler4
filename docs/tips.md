@@ -3,6 +3,8 @@
 ### Sliders
 
 - Double tap any slider to return to its default value.
+- Use two fingers on any slider for precision (10x finer) adjustment.
+- Enable Spring mode in the toolbar to make sliders momentary — touch and drag, then release to spring back to the value at touch start. Works on knobbler sliders, X/Y pads, and mixer faders.
 - Show or hide the Current Param slider with the dock-bottom toolbar button.
 
 ### Clips & Scenes

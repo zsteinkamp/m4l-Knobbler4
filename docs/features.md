@@ -70,6 +70,12 @@ All sliders in Knobbler respond to a double-tap by resetting the parameter to it
 
 Use two fingers on any slider for 10x precision. This works on all sliders throughout the app — Knobbler pages, Bluhand, Channel Strip, Multi-Track Mixer, and Current Parameter.
 
+#### Spring (Momentary) Mode
+
+Enable Spring mode from the toolbar to make sliders momentary. Touch a slider, drag to a new value, then release — the slider springs back to the value it had when you first touched it. It's a quick way to audition a change, ride a parameter during a performance, or add a one-shot emphasis without having to manually return to where you started.
+
+Spring mode works on Knobbler sliders, X-Y pads, and mixer faders (volume, pan, and sends). Your Spring mode setting is remembered across app restarts.
+
 #### X-Y Pads
 
 Two adjacent Knobbler sliders can be linked into an X-Y pad, giving you two-dimensional control over a pair of parameters with a single finger.
@@ -84,7 +90,7 @@ X-Y pad assignments are saved per page and persist with your Live Set.
 
 #### Select Track
 
-If you tap the track name under the Knobbler slider, that will select that track in Live, which will update the channel strip on the left side of the screen. This is a convenient way to access the mixer controls for a parameter you have mapped.
+Tap anywhere in the text area below a Knobbler slider or X-Y pad (track name, parameter name, or value) to select that track in Live, which will update the channel strip on the left side of the screen. This is a convenient way to access the mixer controls for a parameter you have mapped.
 
 ### Bluhand Page
 
@@ -295,6 +301,10 @@ Requests an update of all data from the computer.
 ![Channel Strip Mixer](images/ipad-toolbar-unmap.png)
 
 This button toggles Unmapping mode on and off. When Unmapping mode is engaged, then Knobbler sliders and Shortcut buttons have a red border. Tap the slider or button to unmap it.
+
+#### Spring Mode
+
+Toggles Spring (momentary) mode on all sliders. With Spring on, any slider you drag will spring back to its touch-start value when you release. Works on Knobbler sliders, X-Y pads, and mixer faders. See [Spring (Momentary) Mode](#spring-momentary-mode) above for details.
 
 #### Tempo Section
 
