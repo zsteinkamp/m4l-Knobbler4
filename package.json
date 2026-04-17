@@ -1,8 +1,9 @@
 {
   "license": "MIT",
   "scripts": {
-    "build": "yarn tsc",
-    "dev": "yarn install --frozen-lockfile && yarn tsc --watch",
+    "generate": "node scripts/generateDeviceParams.js",
+    "build": "yarn generate && yarn tsc",
+    "dev": "yarn install --frozen-lockfile && yarn generate && node scripts/generateDeviceParams.js --watch & yarn tsc --watch",
     "test": "vitest run"
   },
   "devDependencies": {

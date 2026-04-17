@@ -1,0 +1,1397 @@
+# Device parameter bank definitions
+# Sourced from Ableton Live MIDI Remote Scripts
+# Pipe-separated values (e.g. "Old Name|New Name") provide fallback matching
+# across Live versions where parameter names were renamed.
+
+Amp:
+  Global:
+    - Amp Type
+    - Bass
+    - Middle
+    - Treble
+    - Presence
+    - "Gain|Input Gain"
+    - Volume
+    - Dry/Wet
+  Dual Mono:
+    - Dual Mono
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+
+AutoFilter:
+  Filter:
+    - Frequency
+    - Resonance
+    - Env. Attack
+    - Env. Release
+    - Env. Modulation
+    - LFO Amount
+    - LFO Frequency
+    - LFO Phase
+  Filter Extra:
+    - Filter Type
+    - LFO Quantize On
+    - LFO Quantize Rate
+    - LFO Stereo Mode
+    - LFO Spin
+    - LFO Sync
+    - LFO Sync Rate
+    - LFO Offset
+  Side Chain:
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - S/C On
+    - S/C Mix
+    - S/C Gain
+
+AutoPan:
+  Bank 1:
+    - Frequency
+    - Phase
+    - Shape
+    - Waveform
+    - Sync Rate
+    - Offset
+    - "Width [Random]"
+    - Amount
+
+BeatRepeat:
+  Repeat Rate:
+    - Interval
+    - Offset
+    - Grid
+    - Variation
+    - Filter Freq
+    - Filter Width
+    - Volume
+    - Decay
+  Gate/Pitch:
+    - Chance
+    - Gate
+    - Pitch
+    - Pitch Decay
+    - Filter Freq
+    - Filter Width
+    - Volume
+    - Decay
+
+Cabinet:
+  Bank 1:
+    - Cabinet Type
+    - Microphone Position
+    - Microphone Type
+    - Dual Mono
+    - ""
+    - ""
+    - ""
+    - Dry/Wet
+
+Chorus:
+  Bank 1:
+    - LFO Amount
+    - LFO Rate
+    - Delay 1 Time
+    - Delay 1 HiPass
+    - Delay 2 Time
+    - Delay 2 Mode
+    - Feedback
+    - Dry/Wet
+
+Collision:
+  Mallet:
+    - Mallet On/Off
+    - Mallet Volume
+    - Mallet Noise Amount
+    - Mallet Stiffness
+    - Mallet Noise Color
+    - ""
+    - ""
+    - ""
+  Noise:
+    - Noise Volume
+    - Noise Filter Type
+    - Noise Filter Freq
+    - Noise Filter Q
+    - Noise Attack
+    - Noise Decay
+    - Noise Sustain
+    - Noise Release
+  "Resonator 1, Set A":
+    - Res 1 Decay
+    - Res 1 Material
+    - Res 1 Type
+    - Res 1 Quality
+    - Res 1 Tune
+    - Res 1 Fine Tune
+    - Res 1 Pitch Env.
+    - Res 1 Pitch Env. Time
+  "Resonator 1, Set B":
+    - Res 1 Listening L
+    - Res 1 Listening R
+    - Res 1 Hit
+    - Res 1 Brightness
+    - Res 1 Inharmonics
+    - Res 1 Radius
+    - Res 1 Opening
+    - Res 1 Ratio
+  "Resonator 2, Set A":
+    - Res 2 Decay
+    - Res 2 Material
+    - Res 2 Type
+    - Res 2 Quality
+    - Res 2 Tune
+    - Res 2 Fine Tune
+    - Res 2 Pitch Env.
+    - Res 2 Pitch Env. Time
+  "Resonator 2, Set B":
+    - Res 2 Listening L
+    - Res 2 Listening R
+    - Res 2 Hit
+    - Res 2 Brightness
+    - Res 2 Inharmonics
+    - Res 2 Radius
+    - Res 2 Opening
+    - Res 2 Ratio
+
+Compressor2:
+  Compression:
+    - Threshold
+    - Ratio
+    - Attack
+    - Release
+    - Auto Release On/Off
+    - Env Mode
+    - Knee
+    - Model
+  Output:
+    - Threshold
+    - Expansion Ratio
+    - LookAhead
+    - S/C Listen
+    - S/C Gain
+    - "Makeup|Output"
+    - Dry/Wet
+    - "Output Gain|Output"
+  Side Chain:
+    - S/C EQ On
+    - S/C EQ Type
+    - S/C EQ Freq
+    - S/C EQ Q
+    - S/C EQ Gain
+    - S/C On
+    - S/C Mix
+    - S/C Gain
+
+Corpus:
+  Amount:
+    - Decay
+    - Material
+    - Mid Freq
+    - Width
+    - Bleed
+    - Resonance Type
+    - Gain
+    - Dry Wet
+  Body:
+    - Listening L
+    - Listening R
+    - Hit
+    - Brightness
+    - Inharmonics
+    - Radius
+    - Opening
+    - Ratio
+  Tune:
+    - Resonance Type
+    - Tune
+    - Transpose
+    - Fine
+    - Spread
+    - Resonator Quality
+    - Note Off
+    - Off Decay
+
+DrumBuss:
+  Drive:
+    - Drive
+    - Drive Type
+    - Transients
+    - Crunch
+    - Boom Freq
+    - Boom Amt
+    - Boom Decay
+    - Boom Audition
+  Gain:
+    - Trim
+    - "Output Gain|Output"
+    - Dry/Wet
+    - Compressor On
+    - Damping Freq
+    - ""
+    - ""
+    - ""
+
+Echo:
+  Sync:
+    - "L Division|L Synced"
+    - "R Division|R Synced"
+    - L Sync Mode
+    - R Sync Mode
+    - L 16th
+    - R 16th
+    - L Sync
+    - R Sync
+  Time:
+    - L Time
+    - R Time
+    - L Offset
+    - R Offset
+    - Link
+    - Channel Mode
+    - ""
+    - ""
+  Gate/Ducking:
+    - Gate On
+    - Gate Thr
+    - Gate Release
+    - Duck On
+    - Duck Thr
+    - Duck Release
+    - Env Mix
+    - ""
+  Noise/Wobble:
+    - Noise On
+    - Noise Amt
+    - Noise Mrph
+    - Wobble On
+    - Wobble Amt
+    - Wobble Mrph
+    - Repitch
+    - ""
+  Gain:
+    - Feedback
+    - "Feedback Inv|FB Invert"
+    - Input Gain
+    - "Output Gain|Output"
+    - Clip Dry
+    - Dry Wet
+    - ""
+    - ""
+  Filter:
+    - Filter On
+    - HP Freq
+    - HP Res
+    - LP Freq
+    - LP Res
+    - ""
+    - ""
+    - ""
+  Reverb:
+    - Reverb Level
+    - Reverb Decay
+    - Reverb Loc
+    - Stereo Width
+    - ""
+    - ""
+    - ""
+    - ""
+  Modulation:
+    - Mod Wave
+    - Mod Sync
+    - Mod Rate
+    - "Mod Freq|Mod LFO Freq"
+    - Mod Phase
+    - "Dly < Mod|LFO > Delay"
+    - "Flt < Mod|LFO > Filter"
+    - Mod 4x
+
+Eq8:
+  Band On/Off:
+    - "1 Filter On A"
+    - "2 Filter On A"
+    - "3 Filter On A"
+    - "4 Filter On A"
+    - "5 Filter On A"
+    - "6 Filter On A"
+    - "7 Filter On A"
+    - "8 Filter On A"
+  Frequency:
+    - "1 Frequency A"
+    - "2 Frequency A"
+    - "3 Frequency A"
+    - "4 Frequency A"
+    - "5 Frequency A"
+    - "6 Frequency A"
+    - "7 Frequency A"
+    - "8 Frequency A"
+  Gain:
+    - "1 Gain A"
+    - "2 Gain A"
+    - "3 Gain A"
+    - "4 Gain A"
+    - "5 Gain A"
+    - "6 Gain A"
+    - "7 Gain A"
+    - "8 Gain A"
+  Resonance:
+    - "1 Resonance A|1 Q A"
+    - "2 Resonance A|2 Q A"
+    - "3 Resonance A|3 Q A"
+    - "4 Resonance A|4 Q A"
+    - "5 Resonance A|5 Q A"
+    - "6 Resonance A|6 Q A"
+    - "7 Resonance A|7 Q A"
+    - "8 Resonance A|8 Q A"
+  Filter Type:
+    - "1 Filter Type A"
+    - "2 Filter Type A"
+    - "3 Filter Type A"
+    - "4 Filter Type A"
+    - "5 Filter Type A"
+    - "6 Filter Type A"
+    - "7 Filter Type A"
+    - "8 Filter Type A"
+  Output:
+    - Adaptive Q
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - Scale
+    - "Output Gain|Output"
+  EQs 3-5:
+    - "3 Gain A"
+    - "3 Frequency A"
+    - "3 Resonance A|3 Q A"
+    - "4 Gain A"
+    - "4 Frequency A"
+    - "4 Resonance A|4 Q A"
+    - "5 Gain A"
+    - "5 Frequency A"
+
+Erosion:
+  Bank 1:
+    - Frequency
+    - Width
+    - Mode
+    - Amount
+    - ""
+    - ""
+    - ""
+    - ""
+
+FilterDelay:
+  Input L Filter:
+    - "1 Filter Freq"
+    - "1 Filter Width"
+    - "1 Beat Delay"
+    - "1 Beat Swing"
+    - "1 Feedback"
+    - "1 Pan"
+    - "1 Volume"
+    - Dry
+  Input L+R Filter:
+    - "2 Filter Freq"
+    - "2 Filter Width"
+    - "2 Beat Delay"
+    - "2 Beat Swing"
+    - "2 Feedback"
+    - "2 Pan"
+    - "2 Volume"
+    - Dry
+  Input R Filter:
+    - "3 Filter Freq"
+    - "3 Filter Width"
+    - "3 Beat Delay"
+    - "3 Beat Swing"
+    - "3 Feedback"
+    - "3 Pan"
+    - "3 Volume"
+    - Dry
+
+FilterEQ3:
+  Bank 1:
+    - GainLo
+    - GainMid
+    - GainHi
+    - FreqLo
+    - LowOn
+    - MidOn
+    - HighOn
+    - FreqHi
+
+Flanger:
+  Frequency Controls:
+    - Hi Pass
+    - Dry/Wet
+    - Delay Time
+    - Feedback
+    - Env. Modulation
+    - Env. Attack
+    - Env. Release
+    - ""
+  "LFO / S&H":
+    - LFO Amount
+    - Frequency
+    - LFO Phase
+    - Sync
+    - LFO Offset
+    - Sync Rate
+    - "LFO Width [Random]"
+    - LFO Waveform
+
+FrequencyShifter:
+  Bank 1:
+    - Coarse
+    - Fine
+    - Mode
+    - Ring Mod Frequency
+    - Drive On/Off
+    - Drive
+    - Wide
+    - Dry/Wet
+
+Gate:
+  Gate:
+    - Threshold
+    - Return
+    - FlipMode
+    - LookAhead
+    - Attack
+    - Hold
+    - Release
+    - Floor
+  Side Chain:
+    - S/C EQ On
+    - S/C EQ Type
+    - S/C EQ Freq
+    - S/C EQ Q
+    - S/C EQ Gain
+    - S/C On
+    - S/C Mix
+    - S/C Gain
+
+GlueCompressor:
+  Compression:
+    - Threshold
+    - Ratio
+    - Attack
+    - Release
+    - Peak Clip In
+    - Range
+    - Dry/Wet
+    - "Makeup|Output"
+  Side Chain:
+    - S/C EQ On
+    - S/C EQ Type
+    - S/C EQ Freq
+    - S/C EQ Q
+    - S/C EQ Gain
+    - S/C On
+    - S/C Mix
+    - S/C Gain
+
+GrainDelay:
+  Bank 1:
+    - Frequency
+    - Pitch
+    - Time Delay
+    - Beat Swing
+    - Random
+    - Spray
+    - Feedback
+    - DryWet
+
+InstrumentImpulse:
+  Pad 1:
+    - "1 Start"
+    - "1 Transpose"
+    - "1 Stretch Factor"
+    - "1 Saturator Drive"
+    - "1 Filter Freq"
+    - "1 Filter Res"
+    - "1 Pan"
+    - "1 Volume"
+  Pad 2:
+    - "2 Start"
+    - "2 Transpose"
+    - "2 Stretch Factor"
+    - "2 Saturator Drive"
+    - "2 Filter Freq"
+    - "2 Filter Res"
+    - "2 Pan"
+    - "2 Volume"
+  Pad 3:
+    - "3 Start"
+    - "3 Transpose"
+    - "3 Stretch Factor"
+    - "3 Saturator Drive"
+    - "3 Filter Freq"
+    - "3 Filter Res"
+    - "3 Pan"
+    - "3 Volume"
+  Pad 4:
+    - "4 Start"
+    - "4 Transpose"
+    - "4 Stretch Factor"
+    - "4 Saturator Drive"
+    - "4 Filter Freq"
+    - "4 Filter Res"
+    - "4 Pan"
+    - "4 Volume"
+  Pad 5:
+    - "5 Start"
+    - "5 Transpose"
+    - "5 Stretch Factor"
+    - "5 Saturator Drive"
+    - "5 Filter Freq"
+    - "5 Filter Res"
+    - "5 Pan"
+    - "5 Volume"
+  Pad 6:
+    - "6 Start"
+    - "6 Transpose"
+    - "6 Stretch Factor"
+    - "6 Saturator Drive"
+    - "6 Filter Freq"
+    - "6 Filter Res"
+    - "6 Pan"
+    - "6 Volume"
+  Pad 7:
+    - "7 Start"
+    - "7 Transpose"
+    - "7 Stretch Factor"
+    - "7 Saturator Drive"
+    - "7 Filter Freq"
+    - "7 Filter Res"
+    - "7 Pan"
+    - "7 Volume"
+  Pad 8:
+    - "8 Start"
+    - "8 Transpose"
+    - "8 Stretch Factor"
+    - "8 Saturator Drive"
+    - "8 Filter Freq"
+    - "8 Filter Res"
+    - "8 Pan"
+    - "8 Volume"
+
+InstrumentVector:
+  Oscillator 1:
+    - Osc 1 Transp
+    - Osc 1 Detune
+    - Osc 1 Pos
+    - Osc 1 Effect 1
+    - Osc 1 Effect 2
+    - Osc 1 Pan
+    - Osc 1 Gain
+    - Osc 1 On
+  Oscillator 2:
+    - Osc 2 Transp
+    - Osc 2 Detune
+    - Osc 2 Pos
+    - Osc 2 Effect 1
+    - Osc 2 Effect 2
+    - Osc 2 Pan
+    - Osc 2 Gain
+    - Osc 2 On
+  Filter 1:
+    - "Filter 1 On|Flt 1 On"
+    - "Filter 1 Freq|Flt 1 Freq"
+    - "Filter 1 Res|Flt 1 Res"
+    - "Filter 1 Drive|Flt 1 Drive"
+    - "Filter 1 Type|Flt 1 Type"
+    - "Filter 1 Slope|Flt 1 Slope"
+    - "Filter 1 LP/HP|Flt 1 LP/HP"
+    - "Filter 1 BP/NO/Morph|Flt 1 BP/NO/MO"
+  Filter 2:
+    - "Filter 2 On|Flt 2 On"
+    - "Filter 2 Freq|Flt 2 Freq"
+    - "Filter 2 Res|Flt 2 Res"
+    - "Filter 2 Drive|Flt 2 Drive"
+    - "Filter 2 Type|Flt 2 Type"
+    - "Filter 2 Slope|Flt 2 Slope"
+    - "Filter 2 LP/HP|Flt 2 LP/HP"
+    - "Filter 2 BP/NO/Morph|Flt 2 BP/NO/MO"
+  Amp Envelope:
+    - Amp Attack
+    - Amp Decay
+    - Amp Sustain
+    - Amp Release
+    - Amp A Slope
+    - Amp D Slope
+    - Amp R Slope
+    - Amp Loop Mode
+  Envelope 2/3:
+    - Env 2 Attack
+    - Env 2 Decay
+    - Env 2 Sustain
+    - Env 2 Release
+    - Env 3 Attack
+    - Env 3 Decay
+    - Env 3 Sustain
+    - Env 3 Release
+  LFO 1/2:
+    - LFO 1 Amount
+    - LFO 1 Rate
+    - LFO 1 S. Rate
+    - LFO 1 Sync
+    - LFO 2 Amount
+    - LFO 2 Rate
+    - LFO 2 S. Rate
+    - LFO 2 Sync
+  Global:
+    - Time
+    - Global Mod Amount
+    - Unison Amount
+    - Transpose
+    - Glide
+    - Sub Gain
+    - Sub Transpose
+    - Volume
+
+Looper:
+  Bank 1:
+    - State
+    - Speed
+    - Reverse
+    - Quantization
+    - Monitor
+    - Song Control
+    - Tempo Control
+    - Feedback
+
+LoungeLizard:
+  Mallet and Tine:
+    - M Stiffness
+    - M Force
+    - Noise Pitch
+    - Noise Decay
+    - Noise Amount
+    - F Tine Color
+    - F Tine Decay
+    - F Tine Vol
+  Tone and Damper:
+    - F Tone Decay
+    - F Tone Vol
+    - F Release
+    - Damp Tone
+    - Damp Balance
+    - Damp Amount
+    - ""
+    - ""
+  Pickup:
+    - P Symmetry
+    - P Distance
+    - P Amp In
+    - P Amp Out
+    - Pickup Model
+    - ""
+    - ""
+    - ""
+  Modulation:
+    - M Stiff < Vel
+    - M Stiff < Key
+    - M Force < Vel
+    - M Force < Key
+    - Noise < Key
+    - F Tine < Key
+    - P Amp < Key
+    - ""
+  Global:
+    - Volume
+    - Voices
+    - Semitone
+    - Detune
+    - KB Stretch
+    - PB Range
+    - Note PB Range
+    - ""
+
+MidiArpeggiator:
+  Style:
+    - Style
+    - Groove
+    - Offset
+    - Synced Rate
+    - Retrigger Mode
+    - Ret. Interval
+    - Repeats
+    - Gate
+  Pitch/Velocity:
+    - Tranpose Mode
+    - Tranpose Key
+    - Transp. Steps
+    - Transp. Dist.
+    - Velocity Decay
+    - Velocity Target
+    - Velocity On
+    - Vel. Retrigger
+
+MidiChord:
+  Shift:
+    - Shift1
+    - Shift2
+    - Shift3
+    - Shift4
+    - Shift5
+    - Shift6
+    - ""
+    - ""
+  "Shift %":
+    - Velocity1
+    - Velocity2
+    - Velocity3
+    - Velocity4
+    - Velocity5
+    - Velocity6
+    - ""
+    - ""
+
+MidiNoteLength:
+  Bank 1:
+    - Sync On
+    - Time Length
+    - Synced Length
+    - Gate
+    - Release Velocity
+    - Decay Time
+    - Decay Key Scale
+    - Latch
+
+MidiPitcher:
+  Bank 1:
+    - Pitch
+    - Range
+    - Lowest
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+
+MidiRandom:
+  Bank 1:
+    - Chance
+    - Choices
+    - Interval
+    - Sign
+    - ""
+    - ""
+    - ""
+    - ""
+
+MidiScale:
+  Bank 1:
+    - Base
+    - Transpose
+    - Range
+    - Lowest
+    - ""
+    - ""
+    - ""
+    - ""
+
+MidiVelocity:
+  Bank 1:
+    - Drive
+    - Compand
+    - Random
+    - Mode
+    - Out Hi
+    - Out Low
+    - Range
+    - Lowest
+
+MultiSampler:
+  Volume:
+    - Volume
+    - Ve Attack
+    - Ve Decay
+    - Ve Sustain
+    - Ve Release
+    - Vol < Vel
+    - Ve R < Vel
+    - Time
+  Filter:
+    - Filter Type
+    - Filter Morph
+    - Filter Freq
+    - Filter Res
+    - Filt < Vel
+    - Filt < Key
+    - Fe < Env
+    - Shaper Amt
+  Filter Envelope:
+    - Fe Attack
+    - Fe Decay
+    - Fe Sustain
+    - Fe Release
+    - Fe End
+    - Fe Mode
+    - Fe Loop
+    - Fe Retrig
+  LFO 1:
+    - L 1 Wave
+    - L 1 Sync
+    - L 1 Sync Rate
+    - L 1 Rate
+    - Vol < LFO
+    - Filt < LFO
+    - Pan < LFO
+    - Pitch < LFO
+  LFO 2:
+    - L 2 Wave
+    - L 2 Sync
+    - L 2 Sync Rate
+    - L 2 Rate
+    - L 2 R < Key
+    - L 2 St Mode
+    - L 2 Spin
+    - L 2 Phase
+  LFO 3:
+    - L 3 Wave
+    - L 3 Sync
+    - L 3 Sync Rate
+    - L 3 Rate
+    - L 3 R < Key
+    - L 3 St Mode
+    - L 3 Spin
+    - L 3 Phase
+  Oscillator:
+    - O Mode
+    - O Volume
+    - O Coarse
+    - O Fine
+    - Oe Attack
+    - Oe Decay
+    - Oe Sustain
+    - Oe Release
+  Pitch:
+    - Transpose
+    - Spread
+    - Pe < Env
+    - Pe Attack
+    - Pe Peak
+    - Pe Decay
+    - Pe Sustain
+    - Pe Release
+
+MultibandDynamics:
+  Global:
+    - "Master Output|Output"
+    - Amount
+    - Time Scaling
+    - Soft Knee On/Off
+    - Peak/RMS Mode
+    - "Band Activator [High]"
+    - "Band Activator [Mid]"
+    - "Band Activator [Low]"
+  Low Band:
+    - "Input Gain [Low]"
+    - "Below Threshold [Low]"
+    - "Below Ratio [Low]"
+    - "Above Threshold [Low]"
+    - "Above Ratio [Low]"
+    - "Attack Time [Low]"
+    - "Release Time [Low]"
+    - "Output Gain [Low]"
+  Mid Band:
+    - "Input Gain [Mid]"
+    - "Below Threshold [Mid]"
+    - "Below Ratio [Mid]"
+    - "Above Threshold [Mid]"
+    - "Above Ratio [Mid]"
+    - "Attack Time [Mid]"
+    - "Release Time [Mid]"
+    - "Output Gain [Mid]"
+  High Band:
+    - "Input Gain [High]"
+    - "Below Threshold [High]"
+    - "Below Ratio [High]"
+    - "Above Threshold [High]"
+    - "Above Ratio [High]"
+    - "Attack Time [High]"
+    - "Release Time [High]"
+    - "Output Gain [High]"
+  Split Frequencies:
+    - Low-Mid Crossover
+    - Mid-High Crossover
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+  Side Chain:
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - S/C On
+    - S/C Mix
+    - S/C Gain
+
+Operator:
+  Oscillator A:
+    - Ae Attack
+    - Ae Decay
+    - Ae Sustain
+    - Ae Release
+    - A Coarse
+    - A Fine
+    - Osc-A Lev < Vel
+    - Osc-A Level
+  Oscillator B:
+    - Be Attack
+    - Be Decay
+    - Be Sustain
+    - Be Release
+    - B Coarse
+    - B Fine
+    - Osc-B Lev < Vel
+    - Osc-B Level
+  Oscillator C:
+    - Ce Attack
+    - Ce Decay
+    - Ce Sustain
+    - Ce Release
+    - C Coarse
+    - C Fine
+    - Osc-C Lev < Vel
+    - Osc-C Level
+  Oscillator D:
+    - De Attack
+    - De Decay
+    - De Sustain
+    - De Release
+    - D Coarse
+    - D Fine
+    - Osc-D Lev < Vel
+    - Osc-D Level
+  LFO:
+    - Le Attack
+    - Le Decay
+    - Le Sustain
+    - Le Release
+    - LFO Rate
+    - LFO Amt
+    - LFO Type
+    - LFO R < K
+  Filter:
+    - Fe Attack
+    - Fe Decay
+    - Fe Sustain
+    - Fe Release
+    - Filter Freq
+    - Filter Res
+    - Fe R < Vel
+    - Fe Amount
+  Pitch Modulation:
+    - Pe Attack
+    - Pe Decay
+    - Pe Sustain
+    - Pe Release
+    - Pe Init
+    - Glide Time
+    - Pe Amount
+    - Spread
+  Routing:
+    - Time < Key
+    - Panorama
+    - Pan < Key
+    - Pan < Rnd
+    - Algorithm
+    - Time
+    - Tone
+    - Volume
+
+OriginalSimpler:
+  Amplitude:
+    - Ve Attack
+    - Ve Decay
+    - Ve Sustain
+    - Ve Release
+    - S Start
+    - S Loop Length
+    - S Length
+    - S Loop Fade
+  Filter:
+    - Fe Attack
+    - Fe Decay
+    - Fe Sustain
+    - Fe Release
+    - Filter Freq
+    - Filter Res
+    - Filt < Vel
+    - Fe < Env
+  LFO:
+    - L Attack
+    - L Rate
+    - L R < Key
+    - L Wave
+    - Vol < LFO
+    - Filt < LFO
+    - Pitch < LFO
+    - Pan < LFO
+  Pitch Modifiers:
+    - Pe Attack
+    - Pe Decay
+    - Pe Sustain
+    - Pe Release
+    - Glide Time
+    - Spread
+    - Pan
+    - Volume
+
+Overdrive:
+  Bank 1:
+    - Filter Freq
+    - Filter Width
+    - Drive
+    - Tone
+    - Preserve Dynamics
+    - ""
+    - ""
+    - Dry/Wet
+
+Pedal:
+  General:
+    - Type
+    - "Gain|Drive"
+    - Output
+    - Bass
+    - Mid
+    - Treble
+    - Sub
+    - Dry/Wet
+  Eq:
+    - Mid Freq
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+
+Phaser:
+  Frequency Controls:
+    - Poles
+    - Color
+    - Dry/Wet
+    - Frequency
+    - Env. Modulation
+    - Env. Attack
+    - Env. Release
+    - Feedback
+  "LFO / S&H":
+    - LFO Amount
+    - LFO Frequency
+    - LFO Phase
+    - LFO Sync
+    - LFO Offset
+    - LFO Sync Rate
+    - LFO Spin
+    - LFO Waveform
+
+Redux:
+  Bank 1:
+    - Bit Depth
+    - Sample Mode
+    - Sample Hard
+    - Sample Soft
+    - Bit On
+    - ""
+    - ""
+    - ""
+
+Resonator:
+  General / Mode I:
+    - Frequency
+    - Width
+    - "Global Gain|Output"
+    - Dry/Wet
+    - Decay
+    - I Note
+    - Color
+    - I Gain
+  Modes II-IV:
+    - II Gain
+    - III Gain
+    - IV Gain
+    - V Gain
+    - II Pitch
+    - III Pitch
+    - IV Pitch
+    - V Pitch
+
+Reverb:
+  Reflections:
+    - "In Filter Freq|Input Freq"
+    - "In Filter Width|Input Width"
+    - Predelay
+    - ER Spin On
+    - ER Spin Rate
+    - ER Spin Amount
+    - ER Shape
+    - Decay Time
+  Diffusion Network:
+    - "HiFilter Freq|Diff. Hi Freq"
+    - "LowShelf Freq|Diff. Lo Freq"
+    - Chorus Rate
+    - Diffusion
+    - HiShelf Gain
+    - LowShelf Gain
+    - Chorus Amount
+    - Scale
+  Global:
+    - Decay Time
+    - Freeze On
+    - Room Size
+    - Stereo Image
+    - Reflect Level
+    - Diffuse Level
+    - Dry/Wet
+    - Density
+
+Saturator:
+  General Controls:
+    - Drive
+    - Base
+    - Frequency
+    - Width
+    - Depth
+    - Output
+    - Dry/Wet
+    - Type
+  Waveshaper Controls:
+    - WS Drive
+    - WS Lin
+    - WS Curve
+    - WS Damp
+    - WS Depth
+    - WS Period
+    - Dry/Wet
+    - ""
+
+StereoGain:
+  General Controls:
+    - Left Inv
+    - Right Inv
+    - Channel Mode
+    - Stereo Width
+    - Mono
+    - Balance
+    - Gain
+    - Mute
+  Low Frequency:
+    - Bass Mono
+    - Bass Freq
+    - DC Filter
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+
+StringStudio:
+  Exciter and String:
+    - Exciter Type
+    - String Decay
+    - Str Inharmon
+    - Str Damping
+    - Exc ForceMassProt
+    - Exc FricStiff
+    - Exc Velocity
+    - E Pos
+  Damper:
+    - Damper On
+    - Damper Mass
+    - D Stiffness
+    - D Velocity
+    - Damp Pos
+    - D Damping
+    - D Pos < Vel
+    - D Pos Abs
+  Termination and Pickup:
+    - Term On/Off
+    - Term Mass
+    - Term Fng Stiff
+    - Term Fret Stiff
+    - Pickup On/Off
+    - Pickup Pos
+    - T Mass < Vel
+    - T Mass < Key
+  Body:
+    - Body On/Off
+    - Body Type
+    - Body Size
+    - Body Decay
+    - Body Low-Cut
+    - Body High-Cut
+    - Body Mix
+    - Volume
+  Vibrato:
+    - Vibrato On/Off
+    - Vib Delay
+    - Vib Fade-In
+    - Vib Speed
+    - Vib Amount
+    - Vib < ModWh
+    - Vib Error
+    - Volume
+  Filter:
+    - Filter On/Off
+    - Filter Type
+    - Filter Freq
+    - Filter Reso
+    - Freq < Env
+    - Freq < LFO
+    - Reso < Env
+    - Reso < LFO
+  Envelope and LFO:
+    - FEG On/Off
+    - FEG Attack
+    - FEG Decay
+    - FEG Sustain
+    - FEG Release
+    - LFO On/Off
+    - LFO Shape
+    - LFO Speed
+  Global:
+    - Unison On/Off
+    - Uni Detune
+    - Porta On/Off
+    - Porta Time
+    - Voices
+    - Octave
+    - Semitone
+    - Volume
+
+Tube:
+  Bank 1:
+    - Drive
+    - Bias
+    - Envelope
+    - Tone
+    - Attack
+    - Release
+    - Output
+    - Dry/Wet
+
+UltraAnalog:
+  Oscillators:
+    - OSC1 Level
+    - OSC1 Octave
+    - OSC1 Semi
+    - OSC1 Shape
+    - OSC2 Level
+    - OSC2 Octave
+    - OSC2 Semi
+    - OSC2 Shape
+  Filters:
+    - OSC1 Balance
+    - F1 Freq
+    - F1 Resonance
+    - F1 Type
+    - OSC2 Balance
+    - F2 Freq
+    - F2 Resonance
+    - F2 Type
+  Filter Envelopes:
+    - FEG1 Attack
+    - FEG1 Decay
+    - FEG1 Sustain
+    - FEG1 Rel
+    - FEG2 Attack
+    - FEG2 Decay
+    - FEG2 Sustain
+    - FEG2 Rel
+  Filter Modulation:
+    - F1 On/Off
+    - F1 Freq < LFO
+    - F1 Freq < Env
+    - F1 Res < LFO
+    - F2 On/Off
+    - F2 Freq < LFO
+    - F2 Freq < Env
+    - F2 Res < LFO
+  Volume Envelopes:
+    - AEG1 Attack
+    - AEG1 Decay
+    - AEG1 Sustain
+    - AEG1 Rel
+    - AEG2 Attack
+    - AEG2 Decay
+    - AEG2 Sustain
+    - AEG2 Rel
+  Mix:
+    - AMP1 Level
+    - AMP1 Pan
+    - LFO1 Shape
+    - LFO1 Speed
+    - AMP2 Level
+    - AMP2 Pan
+    - LFO2 Shape
+    - LFO2 Speed
+  Output:
+    - Volume
+    - Noise On/Off
+    - Noise Level
+    - Noise Color
+    - Unison On/Off
+    - Unison Detune
+    - Vib On/Off
+    - Vib Amount
+
+Vinyl:
+  Bank 1:
+    - Tracing Freq.
+    - Tracing Width
+    - Tracing Drive
+    - Crackle Density
+    - Pinch Freq.
+    - Pinch Width
+    - Pinch Drive
+    - Crackle Volume
+
+Vocoder:
+  Global:
+    - Formant Shift
+    - Attack Time
+    - Release Time
+    - Mono/Stereo
+    - "Output Level|Output"
+    - Gate Threshold
+    - Envelope Depth
+    - Dry/Wet
+  Filters/Voicing:
+    - "Filter Bandwidth|Filter Width"
+    - Upper Filter Band
+    - Lower Filter Band
+    - Precise/Retro
+    - Unvoiced Level
+    - Unvoiced Sensitivity
+    - Unvoiced Speed
+    - Enhance
+  Carrier:
+    - Noise Rate
+    - Noise Crackle
+    - Upper Pitch Detection
+    - Lower Pitch Detection
+    - Oscillator Pitch
+    - Oscillator Waveform
+    - Ext. In Gain
+    - ""
+
