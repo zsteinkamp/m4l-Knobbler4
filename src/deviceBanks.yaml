@@ -1395,6 +1395,291 @@ Vocoder:
     - Ext. In Gain
     - ""
 
+InstrumentMeld:
+  "Osc A":
+    - A On
+    - A Osc Type
+    - A Osc Shape
+    - A Osc Tone
+    - A Octave
+    - A Transpose
+    - A Detune
+    - A Volume
+  "Filter A":
+    - A Filter On
+    - A Filter Type
+    - A Filter Freq
+    - A Filter Q
+    - A Filter L-B-H-N
+    - A Tone Filter
+    - A Pan
+    - A Keytracking
+  "Amp Env A":
+    - A Amp Attack
+    - A Amp Decay
+    - A Amp Sustain
+    - A Amp Release
+    - A Amp A Slope
+    - A Amp D Slope
+    - A Amp R Slope
+    - A Amp Loop Mode
+  "Mod Env A":
+    - A Mod Attack
+    - A Mod Decay
+    - A Mod Sustain
+    - A Mod Release
+    - A Mod Initial
+    - A Mod Peak
+    - A Mod Final
+    - A Mod Loop Mode
+  "LFO A":
+    - A LFO 1 Type
+    - A LFO 1 Sync
+    - "A LFO 1 Rate|A LFO 1 S. Rate"
+    - A LFO 1 Phase
+    - A LFO 1 Shape
+    - A LFO 1 Fold
+    - A LFO 1 Retrigger
+    - A LFO 2 Waveform
+  "Osc B":
+    - B On
+    - B Osc Type
+    - B Osc Shape
+    - B Osc Tone
+    - B Octave
+    - B Transpose
+    - B Detune
+    - B Volume
+  "Filter B":
+    - B Filter On
+    - B Filter Type
+    - B Filter Freq
+    - B Filter Q
+    - B Filter L-B-H-N
+    - B Tone Filter
+    - B Pan
+    - B Keytracking
+  "Amp Env B":
+    - B Amp Attack
+    - B Amp Decay
+    - B Amp Sustain
+    - B Amp Release
+    - B Amp A Slope
+    - B Amp D Slope
+    - B Amp R Slope
+    - B Amp Loop Mode
+  "Mod Env B":
+    - B Mod Attack
+    - B Mod Decay
+    - B Mod Sustain
+    - B Mod Release
+    - B Mod Initial
+    - B Mod Peak
+    - B Mod Final
+    - B Mod Loop Mode
+  "LFO B":
+    - B LFO 1 Type
+    - B LFO 1 Sync
+    - "B LFO 1 Rate|B LFO 1 S. Rate"
+    - B LFO 1 Phase
+    - B LFO 1 Shape
+    - B LFO 1 Fold
+    - B LFO 1 Retrigger
+    - B LFO 2 Waveform
+  Global:
+    - Volume
+    - Drive
+    - Limiter On
+    - Engine B Delay
+    - Voice Spread
+    - Link Envelopes
+    - Scale Aware
+    - Mono Legato
+
+Roar:
+  Global:
+    - Drive
+    - Tone Amt
+    - Tone Freq
+    - Blend
+    - Comp Amt
+    - Global Mod Amt
+    - Output
+    - Dry/Wet
+  Crossover:
+    - Color On
+    - Low Mid X-Over
+    - Mid High X-Over
+    - Comp Hp On
+    - ""
+    - ""
+    - ""
+    - ""
+  Stage 1:
+    - Stage 1 On
+    - Shaper 1 Type
+    - Shaper 1 Amt
+    - Shaper 1 Bias
+    - Shaper 1 Level
+    - Flt 1 Freq
+    - Flt 1 Res
+    - Flt 1 Type
+  "Stage 1 Extra":
+    - Flt 1 On
+    - Flt 1 Morph
+    - Flt 1 Peak
+    - Flt 1 Pre On
+    - Shaper 1 On
+    - ""
+    - ""
+    - ""
+  Stage 2:
+    - Stage 2 On
+    - Shaper 2 Type
+    - Shaper 2 Amt
+    - Shaper 2 Bias
+    - Shaper 2 Level
+    - Flt 2 Freq
+    - Flt 2 Res
+    - Flt 2 Type
+  "Stage 2 Extra":
+    - Flt 2 On
+    - Flt 2 Morph
+    - Flt 2 Peak
+    - Flt 2 Pre On
+    - Shaper 2 On
+    - ""
+    - ""
+    - ""
+  Stage 3:
+    - Stage 3 On
+    - Shaper 3 Type
+    - Shaper 3 Amt
+    - Shaper 3 Bias
+    - Shaper 3 Level
+    - Flt 3 Freq
+    - Flt 3 Res
+    - Flt 3 Type
+  "Stage 3 Extra":
+    - Flt 3 On
+    - Flt 3 Morph
+    - Flt 3 Peak
+    - Flt 3 Pre On
+    - Shaper 3 On
+    - ""
+    - ""
+    - ""
+  Feedback:
+    - Fb Amt
+    - Fb Time Mode
+    - "Fb Time|Fb Synced|Fb Note"
+    - Fb Freq
+    - Fb Width
+    - Fb Inv On
+    - Fb Gate On
+    - ""
+  LFO 1:
+    - LFO 1 Rate Mode
+    - "LFO 1 Rate|LFO 1 Synced Rate|LFO 1 16th"
+    - LFO 1 Wave
+    - LFO 1 Morph
+    - LFO 1 Smooth
+    - ""
+    - ""
+    - ""
+  LFO 2:
+    - LFO 2 Rate Mode
+    - "LFO 2 Rate|LFO 2 Synced Rate|LFO 2 16th"
+    - LFO 2 Wave
+    - LFO 2 Morph
+    - LFO 2 Smooth
+    - ""
+    - ""
+    - ""
+  Envelope:
+    - Env Gain
+    - Env Attack
+    - Env Hold On
+    - Env Release
+    - Env Thresh
+    - Env Freq
+    - Env Width
+    - ""
+  Noise:
+    - Noise Rate Mode
+    - "Noise Rate|Noise Synced Rate|Noise 16th"
+    - Noise Type
+    - Noise Smooth
+    - ""
+    - ""
+    - ""
+    - ""
+  Side Chain:
+    - S/C On
+    - S/C Gain
+    - S/C Mix
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+
+AutoFilter2:
+  Filter:
+    - Frequency
+    - Resonance
+    - Morph
+    - Type
+    - Slope
+    - Morph Slope
+    - Circuit
+    - Drive
+  "Filter Extra":
+    - Control
+    - Pitch
+    - Formant
+    - Output
+    - Soft Clip On
+    - Dry/Wet
+    - ""
+    - ""
+  LFO:
+    - LFO Amount
+    - LFO Wave
+    - LFO T Mode
+    - LFO Freq
+    - LFO Rate
+    - LFO Phase
+    - LFO Offset
+    - LFO Smoothing
+  "LFO Extra":
+    - LFO S Mode
+    - LFO Spin
+    - LFO Morph
+    - LFO Q Mode
+    - LFO Steps
+    - "LFO S&H"
+    - ""
+    - ""
+  Envelope:
+    - Env Amount
+    - Env Attack
+    - Env Hold On
+    - Env Release
+    - Env S&H On
+    - "Env S&H"
+    - ""
+    - ""
+  Side Chain:
+    - S/C On
+    - S/C Gain
+    - S/C Mix
+    - S/C EQ On
+    - S/C EQ Type
+    - S/C EQ Freq
+    - S/C EQ Q
+    - S/C EQ Gain
+
 ChannelEq:
   Bank 1:
     - Highpass On
