@@ -53,6 +53,15 @@ exports.DEVICE_DICT = {
     UltraAnalog: [['OSC1 Level', 'OSC1 Octave', 'OSC1 Semi', 'OSC1 Shape', 'OSC2 Level', 'OSC2 Octave', 'OSC2 Semi', 'OSC2 Shape'], ['OSC1 Balance', 'F1 Freq', 'F1 Resonance', 'F1 Type', 'OSC2 Balance', 'F2 Freq', 'F2 Resonance', 'F2 Type'], ['FEG1 Attack', 'FEG1 Decay', 'FEG1 Sustain', 'FEG1 Rel', 'FEG2 Attack', 'FEG2 Decay', 'FEG2 Sustain', 'FEG2 Rel'], ['F1 On/Off', 'F1 Freq < LFO', 'F1 Freq < Env', 'F1 Res < LFO', 'F2 On/Off', 'F2 Freq < LFO', 'F2 Freq < Env', 'F2 Res < LFO'], ['AEG1 Attack', 'AEG1 Decay', 'AEG1 Sustain', 'AEG1 Rel', 'AEG2 Attack', 'AEG2 Decay', 'AEG2 Sustain', 'AEG2 Rel'], ['AMP1 Level', 'AMP1 Pan', 'LFO1 Shape', 'LFO1 Speed', 'AMP2 Level', 'AMP2 Pan', 'LFO2 Shape', 'LFO2 Speed'], ['Volume', 'Noise On/Off', 'Noise Level', 'Noise Color', 'Unison On/Off', 'Unison Detune', 'Vib On/Off', 'Vib Amount']],
     Vinyl: [['Tracing Freq.', 'Tracing Width', 'Tracing Drive', 'Crackle Density', 'Pinch Freq.', 'Pinch Width', 'Pinch Drive', 'Crackle Volume']],
     Vocoder: [['Formant Shift', 'Attack Time', 'Release Time', 'Mono/Stereo', 'Output Level|Output', 'Gate Threshold', 'Envelope Depth', 'Dry/Wet'], ['Filter Bandwidth|Filter Width', 'Upper Filter Band', 'Lower Filter Band', 'Precise/Retro', 'Unvoiced Level', 'Unvoiced Sensitivity', 'Unvoiced Speed', 'Enhance'], ['Noise Rate', 'Noise Crackle', 'Upper Pitch Detection', 'Lower Pitch Detection', 'Oscillator Pitch', 'Oscillator Waveform', 'Ext. In Gain', '']],
+    ChannelEq: [['Highpass On', 'Low Gain', 'Mid Gain', 'Mid Freq', 'High Gain', 'Gain', '', '']],
+    Chorus2: [['Mode', 'Rate', 'Amount', 'Feedback', 'Offset|Width', 'Gain', 'Warmth', 'Dry/Wet']],
+    Delay: [['L Sync Enum', 'L 16th|L Time', 'L Offset', 'R Sync Enum|L Sync Enum', 'R 16th|R Time|L 16th|L Time', 'R Offset', 'Feedback', 'Dry/Wet'], ['Delay Mode', 'Link', 'Ping Pong', 'L Offset', 'R Offset', 'Freeze', 'Feedback', 'Dry/Wet'], ['Filter On', 'Filter Freq', 'Filter Width', 'Mod Freq|Mod LFO Freq', 'Filter < Mod|LFO > Filter', 'Dly < Mod|LFO > Delay', 'Feedback', 'Dry/Wet']],
+    Drift: [['Osc 1 Wave', 'Osc 1 Shape', 'Osc 1 Oct', 'Osc 1 Gain', 'Osc 2 Gain', 'LP Freq', 'LP Reso|LP Res', 'Volume'], ['Osc 1 Wave', 'Osc 1 Shape', 'Osc 1 Oct', 'Osc 1 Gain', 'Osc 2 Wave', 'Osc 2 Detune', 'Osc 2 Oct', 'Osc 2 Gain'], ['LP Type', 'LP Freq', 'LP Reso|LP Res', 'HP Freq', 'LP Mod Src 1', 'LP Mod Amt 1', 'LP Mod Src 2', 'LP Mod Amt 2'], ['Env 1 Attack', 'Env 1 Decay', 'Env 1 Sustain', 'Env 1 Release', 'Env 2 Attack', 'Env 2 Decay', 'Env 2 Sustain', 'Env 2 Release'], ['LFO Wave', 'LFO Time Mode', 'LFO Rate|LFO Ratio|LFO Time|LFO Synced', 'LFO Amt', 'Cyc Env Tilt', 'Cyc Env Hold', 'Cyc Env Time Mode', 'Cyc Env Rate|Cyc Env Ratio|Cyc Env Time|Cyc Env Synced'], ['Osc 1 Shape Mod Amt', 'Pitch Mod Amt 1', 'Pitch Mod Amt 2', 'LP Mod Amt 1', 'LP Mod Amt 2', 'LFO Mod Amt', 'Vel > Vol', ''], ['Voice Mode', 'Thickness|Spread|Strength', 'Voice Count', 'Glide Time', 'Drift', 'Transpose', 'Noise Gain', 'Volume']],
+    Hybrid: [['Send Gain', 'Routing', 'Blend', 'Algo Type', 'Decay', 'Size', 'Ti Waveform|Modulation', 'Dry/Wet'], ['Algo Type', 'Decay', 'Size', 'DH Shape|Qz Low Damp|Sh Pitch Shift|Ti Tide|Pr High Mult', 'DH BassMult|Qz Distance|Sh Shimmer|Ti Rate|Pr X Over', 'Ti Waveform|Modulation', 'Width', 'Dry/Wet'], ['Algo Type', 'Pr Low Mult|Damping', 'DH Bass X|Diffusion|Ti Phase', 'EQ Pre Algo', 'Send Gain', 'Blend', 'Routing', 'Dry/Wet'], ['EQ Pre Algo', 'EQ Low Type|EQ Lo Type', 'EQ Low Freq|EQ Lo Freq', 'EQ Low Gain|EQ Low Slope|EQ Lo Slope', 'EQ High Type|EQ Hi Type', 'EQ High Freq|EQ Hi Freq', 'EQ High Gain|EQ High Slope|EQ Hi Gain|EQ Hi Slope', 'Dry/Wet'], ['EQ Pre Algo', 'EQ P1 Freq|EQ Peak 1 Freq', 'EQ P1 Q|EQ Peak 1 Q', 'EQ P1 Gain|EQ Peak 1 Gain', 'EQ P2 Freq|EQ Peak 2 Freq', 'EQ P2 Q|EQ Peak 2 Q', 'EQ P2 Gain|EQ Peak 2 Gain', 'Dry/Wet'], ['Send Gain', 'P.Dly Sync|Predelay Sync', 'P.Dly Time|P.Dly 16th|Predelay 16th', 'P.Dly Fb Time|P.Dly Fb 16th|Predel. FB 16th', 'Vintage', 'Width', 'Blend', 'Dry/Wet']],
+    Limiter: [['Gain', 'Ceiling', 'Link Channels', 'Lookahead', 'Auto', 'Release time', '', '']],
+    PhaserNew: [['Mode', 'Mod Rate|Mod Freq', 'Amount', 'Feedback', 'Notches|Flange Time|Flanger Time|Doubler Time', 'Warmth', 'Output Gain|Output', 'Dry/Wet'], ['Mode', 'Mod Rate|Mod Freq', 'Amount', 'Feedback', 'Notches|Flange Time|Flanger Time|Doubler Time', 'FB Inv|FB Invert', 'Output Gain|Output', 'Dry/Wet'], ['Lfo Blend', 'Mod Wave', 'Duty Cycle', 'Spin Enabled', 'Spin|Mod Phase', 'Mod Sync 2', 'Mod Rate 2|Mod Freq 2', 'Dry/Wet'], ['Lfo Blend', 'Env Enabled', 'Env Amount', 'Env Attack', 'Env Release', 'Safe Freq', 'Output Gain|Output', 'Dry/Wet']],
+    Redux2: [['Sample Rate', 'Jitter', 'Bit Depth', 'Quantizer Shape', 'DC Shift', 'Pre-Filter On', 'Post-Filter', 'Dry/Wet']],
+    Transmute: [['Transpose|Freq. Hz|Note', 'Hz/Note Mode', 'Decay', 'Stretch', 'Shift', 'Unison', 'Input Send Gain', 'Dry Wet']],
 };
 exports.BANK_NAME_DICT = {
     Amp: ['Global', 'Dual Mono'],
@@ -103,5 +112,14 @@ exports.BANK_NAME_DICT = {
     UltraAnalog: ['Oscillators', 'Filters', 'Filter Envelopes', 'Filter Modulation', 'Volume Envelopes', 'Mix', 'Output'],
     Vinyl: ['Bank 1'],
     Vocoder: ['Global', 'Filters/Voicing', 'Carrier'],
+    ChannelEq: ['Bank 1'],
+    Chorus2: ['Bank 1'],
+    Delay: ['Bank 1', 'Time', 'Filter/Mod'],
+    Drift: ['Bank 1', 'Oscillator', 'Filter', 'Envelopes', 'LFO', 'Modulation', 'Global'],
+    Hybrid: ['Bank 1', 'Algorithm Pg1', 'Algorithm Pg2', 'EQ Pg1', 'EQ Pg2', 'Global'],
+    Limiter: ['Bank 1'],
+    PhaserNew: ['Bank 1', 'Details', 'LFO2', 'LFO2 Env'],
+    Redux2: ['Bank 1'],
+    Transmute: ['Bank 1'],
 };
 exports.MAX_DEVICES = ['MxDeviceInstrument', 'MxDeviceAudioEffect', 'MxDeviceMidiEffect'];
