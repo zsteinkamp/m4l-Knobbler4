@@ -98,9 +98,9 @@ function sendAllParamInfo(paramId) {
     var paramMax = parseFloat(scratchApi.get('max').toString());
     var paramVal = parseFloat(scratchApi.get('value').toString());
     // Get the min/max display strings
-    var minStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramMin).toString());
-    var maxStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramMax).toString());
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', paramVal).toString());
+    var minStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramMin)).toString());
+    var maxStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramMax)).toString());
+    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramVal)).toString());
     // Scale value to 0-1
     var scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
     // Navigate to the parent device
@@ -155,7 +155,7 @@ function onValueChange() {
     var paramVal = parseFloat(valScratchApi.get('value').toString());
     var paramMin = parseFloat(valScratchApi.get('min').toString());
     var paramMax = parseFloat(valScratchApi.get('max').toString());
-    var valStr = (0, utils_1.dequote)(valScratchApi.call('str_for_value', paramVal).toString());
+    var valStr = (0, utils_1.dequote)(valScratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramVal)).toString());
     var scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
     (0, utils_1.osc)('/currentParam/val', scaledVal);
     (0, utils_1.osc)('/currentParam/valStr', valStr);
@@ -180,7 +180,7 @@ function currentParamVal(val) {
     var rawVal = paramMin + val * (paramMax - paramMin);
     (0, utils_1.pauseUnpause)(pause, consts_1.PAUSE_MS);
     scratchApi.set('value', rawVal);
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', rawVal).toString());
+    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(rawVal)).toString());
     (0, utils_1.osc)('/currentParam/valStr', valStr);
 }
 // Called from router when user taps "default" button
@@ -197,7 +197,7 @@ function currentParamDefault() {
     (0, utils_1.pauseUnpause)(pause, consts_1.PAUSE_MS);
     scratchApi.set('value', defaultVal);
     var scaledVal = paramMax > paramMin ? (defaultVal - paramMin) / (paramMax - paramMin) : 0;
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', defaultVal).toString());
+    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(defaultVal)).toString());
     (0, utils_1.osc)('/currentParam/val', scaledVal);
     (0, utils_1.osc)('/currentParam/valStr', valStr);
 }

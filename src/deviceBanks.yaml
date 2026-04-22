@@ -1524,9 +1524,9 @@ AutoFilter2:
   Filter:
     - Frequency
     - Resonance
-    - Morph
-    - Type
-    - Slope
+    - 'Morph|Filter Morph'
+    - 'Type|Filter Type'
+    - 'Slope|Filter Slope'
     - Morph Slope
     - Circuit
     - Drive
@@ -1541,15 +1541,14 @@ AutoFilter2:
     - LFO Amount
     - LFO Wave
     - LFO T Mode
-    - LFO Freq
-    - LFO Rate
+    - 'LFO Freq|LFO Time|LFO Rate|LFO 16th'
     - LFO Phase
     - LFO Offset
     - LFO Smoothing
+    - LFO Morph
   'LFO Extra':
     - LFO S Mode
     - LFO Spin
-    - LFO Morph
     - LFO Q Mode
     - LFO Steps
     - 'LFO S&H'
@@ -1591,19 +1590,24 @@ Chorus2:
     - Dry/Wet
 
 Delay:
-  Bank 1:
+  Time:
     - 'Delay Mode|Smoothing'
     - Link
-    - Ping Pong
+    - L Sync
+    - R Sync
+    - 'L 16th|L Time'
+    - 'R 16th|R Time'
     - L Offset
     - R Offset
-    - Freeze
+  Global:
     - Feedback
+    - Ping Pong
+    - Freeze
     - Dry/Wet
-  Filter:
     - Filter On
     - Filter Freq
     - Filter Width
+  Modulation:
     - 'Mod Freq|LFO Freq'
     - 'Dly < Mod|LFO > Delay'
     - 'Filter < Mod|LFO > Filter'

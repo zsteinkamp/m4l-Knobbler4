@@ -306,7 +306,7 @@ function createStripObservers(trackId, stripIdx) {
         if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
             var fVal = parseFloat(args[1]) || 0;
             (0, utils_1.osc)(SA_VOL[strip.stripIndex], fVal);
-            var str = strip.volApi.call('str_for_value', fVal);
+            var str = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
             (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '');
         }
     }, mixerPath + ' volume');
@@ -325,7 +325,7 @@ function createStripObservers(trackId, stripIdx) {
         if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
             var fVal = parseFloat(args[1]) || 0;
             (0, utils_1.osc)(SA_PAN[strip.stripIndex], fVal);
-            var str = strip.panApi.call('str_for_value', fVal);
+            var str = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
             (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], str ? str.toString() : '');
         }
     }, mixerPath + ' panning');
@@ -399,12 +399,12 @@ function sendStripState(n, strip) {
     (0, utils_1.osc)(SA_COLOR[n], info ? info.color : consts_1.DEFAULT_COLOR);
     (0, utils_1.osc)(SA_TYPE[n], info ? info.type : consts_1.TYPE_TRACK);
     var volVal = parseFloat(strip.volApi.get('value').toString()) || 0;
-    var volStr = strip.volApi.call('str_for_value', volVal);
+    var volStr = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(volVal));
     (0, utils_1.osc)(SA_VOL[n], volVal);
     (0, utils_1.osc)(SA_VOLSTR[n], volStr ? volStr.toString() : '');
     (0, utils_1.osc)(SA_VOLAUTO[n], parseInt(strip.volAutoApi.get('automation_state').toString()));
     var panVal = parseFloat(strip.panApi.get('value').toString()) || 0;
-    var panStr = strip.panApi.call('str_for_value', panVal);
+    var panStr = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(panVal));
     (0, utils_1.osc)(SA_PAN[n], panVal);
     (0, utils_1.osc)(SA_PANSTR[n], panStr ? panStr.toString() : '');
     (0, utils_1.osc)(SA_MUTE[n], !strip.isMain ? parseInt(strip.trackApi.get('mute').toString()) : 0);
@@ -626,7 +626,7 @@ function vol(stripIdx, val) {
     stripPause(strip, 'vol');
     var fVal = parseFloat(val.toString());
     strip.volApi.set('value', fVal);
-    var str = strip.volApi.call('str_for_value', fVal);
+    var str = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
     (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '');
 }
 function pan(stripIdx, val) {
@@ -636,7 +636,7 @@ function pan(stripIdx, val) {
     stripPause(strip, 'pan');
     var fVal = parseFloat(val.toString());
     strip.panApi.set('value', fVal);
-    var str = strip.panApi.call('str_for_value', fVal);
+    var str = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
     (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], str ? str.toString() : '');
 }
 function volDefault(stripIdx) {
@@ -646,7 +646,7 @@ function volDefault(stripIdx) {
     var defVal = parseFloat(strip.volApi.get('default_value').toString());
     strip.volApi.set('value', defVal);
     (0, utils_1.osc)(SA_VOL[strip.stripIndex], defVal);
-    var str = strip.volApi.call('str_for_value', defVal);
+    var str = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(defVal));
     (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '');
 }
 function panDefault(stripIdx) {
@@ -655,7 +655,7 @@ function panDefault(stripIdx) {
         return;
     var defVal = parseFloat(strip.panApi.get('default_value').toString());
     strip.panApi.set('value', defVal);
-    var str = strip.panApi.call('str_for_value', defVal);
+    var str = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(defVal));
     (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], str ? str.toString() : '');
 }
 // Send handlers — send1 through send12

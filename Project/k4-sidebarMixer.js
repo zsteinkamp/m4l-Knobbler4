@@ -261,7 +261,7 @@ function handlePan(val) {
     (0, utils_1.pauseUnpause)(state.pause['pan'], consts_1.PAUSE_MS);
     var fVal = parseFloat(val);
     state.panObj.set('value', fVal);
-    var str = state.panObj.call('str_for_value', fVal);
+    var str = state.panObj.call('str_for_value', (0, utils_1.fixFloat)(fVal));
     (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
 }
 function handlePanDefault() {
@@ -271,7 +271,7 @@ function handlePanDefault() {
     var defVal = parseFloat(state.panObj.get('default_value'));
     state.panObj.set('value', defVal);
     (0, utils_1.osc)('/mixer/pan', defVal);
-    var str = state.panObj.call('str_for_value', defVal);
+    var str = state.panObj.call('str_for_value', (0, utils_1.fixFloat)(defVal));
     (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
 }
 function handleVol(val) {
@@ -281,7 +281,7 @@ function handleVol(val) {
     (0, utils_1.pauseUnpause)(state.pause['vol'], consts_1.PAUSE_MS);
     var fVal = parseFloat(val);
     state.volObj.set('value', fVal);
-    var str = state.volObj.call('str_for_value', fVal);
+    var str = state.volObj.call('str_for_value', (0, utils_1.fixFloat)(fVal));
     (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
 }
 function handleVolDefault() {
@@ -291,7 +291,7 @@ function handleVolDefault() {
     var defVal = parseFloat(state.volObj.get('default_value'));
     state.volObj.set('value', defVal);
     (0, utils_1.osc)('/mixer/vol', defVal);
-    var str = state.volObj.call('str_for_value', defVal);
+    var str = state.volObj.call('str_for_value', (0, utils_1.fixFloat)(defVal));
     (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
 }
 // ---------------------------------------------------------------------------
@@ -304,7 +304,7 @@ var handleVolVal = function (val) {
     if (!state.pause.vol.paused) {
         var fVal = parseFloat(val[1].toString()) || 0;
         (0, utils_1.osc)('/mixer/vol', fVal);
-        var str = state.volObj.call('str_for_value', fVal);
+        var str = state.volObj.call('str_for_value', (0, utils_1.fixFloat)(fVal));
         (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
     }
 };
@@ -315,7 +315,7 @@ var handlePanVal = function (val) {
     if (!state.pause.pan.paused) {
         var fVal = parseFloat(val[1].toString()) || 0;
         (0, utils_1.osc)('/mixer/pan', fVal);
-        var str = state.panObj.call('str_for_value', fVal);
+        var str = state.panObj.call('str_for_value', (0, utils_1.fixFloat)(fVal));
         (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
     }
 };
@@ -419,11 +419,11 @@ function handleTrackChange(id) {
     // vol/pan str
     var volVal = parseFloat(state.volObj.get('value')) || 0;
     (0, utils_1.osc)('/mixer/vol', volVal);
-    var volStr = state.volObj.call('str_for_value', volVal);
+    var volStr = state.volObj.call('str_for_value', (0, utils_1.fixFloat)(volVal));
     (0, utils_1.osc)('/mixer/volStr', volStr ? volStr.toString() : '');
     var panVal = parseFloat(state.panObj.get('value')) || 0;
     (0, utils_1.osc)('/mixer/pan', panVal);
-    var panStr = state.panObj.call('str_for_value', panVal);
+    var panStr = state.panObj.call('str_for_value', (0, utils_1.fixFloat)(panVal));
     (0, utils_1.osc)('/mixer/panStr', panStr ? panStr.toString() : '');
     // sends
     updateSendsFromMixer();

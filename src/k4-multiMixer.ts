@@ -2,6 +2,7 @@ import {
   cleanArr,
   colorToString,
   detach,
+  fixFloat,
   getVisibleTracks,
   loadInstanceSetting,
   numArrToJson,
@@ -410,7 +411,7 @@ function createStripObservers(
     if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
       const fVal = parseFloat(args[1]) || 0
       osc(SA_VOL[strip.stripIndex], fVal)
-      const str = strip.volApi.call('str_for_value', fVal) as any
+      const str = strip.volApi.call('str_for_value', fixFloat(fVal)) as any
       osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
     }
   }, mixerPath + ' volume')
@@ -430,7 +431,7 @@ function createStripObservers(
     if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
       const fVal = parseFloat(args[1]) || 0
       osc(SA_PAN[strip.stripIndex], fVal)
-      const str = strip.panApi.call('str_for_value', fVal) as any
+      const str = strip.panApi.call('str_for_value', fixFloat(fVal)) as any
       osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
     }
   }, mixerPath + ' panning')
@@ -509,13 +510,13 @@ function sendStripState(n: number, strip: StripObservers) {
   osc(SA_TYPE[n], info ? info.type : TYPE_TRACK)
 
   const volVal = parseFloat(strip.volApi.get('value').toString()) || 0
-  const volStr = strip.volApi.call('str_for_value', volVal) as any
+  const volStr = strip.volApi.call('str_for_value', fixFloat(volVal)) as any
   osc(SA_VOL[n], volVal)
   osc(SA_VOLSTR[n], volStr ? volStr.toString() : '')
   osc(SA_VOLAUTO[n], parseInt(strip.volAutoApi.get('automation_state').toString()))
 
   const panVal = parseFloat(strip.panApi.get('value').toString()) || 0
-  const panStr = strip.panApi.call('str_for_value', panVal) as any
+  const panStr = strip.panApi.call('str_for_value', fixFloat(panVal)) as any
   osc(SA_PAN[n], panVal)
   osc(SA_PANSTR[n], panStr ? panStr.toString() : '')
 
@@ -754,7 +755,7 @@ function vol(stripIdx: number, val: number) {
   stripPause(strip, 'vol')
   const fVal = parseFloat(val.toString())
   strip.volApi.set('value', fVal)
-  const str = strip.volApi.call('str_for_value', fVal) as any
+  const str = strip.volApi.call('str_for_value', fixFloat(fVal)) as any
   osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
 }
 
@@ -764,7 +765,7 @@ function pan(stripIdx: number, val: number) {
   stripPause(strip, 'pan')
   const fVal = parseFloat(val.toString())
   strip.panApi.set('value', fVal)
-  const str = strip.panApi.call('str_for_value', fVal) as any
+  const str = strip.panApi.call('str_for_value', fixFloat(fVal)) as any
   osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
 }
 
@@ -774,7 +775,7 @@ function volDefault(stripIdx: number) {
   const defVal = parseFloat(strip.volApi.get('default_value').toString())
   strip.volApi.set('value', defVal)
   osc(SA_VOL[strip.stripIndex], defVal)
-  const str = strip.volApi.call('str_for_value', defVal) as any
+  const str = strip.volApi.call('str_for_value', fixFloat(defVal)) as any
   osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
 }
 
@@ -783,7 +784,7 @@ function panDefault(stripIdx: number) {
   if (!strip) return
   const defVal = parseFloat(strip.panApi.get('default_value').toString())
   strip.panApi.set('value', defVal)
-  const str = strip.panApi.call('str_for_value', defVal) as any
+  const str = strip.panApi.call('str_for_value', fixFloat(defVal)) as any
   osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
 }
 

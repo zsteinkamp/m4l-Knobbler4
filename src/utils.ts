@@ -27,6 +27,12 @@ export function logFactory({ outputLogs = true }) {
   return log as logFn
 }
 
+// Format a float for LiveAPI.call() which stringifies args internally.
+// Avoids scientific notation (e.g. 7.26e-05) which LiveAPI can't parse.
+export function fixFloat(val: number): string {
+  return val.toFixed(10)
+}
+
 export function dequote(str: string) {
   //log(str, typeof str)
   return str.toString().replace(/^"|"$/g, '')

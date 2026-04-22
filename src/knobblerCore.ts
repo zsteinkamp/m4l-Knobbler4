@@ -3,6 +3,7 @@ import {
   debouncedTask,
   dequote,
   detach,
+  fixFloat,
   isValidPath,
   loadInstanceSetting,
   loadSetting,
@@ -605,7 +606,7 @@ function sendVal(slot: number) {
   osc(
     ADDR_VALSTR[slot],
     paramObj[slot]
-      ? paramObj[slot].call('str_for_value', param[slot].val)
+      ? paramObj[slot].call('str_for_value', fixFloat(param[slot].val))
       : nullString
   )
 }
@@ -637,7 +638,7 @@ function val(slot: number, val: number) {
       // the device shows up as "off"
       osc(
         ADDR_VALSTR[slot],
-        paramObj[slot].call('str_for_value', paramObj[slot].get('value'))
+        paramObj[slot].call('str_for_value', fixFloat(parseFloat(paramObj[slot].get('value'))))
       )
     }
   } else {

@@ -1,4 +1,4 @@
-import { cleanArr, colorToString, loadInstanceSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR, setDictPrefix as _setDictPrefix } from './utils'
+import { cleanArr, colorToString, fixFloat, loadInstanceSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR, setDictPrefix as _setDictPrefix } from './utils'
 import config from './config'
 import {
   noFn,
@@ -300,7 +300,7 @@ function handlePan(val: string) {
   pauseUnpause(state.pause['pan'], PAUSE_MS)
   const fVal = parseFloat(val)
   state.panObj.set('value', fVal)
-  const str = state.panObj.call('str_for_value', fVal) as any
+  const str = state.panObj.call('str_for_value', fixFloat(fVal)) as any
   osc('/mixer/panStr', str ? str.toString() : '')
 }
 
@@ -311,7 +311,7 @@ function handlePanDefault() {
   const defVal = parseFloat(state.panObj.get('default_value'))
   state.panObj.set('value', defVal)
   osc('/mixer/pan', defVal)
-  const str = state.panObj.call('str_for_value', defVal) as any
+  const str = state.panObj.call('str_for_value', fixFloat(defVal)) as any
   osc('/mixer/panStr', str ? str.toString() : '')
 }
 
@@ -322,7 +322,7 @@ function handleVol(val: string) {
   pauseUnpause(state.pause['vol'], PAUSE_MS)
   const fVal = parseFloat(val)
   state.volObj.set('value', fVal)
-  const str = state.volObj.call('str_for_value', fVal) as any
+  const str = state.volObj.call('str_for_value', fixFloat(fVal)) as any
   osc('/mixer/volStr', str ? str.toString() : '')
 }
 
@@ -333,7 +333,7 @@ function handleVolDefault() {
   const defVal = parseFloat(state.volObj.get('default_value'))
   state.volObj.set('value', defVal)
   osc('/mixer/vol', defVal)
-  const str = state.volObj.call('str_for_value', defVal) as any
+  const str = state.volObj.call('str_for_value', fixFloat(defVal)) as any
   osc('/mixer/volStr', str ? str.toString() : '')
 }
 
@@ -348,7 +348,7 @@ const handleVolVal = (val: IdObserverArg) => {
   if (!state.pause.vol.paused) {
     const fVal = parseFloat(val[1].toString()) || 0
     osc('/mixer/vol', fVal)
-    const str = state.volObj.call('str_for_value', fVal) as any
+    const str = state.volObj.call('str_for_value', fixFloat(fVal)) as any
     osc('/mixer/volStr', str ? str.toString() : '')
   }
 }
@@ -360,7 +360,7 @@ const handlePanVal = (val: IdObserverArg) => {
   if (!state.pause.pan.paused) {
     const fVal = parseFloat(val[1].toString()) || 0
     osc('/mixer/pan', fVal)
-    const str = state.panObj.call('str_for_value', fVal) as any
+    const str = state.panObj.call('str_for_value', fixFloat(fVal)) as any
     osc('/mixer/panStr', str ? str.toString() : '')
   }
 }
@@ -475,12 +475,12 @@ function handleTrackChange(id: number) {
   // vol/pan str
   const volVal = parseFloat(state.volObj.get('value')) || 0
   osc('/mixer/vol', volVal)
-  const volStr = state.volObj.call('str_for_value', volVal) as any
+  const volStr = state.volObj.call('str_for_value', fixFloat(volVal)) as any
   osc('/mixer/volStr', volStr ? volStr.toString() : '')
 
   const panVal = parseFloat(state.panObj.get('value')) || 0
   osc('/mixer/pan', panVal)
-  const panStr = state.panObj.call('str_for_value', panVal) as any
+  const panStr = state.panObj.call('str_for_value', fixFloat(panVal)) as any
   osc('/mixer/panStr', panStr ? panStr.toString() : '')
 
   // sends

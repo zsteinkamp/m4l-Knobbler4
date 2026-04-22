@@ -2,6 +2,7 @@ import config from './config'
 import {
   detach,
   dequote,
+  fixFloat,
   logFactory,
   osc,
   pauseUnpause,
@@ -122,13 +123,13 @@ function sendAllParamInfo(paramId: number) {
 
   // Get the min/max display strings
   const minStr = dequote(
-    (scratchApi.call('str_for_value', paramMin) as any).toString()
+    (scratchApi.call('str_for_value', fixFloat(paramMin)) as any).toString()
   )
   const maxStr = dequote(
-    (scratchApi.call('str_for_value', paramMax) as any).toString()
+    (scratchApi.call('str_for_value', fixFloat(paramMax)) as any).toString()
   )
   const valStr = dequote(
-    (scratchApi.call('str_for_value', paramVal) as any).toString()
+    (scratchApi.call('str_for_value', fixFloat(paramVal)) as any).toString()
   )
 
   // Scale value to 0-1
@@ -192,7 +193,7 @@ function onValueChange() {
   const paramMin = parseFloat(valScratchApi.get('min').toString())
   const paramMax = parseFloat(valScratchApi.get('max').toString())
   const valStr = dequote(
-    (valScratchApi.call('str_for_value', paramVal) as any).toString()
+    (valScratchApi.call('str_for_value', fixFloat(paramVal)) as any).toString()
   )
 
   const scaledVal =
@@ -225,7 +226,7 @@ function currentParamVal(val: number) {
   scratchApi.set('value', rawVal)
 
   const valStr = dequote(
-    (scratchApi.call('str_for_value', rawVal) as any).toString()
+    (scratchApi.call('str_for_value', fixFloat(rawVal)) as any).toString()
   )
   osc('/currentParam/valStr', valStr)
 }
@@ -248,7 +249,7 @@ function currentParamDefault() {
   const scaledVal =
     paramMax > paramMin ? (defaultVal - paramMin) / (paramMax - paramMin) : 0
   const valStr = dequote(
-    (scratchApi.call('str_for_value', defaultVal) as any).toString()
+    (scratchApi.call('str_for_value', fixFloat(defaultVal)) as any).toString()
   )
   osc('/currentParam/val', scaledVal)
   osc('/currentParam/valStr', valStr)

@@ -523,7 +523,7 @@ function sendVal(slot) {
     //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
     (0, utils_1.osc)(ADDR_VAL[slot], scaledValProp);
     (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot]
-        ? paramObj[slot].call('str_for_value', param[slot].val)
+        ? paramObj[slot].call('str_for_value', (0, utils_1.fixFloat)(param[slot].val))
         : consts_1.nullString);
 }
 // new value received over OSC
@@ -550,7 +550,7 @@ function val(slot, val) {
             // string value due to what looks like a rounding bug inside of
             // those params (e.g. str_for_value(0.9) yields "on" even though
             // the device shows up as "off"
-            (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot].call('str_for_value', paramObj[slot].get('value')));
+            (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot].call('str_for_value', (0, utils_1.fixFloat)(parseFloat(paramObj[slot].get('value')))));
         }
     }
     else {

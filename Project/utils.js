@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -31,6 +31,12 @@ function logFactory(_a) {
     return log;
 }
 exports.logFactory = logFactory;
+// Format a float for LiveAPI.call() which stringifies args internally.
+// Avoids scientific notation (e.g. 7.26e-05) which LiveAPI can't parse.
+function fixFloat(val) {
+    return val.toFixed(10);
+}
+exports.fixFloat = fixFloat;
 function dequote(str) {
     //log(str, typeof str)
     return str.toString().replace(/^"|"$/g, '');
