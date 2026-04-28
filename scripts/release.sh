@@ -19,7 +19,7 @@ if ! grep -q "\[$VERSION\]" README.md; then
 fi
 
 # Check frozen devices exist
-DEVICES=(frozen/Knobbler4*-${VERSION}.amxd)
+DEVICES=(frozen/Knobbler4-${VERSION}*.amxd)
 if [ ${#DEVICES[@]} -eq 0 ] || [ ! -f "${DEVICES[0]}" ]; then
   echo "ERROR: No frozen devices found matching frozen/Knobbler4*-${VERSION}.amxd"
   exit 1
