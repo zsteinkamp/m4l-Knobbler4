@@ -132,6 +132,11 @@ function ensureApis() {
   if (!viewApi) viewApi = new LiveAPI(noFn, 'live_set view')
 }
 
+function shouldSelectOnLaunch(): boolean {
+  scratchApi.path = 'live_set'
+  return !!parseInt(scratchApi.get('select_on_launch'))
+}
+
 function selectClipSlot(trackIdx: number, sceneIdx: number) {
   viewApi.set('selected_track', ['id', trackIds[trackIdx]])
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
@@ -960,9 +965,10 @@ function clipLaunch(jsonStr: string) {
   if (trackIdx < 0 || trackIdx >= trackPaths.length) return
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
+  const selectOnLaunch = shouldSelectOnLaunch()
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
   scratchApi.call('fire')
-  selectClipSlot(trackIdx, sceneIdx)
+  if (selectOnLaunch) selectClipSlot(trackIdx, sceneIdx)
 }
 
 function clipRecord(jsonStr: string) {
@@ -974,9 +980,10 @@ function clipRecord(jsonStr: string) {
   if (trackIdx < 0 || trackIdx >= trackPaths.length) return
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
+  const selectOnLaunch = shouldSelectOnLaunch()
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
   scratchApi.call('fire')
-  selectClipSlot(trackIdx, sceneIdx)
+  if (selectOnLaunch) selectClipSlot(trackIdx, sceneIdx)
 }
 
 function clipDelete(jsonStr: string) {
@@ -1026,8 +1033,12 @@ function sceneLaunch(sceneIdx: number) {
   const idx = parseInt(sceneIdx.toString())
   if (idx < 0 || idx >= totalScenes) return
 
+  const selectOnLaunch = shouldSelectOnLaunch()
   scratchApi.path = 'live_set scenes ' + idx
   scratchApi.call('fire')
+  if (selectOnLaunch) {
+    viewApi.set('selected_scene', ['id', parseInt(scratchApi.id.toString())])
+  }
 }
 
 function sceneRename(jsonStr: string) {
