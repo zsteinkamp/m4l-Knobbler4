@@ -24,6 +24,7 @@ Every mapping is saved with your Live Set. Pick up right where you left off, wor
 ### Features
 
 - **32 assignable faders** across two pages. Auto-labeling, auto-coloring, high-resolution, and always showing you exactly what is happening in your music. Pair any two faders into an **X-Y pad** for two-dimensional control, or flip on **Spring mode** to make any slider momentary.
+- **Experimental Spring Physics** -- a new layer of interaction. Fling sliders and X-Y pads and watch them respond with gravity and rubber-band simulation, driving parameter values with momentum and bounce.
 - **Bluhand** -- a dedicated page with all of the parameters of the currently selected device. Parameter banks are labeled and just a touch away. Store, recall, and randomize **Variations** in Racks.
 - **Full-screen mixer** -- volume, pan, mute, solo, arm, sends, and real-time meters for every track in your set. Scrollable, with send controls for every return track.
 - **Session view clip grid** -- Launch, record, rename, and color clips and scenes.
@@ -32,6 +33,7 @@ Every mapping is saved with your Live Set. Pick up right where you left off, wor
 - **Device shortcuts** -- eight buttons to jump directly to the most important devices in your Live Set.
 - **Toolbar** -- tap tempo, capture MIDI, transport controls, and more.
 - **Multi-device support** -- use multiple phones and tablets simultaneously with multiple Knobbler instances.
+- **Light and dark themes** -- match your studio environment.
 
 Read more about all of Knobbler's features in the [Features](./features.md) page, and check out [Knobbler Tips](./tips.md) for getting the most out of it.
 

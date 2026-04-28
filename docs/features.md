@@ -76,6 +76,28 @@ Enable Spring mode from the toolbar to make sliders momentary. Touch a slider, d
 
 Spring mode works on Knobbler sliders, X-Y pads, and mixer faders (volume, pan, and sends). Your Spring mode setting is remembered across app restarts.
 
+#### Experimental Spring Physics
+
+Spring Physics adds a new layer of interaction on top of sliders and X-Y pads. Fling a slider or X-Y pad and it responds with gravity and rubber-band simulation, carrying the underlying parameter value along with it -- momentum, bounce, and settle, all driving the parameter in real time.
+
+This is an experimental feature and is labeled as such in the app. Try it on resonance, filter cutoff, or an X-Y pad of effect sends and see what falls out.
+
+##### Using Spring Physics
+
+![Spring Mode Toggle](images/ipad-toolbar-spring.png)
+
+1. **Tap** the Spring button in the toolbar to toggle Spring mode on and off.
+2. **Long-press** the Spring button to open the Spring Physics overlay, where you can choose between **Time**, **Rubber**, and **Gravity** behaviors and dial in **Weight**, **Pull**, and **Drag**.
+
+   ![Spring Physics Overlay](images/spring-physics-overlay.png)
+
+3. **Store** the current settings as a preset by tapping the **+** icon in the overlay. Stored presets appear as small lettered chips (T / R / G) you can recall later.
+
+   ![Per-parameter Spring Icon](images/spring-parameter-icon.png)
+
+4. **Recall** a stored preset for a specific parameter by tapping the spring icon next to that parameter (shown above in the corner of an X-Y pad).
+5. **Double-tap** the spring icon to cancel an in-flight animation on that parameter.
+
 #### X-Y Pads
 
 Two adjacent Knobbler sliders can be linked into an X-Y pad, giving you two-dimensional control over a pair of parameters with a single finger.
@@ -304,7 +326,11 @@ This button toggles Unmapping mode on and off. When Unmapping mode is engaged, t
 
 #### Spring Mode
 
-Toggles Spring (momentary) mode on all sliders. With Spring on, any slider you drag will spring back to its touch-start value when you release. Works on Knobbler sliders, X-Y pads, and mixer faders. See [Spring (Momentary) Mode](#spring-momentary-mode) above for details.
+![Spring Mode Toggle](images/ipad-toolbar-spring.png)
+
+Tap to toggle Spring (momentary) mode on all sliders. With Spring on, any slider you drag will spring back to its touch-start value when you release. Works on Knobbler sliders, X-Y pads, and mixer faders. See [Spring (Momentary) Mode](#spring-momentary-mode) above for details.
+
+Long-press the Spring button to open the **Spring Physics** overlay (Time / Rubber / Gravity behaviors, with Weight, Pull, and Drag controls). See [Experimental Spring Physics](#experimental-spring-physics) for the full walkthrough.
 
 #### Tempo Section
 
@@ -403,6 +429,10 @@ The Debug tab shows app version info, build number, server details, and subscrip
 #### Version Checks
 
 If the Knobbler device that the app is communicating with is too old, a warning message will be shown. This message also includes a link to download the latest Knobbler device.
+
+### Light and Dark Themes
+
+Knobbler ships with both light and dark themes so you can match your studio environment -- bright and easy to see at a glance during the day, or dim and unobtrusive when you're working with the lights down.
 
 ### Multi-Device Support
 
