@@ -51,6 +51,7 @@ type RouterItem = {
   prefix: string
   handler: HandlerType
   msg: string | [string, ...any]
+  coalesce?: boolean
 }
 
 function getSlotNum(router: RouterItem, msg: string): number {
@@ -71,7 +72,12 @@ function synAckHandler(router: RouterItem, _: string, val: string | number) {
   outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr'])
   outlet(OUTLET_OSC, ['/sendState'])
 }
-function pingHandler(router: RouterItem) {
+function pingHandler(router: RouterItem, _: string, val: string | number) {
+  if (val) {
+    const parts = val.toString().split(' ')
+    saveSetting('clientVersion', parts[0])
+    saveSetting('clientCapabilities', parts.slice(1).join(' '))
+  }
   outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr'])
 }
 function bareMsg(router: RouterItem) {
@@ -148,6 +154,7 @@ const ROUTER: RouterItem[] = [
     prefix: '/val',
     handler: stdSlotVal,
     msg: 'val',
+    coalesce: true,
   },
   {
     outlet: OUTLET_KNOBBLER, // foo bar
@@ -190,6 +197,7 @@ const ROUTER: RouterItem[] = [
     prefix: '/bval',
     handler: stdSlotVal,
     msg: 'val',
+    coalesce: true,
   },
   {
     outlet: OUTLET_BLUHAND,
@@ -352,6 +360,7 @@ const ROUTER: RouterItem[] = [
     prefix: '/tempo',
     handler: stdVal,
     msg: 'setTempo',
+    coalesce: true,
   },
   {
     outlet: OUTLET_BLUHAND,
@@ -436,6 +445,7 @@ const ROUTER: RouterItem[] = [
     prefix: '/mixer/send',
     handler: stdSlotVal,
     msg: 'updateSendVal',
+    coalesce: true,
   },
   {
     outlet: OUTLET_MIXER,
@@ -484,18 +494,21 @@ const ROUTER: RouterItem[] = [
     prefix: '/mixer/pan',
     handler: stdVal,
     msg: 'handlePan',
+    coalesce: true,
   },
   {
     outlet: OUTLET_MIXER,
     prefix: '/mixer/vol',
     handler: stdVal,
     msg: 'handleVol',
+    coalesce: true,
   },
   {
     outlet: OUTLET_MIXER,
     prefix: '/mixer/crossfader',
     handler: stdVal,
     msg: 'handleCrossfader',
+    coalesce: true,
   },
   {
     outlet: OUTLET_PAGE,
@@ -586,6 +599,7 @@ const ROUTER: RouterItem[] = [
     prefix: '/currentParam/val',
     handler: stdVal,
     msg: 'currentParamVal',
+    coalesce: true,
   },
   {
     outlet: OUTLET_CURRPARAM,
@@ -718,6 +732,7 @@ const ROUTER: RouterItem[] = [
     prefix: '/mixer/',
     handler: multiMixerHandler,
     msg: '',
+    coalesce: true,
   },
 ]
 ROUTER.sort((a, b) => {
@@ -726,15 +741,108 @@ ROUTER.sort((a, b) => {
 
 type HandlerType = (router: RouterItem, ...args: any) => void
 
-function anything(val: any) {
-  //log(`message: ${messagename} val: ${val}`)
+// --- Inbound coalescing ---
+// Leading-edge: first message dispatches immediately, subsequent messages for
+// the same OSC address within the interval store only the latest value and
+// dispatch when the interval expires.
+const COALESCE_MS = 15
+
+type CoalesceEntry = {
+  router: RouterItem
+  address: string
+  val: any
+  lastSentTime: number
+  task: MaxTask | null
+  deferredFn: () => void
+}
+
+const coalesceEntries: Record<string, CoalesceEntry> = {}
+
+function makeCoalesceDeferred(entry: CoalesceEntry) {
+  return function () {
+    entry.task = null
+    entry.lastSentTime = Date.now()
+    entry.router.handler(entry.router, entry.address, entry.val)
+  }
+}
+
+function dispatchCoalesced(
+  router: RouterItem,
+  address: string,
+  val: any
+) {
+  const now = Date.now()
+  const entry = coalesceEntries[address]
+
+  if (!entry) {
+    // First time seeing this address — leading-edge dispatch
+    const e: CoalesceEntry = {
+      router: router,
+      address: address,
+      val: val,
+      lastSentTime: now,
+      task: null,
+      deferredFn: null,
+    }
+    e.deferredFn = makeCoalesceDeferred(e)
+    coalesceEntries[address] = e
+    router.handler(router, address, val)
+    return
+  }
+
+  if (now - entry.lastSentTime >= COALESCE_MS) {
+    // Interval expired — dispatch immediately
+    if (entry.task) {
+      entry.task.cancel()
+      entry.task.freepeer()
+      entry.task = null
+    }
+    entry.val = val
+    entry.lastSentTime = now
+    router.handler(router, address, val)
+    return
+  }
+
+  // Too soon — store latest value and schedule trailing dispatch
+  entry.val = val
+  if (!entry.task) {
+    const delay = entry.lastSentTime + COALESCE_MS - now
+    entry.task = new Task(entry.deferredFn) as MaxTask
+    entry.task.schedule(delay)
+  }
+}
+
+// --- Routing core ---
+function dispatch(address: string, val: any) {
   for (const router of ROUTER) {
-    if (messagename.indexOf(router.prefix) === 0) {
-      // found the right router, now pass to the handler
-      return router.handler(router, messagename, val)
+    if (address.indexOf(router.prefix) === 0) {
+      if (router.coalesce) {
+        return dispatchCoalesced(router, address, val)
+      }
+      return router.handler(router, address, val)
     }
   }
-  return outlet(OUTLET_UNKNOWN, [messagename, val])
+  return outlet(OUTLET_UNKNOWN, [address, val])
+}
+
+function anything(val: any) {
+  const address = messagename
+
+  // Disassemble inbound batches into individual messages
+  if (address === '/batch') {
+    try {
+      const batch = JSON.parse(val)
+      const keys = Object.keys(batch)
+      for (let i = 0; i < keys.length; i++) {
+        dispatch(keys[i], batch[keys[i]])
+      }
+    } catch (e) {
+      log('bad inbound /batch: ' + e)
+    }
+    return
+  }
+
+  dispatch(address, val)
 }
 
 log('reloaded router')

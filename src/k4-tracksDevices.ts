@@ -6,9 +6,9 @@ import {
   cleanArr,
   colorToString,
   isDeviceSupported,
-  loadSetting,
   logFactory,
   saveSetting,
+  sendChunkedData,
   truncate,
 } from './utils'
 import config from './config'
@@ -26,46 +26,6 @@ import {
 } from './consts'
 
 const log = logFactory(config)
-
-const CHUNK_MAX_BYTES = 1024
-function clientHasCapability(cap: string): boolean {
-  const caps = loadSetting('clientCapabilities')
-  if (!caps) {
-    return false
-  }
-  return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1
-}
-
-function sendNavData(prefix: string, items: MaxObjRecord[]) {
-  const chunked = clientHasCapability('cNav')
-  if (chunked) {
-    // chunked protocol: start, chunk(s), end
-    outlet(OUTLET_OSC, [prefix + '/start', items.length])
-
-    let chunkParts: string[] = []
-    let chunkSize = 2 // for the surrounding []
-    for (let i = 0; i < items.length; i++) {
-      const itemJson = JSON.stringify(items[i])
-      const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length // comma + item
-      if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-        outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
-        chunkParts = []
-        chunkSize = 2
-      }
-      chunkParts.push(itemJson)
-      chunkSize += added
-    }
-    if (chunkParts.length > 0) {
-      outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
-    }
-
-    outlet(OUTLET_OSC, [prefix + '/end'])
-  }
-  // legacy: send full payload for old/unknown clients (may truncate on large sets)
-  if (!chunked) {
-    outlet(OUTLET_OSC, [prefix, JSON.stringify(items)])
-  }
-}
 
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
@@ -106,7 +66,7 @@ function updateDeviceNav() {
     // if no device is selected, null out the devices list
     outlet(OUTLET_OSC, ['/nav/currDeviceId', -1])
     //log('/nav/devices=' + JSON.stringify([]))
-    sendNavData('/nav/devices', [])
+    sendChunkedData('/nav/devices', [])
     return
   }
 
@@ -227,7 +187,7 @@ function updateDeviceNav() {
   }
 
   //log('/nav/devices=' + JSON.stringify(ret))
-  sendNavData('/nav/devices', ret)
+  sendChunkedData('/nav/devices', ret)
 }
 
 let trackChangeDebounce: MaxTask = null

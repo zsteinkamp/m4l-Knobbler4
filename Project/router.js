@@ -59,7 +59,12 @@ function synAckHandler(router, _, val) {
     outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
     outlet(OUTLET_OSC, ['/sendState']);
 }
-function pingHandler(router) {
+function pingHandler(router, _, val) {
+    if (val) {
+        var parts = val.toString().split(' ');
+        (0, utils_1.saveSetting)('clientVersion', parts[0]);
+        (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
+    }
     outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
 }
 function bareMsg(router) {
@@ -127,6 +132,7 @@ var ROUTER = [
         prefix: '/val',
         handler: stdSlotVal,
         msg: 'val',
+        coalesce: true,
     },
     {
         outlet: OUTLET_KNOBBLER,
@@ -169,6 +175,7 @@ var ROUTER = [
         prefix: '/bval',
         handler: stdSlotVal,
         msg: 'val',
+        coalesce: true,
     },
     {
         outlet: OUTLET_BLUHAND,
@@ -331,6 +338,7 @@ var ROUTER = [
         prefix: '/tempo',
         handler: stdVal,
         msg: 'setTempo',
+        coalesce: true,
     },
     {
         outlet: OUTLET_BLUHAND,
@@ -415,6 +423,7 @@ var ROUTER = [
         prefix: '/mixer/send',
         handler: stdSlotVal,
         msg: 'updateSendVal',
+        coalesce: true,
     },
     {
         outlet: OUTLET_MIXER,
@@ -463,18 +472,21 @@ var ROUTER = [
         prefix: '/mixer/pan',
         handler: stdVal,
         msg: 'handlePan',
+        coalesce: true,
     },
     {
         outlet: OUTLET_MIXER,
         prefix: '/mixer/vol',
         handler: stdVal,
         msg: 'handleVol',
+        coalesce: true,
     },
     {
         outlet: OUTLET_MIXER,
         prefix: '/mixer/crossfader',
         handler: stdVal,
         msg: 'handleCrossfader',
+        coalesce: true,
     },
     {
         outlet: OUTLET_PAGE,
@@ -565,6 +577,7 @@ var ROUTER = [
         prefix: '/currentParam/val',
         handler: stdVal,
         msg: 'currentParamVal',
+        coalesce: true,
     },
     {
         outlet: OUTLET_CURRPARAM,
@@ -697,21 +710,93 @@ var ROUTER = [
         prefix: '/mixer/',
         handler: multiMixerHandler,
         msg: '',
+        coalesce: true,
     },
 ];
 ROUTER.sort(function (a, b) {
     return a.prefix.length > b.prefix.length ? -1 : 1;
 });
-function anything(val) {
-    //log(`message: ${messagename} val: ${val}`)
+// --- Inbound coalescing ---
+// Leading-edge: first message dispatches immediately, subsequent messages for
+// the same OSC address within the interval store only the latest value and
+// dispatch when the interval expires.
+var COALESCE_MS = 15;
+var coalesceEntries = {};
+function makeCoalesceDeferred(entry) {
+    return function () {
+        entry.task = null;
+        entry.lastSentTime = Date.now();
+        entry.router.handler(entry.router, entry.address, entry.val);
+    };
+}
+function dispatchCoalesced(router, address, val) {
+    var now = Date.now();
+    var entry = coalesceEntries[address];
+    if (!entry) {
+        // First time seeing this address — leading-edge dispatch
+        var e = {
+            router: router,
+            address: address,
+            val: val,
+            lastSentTime: now,
+            task: null,
+            deferredFn: null,
+        };
+        e.deferredFn = makeCoalesceDeferred(e);
+        coalesceEntries[address] = e;
+        router.handler(router, address, val);
+        return;
+    }
+    if (now - entry.lastSentTime >= COALESCE_MS) {
+        // Interval expired — dispatch immediately
+        if (entry.task) {
+            entry.task.cancel();
+            entry.task.freepeer();
+            entry.task = null;
+        }
+        entry.val = val;
+        entry.lastSentTime = now;
+        router.handler(router, address, val);
+        return;
+    }
+    // Too soon — store latest value and schedule trailing dispatch
+    entry.val = val;
+    if (!entry.task) {
+        var delay = entry.lastSentTime + COALESCE_MS - now;
+        entry.task = new Task(entry.deferredFn);
+        entry.task.schedule(delay);
+    }
+}
+// --- Routing core ---
+function dispatch(address, val) {
     for (var _i = 0, ROUTER_1 = ROUTER; _i < ROUTER_1.length; _i++) {
         var router = ROUTER_1[_i];
-        if (messagename.indexOf(router.prefix) === 0) {
-            // found the right router, now pass to the handler
-            return router.handler(router, messagename, val);
+        if (address.indexOf(router.prefix) === 0) {
+            if (router.coalesce) {
+                return dispatchCoalesced(router, address, val);
+            }
+            return router.handler(router, address, val);
         }
     }
-    return outlet(OUTLET_UNKNOWN, [messagename, val]);
+    return outlet(OUTLET_UNKNOWN, [address, val]);
+}
+function anything(val) {
+    var address = messagename;
+    // Disassemble inbound batches into individual messages
+    if (address === '/batch') {
+        try {
+            var batch = JSON.parse(val);
+            var keys = Object.keys(batch);
+            for (var i = 0; i < keys.length; i++) {
+                dispatch(keys[i], batch[keys[i]]);
+            }
+        }
+        catch (e) {
+            log('bad inbound /batch: ' + e);
+        }
+        return;
+    }
+    dispatch(address, val);
 }
 log('reloaded router');
 // NOTE: This section must appear in any .ts file that is directuly used by a

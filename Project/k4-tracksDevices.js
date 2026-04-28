@@ -6,42 +6,6 @@ var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(config_1.default);
-var CHUNK_MAX_BYTES = 1024;
-function clientHasCapability(cap) {
-    var caps = (0, utils_1.loadSetting)('clientCapabilities');
-    if (!caps) {
-        return false;
-    }
-    return (' ' + caps.toString() + ' ').indexOf(' ' + cap + ' ') !== -1;
-}
-function sendNavData(prefix, items) {
-    var chunked = clientHasCapability('cNav');
-    if (chunked) {
-        // chunked protocol: start, chunk(s), end
-        outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
-        var chunkParts = [];
-        var chunkSize = 2; // for the surrounding []
-        for (var i = 0; i < items.length; i++) {
-            var itemJson = JSON.stringify(items[i]);
-            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length; // comma + item
-            if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
-                chunkParts = [];
-                chunkSize = 2;
-            }
-            chunkParts.push(itemJson);
-            chunkSize += added;
-        }
-        if (chunkParts.length > 0) {
-            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
-        }
-        outlet(consts_1.OUTLET_OSC, [prefix + '/end']);
-    }
-    // legacy: send full payload for old/unknown clients (may truncate on large sets)
-    if (!chunked) {
-        outlet(consts_1.OUTLET_OSC, [prefix, JSON.stringify(items)]);
-    }
-}
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setoutletassist(consts_1.OUTLET_MSGS, 'Messages');
@@ -76,7 +40,7 @@ function updateDeviceNav() {
         // if no device is selected, null out the devices list
         outlet(consts_1.OUTLET_OSC, ['/nav/currDeviceId', -1]);
         //log('/nav/devices=' + JSON.stringify([]))
-        sendNavData('/nav/devices', []);
+        (0, utils_1.sendChunkedData)('/nav/devices', []);
         return;
     }
     //log('NEW CURR DEVICE ID=' + state.currDeviceId)
@@ -186,7 +150,7 @@ function updateDeviceNav() {
         }
     }
     //log('/nav/devices=' + JSON.stringify(ret))
-    sendNavData('/nav/devices', ret);
+    (0, utils_1.sendChunkedData)('/nav/devices', ret);
 }
 var trackChangeDebounce = null;
 function onCurrTrackChange(val) {

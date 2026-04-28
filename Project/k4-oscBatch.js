@@ -5,18 +5,20 @@ autowatch = 1;
 inlets = 1;
 outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
-setinletassist(0, 'OSC messages to batch');
-setoutletassist(0, 'Batched OSC messages to [udpsend]');
-var OSC_FLUSH_MS = 10;
-var OSC_MAX_BYTES = 1024;
+setinletassist(0, 'OSC messages to coalesce and batch');
+setoutletassist(0, 'Coalesced/batched OSC messages to [udpsend]');
+var BATCH_FLUSH_MS = 10;
+var BATCH_MAX_BYTES = 1024;
+var THROTTLE_MS = 15;
 var BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/meters'];
 var batchEnabled = false;
 var oscBuffer = {};
 var oscBufferSize = 0;
 var oscBufferBytes = 2; // opening/closing braces: {}
-var oscFlushTask = null;
-var oscFlushPending = false;
+var batchFlushTask = null;
+var batchFlushPending = false;
 var batchOut = ['/batch', null];
+// --- Shared helpers ---
 function oscValBytes(val) {
     if (val === null)
         return 4; // "null"
@@ -38,40 +40,17 @@ function checkClientCapabilities() {
     var caps = (0, utils_1.loadSetting)('clientCapabilities');
     batchEnabled = typeof caps === 'string' && caps.indexOf('batch') !== -1;
 }
-function anything(val) {
-    var address = messagename;
-    // /sendState fires right after /syn handshake — re-check capabilities
-    if (address === '/sendState') {
-        checkClientCapabilities();
-    }
-    if (shouldBypass(address) || !batchEnabled) {
-        outlet(0, address, val);
-        return;
-    }
-    if (val === undefined) {
-        val = null;
-    }
-    if (!(address in oscBuffer)) {
-        // "addr":val, — key quotes(2) + colon(1) + valBytes + comma(1)
-        var entryBytes = address.length + 4 + oscValBytes(val);
-        if (oscBufferSize > 0 && oscBufferBytes + entryBytes > OSC_MAX_BYTES) {
-            flushOscBuffer();
-        }
-        oscBufferSize++;
-        oscBufferBytes += entryBytes;
-    }
-    oscBuffer[address] = val;
-    if (!oscFlushPending) {
-        if (!oscFlushTask) {
-            oscFlushTask = new Task(flushOscBuffer);
-        }
-        oscFlushTask.schedule(OSC_FLUSH_MS);
-        oscFlushPending = true;
-    }
+// Reusable 2-element output array to avoid allocations in send()
+var outMsg = ['', ''];
+function sendDirect(address, val) {
+    outMsg[0] = address;
+    outMsg[1] = val;
+    outlet(0, outMsg);
 }
-function flushOscBuffer() {
+// --- Batch path (coalesce into JSON, flush on timer or size) ---
+function flushBatchBuffer() {
     if (oscBufferSize === 0) {
-        oscFlushPending = false;
+        batchFlushPending = false;
         return;
     }
     batchOut[1] = JSON.stringify(oscBuffer);
@@ -79,10 +58,93 @@ function flushOscBuffer() {
     oscBuffer = {};
     oscBufferSize = 0;
     oscBufferBytes = 2;
-    if (oscFlushPending && oscFlushTask) {
-        oscFlushTask.cancel();
+    if (batchFlushPending && batchFlushTask) {
+        batchFlushTask.cancel();
     }
-    oscFlushPending = false;
+    batchFlushPending = false;
+}
+function addToBatch(address, val) {
+    if (val === undefined) {
+        val = null;
+    }
+    if (!(address in oscBuffer)) {
+        // "addr":val, — key quotes(2) + colon(1) + valBytes + comma(1)
+        var entryBytes = address.length + 4 + oscValBytes(val);
+        if (oscBufferSize > 0 && oscBufferBytes + entryBytes > BATCH_MAX_BYTES) {
+            flushBatchBuffer();
+        }
+        oscBufferSize++;
+        oscBufferBytes += entryBytes;
+    }
+    oscBuffer[address] = val;
+    if (!batchFlushPending) {
+        if (!batchFlushTask) {
+            batchFlushTask = new Task(flushBatchBuffer);
+        }
+        batchFlushTask.schedule(BATCH_FLUSH_MS);
+        batchFlushPending = true;
+    }
+}
+var throttleEntries = {};
+function makeThrottleDeferred(entry) {
+    return function () {
+        entry.task = null;
+        entry.lastSentTime = Date.now();
+        sendDirect(entry.address, entry.val);
+    };
+}
+function throttleSend(address, val) {
+    var now = Date.now();
+    var entry = throttleEntries[address];
+    if (!entry) {
+        var e = {
+            address: address,
+            val: val,
+            lastSentTime: now,
+            task: null,
+            deferredFn: null,
+        };
+        e.deferredFn = makeThrottleDeferred(e);
+        throttleEntries[address] = e;
+        sendDirect(address, val);
+        return;
+    }
+    if (now - entry.lastSentTime >= THROTTLE_MS) {
+        if (entry.task) {
+            entry.task.cancel();
+            entry.task.freepeer();
+            entry.task = null;
+        }
+        entry.val = val;
+        entry.lastSentTime = now;
+        sendDirect(address, val);
+        return;
+    }
+    // Too soon — store latest value and schedule trailing dispatch
+    entry.val = val;
+    if (!entry.task) {
+        var delay = entry.lastSentTime + THROTTLE_MS - now;
+        entry.task = new Task(entry.deferredFn);
+        entry.task.schedule(delay);
+    }
+}
+// --- Entry point ---
+function anything(val) {
+    var address = messagename;
+    // Re-check capabilities after handshake or ping (capabilities may arrive in either)
+    if (address === '/sendState' || address === '/pong') {
+        checkClientCapabilities();
+    }
+    if (shouldBypass(address)) {
+        sendDirect(address, val);
+        return;
+    }
+    if (batchEnabled) {
+        addToBatch(address, val);
+    }
+    else {
+        throttleSend(address, val);
+    }
 }
 log('reloaded k4-oscBatch');
 // NOTE: This section must appear in any .ts file that is directly used by a
