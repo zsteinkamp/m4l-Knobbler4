@@ -44,6 +44,12 @@ Joined X-Y pads on the Knobbler page in landscape mode — great for filter swee
 
 My personal setup — Knobbler front and center on a 13" iPad and Push working together.
 
+### Push 3 Standalone
+
+![Knobbler on iPad next to a Push 3 Standalone](images/gallery/drez-push-ipad.jpg)
+
+Knobbler running on iPad alongside a Push 3 Standalone — no computer required. Photo by Discord user @drez.
+
 ### Your Photo Here
 
 If you've got a great shot of Knobbler in the wild, send it to me! [zack@steinkamp.us](mailto:zack@steinkamp.us).
