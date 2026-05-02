@@ -53,8 +53,15 @@ function flushBatchBuffer() {
         batchFlushPending = false;
         return;
     }
-    batchOut[1] = JSON.stringify(oscBuffer);
-    outlet(0, batchOut);
+    if (oscBufferSize === 1) {
+        for (var address in oscBuffer) {
+            sendDirect(address, oscBuffer[address]);
+        }
+    }
+    else {
+        batchOut[1] = JSON.stringify(oscBuffer);
+        outlet(0, batchOut);
+    }
     oscBuffer = {};
     oscBufferSize = 0;
     oscBufferBytes = 2;
