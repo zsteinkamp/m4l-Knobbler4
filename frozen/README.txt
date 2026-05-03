@@ -18,9 +18,10 @@ Push 3 Standalone Instructions
 ====================================================================
 
 - Install the Knobbler4-vXX-Push3Standalone.amxd file in the Live Set in your Push 3 Standalone (P3SA).
-- Make note of your P3SA's IP address or hostname on your network.
 - Run the Knobbler app on your touch device.
-- Go to the Setup page, and enter your P3SA's hostname or IP address into the Hostname or IP box.
+- Go to the Setup page.
+  - If your P3SA is on a shared WiFi (e.g. your home WiFi), then enter the hostname 'push.local'.
+  - If your P3SA is in Hotspot mode, then enter '192.168.0.1' in the Hostname or IP box.
 - Enter 2346 into the port box.
 - It should show 'connected' at this point.
 - If not, bundle up as much information as you can and send it my way. zack@steinkamp.us
