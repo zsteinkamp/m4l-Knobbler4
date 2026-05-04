@@ -23,7 +23,7 @@ If one-touch connect is not working for your setup, you can configure the connec
 2. Click "Rescan Net" and choose your device from the drop-down list, or enter the host/IP and port manually.
 3. In the app's Setup tab, enter your computer's host/IP and device port, or select it from the discovered list.
 
-If you want to use more than one device, then follow these instructions here: [Multiple Devices](./multiple-tablets.md).
+If you want to use more than one tablet or phone, then follow these instructions here: [Multiple Tablets / Phones](./multiple-tablets.md).
 
 Next, check out all of Knobbler's [Features](./features.md).
 

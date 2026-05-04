@@ -438,4 +438,4 @@ Knobbler ships with both light and dark themes so you can match your studio envi
 
 You can use multiple phones and tablets simultaneously with multiple Knobbler instances. Add as many instances of the Knobbler device as you have devices, and ensure each instance has a unique "Device Port" setting. Each device operates independently — use one for faders, another for the mixer, a phone for clips, or whatever combination suits your workflow.
 
-See [Multiple Tablets](multiple-tablets.md) for more.
+See [Multiple Tablets / Phones](multiple-tablets.md) for more.
