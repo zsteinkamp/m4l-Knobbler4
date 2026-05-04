@@ -14,6 +14,8 @@
   title: Troubleshooting
 - fname: multiple-tablets.md
   title: Multiple Tablet Setup
+- fname: push3-standalone.md
+  title: Push 3 Standalone
 - fname: updating.md
   title: Updating the Max for Live Device
 - fname: tablet-stand.md
