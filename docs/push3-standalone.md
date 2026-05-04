@@ -10,7 +10,7 @@ Pair Knobbler with P3SA and you can:
 
 - Assemble two pages of 16 auto-named, auto-colored, multitouch sliders, or combine adjacent sliders into X-Y controls.
   ![Knobbler page on iPad over a Push 3 Standalone](images/push3-knobbler-page.jpg)
-- See all of the parameters of the currently selected device — on a phone, in your hand, while you work the pads.
+- Navigate your set and see and adjust all of the parameters of the currently selected device — on a phone or a tablet where you are playing or singing.
   ![Phone showing Knobbler parameter view next to a Push 3 Standalone](images/push3-phone-bluhand.jpg)
 - Switch to mixer view for a sidecar mixer that travels with you.
   ![Knobbler mixer alongside a Push 3 Standalone](images/push3-sidecar-mixer.jpg)
