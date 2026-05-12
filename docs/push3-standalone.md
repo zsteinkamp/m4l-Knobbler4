@@ -47,4 +47,12 @@ The Push 3 Standalone does not support Knobbler's auto-discovery, so you'll conn
 3. Confirm the port is `2346`.
 4. You should see "Connected".
 
+### Multiple Knobbler devices, including Push 3 Standalone
+
+If you want to run more than one Knobbler instance (for example, to control your set from two tablets), each instance needs its own receive port (e.g. `2346` for the first instance, `2347` for the second). Then point each app at the matching port in its Setup tab.
+
+![Device Port parameter on a Push 3 Standalone encoder, showing port 2346](images/push3-device-port.jpg)
+
+The Knobbler4 device exposes the receive port as a Live parameter named **Device Port**, so you can change it from anywhere you can change Live parameters — even on Push 3 Standalone.
+
 If something doesn't work, see [Troubleshooting](./troubleshooting.md), or email [zack@steinkamp.us](mailto:zack@steinkamp.us) with as much detail as you can gather.
