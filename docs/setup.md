@@ -23,6 +23,8 @@ If one-touch connect is not working for your setup, you can configure the connec
 2. Click "Rescan Net" and choose your device from the drop-down list, or enter the host/IP and port manually.
 3. In the app's Setup tab, enter your computer's host/IP and device port, or select it from the discovered list.
 
+The receive port is exposed as a Live parameter named **Device Port**, so you can change it from anywhere you can change Live parameters — even on [Push 3 Standalone](./push3-standalone.md).
+
 If you want to use more than one tablet or phone, then follow these instructions here: [Multiple Tablets / Phones](./multiple-tablets.md).
 
 Next, check out all of Knobbler's [Features](./features.md).
