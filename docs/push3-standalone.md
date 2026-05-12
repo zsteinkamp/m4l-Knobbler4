@@ -8,7 +8,7 @@ Knobbler runs on the Push 3 Standalone (P3SA) — no computer required
 
 Pair Knobbler with P3SA and you can:
 
-- Assemble two pages of 16 auto-named, auto-colored, multitouch sliders, or combine adjacent sliders into X-Y controls.
+- Control parameters from anywhere in your Live Set on two pages of 16 auto-named, auto-colored, multitouch sliders, or combine adjacent sliders into X-Y controls.
   ![Knobbler page on iPad over a Push 3 Standalone](images/push3-knobbler-page.jpg)
 - Navigate your set and see and adjust all of the parameters of the currently selected device — on a phone or a tablet where you are playing or singing.
   ![Phone showing Knobbler parameter view next to a Push 3 Standalone](images/push3-phone-bluhand.jpg)
@@ -16,10 +16,12 @@ Pair Knobbler with P3SA and you can:
   ![Knobbler mixer alongside a Push 3 Standalone](images/push3-sidecar-mixer.jpg)
 - Expand your clips view with clip names and a smooth panning surface that's more satisfying than tapping cursor keys.
   ![Knobbler clips view next to a Push 3 Standalone](images/push3-clips.jpg)
-- Navigate all of your tracks, groups, racks, chains, and devices with a swipe on the Navigation bar on the right — handy on a phone too.
+- Special on the Phone: Navigate all of your tracks, with a mixer strip for the current track. Jump directly to any device's parameters in a track or chain.
   ![Phone showing Knobbler navigation view](images/push3-phone-nav.jpg)
 - Keep the current track's mixer strip docked on the left of most pages, when you want it.
 - Enable and disable real-time level meters.
+- Record and overdub automation directly on the app.
+-
 
 ### Files
 
