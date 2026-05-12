@@ -3,7 +3,7 @@ var config_1 = require("./config");
 var utils_1 = require("./utils");
 autowatch = 1;
 inlets = 1;
-outlets = 15;
+outlets = 16;
 var log = (0, utils_1.logFactory)(config_1.default);
 var deviceVersion = '';
 function setDeviceVersion(ver) {
@@ -26,6 +26,7 @@ var OUTLET_MULTI_MIXER = 11;
 var OUTLET_CLIP_VIEW = 12;
 var OUTLET_UDPSEND = 13;
 var OUTLET_VISIBLE_TRACKS = 14;
+var OUTLET_BROWSER = 15;
 setinletassist(INLET_OSC, 'OSC messages from a [udpreceive]');
 setoutletassist(OUTLET_KNOBBLER, 'Messages for Knobbler4');
 setoutletassist(OUTLET_BLUHAND, 'Messages for Bluhand');
@@ -42,6 +43,7 @@ setoutletassist(OUTLET_MULTI_MIXER, 'Messages for Multi Mixer');
 setoutletassist(OUTLET_CLIP_VIEW, 'Messages for Clip View');
 setoutletassist(OUTLET_UDPSEND, 'host/port messages for [udpsend]');
 setoutletassist(OUTLET_VISIBLE_TRACKS, 'Messages for Visible Tracks');
+setoutletassist(OUTLET_BROWSER, 'Messages for Browser');
 function getSlotNum(router, msg) {
     var matches = msg.substring(router.prefix.length).match(/^\d+/);
     if (matches) {
@@ -711,6 +713,24 @@ var ROUTER = [
         handler: multiMixerHandler,
         msg: '',
         coalesce: true,
+    },
+    {
+        outlet: OUTLET_BROWSER,
+        prefix: '/browser/navigate',
+        handler: stdVal,
+        msg: 'navigate',
+    },
+    {
+        outlet: OUTLET_BROWSER,
+        prefix: '/browser/load',
+        handler: stdVal,
+        msg: 'load',
+    },
+    {
+        outlet: OUTLET_BROWSER,
+        prefix: '/browser/refresh',
+        handler: bareMsg,
+        msg: 'refresh',
     },
 ];
 ROUTER.sort(function (a, b) {
