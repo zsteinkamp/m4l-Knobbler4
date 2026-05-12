@@ -25,6 +25,8 @@ If one-touch connect is not working for your setup, you can configure the connec
 
 The receive port is exposed as a Live parameter named **Device Port**, so you can change it from anywhere you can change Live parameters — even on [Push 3 Standalone](./push3-standalone.md).
 
+![Device Port parameter on a Push 3 Standalone encoder, showing port 2346](images/push3-device-port.jpg)
+
 If you want to use more than one tablet or phone, then follow these instructions here: [Multiple Tablets / Phones](./multiple-tablets.md).
 
 Next, check out all of Knobbler's [Features](./features.md).
