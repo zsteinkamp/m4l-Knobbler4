@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2026-05-09 [v59](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v59/Knobbler4-v59.amxd) - Send single-item batches as raw OSC messages, skipping the `/batch` wrapper overhead. New documentation page covering use with Push 3 Standalone, and expanded multi-device docs to cover phones in addition to tablets.
 - 2026-04-28 [v58](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v58/Knobbler4-v58.amxd) - Honor Live's "Select on Launch" preference when firing clips and scenes from the Knobbler clip view -- previously these always selected the launched clip/scene regardless of the preference. Thanks to u/Jorne555 on Reddit for the report!
 - 2026-04-28 [v57](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v57/Knobbler4-v57.amxd) - Inbound OSC coalescing (15ms leading-edge) for physics-driven sliders and X-Y pads; Unified outbound coalesce+batch layer; Inbound /batch disassembly; Parse capabilities from /ping messages; Unified chunked data sending with checksums.
 - 2026-04-21 [v56](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v56/Knobbler4-v56.amxd) - Add Bluhand bank definitions for 12 devices that were missing custom layouts: Drift, Meld, Hybrid Reverb, Delay, Roar, Transmute, Chorus-Ensemble, Phaser-Flanger, Redux, AutoFilter2, Channel EQ, and Limiter. Add compatibility with Live 12.4 beta parameter renames across all devices.
