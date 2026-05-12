@@ -1,6 +1,6 @@
 ## Using Multiple Tablets and Phones with Knobbler
 
-It is possible to use more than one tablet or phone by using more than one instance of the Knobbler device.
+It is possible to use more than one tablet or phone by using more than one instance of the Knobbler device. Each instance exposes a Live parameter named **Device Port**, so you can give each instance a unique port from anywhere you can change Live parameters — even on [Push 3 Standalone](./push3-standalone.md).
 
 ![Dual Tablets](./images/dual_tablets-export.jpg)
 
