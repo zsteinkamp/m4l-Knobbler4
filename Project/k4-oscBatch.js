@@ -17,9 +17,6 @@ var oscBufferSize = 0;
 var oscBufferBytes = 2; // opening/closing braces: {}
 var batchFlushTask = null;
 var batchFlushPending = false;
-// Pre-wrapped /batch outlet message. The JSON body is rebuilt per flush into
-// a `new String(...)` so [v8] emits it as a t_string atom (no gensym).
-var batchOut = ['/batch', null];
 // --- Shared helpers ---
 function oscValBytes(val) {
     if (val === null)
@@ -42,12 +39,33 @@ function checkClientCapabilities() {
     var caps = (0, utils_1.loadSetting)('clientCapabilities');
     batchEnabled = typeof caps === 'string' && caps.indexOf('batch') !== -1;
 }
-// Reusable 2-element output array to avoid allocations in send()
+// Reusable 2-element output array for numeric fast-path sends.
 var outMsg = ['', ''];
+// Reusable rawbytes output array for non-numeric sends. The first atom is
+// the fixed 'rawbytes' selector (gensym'd once and reused); the rest are
+// byte values (numeric atoms — no symbol-table interaction).
+var rawOut = ['rawbytes'];
+function sendRawBytes(bytes) {
+    rawOut.length = 1;
+    for (var i = 0; i < bytes.length; i++)
+        rawOut.push(bytes[i]);
+    outlet(0, rawOut);
+}
+// For numeric args we keep the existing path — [udpsend]'s default OSC
+// formatter handles them cleanly and they don't intern. For anything else
+// (strings, JSON-encoded objects), we build the wire packet ourselves and
+// hand [udpsend] the bytes via its rawbytes message, bypassing its OSC
+// formatter entirely so the variable-content payload never becomes a Max
+// atom.
 function sendDirect(address, val) {
-    outMsg[0] = address;
-    outMsg[1] = val;
-    outlet(0, outMsg);
+    if (typeof val === 'number') {
+        outMsg[0] = address;
+        outMsg[1] = val;
+        outlet(0, outMsg);
+    }
+    else {
+        sendRawBytes((0, utils_1.buildOscPacket)(address, val));
+    }
 }
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
 function flushBatchBuffer() {
@@ -61,8 +79,9 @@ function flushBatchBuffer() {
         }
     }
     else {
-        batchOut[1] = new String(JSON.stringify(oscBuffer));
-        outlet(0, batchOut);
+        // /batch envelope always has a JSON-string arg — build the wire packet
+        // here so the JSON never becomes a Max atom.
+        sendRawBytes((0, utils_1.buildOscPacket)('/batch', oscBuffer));
     }
     oscBuffer = {};
     oscBufferSize = 0;

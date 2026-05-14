@@ -274,7 +274,7 @@ function unfoldParentTracks(objId: number) {
         util.set('fold_state', 0)
       }
     }
-    util.id = util.get('canonical_parent')[1]
+    util.id = parseInt(util.get('canonical_parent')[1] as any)
     //log('TYPE=' + util.type)
     if (util.type === 'Song') {
       break
@@ -288,7 +288,7 @@ function getParentTrackForDevice(deviceId: number) {
   if (isDeviceSupported(util)) {
     let counter = 0
     while (counter < 20) {
-      util.id = util.get('canonical_parent')[1]
+      util.id = parseInt(util.get('canonical_parent')[1] as any)
       if (util.type === 'Track') {
         return +util.id
       }

@@ -1,4 +1,17 @@
-import { cleanArr, colorToString, fixFloat, loadInstanceSetting, logFactory, meterVal, numArrToJson, osc, pauseUnpause, PauseState, SEND_ADDR, setDictPrefix as _setDictPrefix } from './utils'
+import {
+  cleanArr,
+  colorToString,
+  fixFloat,
+  loadInstanceSetting,
+  logFactory,
+  meterVal,
+  numArrToJson,
+  osc,
+  pauseUnpause,
+  PauseState,
+  SEND_ADDR,
+  setDictPrefix as _setDictPrefix,
+} from './utils'
 import config from './config'
 import {
   noFn,
@@ -33,6 +46,8 @@ const INLET_PAGE = 1
 setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
 setinletassist(INLET_PAGE, 'Page change messages')
 setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
+
+log('loaded k4-sidebarMixer')
 
 const state = {
   trackLookupObj: null as LiveAPI,
@@ -174,7 +189,12 @@ const setSendWatcherIds = (sendIds: number[]) => {
       if (state.watchers[i].type === 'DeviceParameter') {
         state.watchers[i].property = 'value'
       } else {
-        log('send watcher', i, 'expected DeviceParameter, got', state.watchers[i].type)
+        log(
+          'send watcher',
+          i,
+          'expected DeviceParameter, got',
+          state.watchers[i].type
+        )
         state.watchers[i].id = 0
         osc(SEND_ADDR[i], 0)
       }
@@ -269,7 +289,10 @@ function toggleSolo() {
   const newState = currState ? 0 : 1
 
   if (newState) {
-    handleExclusiveSolo(parseInt(state.trackObj.id.toString()), state.trackLookupObj)
+    handleExclusiveSolo(
+      parseInt(state.trackObj.id.toString()),
+      state.trackLookupObj
+    )
   }
   state.trackObj.set('solo', newState)
   osc('/mixer/solo', newState)
@@ -393,7 +416,10 @@ const onTrackChange = (args: IdObserverArg) => {
   if (!state.trackObj) {
     return
   }
-  if (args[1].toString() !== 'id') {
+  // Property name is at args[0] per the type declaration; the historical
+  // `args[1] !== 'id'` check was accidentally correct in [js] (which used to
+  // deliver args reversed) and broke under [v8].
+  if (args[0] !== 'id') {
     return
   }
 
@@ -493,7 +519,7 @@ const onReturnsChange = (args: IdObserverArg) => {
   }
   const returnIds = cleanArr(args)
   for (let i = 0; i < MAX_SENDS; i++) {
-    var color = DEFAULT_COLOR
+    let color = DEFAULT_COLOR
     if (returnIds[i]) {
       state.trackLookupObj.id = returnIds[i]
       color = colorToString(state.trackLookupObj.get('color').toString())
@@ -509,7 +535,7 @@ const onReturnsChange = (args: IdObserverArg) => {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-function refresh() {
+function doRefresh() {
   state.watchers = []
   state.trackLookupObj = null
   state.returnsObj = null
@@ -527,6 +553,7 @@ function setDictPrefix(prefix: any) {
 }
 
 function init() {
+  log('init called')
   if (state.watchers.length === MAX_SENDS) {
     return
   }

@@ -11,6 +11,7 @@ var INLET_PAGE = 1;
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setinletassist(INLET_PAGE, 'Page change messages');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
+log('loaded k4-sidebarMixer');
 var state = {
     trackLookupObj: null,
     returnTrackColors: [],
@@ -343,7 +344,10 @@ var onTrackChange = function (args) {
     if (!state.trackObj) {
         return;
     }
-    if (args[1].toString() !== 'id') {
+    // Property name is at args[0] per the type declaration; the historical
+    // `args[1] !== 'id'` check was accidentally correct in [js] (which used to
+    // deliver args reversed) and broke under [v8].
+    if (args[0] !== 'id') {
         return;
     }
     var id = (0, utils_1.cleanArr)(args)[0];
@@ -448,7 +452,7 @@ var onReturnsChange = function (args) {
 // ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
-function refresh() {
+function doRefresh() {
     state.watchers = [];
     state.trackLookupObj = null;
     state.returnsObj = null;
@@ -464,6 +468,7 @@ function setDictPrefix(prefix) {
     (0, utils_1.setDictPrefix)(prefix);
 }
 function init() {
+    log('init called');
     if (state.watchers.length === consts_1.MAX_SENDS) {
         return;
     }

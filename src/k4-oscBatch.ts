@@ -1,4 +1,4 @@
-import { loadSetting, logFactory } from './utils'
+import { buildOscPacket, loadSetting, logFactory } from './utils'
 import config from './config'
 
 autowatch = 1
@@ -22,9 +22,6 @@ let oscBufferSize = 0
 let oscBufferBytes = 2 // opening/closing braces: {}
 let batchFlushTask: MaxTask | null = null
 let batchFlushPending = false
-// Pre-wrapped /batch outlet message. The JSON body is rebuilt per flush into
-// a `new String(...)` so [v8] emits it as a t_string atom (no gensym).
-const batchOut: any[] = ['/batch', null]
 
 // --- Shared helpers ---
 
@@ -52,13 +49,34 @@ function checkClientCapabilities() {
   batchEnabled = typeof caps === 'string' && caps.indexOf('batch') !== -1
 }
 
-// Reusable 2-element output array to avoid allocations in send()
+// Reusable 2-element output array for numeric fast-path sends.
 const outMsg: any[] = ['', '']
 
+// Reusable rawbytes output array for non-numeric sends. The first atom is
+// the fixed 'rawbytes' selector (gensym'd once and reused); the rest are
+// byte values (numeric atoms — no symbol-table interaction).
+const rawOut: any[] = ['rawbytes']
+
+function sendRawBytes(bytes: number[]) {
+  rawOut.length = 1
+  for (let i = 0; i < bytes.length; i++) rawOut.push(bytes[i])
+  outlet(0, rawOut)
+}
+
+// For numeric args we keep the existing path — [udpsend]'s default OSC
+// formatter handles them cleanly and they don't intern. For anything else
+// (strings, JSON-encoded objects), we build the wire packet ourselves and
+// hand [udpsend] the bytes via its rawbytes message, bypassing its OSC
+// formatter entirely so the variable-content payload never becomes a Max
+// atom.
 function sendDirect(address: string, val: any) {
-  outMsg[0] = address
-  outMsg[1] = val
-  outlet(0, outMsg)
+  if (typeof val === 'number') {
+    outMsg[0] = address
+    outMsg[1] = val
+    outlet(0, outMsg)
+  } else {
+    sendRawBytes(buildOscPacket(address, val))
+  }
 }
 
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
@@ -73,8 +91,9 @@ function flushBatchBuffer() {
       sendDirect(address, oscBuffer[address])
     }
   } else {
-    batchOut[1] = new String(JSON.stringify(oscBuffer))
-    outlet(0, batchOut)
+    // /batch envelope always has a JSON-string arg — build the wire packet
+    // here so the JSON never becomes a Max atom.
+    sendRawBytes(buildOscPacket('/batch', oscBuffer))
   }
   oscBuffer = {}
   oscBufferSize = 0

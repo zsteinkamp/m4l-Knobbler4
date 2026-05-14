@@ -255,7 +255,7 @@ function currentParamDefault() {
   osc('/currentParam/valStr', valStr)
 }
 
-function refresh() {
+function doRefresh() {
   if (!active || !currentParamId) return
   sendAllParamInfo(currentParamId)
 }

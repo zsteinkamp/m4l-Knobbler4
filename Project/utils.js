@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.oscSend = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -128,33 +128,74 @@ function osc(addr, val) {
     outlet(consts_1.OUTLET_OSC, oscOut);
 }
 exports.osc = osc;
-// Symbol-safe OSC send. `value` is any JSON-serializable JS data structure.
-//   - number: passed through (floats rounded to 6 decimals)
-//   - anything else: JSON-stringified (if needed) and wrapped in
-//     `new String(...)` so [v8] emits a t_string atom rather than gensym'ing
-//     a t_symbol — keeping Max's global symbol table clean even at high
-//     message rates. [udpsend] handles t_string atoms in its normal OSC
-//     formatting path, so the wire format on the wire is unchanged.
+// Build an OSC packet (address + single arg) as a flat array of byte values
+// (0..255), suitable for outlet to [udpsend]'s `rawbytes` message. Building
+// the wire packet in JS keeps the payload out of Max's atom system entirely,
+// avoiding the symbol-table bloat that [udpsend]'s default OSC formatter
+// would otherwise create when gensym'ing string args.
 //
-// Callers don't need to think about this — just pass the value. The helper
-// hides the engine-level mechanics so the optimization strategy can change
-// without touching call sites. Requires [v8] (loads as [v8 foo.js]).
-var oscSendOut = [null, null];
-function oscSend(addr, value) {
-    oscSendOut[0] = addr;
+// Arg encoding inferred from JS value type:
+//   number (integer in int32 range)  → 'i', 4 bytes big-endian
+//   number (other)                   → 'f', 4 bytes big-endian
+//   string                           → 's', null-terminated, padded to 4
+//   object / array / null / undefined → 's' with JSON.stringify (or 'null')
+var _f32buf = new ArrayBuffer(4);
+var _f32view = new DataView(_f32buf);
+var _f32bytes = new Uint8Array(_f32buf);
+function buildOscPacket(addr, value) {
+    var tag;
+    var intVal = 0;
+    var floatVal = 0;
+    var strVal = '';
     if (typeof value === 'number') {
-        oscSendOut[1] =
-            value !== (value | 0) ? Math.round(value * 1000000) / 1000000 : value;
+        if ((value | 0) === value && value >= -2147483648 && value <= 2147483647) {
+            tag = 'i';
+            intVal = value;
+        }
+        else {
+            tag = 'f';
+            floatVal = value;
+        }
     }
     else if (typeof value === 'string') {
-        oscSendOut[1] = new String(value);
+        tag = 's';
+        strVal = value;
+    }
+    else if (value === null || value === undefined) {
+        tag = 's';
+        strVal = String(value);
     }
     else {
-        oscSendOut[1] = new String(JSON.stringify(value));
+        tag = 's';
+        strVal = JSON.stringify(value);
     }
-    outlet(consts_1.OUTLET_OSC, oscSendOut);
+    var out = [];
+    // address, null-terminated, padded to 4-byte boundary
+    for (var i = 0; i < addr.length; i++)
+        out.push(addr.charCodeAt(i) & 0xff);
+    out.push(0);
+    while (out.length & 0x3)
+        out.push(0);
+    // type tag string ",X" — 2 chars + null + 1 pad = 4 bytes, already aligned
+    out.push(0x2c, tag.charCodeAt(0), 0, 0);
+    // arg
+    if (tag === 'i') {
+        out.push((intVal >>> 24) & 0xff, (intVal >>> 16) & 0xff, (intVal >>> 8) & 0xff, intVal & 0xff);
+    }
+    else if (tag === 'f') {
+        _f32view.setFloat32(0, floatVal, false);
+        out.push(_f32bytes[0], _f32bytes[1], _f32bytes[2], _f32bytes[3]);
+    }
+    else {
+        for (var i = 0; i < strVal.length; i++)
+            out.push(strVal.charCodeAt(i) & 0xff);
+        out.push(0);
+        while (out.length & 0x3)
+            out.push(0);
+    }
+    return out;
 }
-exports.oscSend = oscSend;
+exports.buildOscPacket = buildOscPacket;
 function pauseUnpause(p, delayMs) {
     if (p.task) {
         p.task.cancel();
@@ -216,12 +257,22 @@ function sendChunkedData(prefix, items) {
     }
 }
 exports.sendChunkedData = sendChunkedData;
+// Filter an id-observer arg down to its numeric ids, returning them AS
+// numbers. The arg comes from LiveAPI as strings (e.g. ["id", "42", "id",
+// "55"]); each numeric-looking string round-trips through parseInt and the
+// rest are dropped. Returning numbers (matching the declared IdArr type) is
+// required by [v8]'s LiveAPI .id setter, which rejects strings.
 function cleanArr(arr) {
-    if (!arr) {
+    if (!arr)
         return [];
+    var out = [];
+    for (var i = 0; i < arr.length; i++) {
+        var e = arr[i];
+        var n = parseInt(e);
+        if (!isNaN(n) && n.toString() === e.toString()) {
+            out.push(n);
+        }
     }
-    return arr.filter(function (e) {
-        return parseInt(e).toString() === e.toString();
-    });
+    return out;
 }
 exports.cleanArr = cleanArr;

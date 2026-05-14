@@ -746,15 +746,22 @@ function teardownAll() {
 function applyWindow() {
   if (leftTrack < 0 || topScene < 0) return
 
+  // Clamp the window to the actual track/scene counts. The app may request
+  // a window larger than the live set (e.g. a 4x8 viewport when only 3
+  // tracks or 5 scenes exist); without clamping we'd construct LiveAPIs on
+  // non-existent slots, which v8 logs as 'invalid path' / 'no valid object'.
+  const visRight = Math.min(rightTrack, trackPaths.length)
+  const visBottom = Math.min(bottomScene, totalScenes)
+
   // --- Track play observers — create BEFORE cell observers so deriveCellState can use them ---
-  for (let col = leftTrack; col < rightTrack; col++) {
+  for (let col = leftTrack; col < visRight; col++) {
     if (!trackPlayObservers[col]) {
       trackPlayObservers[col] = createTrackPlayObservers(col)
     }
   }
 
   // --- Scene observers ---
-  for (let s = topScene; s < bottomScene; s++) {
+  for (let s = topScene; s < visBottom; s++) {
     if (!sceneObservers[s]) {
       sceneObservers[s] = createSceneObserver(s)
     }
@@ -764,8 +771,8 @@ function applyWindow() {
   if (observerBatchTask) observerBatchTask.cancel()
   pendingObserverKeys = []
 
-  for (let col = leftTrack; col < rightTrack; col++) {
-    for (let row = topScene; row < bottomScene; row++) {
+  for (let col = leftTrack; col < visRight; col++) {
+    for (let row = topScene; row < visBottom; row++) {
       const key = cellKey(col, row)
       if (!cellObservers[key]) {
         cellObservers[key] = readCellState(col, row)
@@ -915,7 +922,7 @@ function setupWindow(left: number, top: number, right: number, bottom: number) {
   applyWindow()
 }
 
-function refresh() {
+function doRefresh() {
   if (leftTrack < 0) return
   setupWindow(leftTrack, topScene, rightTrack, bottomScene)
 }
@@ -1063,7 +1070,12 @@ function clipColor(jsonStr: string) {
   if (trackIdx < 0 || trackIdx >= trackPaths.length) return
   if (sceneIdx < 0 || sceneIdx >= totalScenes) return
 
-  scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx + ' clip'
+  // Pre-validate on the slot to avoid v8's noisy 'invalid path' warning when
+  // the slot is empty (race with the app's view state).
+  const slotPath = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
+  scratchApi.path = slotPath
+  if (!parseInt(scratchApi.get('has_clip').toString())) return
+  scratchApi.path = slotPath + ' clip'
   scratchApi.set('color', parseInt(hexStr, 16))
 }
 
@@ -1091,8 +1103,12 @@ function clipsUpdate(jsonStr: string) {
     if (trackIdx < 0 || trackIdx >= trackPaths.length) continue
     if (sceneIdx < 0 || sceneIdx >= totalScenes) continue
 
-    scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx + ' clip'
-    if (parseInt(scratchApi.id.toString()) <= 0) continue
+    // Pre-validate on the slot to avoid v8's noisy 'invalid path' warning
+    // and skip empty slots in one check.
+    const slotPath = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
+    scratchApi.path = slotPath
+    if (!parseInt(scratchApi.get('has_clip').toString())) continue
+    scratchApi.path = slotPath + ' clip'
 
     if (u.n != null) scratchApi.set('name', u.n.toString())
   }

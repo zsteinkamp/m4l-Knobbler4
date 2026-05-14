@@ -44,7 +44,7 @@ function setMax(slot: number, val: number) {
 function setPath(slot: number, paramPath: string) {
   KnobblerCore.setPath(slot, paramPath)
 }
-function refresh() {
+function doRefresh() {
   KnobblerCore.refresh()
 }
 function val(slot: number, val: number) {

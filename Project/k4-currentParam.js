@@ -201,7 +201,7 @@ function currentParamDefault() {
     (0, utils_1.osc)('/currentParam/val', scaledVal);
     (0, utils_1.osc)('/currentParam/valStr', valStr);
 }
-function refresh() {
+function doRefresh() {
     if (!active || !currentParamId)
         return;
     sendAllParamInfo(currentParamId);

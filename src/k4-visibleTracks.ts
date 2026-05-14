@@ -196,7 +196,7 @@ function requestVisibleTracks() {
   sendVisibleTracks()
 }
 
-function refresh() {
+function doRefresh() {
   ensureApis()
   trackList = buildTrackList()
   createColorObservers()
