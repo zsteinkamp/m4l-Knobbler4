@@ -5,7 +5,6 @@ import {
   loadInstanceSetting,
   logFactory,
   meterVal,
-  numArrToJson,
   osc,
   pauseUnpause,
   PauseState,
@@ -136,7 +135,7 @@ function startMeterFlush() {
   state.meterFlushTask = new Task(function () {
     if (state.meterDirty) {
       state.meterDirty = false
-      outlet(OUTLET_OSC, ['/mixer/meters', numArrToJson(state.meterBuffer)])
+      osc('/mixer/meters', state.meterBuffer)
     }
     state.meterFlushTask.schedule(METER_FLUSH_MS)
   }) as MaxTask
@@ -213,10 +212,7 @@ function updateSendsFromMixer() {
 }
 
 const sendReturnTrackColors = () => {
-  outlet(OUTLET_OSC, [
-    '/mixer/returnTrackColors',
-    JSON.stringify(state.returnTrackColors),
-  ])
+  osc('/mixer/returnTrackColors', state.returnTrackColors)
 }
 
 // ---------------------------------------------------------------------------

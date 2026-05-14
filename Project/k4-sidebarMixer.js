@@ -99,7 +99,7 @@ function startMeterFlush() {
     state.meterFlushTask = new Task(function () {
         if (state.meterDirty) {
             state.meterDirty = false;
-            outlet(consts_1.OUTLET_OSC, ['/mixer/meters', (0, utils_1.numArrToJson)(state.meterBuffer)]);
+            (0, utils_1.osc)('/mixer/meters', state.meterBuffer);
         }
         state.meterFlushTask.schedule(consts_1.METER_FLUSH_MS);
     });
@@ -171,10 +171,7 @@ function updateSendsFromMixer() {
     setSendWatcherIds(sendIds);
 }
 var sendReturnTrackColors = function () {
-    outlet(consts_1.OUTLET_OSC, [
-        '/mixer/returnTrackColors',
-        JSON.stringify(state.returnTrackColors),
-    ]);
+    (0, utils_1.osc)('/mixer/returnTrackColors', state.returnTrackColors);
 };
 // ---------------------------------------------------------------------------
 // Command handlers (called by Max message dispatch)

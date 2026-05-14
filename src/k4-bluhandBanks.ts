@@ -1,4 +1,4 @@
-import { cleanArr, isDeviceSupported, logFactory } from './utils'
+import { cleanArr, isDeviceSupported, logFactory, osc } from './utils'
 import config from './config'
 import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
 import { deviceParamMapFor } from './k4-deviceParamMaps'
@@ -216,7 +216,7 @@ function sendBankNames() {
     return { name: bank.name, sel: idx === currBankIdx }
   })
   //log('BANKS: ' + JSON.stringify(banks))
-  outlet(OUTLET_OSC, ['/bBanks', JSON.stringify(banks)])
+  osc('/bBanks', banks)
 }
 
 let sendCurrBankTask = null as Task
@@ -399,10 +399,7 @@ function onVariationChange() {
   // send variation stuff
   const varCount = +api.get('variation_count')
   const varSelected = +api.get('selected_variation_index')
-  outlet(OUTLET_OSC, [
-    '/blu/variations',
-    '{"count":' + varCount + ',"selected":' + varSelected + '}',
-  ])
+  osc('/blu/variations', { count: varCount, selected: varSelected })
 }
 
 function sendCuePoints() {
@@ -438,7 +435,7 @@ function sendCuePoints() {
     }
   })
   //log('CUE POINTS', result)
-  outlet(OUTLET_OSC, ['/cuePoints', JSON.stringify(result)])
+  osc('/cuePoints', result)
 }
 
 let sendCuePointsTask = null as Task

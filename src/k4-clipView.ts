@@ -315,7 +315,7 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
   tObs.nameApi = new LiveAPI(function (args: any[]) {
     if (!tObs.nameApi) return
     if (args[0] !== 'name') return
-    osc('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, n: dequote(args[1]) }))
+    osc('/clips/trackInfo', { t: tObs.trackIdx, n: dequote(args[1]) })
   }, trackPath)
   tObs.nameApi.property = 'name'
 
@@ -323,7 +323,7 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
   tObs.colorApi = new LiveAPI(function (args: any[]) {
     if (!tObs.colorApi) return
     if (args[0] !== 'color') return
-    osc('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, c: colorHex(args[1]) }))
+    osc('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) })
   }, trackPath)
   tObs.colorApi.property = 'color'
 
@@ -656,7 +656,7 @@ function scheduleFlush() {
 
 function flushUpdates() {
   if (pendingUpdates.length === 0) return
-  osc('/clips/update', JSON.stringify(pendingUpdates))
+  osc('/clips/update', pendingUpdates)
   pendingUpdates = []
 }
 
@@ -823,10 +823,7 @@ function sendFullGrid() {
     rows.push(rowData)
   }
 
-  osc(
-    '/clips/grid',
-    JSON.stringify({ left: leftTrack, top: topScene, clips: rows })
-  )
+  osc('/clips/grid', { left: leftTrack, top: topScene, clips: rows })
 }
 
 function sendTrackInfo() {
@@ -842,7 +839,7 @@ function sendTrackInfo() {
       })
     }
   }
-  osc('/clips/trackInfo', JSON.stringify({ left: leftTrack, tracks: tracks }))
+  osc('/clips/trackInfo', { left: leftTrack, tracks: tracks })
 }
 
 function scheduleSceneInfo() {

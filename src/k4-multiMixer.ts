@@ -5,7 +5,6 @@ import {
   fixFloat,
   getVisibleTracks,
   loadInstanceSetting,
-  numArrToJson,
   saveInstanceSetting,
   setDictPrefix as _setDictPrefix,
   logFactory,
@@ -207,7 +206,7 @@ function sendReturnTrackColors() {
       colors.push('#' + DEFAULT_COLOR)
     }
   }
-  outlet(OUTLET_OSC, ['/mixer/returnTrackColors', JSON.stringify(colors)])
+  osc('/mixer/returnTrackColors', colors)
 }
 
 // ---------------------------------------------------------------------------
@@ -281,7 +280,7 @@ function teardownMeterObservers(strip: StripObservers) {
 function flushMeters() {
   if (!meterDirty) return
   meterDirty = false
-  outlet(OUTLET_OSC, ['/mixer/meters', numArrToJson(meterBuffer)])
+  osc('/mixer/meters', meterBuffer)
 }
 
 function startMeterFlush() {

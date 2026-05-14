@@ -86,7 +86,7 @@ function loadXYPairs() {
 }
 function sendXYPairs() {
     //log('SEND XY PAIRS', JSON.stringify(xyPairs))
-    (0, utils_1.osc)('/xyPairs', (0, utils_1.numArrToJson)(xyPairs));
+    (0, utils_1.osc)('/xyPairs', xyPairs);
 }
 function xyJoin(leftIdx) {
     //log('xyJOIN', leftIdx)
@@ -444,7 +444,7 @@ function sendQuant(slot) {
     initSlotIfNecessary(slot);
     (0, utils_1.osc)(ADDR_QUANT[slot], param[slot].quant);
     if (param[slot] && param[slot].quant > 2) {
-        (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], JSON.stringify(param[slot].quantItems));
+        (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], param[slot].quantItems);
     }
     else {
         (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], '[]');

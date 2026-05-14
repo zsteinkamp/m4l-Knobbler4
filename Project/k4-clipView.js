@@ -241,7 +241,7 @@ function createTrackPlayObservers(trackIdx) {
             return;
         if (args[0] !== 'name')
             return;
-        (0, utils_1.osc)('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, n: (0, utils_1.dequote)(args[1]) }));
+        (0, utils_1.osc)('/clips/trackInfo', { t: tObs.trackIdx, n: (0, utils_1.dequote)(args[1]) });
     }, trackPath);
     tObs.nameApi.property = 'name';
     // Observer: track color
@@ -250,7 +250,7 @@ function createTrackPlayObservers(trackIdx) {
             return;
         if (args[0] !== 'color')
             return;
-        (0, utils_1.osc)('/clips/trackInfo', JSON.stringify({ t: tObs.trackIdx, c: colorHex(args[1]) }));
+        (0, utils_1.osc)('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) });
     }, trackPath);
     tObs.colorApi.property = 'color';
     return tObs;
@@ -578,7 +578,7 @@ function scheduleFlush() {
 function flushUpdates() {
     if (pendingUpdates.length === 0)
         return;
-    (0, utils_1.osc)('/clips/update', JSON.stringify(pendingUpdates));
+    (0, utils_1.osc)('/clips/update', pendingUpdates);
     pendingUpdates = [];
 }
 // ---------------------------------------------------------------------------
@@ -730,7 +730,7 @@ function sendFullGrid() {
         }
         rows.push(rowData);
     }
-    (0, utils_1.osc)('/clips/grid', JSON.stringify({ left: leftTrack, top: topScene, clips: rows }));
+    (0, utils_1.osc)('/clips/grid', { left: leftTrack, top: topScene, clips: rows });
 }
 function sendTrackInfo() {
     if (leftTrack < 0)
@@ -745,7 +745,7 @@ function sendTrackInfo() {
             });
         }
     }
-    (0, utils_1.osc)('/clips/trackInfo', JSON.stringify({ left: leftTrack, tracks: tracks }));
+    (0, utils_1.osc)('/clips/trackInfo', { left: leftTrack, tracks: tracks });
 }
 function scheduleSceneInfo() {
     if (!sceneInfoTask) {

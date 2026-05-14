@@ -118,14 +118,25 @@ function meterVal(raw) {
     return Math.round((parseFloat(raw) || 0) * 100) / 100;
 }
 exports.meterVal = meterVal;
+// Reusable outlet arrays. Numeric fast-path uses [addr, val] — udpsend handles
+// numeric atoms cleanly with no symbol-table interaction. Non-numeric payloads
+// (strings, objects, arrays) go through buildOscPacket() and emit as raw OSC
+// packet bytes via udpsend's `rawbytes` message, bypassing its OSC formatter so
+// the payload never becomes a Max atom.
 var oscOut = [null, null];
+var oscRawOut = ['rawbytes'];
 function osc(addr, val) {
-    oscOut[0] = addr;
-    oscOut[1] =
-        typeof val === 'number' && val !== (val | 0)
-            ? Math.round(val * 1000000) / 1000000
-            : val;
-    outlet(consts_1.OUTLET_OSC, oscOut);
+    if (typeof val === 'number') {
+        oscOut[0] = addr;
+        oscOut[1] = val !== (val | 0) ? Math.round(val * 1000000) / 1000000 : val;
+        outlet(consts_1.OUTLET_OSC, oscOut);
+        return;
+    }
+    var bytes = buildOscPacket(addr, val);
+    oscRawOut.length = 1;
+    for (var i = 0; i < bytes.length; i++)
+        oscRawOut.push(bytes[i]);
+    outlet(consts_1.OUTLET_OSC, oscRawOut);
 }
 exports.osc = osc;
 // Build an OSC packet (address + single arg) as a flat array of byte values
@@ -230,30 +241,30 @@ function sendChunkedData(prefix, items) {
     var caps = loadSetting('clientCapabilities');
     var chunked = caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1;
     if (chunked) {
-        outlet(consts_1.OUTLET_OSC, [prefix + '/start', items.length]);
-        var chunkParts = [];
+        osc(prefix + '/start', items.length);
+        var chunkItems = [];
         var chunkSize = 2;
         var allParts = [];
         for (var i = 0; i < items.length; i++) {
             var itemJson = JSON.stringify(items[i]);
             allParts.push(itemJson);
-            var added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length;
-            if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-                outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
-                chunkParts = [];
+            var added = (chunkItems.length > 0 ? 1 : 0) + itemJson.length;
+            if (chunkItems.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+                osc(prefix + '/chunk', chunkItems);
+                chunkItems = [];
                 chunkSize = 2;
             }
-            chunkParts.push(itemJson);
+            chunkItems.push(items[i]);
             chunkSize += added;
         }
-        if (chunkParts.length > 0) {
-            outlet(consts_1.OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']']);
+        if (chunkItems.length > 0) {
+            osc(prefix + '/chunk', chunkItems);
         }
         var checksum = simpleHash('[' + allParts.join(',') + ']');
-        outlet(consts_1.OUTLET_OSC, [prefix + '/end', checksum]);
+        osc(prefix + '/end', checksum);
     }
     if (!chunked) {
-        outlet(consts_1.OUTLET_OSC, [prefix, JSON.stringify(items)]);
+        osc(prefix, items);
     }
 }
 exports.sendChunkedData = sendChunkedData;

@@ -9,7 +9,6 @@ import {
   loadSetting,
   setDictPrefix,
   logFactory,
-  numArrToJson,
   osc,
   saveInstanceSetting,
   saveSetting,
@@ -102,7 +101,7 @@ function loadXYPairs() {
 
 function sendXYPairs() {
   //log('SEND XY PAIRS', JSON.stringify(xyPairs))
-  osc('/xyPairs', numArrToJson(xyPairs))
+  osc('/xyPairs', xyPairs)
 }
 
 function xyJoin(leftIdx: number) {
@@ -505,7 +504,7 @@ function sendQuant(slot: number) {
   initSlotIfNecessary(slot)
   osc(ADDR_QUANT[slot], param[slot].quant)
   if (param[slot] && param[slot].quant > 2) {
-    osc(ADDR_QUANT_ITEMS[slot], JSON.stringify(param[slot].quantItems))
+    osc(ADDR_QUANT_ITEMS[slot], param[slot].quantItems)
   } else {
     osc(ADDR_QUANT_ITEMS[slot], '[]')
   }

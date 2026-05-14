@@ -174,6 +174,17 @@ function anything(val) {
         throttleSend(address, val);
     }
 }
+// Pre-built OSC packets arriving from upstream (e.g. utils.osc()/sendChunkedData
+// for non-numeric payloads). Pass through to udpsend unchanged — the message
+// IS the complete OSC packet bytes, batching it would corrupt it.
+var rawPassthrough = ['rawbytes'];
+function rawbytes() {
+    rawPassthrough.length = 1;
+    var args = arrayfromargs(arguments);
+    for (var i = 0; i < args.length; i++)
+        rawPassthrough.push(args[i]);
+    outlet(0, rawPassthrough);
+}
 log('reloaded k4-oscBatch');
 // NOTE: This section must appear in any .ts file that is directly used by a
 // [js] or [jsui] object so that tsc generates valid JS for Max.

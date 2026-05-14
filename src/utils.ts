@@ -121,14 +121,25 @@ export function meterVal(raw: any): number {
   return Math.round((parseFloat(raw) || 0) * 100) / 100
 }
 
+// Reusable outlet arrays. Numeric fast-path uses [addr, val] — udpsend handles
+// numeric atoms cleanly with no symbol-table interaction. Non-numeric payloads
+// (strings, objects, arrays) go through buildOscPacket() and emit as raw OSC
+// packet bytes via udpsend's `rawbytes` message, bypassing its OSC formatter so
+// the payload never becomes a Max atom.
 const oscOut: any[] = [null, null]
+const oscRawOut: any[] = ['rawbytes']
+
 export function osc(addr: string, val: any) {
-  oscOut[0] = addr
-  oscOut[1] =
-    typeof val === 'number' && val !== (val | 0)
-      ? Math.round(val * 1000000) / 1000000
-      : val
-  outlet(OUTLET_OSC, oscOut)
+  if (typeof val === 'number') {
+    oscOut[0] = addr
+    oscOut[1] = val !== (val | 0) ? Math.round(val * 1000000) / 1000000 : val
+    outlet(OUTLET_OSC, oscOut)
+    return
+  }
+  const bytes = buildOscPacket(addr, val)
+  oscRawOut.length = 1
+  for (let i = 0; i < bytes.length; i++) oscRawOut.push(bytes[i])
+  outlet(OUTLET_OSC, oscRawOut)
 }
 
 // Build an OSC packet (address + single arg) as a flat array of byte values
@@ -240,30 +251,30 @@ export function sendChunkedData(prefix: string, items: any[]) {
   const chunked =
     caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1
   if (chunked) {
-    outlet(OUTLET_OSC, [prefix + '/start', items.length])
-    let chunkParts: string[] = []
+    osc(prefix + '/start', items.length)
+    let chunkItems: any[] = []
     let chunkSize = 2
     let allParts: string[] = []
     for (let i = 0; i < items.length; i++) {
       const itemJson = JSON.stringify(items[i])
       allParts.push(itemJson)
-      const added = (chunkParts.length > 0 ? 1 : 0) + itemJson.length
-      if (chunkParts.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-        outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
-        chunkParts = []
+      const added = (chunkItems.length > 0 ? 1 : 0) + itemJson.length
+      if (chunkItems.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+        osc(prefix + '/chunk', chunkItems)
+        chunkItems = []
         chunkSize = 2
       }
-      chunkParts.push(itemJson)
+      chunkItems.push(items[i])
       chunkSize += added
     }
-    if (chunkParts.length > 0) {
-      outlet(OUTLET_OSC, [prefix + '/chunk', '[' + chunkParts.join(',') + ']'])
+    if (chunkItems.length > 0) {
+      osc(prefix + '/chunk', chunkItems)
     }
     const checksum = simpleHash('[' + allParts.join(',') + ']')
-    outlet(OUTLET_OSC, [prefix + '/end', checksum])
+    osc(prefix + '/end', checksum)
   }
   if (!chunked) {
-    outlet(OUTLET_OSC, [prefix, JSON.stringify(items)])
+    osc(prefix, items)
   }
 }
 

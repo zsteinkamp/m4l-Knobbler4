@@ -122,7 +122,7 @@ function sendReturnTrackColors() {
             colors.push('#' + consts_1.DEFAULT_COLOR);
         }
     }
-    outlet(consts_1.OUTLET_OSC, ['/mixer/returnTrackColors', JSON.stringify(colors)]);
+    (0, utils_1.osc)('/mixer/returnTrackColors', colors);
 }
 // ---------------------------------------------------------------------------
 // Meter Observers
@@ -190,7 +190,7 @@ function flushMeters() {
     if (!meterDirty)
         return;
     meterDirty = false;
-    outlet(consts_1.OUTLET_OSC, ['/mixer/meters', (0, utils_1.numArrToJson)(meterBuffer)]);
+    (0, utils_1.osc)('/mixer/meters', meterBuffer);
 }
 function startMeterFlush() {
     if (meterFlushTask)

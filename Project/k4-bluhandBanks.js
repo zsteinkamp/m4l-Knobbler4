@@ -191,7 +191,7 @@ function sendBankNames() {
         return { name: bank.name, sel: idx === currBankIdx };
     });
     //log('BANKS: ' + JSON.stringify(banks))
-    outlet(consts_1.OUTLET_OSC, ['/bBanks', JSON.stringify(banks)]);
+    (0, utils_1.osc)('/bBanks', banks);
 }
 var sendCurrBankTask = null;
 function debounceSendCurrBank() {
@@ -362,10 +362,7 @@ function onVariationChange() {
     // send variation stuff
     var varCount = +api.get('variation_count');
     var varSelected = +api.get('selected_variation_index');
-    outlet(consts_1.OUTLET_OSC, [
-        '/blu/variations',
-        '{"count":' + varCount + ',"selected":' + varSelected + '}',
-    ]);
+    (0, utils_1.osc)('/blu/variations', { count: varCount, selected: varSelected });
 }
 function sendCuePoints() {
     var api = getUtilApi();
@@ -396,7 +393,7 @@ function sendCuePoints() {
         };
     });
     //log('CUE POINTS', result)
-    outlet(consts_1.OUTLET_OSC, ['/cuePoints', JSON.stringify(result)]);
+    (0, utils_1.osc)('/cuePoints', result);
 }
 var sendCuePointsTask = null;
 function debounceSendCuePoints() {

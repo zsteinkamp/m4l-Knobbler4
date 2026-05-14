@@ -210,6 +210,17 @@ function anything(val: any) {
   }
 }
 
+// Pre-built OSC packets arriving from upstream (e.g. utils.osc()/sendChunkedData
+// for non-numeric payloads). Pass through to udpsend unchanged — the message
+// IS the complete OSC packet bytes, batching it would corrupt it.
+const rawPassthrough: any[] = ['rawbytes']
+function rawbytes() {
+  rawPassthrough.length = 1
+  const args = arrayfromargs(arguments)
+  for (let i = 0; i < args.length; i++) rawPassthrough.push(args[i])
+  outlet(0, rawPassthrough)
+}
+
 log('reloaded k4-oscBatch')
 
 // NOTE: This section must appear in any .ts file that is directly used by a
