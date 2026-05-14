@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.oscSend = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -128,6 +128,33 @@ function osc(addr, val) {
     outlet(consts_1.OUTLET_OSC, oscOut);
 }
 exports.osc = osc;
+// Symbol-safe OSC send. `value` is any JSON-serializable JS data structure.
+//   - number: passed through (floats rounded to 6 decimals)
+//   - anything else: JSON-stringified (if needed) and wrapped in
+//     `new String(...)` so [v8] emits a t_string atom rather than gensym'ing
+//     a t_symbol — keeping Max's global symbol table clean even at high
+//     message rates. [udpsend] handles t_string atoms in its normal OSC
+//     formatting path, so the wire format on the wire is unchanged.
+//
+// Callers don't need to think about this — just pass the value. The helper
+// hides the engine-level mechanics so the optimization strategy can change
+// without touching call sites. Requires [v8] (loads as [v8 foo.js]).
+var oscSendOut = [null, null];
+function oscSend(addr, value) {
+    oscSendOut[0] = addr;
+    if (typeof value === 'number') {
+        oscSendOut[1] =
+            value !== (value | 0) ? Math.round(value * 1000000) / 1000000 : value;
+    }
+    else if (typeof value === 'string') {
+        oscSendOut[1] = new String(value);
+    }
+    else {
+        oscSendOut[1] = new String(JSON.stringify(value));
+    }
+    outlet(consts_1.OUTLET_OSC, oscSendOut);
+}
+exports.oscSend = oscSend;
 function pauseUnpause(p, delayMs) {
     if (p.task) {
         p.task.cancel();

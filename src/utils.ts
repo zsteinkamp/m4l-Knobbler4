@@ -116,6 +116,7 @@ export function setVisibleTracks(value: string) {
   _settingsDict.set('visibleTracks', value)
 }
 
+
 export function meterVal(raw: any): number {
   return Math.round((parseFloat(raw) || 0) * 100) / 100
 }
@@ -128,6 +129,31 @@ export function osc(addr: string, val: any) {
       ? Math.round(val * 1000000) / 1000000
       : val
   outlet(OUTLET_OSC, oscOut)
+}
+
+// Symbol-safe OSC send. `value` is any JSON-serializable JS data structure.
+//   - number: passed through (floats rounded to 6 decimals)
+//   - anything else: JSON-stringified (if needed) and wrapped in
+//     `new String(...)` so [v8] emits a t_string atom rather than gensym'ing
+//     a t_symbol — keeping Max's global symbol table clean even at high
+//     message rates. [udpsend] handles t_string atoms in its normal OSC
+//     formatting path, so the wire format on the wire is unchanged.
+//
+// Callers don't need to think about this — just pass the value. The helper
+// hides the engine-level mechanics so the optimization strategy can change
+// without touching call sites. Requires [v8] (loads as [v8 foo.js]).
+const oscSendOut: any[] = [null, null]
+export function oscSend(addr: string, value: any) {
+  oscSendOut[0] = addr
+  if (typeof value === 'number') {
+    oscSendOut[1] =
+      value !== (value | 0) ? Math.round(value * 1000000) / 1000000 : value
+  } else if (typeof value === 'string') {
+    oscSendOut[1] = new String(value)
+  } else {
+    oscSendOut[1] = new String(JSON.stringify(value))
+  }
+  outlet(OUTLET_OSC, oscSendOut)
 }
 
 export type PauseState = { paused: boolean; task: MaxTask }

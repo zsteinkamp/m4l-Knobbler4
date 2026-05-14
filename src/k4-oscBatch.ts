@@ -22,6 +22,8 @@ let oscBufferSize = 0
 let oscBufferBytes = 2 // opening/closing braces: {}
 let batchFlushTask: MaxTask | null = null
 let batchFlushPending = false
+// Pre-wrapped /batch outlet message. The JSON body is rebuilt per flush into
+// a `new String(...)` so [v8] emits it as a t_string atom (no gensym).
 const batchOut: any[] = ['/batch', null]
 
 // --- Shared helpers ---
@@ -71,7 +73,7 @@ function flushBatchBuffer() {
       sendDirect(address, oscBuffer[address])
     }
   } else {
-    batchOut[1] = JSON.stringify(oscBuffer)
+    batchOut[1] = new String(JSON.stringify(oscBuffer))
     outlet(0, batchOut)
   }
   oscBuffer = {}

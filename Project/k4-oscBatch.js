@@ -17,6 +17,8 @@ var oscBufferSize = 0;
 var oscBufferBytes = 2; // opening/closing braces: {}
 var batchFlushTask = null;
 var batchFlushPending = false;
+// Pre-wrapped /batch outlet message. The JSON body is rebuilt per flush into
+// a `new String(...)` so [v8] emits it as a t_string atom (no gensym).
 var batchOut = ['/batch', null];
 // --- Shared helpers ---
 function oscValBytes(val) {
@@ -59,7 +61,7 @@ function flushBatchBuffer() {
         }
     }
     else {
-        batchOut[1] = JSON.stringify(oscBuffer);
+        batchOut[1] = new String(JSON.stringify(oscBuffer));
         outlet(0, batchOut);
     }
     oscBuffer = {};
