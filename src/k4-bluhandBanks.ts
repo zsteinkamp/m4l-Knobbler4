@@ -237,7 +237,7 @@ function sendCurrBank() {
     return
   }
   const bluBank = state.bankParamArr[currBankIdx]
-  outlet(OUTLET_OSC, ['/bTxtCurrBank', bluBank.name])
+  osc('/bTxtCurrBank', bluBank.name)
   while (bluBank.paramIdxArr.length < 16) {
     bluBank.paramIdxArr.push(-1)
   }
@@ -513,7 +513,7 @@ function toggleOnOff() {
 function updateDeviceOnOff(iargs: IArguments) {
   const args = arrayfromargs(iargs)
   if (args[0] === 'value') {
-    outlet(OUTLET_OSC, ['/bOnOff', parseInt(args[1])])
+    osc('/bOnOff', parseInt(args[1]))
   }
 }
 
@@ -601,7 +601,7 @@ function onParameterChange(args: IdObserverArg) {
 
   if (!canHaveChains) {
     // null send variation stuff
-    outlet(OUTLET_OSC, ['/blu/variations', ''])
+    osc('/blu/variations', '')
   }
   state.bankParamArr = getBankParamArr(paramIds, deviceType, api)
   //log('BANK PARAM ARR', { bpa: state.bankParamArr })

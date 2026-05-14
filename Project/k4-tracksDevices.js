@@ -38,13 +38,13 @@ function updateDeviceNav() {
     //log('DEVICE ID=' + state.currDeviceId + ' TRACKID=' + state.currTrackId)
     if (+state.currDeviceId === 0) {
         // if no device is selected, null out the devices list
-        outlet(consts_1.OUTLET_OSC, ['/nav/currDeviceId', -1]);
+        (0, utils_1.osc)('/nav/currDeviceId', -1);
         //log('/nav/devices=' + JSON.stringify([]))
         (0, utils_1.sendChunkedData)('/nav/devices', []);
         return;
     }
     //log('NEW CURR DEVICE ID=' + state.currDeviceId)
-    outlet(consts_1.OUTLET_OSC, ['/nav/currDeviceId', state.currDeviceId]);
+    (0, utils_1.osc)('/nav/currDeviceId', state.currDeviceId);
     var ret = [];
     var utilObj = state.api;
     utilObj.path = 'live_set';
@@ -169,7 +169,7 @@ function onCurrTrackChange(val) {
         trackChangeDebounce.cancel();
     }
     trackChangeDebounce = new Task(function () {
-        outlet(consts_1.OUTLET_OSC, ['/nav/currTrackId', state.currTrackId]);
+        (0, utils_1.osc)('/nav/currTrackId', state.currTrackId);
         // ensure a device is selected if one exists
         state.api.path = 'live_set view selected_track view selected_device';
         if (+state.api.id === 0) {

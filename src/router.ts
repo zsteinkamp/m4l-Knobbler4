@@ -1,5 +1,5 @@
 import config from './config'
-import { logFactory, saveSetting } from './utils'
+import { logFactory, osc, saveSetting } from './utils'
 
 autowatch = 1
 inlets = 1
@@ -9,11 +9,14 @@ const log = logFactory(config)
 let deviceVersion = ''
 function setDeviceVersion(ver: string) {
   deviceVersion = ver.toString()
-  outlet(OUTLET_OSC, ['/deviceVersion', deviceVersion])
+  osc('/deviceVersion', deviceVersion)
 }
 
 const INLET_OSC = 0
-const OUTLET_KNOBBLER = 0
+// Outlet 0 is the OSC bus to follow the convention used by every other
+// module (utils.osc() outlets to index 0). OUTLET_KNOBBLER moved to 9 and
+// the two patcher connections were swapped accordingly.
+const OUTLET_OSC = 0
 const OUTLET_BLUHAND = 1
 const OUTLET_PRESETS = 2
 const OUTLET_LOOP = 3
@@ -22,7 +25,7 @@ const OUTLET_ACK = 5
 const OUTLET_MIXER = 6
 const OUTLET_PAGE = 7
 const OUTLET_CURRPARAM = 8
-const OUTLET_OSC = 9
+const OUTLET_KNOBBLER = 9
 const OUTLET_UNKNOWN = 10
 const OUTLET_MULTI_MIXER = 11
 const OUTLET_CLIP_VIEW = 12
@@ -69,8 +72,8 @@ function synAckHandler(router: RouterItem, _: string, val: string | number) {
     saveSetting('clientVersion', parts[0])
     saveSetting('clientCapabilities', parts.slice(1).join(' '))
   }
-  outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr'])
-  outlet(OUTLET_OSC, ['/sendState'])
+  osc(router.msg as string, deviceVersion + ' mxr')
+  osc('/sendState', 1)
 }
 function pingHandler(router: RouterItem, _: string, val: string | number) {
   if (val) {
@@ -78,7 +81,7 @@ function pingHandler(router: RouterItem, _: string, val: string | number) {
     saveSetting('clientVersion', parts[0])
     saveSetting('clientCapabilities', parts.slice(1).join(' '))
   }
-  outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr'])
+  osc(router.msg as string, deviceVersion + ' mxr')
 }
 function bareMsg(router: RouterItem) {
   outlet(router.outlet, router.msg)

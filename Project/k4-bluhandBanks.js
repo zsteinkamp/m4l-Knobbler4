@@ -210,7 +210,7 @@ function sendCurrBank() {
         return;
     }
     var bluBank = state.bankParamArr[currBankIdx];
-    outlet(consts_1.OUTLET_OSC, ['/bTxtCurrBank', bluBank.name]);
+    (0, utils_1.osc)('/bTxtCurrBank', bluBank.name);
     while (bluBank.paramIdxArr.length < 16) {
         bluBank.paramIdxArr.push(-1);
     }
@@ -456,7 +456,7 @@ function toggleOnOff() {
 function updateDeviceOnOff(iargs) {
     var args = arrayfromargs(iargs);
     if (args[0] === 'value') {
-        outlet(consts_1.OUTLET_OSC, ['/bOnOff', parseInt(args[1])]);
+        (0, utils_1.osc)('/bOnOff', parseInt(args[1]));
     }
 }
 var pcDebounce = null;
@@ -532,7 +532,7 @@ function onParameterChange(args) {
     state.devicePath = api.unquotedpath;
     if (!canHaveChains) {
         // null send variation stuff
-        outlet(consts_1.OUTLET_OSC, ['/blu/variations', '']);
+        (0, utils_1.osc)('/blu/variations', '');
     }
     state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
     //log('BANK PARAM ARR', { bpa: state.bankParamArr })

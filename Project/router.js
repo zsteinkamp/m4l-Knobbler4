@@ -8,10 +8,13 @@ var log = (0, utils_1.logFactory)(config_1.default);
 var deviceVersion = '';
 function setDeviceVersion(ver) {
     deviceVersion = ver.toString();
-    outlet(OUTLET_OSC, ['/deviceVersion', deviceVersion]);
+    (0, utils_1.osc)('/deviceVersion', deviceVersion);
 }
 var INLET_OSC = 0;
-var OUTLET_KNOBBLER = 0;
+// Outlet 0 is the OSC bus to follow the convention used by every other
+// module (utils.osc() outlets to index 0). OUTLET_KNOBBLER moved to 9 and
+// the two patcher connections were swapped accordingly.
+var OUTLET_OSC = 0;
 var OUTLET_BLUHAND = 1;
 var OUTLET_PRESETS = 2;
 var OUTLET_LOOP = 3;
@@ -20,7 +23,7 @@ var OUTLET_ACK = 5;
 var OUTLET_MIXER = 6;
 var OUTLET_PAGE = 7;
 var OUTLET_CURRPARAM = 8;
-var OUTLET_OSC = 9;
+var OUTLET_KNOBBLER = 9;
 var OUTLET_UNKNOWN = 10;
 var OUTLET_MULTI_MIXER = 11;
 var OUTLET_CLIP_VIEW = 12;
@@ -56,8 +59,8 @@ function synAckHandler(router, _, val) {
         (0, utils_1.saveSetting)('clientVersion', parts[0]);
         (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
     }
-    outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
-    outlet(OUTLET_OSC, ['/sendState']);
+    (0, utils_1.osc)(router.msg, deviceVersion + ' mxr');
+    (0, utils_1.osc)('/sendState', 1);
 }
 function pingHandler(router, _, val) {
     if (val) {
@@ -65,7 +68,7 @@ function pingHandler(router, _, val) {
         (0, utils_1.saveSetting)('clientVersion', parts[0]);
         (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
     }
-    outlet(OUTLET_OSC, [router.msg, deviceVersion + ' mxr']);
+    (0, utils_1.osc)(router.msg, deviceVersion + ' mxr');
 }
 function bareMsg(router) {
     outlet(router.outlet, router.msg);

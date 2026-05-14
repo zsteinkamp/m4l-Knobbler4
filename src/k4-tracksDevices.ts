@@ -7,6 +7,7 @@ import {
   colorToString,
   isDeviceSupported,
   logFactory,
+  osc,
   saveSetting,
   sendChunkedData,
   truncate,
@@ -64,14 +65,14 @@ function updateDeviceNav() {
   //log('DEVICE ID=' + state.currDeviceId + ' TRACKID=' + state.currTrackId)
   if (+state.currDeviceId === 0) {
     // if no device is selected, null out the devices list
-    outlet(OUTLET_OSC, ['/nav/currDeviceId', -1])
+    osc('/nav/currDeviceId', -1)
     //log('/nav/devices=' + JSON.stringify([]))
     sendChunkedData('/nav/devices', [])
     return
   }
 
   //log('NEW CURR DEVICE ID=' + state.currDeviceId)
-  outlet(OUTLET_OSC, ['/nav/currDeviceId', state.currDeviceId])
+  osc('/nav/currDeviceId', state.currDeviceId)
 
   const ret: MaxObjRecord[] = []
   const utilObj = state.api
@@ -209,7 +210,7 @@ function onCurrTrackChange(val: IdObserverArg) {
     trackChangeDebounce.cancel()
   }
   trackChangeDebounce = new Task(function () {
-    outlet(OUTLET_OSC, ['/nav/currTrackId', state.currTrackId])
+    osc('/nav/currTrackId', state.currTrackId)
 
     // ensure a device is selected if one exists
     state.api.path = 'live_set view selected_track view selected_device'
