@@ -894,10 +894,9 @@ function anything() {
         sendDefault12(stripIdx);
 }
 function visibleTracks() {
-    var raw = (0, utils_1.getVisibleTracks)();
-    if (!raw)
+    trackList = (0, utils_1.getVisibleTracksList)();
+    if (!trackList || trackList.length === 0)
         return;
-    trackList = JSON.parse(raw.toString());
     // Clamp leftIndex if track list shrank
     if (leftIndex >= trackList.length) {
         leftIndex = Math.max(0, trackList.length - visibleCount);

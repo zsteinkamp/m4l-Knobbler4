@@ -176,17 +176,9 @@ function mkMap(slot, mixerPath) {
         trackPath = scratchApi.unquotedpath;
     }
     else {
-        var raw = (0, utils_1.getVisibleTracks)();
-        if (!raw) {
+        var list = (0, utils_1.getVisibleTracksList)();
+        if (!list || list.length === 0) {
             log('mkMap: visibleTracks dict empty');
-            return;
-        }
-        var list = void 0;
-        try {
-            list = JSON.parse(raw.toString());
-        }
-        catch (e) {
-            log('mkMap: failed to parse visibleTracks');
             return;
         }
         if (stripIdx < 0 || stripIdx >= list.length) {

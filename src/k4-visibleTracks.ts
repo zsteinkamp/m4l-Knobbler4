@@ -5,6 +5,7 @@ import {
   sendChunkedData,
   setVisibleTracks,
   truncate,
+  TrackInfo,
 } from './utils'
 import config from './config'
 import {
@@ -37,15 +38,6 @@ setoutletassist(OUTLET_TRACK_DATA, 'Track data to mixer/clips')
 let scratchApi: LiveAPI = null
 let visibleTracksWatcher: LiveAPI = null
 let returnTracksWatcher: LiveAPI = null
-
-type TrackInfo = {
-  id: number
-  type: number
-  name: string
-  color: string
-  path: string
-  parentId: number
-}
 
 let trackList: TrackInfo[] = []
 let colorObservers: LiveAPI[] = []
@@ -122,7 +114,7 @@ function sendVisibleTracks() {
   sendChunkedData('/visibleTracks', items)
 
   // Write to shared dict, then notify mixer/clips
-  setVisibleTracks(JSON.stringify(trackList))
+  setVisibleTracks(trackList)
   outlet(OUTLET_TRACK_DATA, 'visibleTracks')
 }
 

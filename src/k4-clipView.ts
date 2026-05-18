@@ -1,4 +1,4 @@
-import { cleanArr, detach, dequote, getVisibleTracks, logFactory, osc, sendChunkedData } from './utils'
+import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, sendChunkedData } from './utils'
 import config from './config'
 import {
   noFn,
@@ -179,9 +179,8 @@ function deriveCellState(
 // ---------------------------------------------------------------------------
 
 function visibleTracks() {
-  const raw = getVisibleTracks()
-  if (!raw) return
-  const tracks = JSON.parse(raw.toString())
+  const tracks = getVisibleTracksList()
+  if (!tracks || tracks.length === 0) return
   trackIds = []
   trackPaths = []
   trackIsGroup = []

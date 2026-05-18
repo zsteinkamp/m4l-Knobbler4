@@ -108,12 +108,51 @@ export function loadInstanceSetting(key: string): any {
   return _settingsDict.get(_instancePrefix + key)
 }
 
-export function getVisibleTracks(): string {
-  return _settingsDict.get('visibleTracks')
+export type TrackInfo = {
+  id: number
+  type: number
+  name: string
+  color: string
+  path: string
+  parentId: number
 }
 
-export function setVisibleTracks(value: string) {
-  _settingsDict.set('visibleTracks', value)
+// Cached typed accessor for the shared visibleTracks dict entry. Each [v8]
+// module has its own utils instance (Max require() does not cache modules),
+// so the cache is per-consumer. A version counter stored alongside the JSON
+// payload keeps consumers in sync with the producer without re-parsing on
+// every call.
+let _visibleTracksCache: TrackInfo[] = null
+let _visibleTracksCacheVersion: number = -1
+
+const VISIBLE_TRACKS_VERSION_MOD = 1048576
+export function setVisibleTracks(value: TrackInfo[]) {
+  _settingsDict.set('visibleTracks', JSON.stringify(value))
+  const prev = parseInt(_settingsDict.get('visibleTracksVersion')) || 0
+  const next = (prev + 1) % VISIBLE_TRACKS_VERSION_MOD
+  _settingsDict.set('visibleTracksVersion', next)
+  _visibleTracksCache = value
+  _visibleTracksCacheVersion = next
+}
+
+export function getVisibleTracksList(): TrackInfo[] {
+  const version = parseInt(_settingsDict.get('visibleTracksVersion')) || 0
+  if (_visibleTracksCache && version === _visibleTracksCacheVersion) {
+    return _visibleTracksCache
+  }
+  const raw = _settingsDict.get('visibleTracks')
+  if (!raw) {
+    _visibleTracksCache = []
+    _visibleTracksCacheVersion = version
+    return _visibleTracksCache
+  }
+  try {
+    _visibleTracksCache = JSON.parse(raw.toString())
+  } catch (e) {
+    _visibleTracksCache = []
+  }
+  _visibleTracksCacheVersion = version
+  return _visibleTracksCache
 }
 
 

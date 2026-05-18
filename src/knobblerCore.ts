@@ -4,7 +4,7 @@ import {
   dequote,
   detach,
   fixFloat,
-  getVisibleTracks,
+  getVisibleTracksList,
   isValidPath,
   loadInstanceSetting,
   loadSetting,
@@ -193,16 +193,9 @@ function mkMap(slot: number, mixerPath: string) {
     scratchApi.path = 'live_set view selected_track'
     trackPath = scratchApi.unquotedpath
   } else {
-    const raw = getVisibleTracks()
-    if (!raw) {
+    const list = getVisibleTracksList()
+    if (!list || list.length === 0) {
       log('mkMap: visibleTracks dict empty')
-      return
-    }
-    let list: any[]
-    try {
-      list = JSON.parse(raw.toString())
-    } catch (e) {
-      log('mkMap: failed to parse visibleTracks')
       return
     }
     if (stripIdx < 0 || stripIdx >= list.length) {

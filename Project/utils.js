@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.meterVal = exports.setVisibleTracks = exports.getVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -106,14 +106,44 @@ function loadInstanceSetting(key) {
     return _settingsDict.get(_instancePrefix + key);
 }
 exports.loadInstanceSetting = loadInstanceSetting;
-function getVisibleTracks() {
-    return _settingsDict.get('visibleTracks');
-}
-exports.getVisibleTracks = getVisibleTracks;
+// Cached typed accessor for the shared visibleTracks dict entry. Each [v8]
+// module has its own utils instance (Max require() does not cache modules),
+// so the cache is per-consumer. A version counter stored alongside the JSON
+// payload keeps consumers in sync with the producer without re-parsing on
+// every call.
+var _visibleTracksCache = null;
+var _visibleTracksCacheVersion = -1;
+var VISIBLE_TRACKS_VERSION_MOD = 1048576;
 function setVisibleTracks(value) {
-    _settingsDict.set('visibleTracks', value);
+    _settingsDict.set('visibleTracks', JSON.stringify(value));
+    var prev = parseInt(_settingsDict.get('visibleTracksVersion')) || 0;
+    var next = (prev + 1) % VISIBLE_TRACKS_VERSION_MOD;
+    _settingsDict.set('visibleTracksVersion', next);
+    _visibleTracksCache = value;
+    _visibleTracksCacheVersion = next;
 }
 exports.setVisibleTracks = setVisibleTracks;
+function getVisibleTracksList() {
+    var version = parseInt(_settingsDict.get('visibleTracksVersion')) || 0;
+    if (_visibleTracksCache && version === _visibleTracksCacheVersion) {
+        return _visibleTracksCache;
+    }
+    var raw = _settingsDict.get('visibleTracks');
+    if (!raw) {
+        _visibleTracksCache = [];
+        _visibleTracksCacheVersion = version;
+        return _visibleTracksCache;
+    }
+    try {
+        _visibleTracksCache = JSON.parse(raw.toString());
+    }
+    catch (e) {
+        _visibleTracksCache = [];
+    }
+    _visibleTracksCacheVersion = version;
+    return _visibleTracksCache;
+}
+exports.getVisibleTracksList = getVisibleTracksList;
 function meterVal(raw) {
     return Math.round((parseFloat(raw) || 0) * 100) / 100;
 }

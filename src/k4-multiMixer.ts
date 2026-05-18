@@ -3,7 +3,7 @@ import {
   colorToString,
   detach,
   fixFloat,
-  getVisibleTracks,
+  getVisibleTracksList,
   loadInstanceSetting,
   saveInstanceSetting,
   setDictPrefix as _setDictPrefix,
@@ -12,6 +12,7 @@ import {
   osc,
   pauseUnpause,
   PauseState,
+  TrackInfo,
 } from './utils'
 import config from './config'
 import {
@@ -50,15 +51,6 @@ setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-type TrackInfo = {
-  id: number
-  type: number
-  name: string
-  color: string
-  path: string
-  parentId: number
-}
 
 type StripObservers = {
   trackId: number
@@ -995,9 +987,8 @@ function anything() {
 }
 
 function visibleTracks() {
-  const raw = getVisibleTracks()
-  if (!raw) return
-  trackList = JSON.parse(raw.toString())
+  trackList = getVisibleTracksList()
+  if (!trackList || trackList.length === 0) return
   // Clamp leftIndex if track list shrank
   if (leftIndex >= trackList.length) {
     leftIndex = Math.max(0, trackList.length - visibleCount)

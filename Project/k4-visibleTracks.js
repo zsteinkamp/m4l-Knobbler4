@@ -85,7 +85,7 @@ function sendVisibleTracks() {
     });
     (0, utils_1.sendChunkedData)('/visibleTracks', items);
     // Write to shared dict, then notify mixer/clips
-    (0, utils_1.setVisibleTracks)(JSON.stringify(trackList));
+    (0, utils_1.setVisibleTracks)(trackList);
     outlet(OUTLET_TRACK_DATA, 'visibleTracks');
 }
 // ---------------------------------------------------------------------------
