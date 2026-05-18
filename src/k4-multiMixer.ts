@@ -57,6 +57,7 @@ type StripObservers = {
   trackApi: LiveAPI
   colorApi: LiveAPI
   muteApi: LiveAPI
+  mutedViaSoloApi: LiveAPI
   soloApi: LiveAPI
   armApi: LiveAPI
   meterLeftApi: LiveAPI
@@ -304,6 +305,7 @@ function createStripObservers(
     trackApi: null,
     colorApi: null,
     muteApi: null,
+    mutedViaSoloApi: null,
     soloApi: null,
     armApi: null,
     meterLeftApi: null,
@@ -349,10 +351,19 @@ function createStripObservers(
   if (!strip.isMain) {
     strip.muteApi = new LiveAPI(function (args: any[]) {
       if (args[0] === 'mute' && strip.initialized && isVisible(strip)) {
-        osc(SA_MUTE[strip.stripIndex], parseInt(args[1].toString()))
+        emitEffectiveMute(strip)
       }
     }, trackPath)
     strip.muteApi.property = 'mute'
+
+    // muted_via_solo also lights the mute indicator so the user sees that
+    // soloing another track has effectively muted this one.
+    strip.mutedViaSoloApi = new LiveAPI(function (args: any[]) {
+      if (args[0] === 'muted_via_solo' && strip.initialized && isVisible(strip)) {
+        emitEffectiveMute(strip)
+      }
+    }, trackPath)
+    strip.mutedViaSoloApi.property = 'muted_via_solo'
 
     strip.soloApi = new LiveAPI(function (args: any[]) {
       if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
@@ -449,9 +460,18 @@ function createStripObservers(
   return strip
 }
 
+// Effective mute = mute || muted_via_solo (the user sees both as "muted")
+function emitEffectiveMute(strip: StripObservers) {
+  if (strip.isMain) return
+  const m = parseInt(strip.trackApi.get('mute').toString()) || 0
+  const mvs = parseInt(strip.trackApi.get('muted_via_solo').toString()) || 0
+  osc(SA_MUTE[strip.stripIndex], m || mvs ? 1 : 0)
+}
+
 function teardownStripObservers(strip: StripObservers) {
   detach(strip.colorApi)
   detach(strip.muteApi)
+  detach(strip.mutedViaSoloApi)
   detach(strip.soloApi)
   detach(strip.armApi)
   teardownMeterObservers(strip)
@@ -511,7 +531,11 @@ function sendStripState(n: number, strip: StripObservers) {
   osc(SA_PAN[n], panVal)
   osc(SA_PANSTR[n], panStr ? panStr.toString() : '')
 
-  osc(SA_MUTE[n], !strip.isMain ? parseInt(strip.trackApi.get('mute').toString()) : 0)
+  if (strip.isMain) {
+    osc(SA_MUTE[n], 0)
+  } else {
+    emitEffectiveMute(strip)
+  }
   osc(SA_SOLO[n], !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0)
   osc(SA_ARM[n], strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0)
 
@@ -881,7 +905,7 @@ function toggleMute(stripIdx: number) {
   const curr = parseInt(strip.trackApi.get('mute').toString())
   const newState = curr ? 0 : 1
   strip.trackApi.set('mute', newState)
-  osc(SA_MUTE[strip.stripIndex], newState)
+  emitEffectiveMute(strip)
 }
 
 function toggleSolo(stripIdx: number) {

@@ -217,6 +217,7 @@ function createStripObservers(trackId, stripIdx) {
         trackApi: null,
         colorApi: null,
         muteApi: null,
+        mutedViaSoloApi: null,
         soloApi: null,
         armApi: null,
         meterLeftApi: null,
@@ -258,10 +259,18 @@ function createStripObservers(trackId, stripIdx) {
     if (!strip.isMain) {
         strip.muteApi = new LiveAPI(function (args) {
             if (args[0] === 'mute' && strip.initialized && isVisible(strip)) {
-                (0, utils_1.osc)(SA_MUTE[strip.stripIndex], parseInt(args[1].toString()));
+                emitEffectiveMute(strip);
             }
         }, trackPath);
         strip.muteApi.property = 'mute';
+        // muted_via_solo also lights the mute indicator so the user sees that
+        // soloing another track has effectively muted this one.
+        strip.mutedViaSoloApi = new LiveAPI(function (args) {
+            if (args[0] === 'muted_via_solo' && strip.initialized && isVisible(strip)) {
+                emitEffectiveMute(strip);
+            }
+        }, trackPath);
+        strip.mutedViaSoloApi.property = 'muted_via_solo';
         strip.soloApi = new LiveAPI(function (args) {
             if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()));
@@ -352,9 +361,18 @@ function createStripObservers(trackId, stripIdx) {
     strip.initialized = true;
     return strip;
 }
+// Effective mute = mute || muted_via_solo (the user sees both as "muted")
+function emitEffectiveMute(strip) {
+    if (strip.isMain)
+        return;
+    var m = parseInt(strip.trackApi.get('mute').toString()) || 0;
+    var mvs = parseInt(strip.trackApi.get('muted_via_solo').toString()) || 0;
+    (0, utils_1.osc)(SA_MUTE[strip.stripIndex], m || mvs ? 1 : 0);
+}
 function teardownStripObservers(strip) {
     (0, utils_1.detach)(strip.colorApi);
     (0, utils_1.detach)(strip.muteApi);
+    (0, utils_1.detach)(strip.mutedViaSoloApi);
     (0, utils_1.detach)(strip.soloApi);
     (0, utils_1.detach)(strip.armApi);
     teardownMeterObservers(strip);
@@ -407,7 +425,12 @@ function sendStripState(n, strip) {
     var panStr = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(panVal));
     (0, utils_1.osc)(SA_PAN[n], panVal);
     (0, utils_1.osc)(SA_PANSTR[n], panStr ? panStr.toString() : '');
-    (0, utils_1.osc)(SA_MUTE[n], !strip.isMain ? parseInt(strip.trackApi.get('mute').toString()) : 0);
+    if (strip.isMain) {
+        (0, utils_1.osc)(SA_MUTE[n], 0);
+    }
+    else {
+        emitEffectiveMute(strip);
+    }
     (0, utils_1.osc)(SA_SOLO[n], !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0);
     (0, utils_1.osc)(SA_ARM[n], strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0);
     var recordStatus = (0, mixerUtils_1.getRecordStatus)(strip.trackApi);
@@ -759,7 +782,7 @@ function toggleMute(stripIdx) {
     var curr = parseInt(strip.trackApi.get('mute').toString());
     var newState = curr ? 0 : 1;
     strip.trackApi.set('mute', newState);
-    (0, utils_1.osc)(SA_MUTE[strip.stripIndex], newState);
+    emitEffectiveMute(strip);
 }
 function toggleSolo(stripIdx) {
     var strip = getStrip(stripIdx);

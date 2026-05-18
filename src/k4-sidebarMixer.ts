@@ -57,6 +57,8 @@ const state = {
   lastTrackId: 0 as number,
   volObj: null as LiveAPI,
   panObj: null as LiveAPI,
+  muteObj: null as LiveAPI,
+  mutedViaSoloObj: null as LiveAPI,
   crossfaderObj: null as LiveAPI,
   watchers: [] as LiveAPI[],
   onMixerPage: false as boolean,
@@ -274,7 +276,23 @@ function toggleMute() {
   const currState = parseInt(state.trackObj.get('mute'))
   const newState = currState ? 0 : 1
   state.trackObj.set('mute', newState)
-  osc('/mixer/mute', newState)
+  emitEffectiveMute()
+}
+
+// Effective mute = mute || muted_via_solo (the user sees both as "muted").
+// Reads via trackLookupObj since it always points at the currently-displayed
+// track; toggleMute writes via trackObj but the result is the same row.
+function emitEffectiveMute() {
+  if (!state.trackLookupObj || +state.trackLookupObj.id === 0) return
+  const m = parseInt(state.trackLookupObj.get('mute').toString()) || 0
+  const mvs = parseInt(state.trackLookupObj.get('muted_via_solo').toString()) || 0
+  osc('/mixer/mute', m || mvs ? 1 : 0)
+}
+
+function handleMuteChange(args: IArguments) {
+  if (args[0] === 'mute' || args[0] === 'muted_via_solo') {
+    emitEffectiveMute()
+  }
 }
 
 function toggleSolo() {
@@ -457,7 +475,7 @@ function handleTrackChange(id: number) {
 
   // mute / solo
   if (!isMain) {
-    osc('/mixer/mute', parseInt(state.trackLookupObj.get('mute')))
+    emitEffectiveMute()
     osc('/mixer/solo', parseInt(state.trackLookupObj.get('solo')))
   } else {
     osc('/mixer/mute', 0)
@@ -593,6 +611,22 @@ function init() {
     )
     state.volObj.mode = 1
     state.volObj.property = 'value'
+  }
+
+  // Mute + muted_via_solo observers (follow selected track) — both feed into
+  // the effective mute LED so the user sees solo-induced mutes update live.
+  if (!state.muteObj) {
+    state.muteObj = new LiveAPI(handleMuteChange, 'live_set view selected_track')
+    state.muteObj.mode = 1
+    state.muteObj.property = 'mute'
+  }
+  if (!state.mutedViaSoloObj) {
+    state.mutedViaSoloObj = new LiveAPI(
+      handleMuteChange,
+      'live_set view selected_track'
+    )
+    state.mutedViaSoloObj.mode = 1
+    state.mutedViaSoloObj.property = 'muted_via_solo'
   }
 
   // Pan obj (follows selected track)
