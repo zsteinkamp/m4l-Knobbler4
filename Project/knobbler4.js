@@ -20,6 +20,9 @@ function initAll() {
 function bkMap(slot, id) {
     KnobblerCore.bkMap(slot, id);
 }
+function mkMap(slot, mixerPath) {
+    KnobblerCore.mkMap(slot, mixerPath);
+}
 function clearCustomName(slot) {
     KnobblerCore.clearCustomName(slot);
 }

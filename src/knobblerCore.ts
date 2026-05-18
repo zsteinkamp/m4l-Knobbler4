@@ -4,6 +4,7 @@ import {
   dequote,
   detach,
   fixFloat,
+  getVisibleTracks,
   isValidPath,
   loadInstanceSetting,
   loadSetting,
@@ -162,6 +163,73 @@ function bkMap(slot: number, id: number) {
   if (!apiReady) return
   scratchApi.id = id
   setPath(slot, scratchApi.unquotedpath)
+}
+
+// Resolve a mixer OSC path (e.g. "/mixer/3/vol", "/mixer/0/send1",
+// "/mixer/vol") to a Live API parameter path and bind it to the given slot.
+function mkMap(slot: number, mixerPath: string) {
+  if (!apiReady) {
+    pendingCalls.push(function () { mkMap(slot, mixerPath) })
+    return
+  }
+  if (!mixerPath) return
+  const parts = String(mixerPath).split('/') // ['', 'mixer', '3', 'vol'] or ['', 'mixer', 'vol']
+  if (parts.length < 3 || parts[1] !== 'mixer') {
+    log('mkMap: unrecognized path ' + mixerPath)
+    return
+  }
+  let stripIdx: number = null
+  let ctrl: string
+  if (parts.length >= 4) {
+    stripIdx = parseInt(parts[2])
+    ctrl = parts[3]
+  } else {
+    ctrl = parts[2]
+  }
+
+  let trackPath: string = null
+  if (stripIdx === null || isNaN(stripIdx)) {
+    // Single-strip variant: resolve against the currently selected track
+    scratchApi.path = 'live_set view selected_track'
+    trackPath = scratchApi.unquotedpath
+  } else {
+    const raw = getVisibleTracks()
+    if (!raw) {
+      log('mkMap: visibleTracks dict empty')
+      return
+    }
+    let list: any[]
+    try {
+      list = JSON.parse(raw.toString())
+    } catch (e) {
+      log('mkMap: failed to parse visibleTracks')
+      return
+    }
+    if (stripIdx < 0 || stripIdx >= list.length) {
+      log('mkMap: stripIdx ' + stripIdx + ' out of range')
+      return
+    }
+    trackPath = list[stripIdx].path
+  }
+  if (!trackPath) return
+
+  let paramPath: string
+  if (ctrl === 'vol') {
+    paramPath = trackPath + ' mixer_device volume'
+  } else if (ctrl === 'pan') {
+    paramPath = trackPath + ' mixer_device panning'
+  } else if (ctrl.indexOf('send') === 0) {
+    const sendNum = parseInt(ctrl.substring(4))
+    if (isNaN(sendNum) || sendNum < 1) {
+      log('mkMap: bad send spec ' + ctrl)
+      return
+    }
+    paramPath = trackPath + ' mixer_device sends ' + (sendNum - 1)
+  } else {
+    log('mkMap: unsupported control ' + ctrl)
+    return
+  }
+  setPath(slot, paramPath)
 }
 
 function initAll() {
@@ -680,6 +748,7 @@ const module = {}
 
 export {
   bkMap,
+  mkMap,
   clearCustomName,
   clearPath,
   gotoTrackFor,

@@ -9,7 +9,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDictPrefix = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.bkMap = void 0;
+exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDictPrefix = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.mkMap = exports.bkMap = void 0;
 var utils_1 = require("./utils");
 Object.defineProperty(exports, "setDictPrefix", { enumerable: true, get: function () { return utils_1.setDictPrefix; } });
 var consts_1 = require("./consts");
@@ -146,6 +146,79 @@ function bkMap(slot, id) {
     setPath(slot, scratchApi.unquotedpath);
 }
 exports.bkMap = bkMap;
+// Resolve a mixer OSC path (e.g. "/mixer/3/vol", "/mixer/0/send1",
+// "/mixer/vol") to a Live API parameter path and bind it to the given slot.
+function mkMap(slot, mixerPath) {
+    if (!apiReady) {
+        pendingCalls.push(function () { mkMap(slot, mixerPath); });
+        return;
+    }
+    if (!mixerPath)
+        return;
+    var parts = String(mixerPath).split('/'); // ['', 'mixer', '3', 'vol'] or ['', 'mixer', 'vol']
+    if (parts.length < 3 || parts[1] !== 'mixer') {
+        log('mkMap: unrecognized path ' + mixerPath);
+        return;
+    }
+    var stripIdx = null;
+    var ctrl;
+    if (parts.length >= 4) {
+        stripIdx = parseInt(parts[2]);
+        ctrl = parts[3];
+    }
+    else {
+        ctrl = parts[2];
+    }
+    var trackPath = null;
+    if (stripIdx === null || isNaN(stripIdx)) {
+        // Single-strip variant: resolve against the currently selected track
+        scratchApi.path = 'live_set view selected_track';
+        trackPath = scratchApi.unquotedpath;
+    }
+    else {
+        var raw = (0, utils_1.getVisibleTracks)();
+        if (!raw) {
+            log('mkMap: visibleTracks dict empty');
+            return;
+        }
+        var list = void 0;
+        try {
+            list = JSON.parse(raw.toString());
+        }
+        catch (e) {
+            log('mkMap: failed to parse visibleTracks');
+            return;
+        }
+        if (stripIdx < 0 || stripIdx >= list.length) {
+            log('mkMap: stripIdx ' + stripIdx + ' out of range');
+            return;
+        }
+        trackPath = list[stripIdx].path;
+    }
+    if (!trackPath)
+        return;
+    var paramPath;
+    if (ctrl === 'vol') {
+        paramPath = trackPath + ' mixer_device volume';
+    }
+    else if (ctrl === 'pan') {
+        paramPath = trackPath + ' mixer_device panning';
+    }
+    else if (ctrl.indexOf('send') === 0) {
+        var sendNum = parseInt(ctrl.substring(4));
+        if (isNaN(sendNum) || sendNum < 1) {
+            log('mkMap: bad send spec ' + ctrl);
+            return;
+        }
+        paramPath = trackPath + ' mixer_device sends ' + (sendNum - 1);
+    }
+    else {
+        log('mkMap: unsupported control ' + ctrl);
+        return;
+    }
+    setPath(slot, paramPath);
+}
+exports.mkMap = mkMap;
 function initAll() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');

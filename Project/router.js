@@ -187,6 +187,12 @@ var ROUTER = [
         msg: 'bkMap',
     },
     {
+        outlet: OUTLET_KNOBBLER,
+        prefix: '/mkMap',
+        handler: stdSlotVal,
+        msg: 'mkMap',
+    },
+    {
         outlet: OUTLET_BLUHAND,
         prefix: '/gotoCuePoint',
         handler: stdVal,

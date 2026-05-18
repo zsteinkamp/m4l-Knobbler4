@@ -26,6 +26,9 @@ function initAll() {
 function bkMap(slot: number, id: number) {
   KnobblerCore.bkMap(slot, id)
 }
+function mkMap(slot: number, mixerPath: string) {
+  KnobblerCore.mkMap(slot, mixerPath)
+}
 function clearCustomName(slot: number) {
   KnobblerCore.clearCustomName(slot)
 }
