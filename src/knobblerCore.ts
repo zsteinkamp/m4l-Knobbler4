@@ -211,6 +211,10 @@ function mkMap(slot: number, mixerPath: string) {
     paramPath = trackPath + ' mixer_device volume'
   } else if (ctrl === 'pan') {
     paramPath = trackPath + ' mixer_device panning'
+  } else if (ctrl === 'mute') {
+    // mute is exposed as mixer_device.track_activator (inverted: activator=1
+    // means unmuted) — bind as a normal parameter
+    paramPath = trackPath + ' mixer_device track_activator'
   } else if (ctrl.indexOf('send') === 0) {
     const sendNum = parseInt(ctrl.substring(4))
     if (isNaN(sendNum) || sendNum < 1) {
