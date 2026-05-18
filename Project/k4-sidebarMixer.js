@@ -396,12 +396,17 @@ function handleTrackChange(id) {
     (0, utils_1.osc)('/mixer/type', trackType);
     // record / input status
     sendRecordStatus(state.trackLookupObj);
-    // mute / solo
+    // mute / solo — master has neither property, so detach the observers
+    // (otherwise [v8] logs "Main track has no 'mute' property!" warnings)
     if (!isMain) {
+        state.muteObj.property = 'mute';
+        state.mutedViaSoloObj.property = 'muted_via_solo';
         emitEffectiveMute();
         (0, utils_1.osc)('/mixer/solo', parseInt(state.trackLookupObj.get('solo')));
     }
     else {
+        state.muteObj.property = '';
+        state.mutedViaSoloObj.property = '';
         (0, utils_1.osc)('/mixer/mute', 0);
         (0, utils_1.osc)('/mixer/solo', 0);
     }
@@ -518,15 +523,15 @@ function init() {
     }
     // Mute + muted_via_solo observers (follow selected track) — both feed into
     // the effective mute LED so the user sees solo-induced mutes update live.
+    // Property is assigned in handleTrackChange (master lacks both, so we toggle
+    // observation based on the selected track's type).
     if (!state.muteObj) {
         state.muteObj = new LiveAPI(handleMuteChange, 'live_set view selected_track');
         state.muteObj.mode = 1;
-        state.muteObj.property = 'mute';
     }
     if (!state.mutedViaSoloObj) {
         state.mutedViaSoloObj = new LiveAPI(handleMuteChange, 'live_set view selected_track');
         state.mutedViaSoloObj.mode = 1;
-        state.mutedViaSoloObj.property = 'muted_via_solo';
     }
     // Pan obj (follows selected track)
     if (!state.panObj) {
