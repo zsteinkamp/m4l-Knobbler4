@@ -187,6 +187,12 @@ function mkMap(slot: number, mixerPath: string) {
     ctrl = parts[2]
   }
 
+  // Crossfader lives on master_track regardless of selection / strip context
+  if (ctrl === 'crossfader') {
+    setPath(slot, 'live_set master_track mixer_device crossfader')
+    return
+  }
+
   let trackPath: string = null
   if (stripIdx === null || isNaN(stripIdx)) {
     // Single-strip variant: resolve against the currently selected track
