@@ -59,7 +59,7 @@ function synAckHandler(router, _, val) {
         (0, utils_1.saveSetting)('clientVersion', parts[0]);
         (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
     }
-    (0, utils_1.osc)(router.msg, deviceVersion + ' mxr');
+    (0, utils_1.osc)(router.msg, deviceVersion + ' mxr mkMap');
     (0, utils_1.osc)('/sendState', 1);
 }
 function pingHandler(router, _, val) {
@@ -68,7 +68,7 @@ function pingHandler(router, _, val) {
         (0, utils_1.saveSetting)('clientVersion', parts[0]);
         (0, utils_1.saveSetting)('clientCapabilities', parts.slice(1).join(' '));
     }
-    (0, utils_1.osc)(router.msg, deviceVersion + ' mxr');
+    (0, utils_1.osc)(router.msg, deviceVersion + ' mxr mkMap');
 }
 function bareMsg(router) {
     outlet(router.outlet, router.msg);

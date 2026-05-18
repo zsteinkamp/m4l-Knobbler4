@@ -72,7 +72,7 @@ function synAckHandler(router: RouterItem, _: string, val: string | number) {
     saveSetting('clientVersion', parts[0])
     saveSetting('clientCapabilities', parts.slice(1).join(' '))
   }
-  osc(router.msg as string, deviceVersion + ' mxr')
+  osc(router.msg as string, deviceVersion + ' mxr mkMap')
   osc('/sendState', 1)
 }
 function pingHandler(router: RouterItem, _: string, val: string | number) {
@@ -81,7 +81,7 @@ function pingHandler(router: RouterItem, _: string, val: string | number) {
     saveSetting('clientVersion', parts[0])
     saveSetting('clientCapabilities', parts.slice(1).join(' '))
   }
-  osc(router.msg as string, deviceVersion + ' mxr')
+  osc(router.msg as string, deviceVersion + ' mxr mkMap')
 }
 function bareMsg(router: RouterItem) {
   outlet(router.outlet, router.msg)
