@@ -169,8 +169,10 @@ function mkMap(slot, mixerPath) {
     else {
         ctrl = parts[2];
     }
-    // Crossfader lives on master_track regardless of selection / strip context
-    if (ctrl === 'crossfader') {
+    // Crossfader without a strip index = the master crossfader itself.
+    // With a strip index = that track's crossfade_assign (A/B/off routing),
+    // handled below in the per-track branch.
+    if (ctrl === 'crossfader' && (stripIdx === null || isNaN(stripIdx))) {
         setPath(slot, 'live_set master_track mixer_device crossfader');
         return;
     }
@@ -205,6 +207,9 @@ function mkMap(slot, mixerPath) {
         // mute is exposed as mixer_device.track_activator (inverted: activator=1
         // means unmuted) — bind as a normal parameter
         paramPath = trackPath + ' mixer_device track_activator';
+    }
+    else if (ctrl === 'crossfader') {
+        paramPath = trackPath + ' mixer_device crossfade_assign';
     }
     else if (ctrl.indexOf('send') === 0) {
         var sendNum = parseInt(ctrl.substring(4));
