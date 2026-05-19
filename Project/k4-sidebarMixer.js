@@ -23,6 +23,7 @@ var state = {
     panObj: null,
     muteObj: null,
     mutedViaSoloObj: null,
+    xfadeAssignObj: null,
     crossfaderObj: null,
     watchers: [],
     onMixerPage: false,
@@ -244,6 +245,18 @@ function handleMuteChange(args) {
         emitEffectiveMute();
     }
 }
+function emitXfadeAssign() {
+    if (!state.mixerObj || +state.mixerObj.id === 0)
+        return;
+    var xfade = parseInt(state.mixerObj.get('crossfade_assign').toString()) || 0;
+    (0, utils_1.osc)('/mixer/xFadeA', xfade === 0 ? 1 : 0);
+    (0, utils_1.osc)('/mixer/xFadeB', xfade === 2 ? 1 : 0);
+}
+function handleXfadeAssignChange(args) {
+    if (args[0] === 'crossfade_assign') {
+        emitXfadeAssign();
+    }
+}
 function toggleSolo() {
     if (!state.trackObj || +state.trackObj.id === 0) {
         return;
@@ -396,10 +409,15 @@ function handleTrackChange(id) {
     (0, utils_1.osc)('/mixer/type', trackType);
     // record / input status
     sendRecordStatus(state.trackLookupObj);
-    // mute / solo — master has neither property, so detach the observers
-    // (otherwise [v8] logs "Main track has no 'mute' property!" warnings)
+    // mute / solo — master has neither property. Repoint the observers to the
+    // selected track first, then attach the property (skip both on master to
+    // avoid v8 warnings).
     if (!isMain) {
+        state.muteObj.property = '';
+        state.muteObj.path = path;
         state.muteObj.property = 'mute';
+        state.mutedViaSoloObj.property = '';
+        state.mutedViaSoloObj.path = path;
         state.mutedViaSoloObj.property = 'muted_via_solo';
         emitEffectiveMute();
         (0, utils_1.osc)('/mixer/solo', parseInt(state.trackLookupObj.get('solo')));
@@ -427,13 +445,16 @@ function handleTrackChange(id) {
         stopMeterFlush();
         disableMeters();
     }
-    // crossfade assign
+    // crossfade assign — every track type except master has it (returns
+    // included). Detach on master to avoid v8 warnings.
     if (!isMain) {
-        var xfade = parseInt(state.mixerObj.get('crossfade_assign'));
-        (0, utils_1.osc)('/mixer/xFadeA', xfade === 0 ? 1 : 0);
-        (0, utils_1.osc)('/mixer/xFadeB', xfade === 2 ? 1 : 0);
+        state.xfadeAssignObj.property = '';
+        state.xfadeAssignObj.path = path + ' mixer_device';
+        state.xfadeAssignObj.property = 'crossfade_assign';
+        emitXfadeAssign();
     }
     else {
+        state.xfadeAssignObj.property = '';
         (0, utils_1.osc)('/mixer/xFadeA', 0);
         (0, utils_1.osc)('/mixer/xFadeB', 0);
     }
@@ -521,17 +542,22 @@ function init() {
         state.volObj.mode = 1;
         state.volObj.property = 'value';
     }
-    // Mute + muted_via_solo observers (follow selected track) — both feed into
-    // the effective mute LED so the user sees solo-induced mutes update live.
-    // Property is assigned in handleTrackChange (master lacks both, so we toggle
-    // observation based on the selected track's type).
+    // Mute + muted_via_solo observers — NOT mode=1. Master track has neither
+    // property, and a mode=1 observer would re-attach itself the instant the
+    // selection changes (before handleTrackChange's debounced clear runs),
+    // producing "Main track has no 'mute' property!" warnings. We manage path
+    // and property explicitly from handleTrackChange instead.
     if (!state.muteObj) {
-        state.muteObj = new LiveAPI(handleMuteChange, 'live_set view selected_track');
-        state.muteObj.mode = 1;
+        state.muteObj = new LiveAPI(handleMuteChange, 'live_set');
     }
     if (!state.mutedViaSoloObj) {
-        state.mutedViaSoloObj = new LiveAPI(handleMuteChange, 'live_set view selected_track');
-        state.mutedViaSoloObj.mode = 1;
+        state.mutedViaSoloObj = new LiveAPI(handleMuteChange, 'live_set');
+    }
+    // Crossfade assign observer — lives on the track's mixer_device, not the
+    // track itself. Master's mixer_device lacks crossfade_assign, so same
+    // detach-on-master pattern as the mute observers.
+    if (!state.xfadeAssignObj) {
+        state.xfadeAssignObj = new LiveAPI(handleXfadeAssignChange, 'live_set');
     }
     // Pan obj (follows selected track)
     if (!state.panObj) {

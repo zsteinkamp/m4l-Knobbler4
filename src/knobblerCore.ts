@@ -224,7 +224,11 @@ function mkMap(slot: number, mixerPath: string) {
     // means unmuted) — bind as a normal parameter
     paramPath = trackPath + ' mixer_device track_activator'
   } else if (ctrl === 'crossfader') {
-    paramPath = trackPath + ' mixer_device crossfade_assign'
+    // NOTE: crossfade_assign is an int property on mixer_device (0=A, 1=off,
+    // 2=B), NOT a DeviceParameter — setPath can't bind it. Same situation as
+    // Track.solo. Will need the property-binding code path to support this.
+    log('mkMap: crossfade_assign binding not yet supported (not a DeviceParameter)')
+    return
   } else if (ctrl.indexOf('send') === 0) {
     const sendNum = parseInt(ctrl.substring(4))
     if (isNaN(sendNum) || sendNum < 1) {
