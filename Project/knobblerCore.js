@@ -586,6 +586,10 @@ function sendColor(slot) {
 }
 function sendVal(slot) {
     //log(`SEND VAL ${slot}`)
+    if (!ADDR_VAL[slot]) {
+        log('sendVal: out-of-range slot=' + slot + ' (type=' + typeof slot + ')');
+        return;
+    }
     initSlotIfNecessary(slot);
     if (!paramObj[slot] ||
         +paramObj[slot].id === 0 ||

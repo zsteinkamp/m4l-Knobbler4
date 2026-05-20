@@ -594,7 +594,6 @@ function setDictPrefix(prefix: any) {
 }
 
 function init() {
-  log('init called')
   if (state.watchers.length === MAX_SENDS) {
     return
   }

@@ -508,7 +508,6 @@ function setDictPrefix(prefix) {
     (0, utils_1.setDictPrefix)(prefix);
 }
 function init() {
-    log('init called');
     if (state.watchers.length === consts_1.MAX_SENDS) {
         return;
     }
