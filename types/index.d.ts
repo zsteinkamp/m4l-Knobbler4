@@ -28,6 +28,22 @@ type BluhandBank = {
   paramIdxArr: number[]
 }
 
+// In-process route descriptor for the [v8 knobbler] dispatcher. Replaces the
+// old router's (outlet, msgName) fan-out with a direct function reference.
+// parse describes how the OSC address+value map to the handler's args:
+//   bare    -> fn()
+//   val     -> fn(value)
+//   slot    -> fn(slotNum)            (slotNum parsed from the address suffix)
+//   slotVal -> fn(slotNum, value)
+//   custom  -> fn(address, value)
+type RouteParse = 'bare' | 'val' | 'slot' | 'slotVal' | 'custom'
+type Route = {
+  prefix: string
+  parse: RouteParse
+  fn: (...args: any[]) => void
+  coalesce?: boolean
+}
+
 //                   type,   id,     name    color, indent, use indent, parent
 type MaxObjRecord = [number, number, string, string, number, number, number]
 

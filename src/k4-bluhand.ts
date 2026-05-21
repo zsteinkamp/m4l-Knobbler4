@@ -12,7 +12,7 @@ import {
   osc,
 } from './utils'
 import config from './config'
-import { noFn, INLET_MSGS, OUTLET_MSGS, OUTLET_OSC } from './consts'
+import { noFn, OUTLET_MSGS } from './consts'
 import {
   deprecatedDeviceDelta,
   deprecatedTrackDelta,
@@ -20,18 +20,11 @@ import {
 import { getBankParamArr } from './k4-bluhandBanks'
 import * as Slots from './k4-bluhandSlots'
 
-autowatch = 1
-inlets = 1
-outlets = 2
-
 const log = logFactory(config)
 
-// outlet 1 carries bkMap messages to the [s ---KNOBBLER] receiver
+// On the [v8 knobbler] entry, outlet 1 carries bkMap messages to the
+// [s ---KNOBBLER] receiver. (Same index the standalone object used.)
 const OUTLET_KNOBBLER = OUTLET_MSGS
-
-setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
-setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
-setoutletassist(OUTLET_KNOBBLER, 'bkMap messages to Knobbler ([s ---KNOBBLER])')
 
 const state = {
   devicePath: null as string,
@@ -732,9 +725,51 @@ function init() {
   pushState()
 }
 
+// --- Route table (the module's slice of the OSC namespace) -----------------
+// Dispatched by the [v8 knobbler] entry via direct function calls. Mirrors the
+// old router's OUTLET_BLUHAND entries (parse kind = old handler: bare=bareMsg,
+// val=stdVal, slot=stdSlot, slotVal=stdSlotVal).
+const routes: Route[] = [
+  { prefix: '/bval', parse: 'slotVal', fn: val, coalesce: true },
+  { prefix: '/bkMap', parse: 'slotVal', fn: bkMap },
+  { prefix: '/bBank', parse: 'slot', fn: gotoBank },
+  { prefix: '/bbankPrev', parse: 'bare', fn: bankPrev },
+  { prefix: '/bbankNext', parse: 'bare', fn: bankNext },
+  { prefix: '/bdefaultbval', parse: 'slot', fn: bSetDefault },
+  { prefix: '/bdefault bval', parse: 'slot', fn: bSetDefault },
+  { prefix: '/toggleOnOff', parse: 'bare', fn: toggleOnOff },
+  { prefix: '/hideChains', parse: 'val', fn: hideChains },
+  { prefix: '/toggleGroup', parse: 'val', fn: toggleGroup },
+  { prefix: '/gotoTrack', parse: 'val', fn: gotoTrack },
+  { prefix: '/gotoChain', parse: 'val', fn: gotoChain },
+  { prefix: '/gotoDevice', parse: 'val', fn: gotoDevice },
+  { prefix: '/bPrevTrack', parse: 'bare', fn: trackPrev },
+  { prefix: '/bNextTrack', parse: 'bare', fn: trackNext },
+  { prefix: '/bPrevDev', parse: 'bare', fn: devPrev },
+  { prefix: '/bNextDev', parse: 'bare', fn: devNext },
+  { prefix: '/blu/macros/random', parse: 'bare', fn: randomMacros },
+  { prefix: '/blu/variation/new', parse: 'bare', fn: variationNew },
+  { prefix: '/blu/variation/delete', parse: 'val', fn: variationDelete },
+  { prefix: '/blu/variation/select', parse: 'val', fn: variationRecall },
+  { prefix: '/gotoCuePoint', parse: 'val', fn: gotoCuePoint },
+  { prefix: '/playCuePoint', parse: 'val', fn: playCuePoint },
+  { prefix: '/btnSkipPrev', parse: 'bare', fn: btnSkipPrev },
+  { prefix: '/btnSkipNext', parse: 'bare', fn: btnSkipNext },
+  { prefix: '/btnReEnableAutomation', parse: 'bare', fn: btnReEnableAutomation },
+  { prefix: '/btnLoop', parse: 'bare', fn: btnLoop },
+  { prefix: '/btnCaptureMidi', parse: 'bare', fn: btnCaptureMidi },
+  { prefix: '/btnArrangementOverdub', parse: 'bare', fn: btnArrangementOverdub },
+  { prefix: '/btnSessionRecord', parse: 'bare', fn: btnSessionRecord },
+  { prefix: '/bCtlRec', parse: 'bare', fn: ctlRec },
+  { prefix: '/bCtlPlay', parse: 'bare', fn: ctlPlay },
+  { prefix: '/bCtlStop', parse: 'bare', fn: ctlStop },
+  { prefix: '/metronome', parse: 'bare', fn: toggleMetronome },
+  { prefix: '/tapTempo', parse: 'bare', fn: tapTempo },
+  { prefix: '/tempo', parse: 'val', fn: setTempo, coalesce: true },
+  { prefix: '/undo', parse: 'bare', fn: undo },
+  { prefix: '/redo', parse: 'bare', fn: redo },
+]
+
 log('reloaded k4-bluhand')
 
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [v8] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+export { routes, init }
