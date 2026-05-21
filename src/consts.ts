@@ -4,6 +4,11 @@ export const OUTLET_OSC = 0 // OSC out -> [udpsend]
 export const OUTLET_MSGS = 1 // knobblerCore -> knob-slot bpatcher messages
 export const OUTLET_VISIBLE_TRACKS = 2 // 'visibleTracks' notify -> mixer/clip consumers (until they fold in)
 export const OUTLET_SHORTCUT_NAME = 3 // [slot, name] -> [s ---shortcutName] (device-UI labels)
+// k4-system (former [v8 router]) Max-side passthroughs:
+export const OUTLET_LOOP = 4 // 'loop' -> [s ---LOOP]
+export const OUTLET_REFRESH = 5 // 'refresh'/'initMenuOnly' -> [s ---REFRESH_LOGIC]
+export const OUTLET_PAGE = 6 // 'page' <name> -> [s ---PAGE] (page UI)
+export const OUTLET_CONFIGURE = 7 // 'host'/'port' -> [s ---CONFIGURE] ([udpsend] target)
 export const MAX_SLOTS = 32
 
 export const TYPE_TRACK = 0

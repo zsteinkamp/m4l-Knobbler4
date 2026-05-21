@@ -10,7 +10,7 @@
 
 import config from './config'
 import { logFactory, setDictPrefix as utilsSetDictPrefix } from './utils'
-import { OUTLET_VISIBLE_TRACKS } from './consts'
+import { OUTLET_VISIBLE_TRACKS, OUTLET_PAGE } from './consts'
 import * as bluhand from './k4-bluhand'
 import * as currentParam from './k4-currentParam'
 import * as multiMixer from './k4-multiMixer'
@@ -21,12 +21,14 @@ import * as tracksDevices from './k4-tracksDevices'
 import * as KnobblerCore from './knobblerCore'
 import * as settings from './k4-settings'
 import * as shortcuts from './k4-shortcuts'
+import * as system from './k4-system'
 
 autowatch = 1
 inlets = 1
 // Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot
-// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI.
-outlets = 4
+// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI,
+// 4 = ---LOOP, 5 = ---REFRESH_LOGIC, 6 = ---PAGE, 7 = ---CONFIGURE (udpsend).
+outlets = 8
 
 const log = logFactory(config)
 
@@ -64,11 +66,19 @@ function sidebarMeters(val: number) {
   sidebarMixer.sidebarMeters(val)
 }
 
-// Page changes drive meter flushing in both mixer modules.
+// Page changes drive meter flushing in both mixer modules AND switch the
+// device's page UI (---PAGE), the latter formerly the router's pageHandler.
 function pageDispatch(address: string) {
   const pageName = address.split('/')[2]
   multiMixer.page(pageName)
   sidebarMixer.page(pageName)
+  outlet(OUTLET_PAGE, 'page', pageName)
+}
+
+// Max message from the live.thisdevice version chain ([prepend setDeviceVersion]
+// -> entry inlet). Selector matches this top-level fn, so Max calls it directly.
+function setDeviceVersion(ver: string) {
+  system.setDeviceVersion(ver)
 }
 
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
@@ -124,6 +134,7 @@ const ROUTES: Route[] = [].concat(
   clipView.routes as any,
   visibleTracks.routes as any,
   shortcuts.routes as any,
+  system.routes as any,
   knobblerRoutes as any,
   entryRoutes as any
 ) as Route[]

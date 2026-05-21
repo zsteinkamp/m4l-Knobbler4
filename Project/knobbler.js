@@ -21,11 +21,13 @@ var tracksDevices = require("./k4-tracksDevices");
 var KnobblerCore = require("./knobblerCore");
 var settings = require("./k4-settings");
 var shortcuts = require("./k4-shortcuts");
+var system = require("./k4-system");
 autowatch = 1;
 inlets = 1;
 // Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot
-// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI.
-outlets = 4;
+// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI,
+// 4 = ---LOOP, 5 = ---REFRESH_LOGIC, 6 = ---PAGE, 7 = ---CONFIGURE (udpsend).
+outlets = 8;
 var log = (0, utils_1.logFactory)(config_1.default);
 // Orchestrator context handed to each module's init(ctx). The entry owns the
 // live singletons; modules reach siblings through ctx (not direct imports —
@@ -57,11 +59,18 @@ function setDictPrefix(prefix) {
 function sidebarMeters(val) {
     sidebarMixer.sidebarMeters(val);
 }
-// Page changes drive meter flushing in both mixer modules.
+// Page changes drive meter flushing in both mixer modules AND switch the
+// device's page UI (---PAGE), the latter formerly the router's pageHandler.
 function pageDispatch(address) {
     var pageName = address.split('/')[2];
     multiMixer.page(pageName);
     sidebarMixer.page(pageName);
+    outlet(consts_1.OUTLET_PAGE, 'page', pageName);
+}
+// Max message from the live.thisdevice version chain ([prepend setDeviceVersion]
+// -> entry inlet). Selector matches this top-level fn, so Max calls it directly.
+function setDeviceVersion(ver) {
+    system.setDeviceVersion(ver);
 }
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
 var entryRoutes = [
@@ -104,7 +113,7 @@ function initAll() {
     KnobblerCore.refresh();
 }
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, knobblerRoutes, entryRoutes);
+var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, system.routes, knobblerRoutes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
