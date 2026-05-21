@@ -85,9 +85,9 @@ export function initSlots() {
   }
   for (let i = 1; i <= NUM_BLU_SLOTS; i++) {
     const slot: BluSlot = {
-      valueApi: new LiveAPI(makeSlotCb(i, 'value', emitSlotValue), 'id 0'),
-      nameApi: new LiveAPI(makeSlotCb(i, 'name', emitSlotName), 'id 0'),
-      autoApi: new LiveAPI(makeSlotCb(i, 'automation_state', emitSlotAuto), 'id 0'),
+      valueApi: null,
+      nameApi: null,
+      autoApi: null,
       paramId: 0,
       min: 0,
       max: 1,
@@ -95,12 +95,10 @@ export function initSlots() {
       allowOscOut: true,
       suppressTask: null,
     }
-    slot.valueApi.property = 'value'
-    slot.nameApi.property = 'name'
-    slot.autoApi.property = 'automation_state'
-    // Reuse one suppression Task per slot. Allocating a new Task per val() and
-    // only cancel()ing the old one leaks (cancel does not free) — and val()
-    // fires on every inbound OSC value.
+    // Reuse one suppression Task per slot (cancel() does not free, and val()
+    // fires on every inbound OSC value). The LiveAPI observers are created
+    // lazily on first valid bind (setParamIdx) with the real, resolvable path
+    // — never with a placeholder, which [v8] would log as "invalid path".
     slot.suppressTask = new Task(function () {
       slot.allowOscOut = true
     })
@@ -118,9 +116,12 @@ export function setParamIdx(idx: number, paramIdx: number) {
 
   if (paramIdx <= 0) {
     slot.paramId = 0
-    slot.valueApi.id = 0
-    slot.nameApi.id = 0
-    slot.autoApi.id = 0
+    if (slot.valueApi) {
+      // detach without setting .path (which [v8] would log for id 0)
+      slot.valueApi.id = 0
+      slot.nameApi.id = 0
+      slot.autoApi.id = 0
+    }
     slot.binding = false
     emitEmptySlot(idx)
     return
@@ -128,7 +129,16 @@ export function setParamIdx(idx: number, paramIdx: number) {
 
   const path =
     'live_set view selected_track view selected_device parameters ' + paramIdx
-  slot.valueApi.path = path
+
+  // Lazy-create the value observer on first bind with the real path; reuse it
+  // (reassign .path) thereafter.
+  if (!slot.valueApi) {
+    slot.valueApi = new LiveAPI(makeSlotCb(idx, 'value', emitSlotValue), path)
+    slot.valueApi.property = 'value'
+  } else {
+    slot.valueApi.path = path
+  }
+
   const pid = parseInt(slot.valueApi.id as any)
   slot.paramId = pid
   if (pid === 0) {
@@ -136,8 +146,20 @@ export function setParamIdx(idx: number, paramIdx: number) {
     emitEmptySlot(idx)
     return
   }
-  slot.nameApi.path = path
-  slot.autoApi.path = path
+
+  // Only bind the name/automation observers once we know the path resolves.
+  if (!slot.nameApi) {
+    slot.nameApi = new LiveAPI(makeSlotCb(idx, 'name', emitSlotName), path)
+    slot.nameApi.property = 'name'
+    slot.autoApi = new LiveAPI(
+      makeSlotCb(idx, 'automation_state', emitSlotAuto),
+      path
+    )
+    slot.autoApi.property = 'automation_state'
+  } else {
+    slot.nameApi.path = path
+    slot.autoApi.path = path
+  }
 
   const meta = readParamMeta(slot.valueApi)
   slot.min = meta.min
