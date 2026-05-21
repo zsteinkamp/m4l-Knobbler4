@@ -216,31 +216,35 @@ function onCurrTrackChange(val: IdObserverArg) {
 }
 
 function init() {
-  // Load-only: the entry's init() also fires on refresh, but we must not clear
-  // the connected client's version/capabilities on every reconnect.
-  if (state.api) {
+  if (!state.api) {
+    // One-time setup: reset client info and create the selection observers
+    // (mode=1 fires once on creation, pushing the initial nav state).
+    saveSetting('clientVersion', '')
+    saveSetting('clientCapabilities', '')
+    state.api = new LiveAPI(noFn, 'live_set')
+
+    state.currTrackWatcher = new LiveAPI(
+      onCurrTrackChange,
+      'live_set view selected_track'
+    )
+    state.currTrackWatcher.mode = 1
+    state.currTrackWatcher.property = 'id'
+
+    state.currDeviceWatcher = new LiveAPI(
+      onCurrDeviceChange,
+      'live_set view selected_track view selected_device'
+    )
+    state.currDeviceWatcher.mode = 1
+    state.currDeviceWatcher.property = 'id'
     return
   }
-  saveSetting('clientVersion', '')
-  saveSetting('clientCapabilities', '')
-  state.currDeviceId = null
-  state.currTrackId = null
 
-  state.api = new LiveAPI(noFn, 'live_set')
-
-  state.currTrackWatcher = new LiveAPI(
-    onCurrTrackChange,
-    'live_set view selected_track'
-  )
-  state.currTrackWatcher.mode = 1
-  state.currTrackWatcher.property = 'id'
-
-  state.currDeviceWatcher = new LiveAPI(
-    onCurrDeviceChange,
-    'live_set view selected_track view selected_device'
-  )
-  state.currDeviceWatcher.mode = 1
-  state.currDeviceWatcher.property = 'id'
+  // Refresh (e.g. app reconnect): re-push current nav without recreating
+  // observers or clobbering the connected client's version/capabilities.
+  if (state.currTrackId) {
+    osc('/nav/currTrackId', state.currTrackId)
+  }
+  updateDeviceNav()
 }
 
 log('reloaded k4-tracksDevices')

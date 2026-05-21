@@ -53,6 +53,7 @@ function getSlotNum(router, msg) {
     return null;
 }
 // HANDLERS
+var synRefreshTask = null;
 function synAckHandler(router, _, val) {
     if (val) {
         var parts = val.toString().split(' ');
@@ -61,6 +62,17 @@ function synAckHandler(router, _, val) {
     }
     (0, utils_1.osc)(router.msg, deviceVersion + ' mxr mkMap');
     (0, utils_1.osc)('/sendState', 1);
+    // The app just connected and the OSC-out gate is now open. Trigger a full
+    // state re-push — the modules' load-time push happened before connect (gate
+    // closed) and was lost, so without this nothing appears until an observer
+    // next fires (e.g. the user changes track). Deferred so /ack settles first.
+    if (synRefreshTask) {
+        synRefreshTask.cancel();
+    }
+    synRefreshTask = new Task(function () {
+        outlet(OUTLET_REFRESH, 'refresh');
+    });
+    synRefreshTask.schedule(150);
 }
 function pingHandler(router, _, val) {
     if (val) {
