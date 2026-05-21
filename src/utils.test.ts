@@ -1,13 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
-// Mock Max globals before importing utils
-vi.stubGlobal('outlet', vi.fn())
-vi.stubGlobal('post', vi.fn())
-vi.stubGlobal('Dict', function () {
-  const store: Record<string, any> = {}
-  return { get: (k: string) => store[k], set: (k: string, v: any) => { store[k] = v } }
-})
-
+// Max globals (Dict/outlet/post) are stubbed in vitest-setup.ts, which runs
+// before this module's imports — utils.ts touches `new Dict(...)` at load.
 import {
   dequote,
   isValidPath,
@@ -161,12 +155,13 @@ describe('numArrToJson', () => {
 })
 
 describe('cleanArr', () => {
-  it('filters LiveAPI id arrays to numeric strings', () => {
-    expect(cleanArr(['id', '3', '5', '7'] as any)).toEqual(['3', '5', '7'])
+  // cleanArr returns numbers (parseInt), filtering out the non-numeric prefix(es)
+  it('filters LiveAPI id arrays to numbers', () => {
+    expect(cleanArr(['id', '3', '5', '7'] as any)).toEqual([3, 5, 7])
   })
 
   it('filters out non-numeric strings', () => {
-    expect(cleanArr(['id', '42'] as any)).toEqual(['42'])
+    expect(cleanArr(['id', '42'] as any)).toEqual([42])
   })
 
   it('handles empty array', () => {
@@ -179,10 +174,10 @@ describe('cleanArr', () => {
   })
 
   it('keeps zero as valid id', () => {
-    expect(cleanArr(['id', '0'] as any)).toEqual(['0'])
+    expect(cleanArr(['id', '0'] as any)).toEqual([0])
   })
 
   it('filters multiple non-numeric prefixes', () => {
-    expect(cleanArr(['id', 'count', '10', '20'] as any)).toEqual(['10', '20'])
+    expect(cleanArr(['id', 'count', '10', '20'] as any)).toEqual([10, 20])
   })
 })
