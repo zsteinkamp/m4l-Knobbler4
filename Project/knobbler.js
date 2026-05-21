@@ -11,6 +11,7 @@
 var config_1 = require("./config");
 var utils_1 = require("./utils");
 var bluhand = require("./k4-bluhand");
+var currentParam = require("./k4-currentParam");
 autowatch = 1;
 inlets = 1;
 // outlet 0 = OSC out (utils.osc), outlet 1 = bkMap -> [s ---KNOBBLER].
@@ -18,7 +19,7 @@ inlets = 1;
 outlets = 2;
 var log = (0, utils_1.logFactory)(config_1.default);
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes);
+var ROUTES = [].concat(bluhand.routes, currentParam.routes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -119,6 +120,7 @@ function anything(value) {
 // migrated module's init() is idempotent and re-pushes its state.
 function init() {
     bluhand.init();
+    currentParam.init();
 }
 log('reloaded knobbler');
 // NOTE: required boilerplate so tsc emits valid CommonJS for the [v8] object.

@@ -11,6 +11,7 @@
 import config from './config'
 import { logFactory } from './utils'
 import * as bluhand from './k4-bluhand'
+import * as currentParam from './k4-currentParam'
 
 autowatch = 1
 inlets = 1
@@ -22,7 +23,10 @@ const log = logFactory(config)
 
 // --- Route table (merged from every migrated module) -----------------------
 
-const ROUTES: Route[] = [].concat(bluhand.routes as any) as Route[]
+const ROUTES: Route[] = [].concat(
+  bluhand.routes as any,
+  currentParam.routes as any
+) as Route[]
 ROUTES.sort((a, b) => (a.prefix.length > b.prefix.length ? -1 : 1))
 
 function getSlotNum(prefix: string, address: string): number {
@@ -147,6 +151,7 @@ function anything(value: any) {
 // migrated module's init() is idempotent and re-pushes its state.
 function init() {
   bluhand.init()
+  currentParam.init()
 }
 
 log('reloaded knobbler')

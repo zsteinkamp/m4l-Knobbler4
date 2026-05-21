@@ -8,16 +8,9 @@ import {
   pauseUnpause,
   PauseState,
 } from './utils'
-import { INLET_MSGS, OUTLET_OSC, PAUSE_MS, noFn } from './consts'
-
-autowatch = 1
-inlets = 1
-outlets = 1
+import { PAUSE_MS, noFn } from './consts'
 
 const log = logFactory(config)
-
-setinletassist(INLET_MSGS, 'Messages from router')
-setoutletassist(OUTLET_OSC, 'OSC messages to [udpsend]')
 
 // Extract track path from a device canonical path
 // e.g. "live_set tracks 3 devices 1" → "live_set tracks 3"
@@ -260,9 +253,17 @@ function doRefresh() {
   sendAllParamInfo(currentParamId)
 }
 
+// --- Route table (dispatched by the [v8 knobbler] entry) -------------------
+const routes: Route[] = [
+  { prefix: '/currentParam/val', parse: 'val', fn: currentParamVal, coalesce: true },
+  { prefix: '/currentParam/default', parse: 'bare', fn: currentParamDefault },
+  { prefix: '/currentParam/lock', parse: 'val', fn: lock },
+  { prefix: '/currentParam/show', parse: 'bare', fn: show },
+  { prefix: '/currentParam/hide', parse: 'bare', fn: hide },
+]
+
 log('reloaded k4-currentParam')
 
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+// init() re-pushes state on refresh (no-op until the app has shown the panel).
+export { routes }
+export { doRefresh as init }

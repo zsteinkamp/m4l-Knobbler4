@@ -1,13 +1,10 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.init = exports.routes = void 0;
 var config_1 = require("./config");
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
-autowatch = 1;
-inlets = 1;
-outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
-setinletassist(consts_1.INLET_MSGS, 'Messages from router');
-setoutletassist(consts_1.OUTLET_OSC, 'OSC messages to [udpsend]');
 // Extract track path from a device canonical path
 // e.g. "live_set tracks 3 devices 1" → "live_set tracks 3"
 var TRACK_PATH_RE = /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/;
@@ -206,8 +203,14 @@ function doRefresh() {
         return;
     sendAllParamInfo(currentParamId);
 }
+exports.init = doRefresh;
+// --- Route table (dispatched by the [v8 knobbler] entry) -------------------
+var routes = [
+    { prefix: '/currentParam/val', parse: 'val', fn: currentParamVal, coalesce: true },
+    { prefix: '/currentParam/default', parse: 'bare', fn: currentParamDefault },
+    { prefix: '/currentParam/lock', parse: 'val', fn: lock },
+    { prefix: '/currentParam/show', parse: 'bare', fn: show },
+    { prefix: '/currentParam/hide', parse: 'bare', fn: hide },
+];
+exports.routes = routes;
 log('reloaded k4-currentParam');
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
-module.exports = {};
