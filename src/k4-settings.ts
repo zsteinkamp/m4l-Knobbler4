@@ -27,6 +27,26 @@ export function set(key: string, value: any) {
   }
 }
 
+// Dump the live ---settingsDict to the Max console (dev convenience).
+export function dump() {
+  if (!dict) {
+    post('[settings] ---settingsDict not open\n')
+    return
+  }
+  let keys = dict.getkeys()
+  post('--- ---settingsDict (' + (keys ? (Array.isArray(keys) ? keys.length : 1) : 0) + ' keys) ---\n')
+  if (keys === null) {
+    return
+  }
+  if (!Array.isArray(keys)) {
+    keys = [keys]
+  }
+  keys.sort()
+  for (let i = 0; i < keys.length; i++) {
+    post('  ' + keys[i] + ' = ' + JSON.stringify(dict.get(keys[i])) + '\n')
+  }
+}
+
 // --- Legacy bridge -----------------------------------------------------------
 // TODO(cleanup, after 2026-07-01 or once v65 ships): remove this whole bridge —
 // it only migrates pre-[v8] sets one time. Delete: openLegacy/setLegacyPrefix/

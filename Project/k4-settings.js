@@ -8,7 +8,7 @@
 // parameter-enabled dict can reset its contents), which is why no module builds
 // its own and why this is not in per-module `utils`.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.legacyGet = exports.setLegacyPrefix = exports.openLegacy = exports.set = exports.get = exports.open = void 0;
+exports.legacyGet = exports.setLegacyPrefix = exports.openLegacy = exports.dump = exports.set = exports.get = exports.open = void 0;
 var dict = null;
 // name = the resolved `---settingsDict`, delivered by the patcher via the
 // entry's settingsDictName message on load (before init). Created once.
@@ -28,6 +28,26 @@ function set(key, value) {
     }
 }
 exports.set = set;
+// Dump the live ---settingsDict to the Max console (dev convenience).
+function dump() {
+    if (!dict) {
+        post('[settings] ---settingsDict not open\n');
+        return;
+    }
+    var keys = dict.getkeys();
+    post('--- ---settingsDict (' + (keys ? (Array.isArray(keys) ? keys.length : 1) : 0) + ' keys) ---\n');
+    if (keys === null) {
+        return;
+    }
+    if (!Array.isArray(keys)) {
+        keys = [keys];
+    }
+    keys.sort();
+    for (var i = 0; i < keys.length; i++) {
+        post('  ' + keys[i] + ' = ' + JSON.stringify(dict.get(keys[i])) + '\n');
+    }
+}
+exports.dump = dump;
 // --- Legacy bridge -----------------------------------------------------------
 // TODO(cleanup, after 2026-07-01 or once v65 ships): remove this whole bridge —
 // it only migrates pre-[v8] sets one time. Delete: openLegacy/setLegacyPrefix/

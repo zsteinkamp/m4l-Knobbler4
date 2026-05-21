@@ -226,6 +226,11 @@ function sendMsg(slot: number, msg: MessageType) {
   outlet(OUTLET_MSGS, [slot, ...msg])
 }
 
+// TODO(cleanup, after 2026-07-01 / v65): remove setPathParam + its call in
+// setPath, and the bpatcher #N_path/#N_targetMin/#N_targetMax params — they're
+// a dual-write kept only for backward compat (new sets readable by older
+// versions). After the cutover, ---settingsDict is the sole source for slots.
+// Track alongside the legacy settingsDict bridge (see k4-settings.ts).
 function setPathParam(slot: number, path: string) {
   if (path) {
     sendMsg(slot, ['path', path])
