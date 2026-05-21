@@ -22,12 +22,12 @@ On any page, tap the crosshair (⊕) button in the toolbar to enter Mapping Mode
 #### 2. Pick a source
 
 Every mappable control gets a green outline to show it can be a source. On the
-Mixer page, that's the volume, pan, and send sliders:
+Mixer page, that's the volume, pan, send, mute, and main track crossfader:
 
 ![Mixer sliders outlined green](images/mapping/mapping-02-mixer.jpg)
 
 Tap the control you want to map. Here we're grabbing the **4-Audio** track's
-volume:
+volume. It will start blinking:
 
 ![Tapping a mixer slider to select it](images/mapping/mapping-03-mixer-select.jpg)
 
