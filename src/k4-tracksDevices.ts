@@ -1,7 +1,3 @@
-autowatch = 1
-inlets = 1
-outlets = 2
-
 import {
   cleanArr,
   colorToString,
@@ -15,10 +11,7 @@ import {
 import config from './config'
 import {
   FIELD_INDENT,
-  INLET_MSGS,
   MAX_NAME_LEN,
-  OUTLET_MSGS,
-  OUTLET_OSC,
   TYPE_CHAIN,
   TYPE_CHILD_CHAIN,
   TYPE_DEVICE,
@@ -27,10 +20,6 @@ import {
 } from './consts'
 
 const log = logFactory(config)
-
-setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
-setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
-setoutletassist(OUTLET_MSGS, 'Messages')
 
 const state = {
   api: null as LiveAPI,
@@ -227,6 +216,11 @@ function onCurrTrackChange(val: IdObserverArg) {
 }
 
 function init() {
+  // Load-only: the entry's init() also fires on refresh, but we must not clear
+  // the connected client's version/capabilities on every reconnect.
+  if (state.api) {
+    return
+  }
   saveSetting('clientVersion', '')
   saveSetting('clientCapabilities', '')
   state.currDeviceId = null
@@ -251,7 +245,5 @@ function init() {
 
 log('reloaded k4-tracksDevices')
 
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+// Observer-driven (no inbound routes); the entry just needs init().
+export { init }

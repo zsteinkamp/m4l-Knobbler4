@@ -17,6 +17,7 @@ var multiMixer = require("./k4-multiMixer");
 var sidebarMixer = require("./k4-sidebarMixer");
 var clipView = require("./k4-clipView");
 var visibleTracks = require("./k4-visibleTracks");
+var tracksDevices = require("./k4-tracksDevices");
 autowatch = 1;
 inlets = 1;
 // Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = bkMap ->
@@ -158,6 +159,7 @@ function init() {
     sidebarMixer.init();
     clipView.init();
     visibleTracks.init();
+    tracksDevices.init();
 }
 log('reloaded knobbler');
 // NOTE: required boilerplate so tsc emits valid CommonJS for the [v8] object.

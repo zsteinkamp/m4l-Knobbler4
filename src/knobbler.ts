@@ -17,6 +17,7 @@ import * as multiMixer from './k4-multiMixer'
 import * as sidebarMixer from './k4-sidebarMixer'
 import * as clipView from './k4-clipView'
 import * as visibleTracks from './k4-visibleTracks'
+import * as tracksDevices from './k4-tracksDevices'
 
 autowatch = 1
 inlets = 1
@@ -199,6 +200,7 @@ function init() {
   sidebarMixer.init()
   clipView.init()
   visibleTracks.init()
+  tracksDevices.init()
 }
 
 log('reloaded knobbler')
