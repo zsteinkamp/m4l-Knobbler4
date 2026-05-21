@@ -98,6 +98,12 @@ export function initSlots() {
     slot.valueApi.property = 'value'
     slot.nameApi.property = 'name'
     slot.autoApi.property = 'automation_state'
+    // Reuse one suppression Task per slot. Allocating a new Task per val() and
+    // only cancel()ing the old one leaks (cancel does not free) — and val()
+    // fires on every inbound OSC value.
+    slot.suppressTask = new Task(function () {
+      slot.allowOscOut = true
+    })
     slots.push(slot)
   }
 }
@@ -164,12 +170,7 @@ export function val(idx: number, value: number) {
   const scaled = slot.range * value + slot.min
 
   slot.allowOscOut = false
-  if (slot.suppressTask) {
-    slot.suppressTask.cancel()
-  }
-  slot.suppressTask = new Task(function () {
-    slot.allowOscOut = true
-  })
+  slot.suppressTask.cancel()
   slot.suppressTask.schedule(OSC_SUPPRESS_MS)
 
   slot.valueApi.set('value', scaled)

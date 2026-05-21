@@ -60,7 +60,7 @@ function initSlots() {
     if (slots.length) {
         return;
     }
-    for (var i = 1; i <= exports.NUM_BLU_SLOTS; i++) {
+    var _loop_1 = function (i) {
         var slot = {
             valueApi: new LiveAPI(makeSlotCb(i, 'value', emitSlotValue), 'id 0'),
             nameApi: new LiveAPI(makeSlotCb(i, 'name', emitSlotName), 'id 0'),
@@ -76,7 +76,16 @@ function initSlots() {
         slot.valueApi.property = 'value';
         slot.nameApi.property = 'name';
         slot.autoApi.property = 'automation_state';
+        // Reuse one suppression Task per slot. Allocating a new Task per val() and
+        // only cancel()ing the old one leaks (cancel does not free) — and val()
+        // fires on every inbound OSC value.
+        slot.suppressTask = new Task(function () {
+            slot.allowOscOut = true;
+        });
         slots.push(slot);
+    };
+    for (var i = 1; i <= exports.NUM_BLU_SLOTS; i++) {
+        _loop_1(i);
     }
 }
 exports.initSlots = initSlots;
@@ -136,12 +145,7 @@ function val(idx, value) {
     }
     var scaled = slot.range * value + slot.min;
     slot.allowOscOut = false;
-    if (slot.suppressTask) {
-        slot.suppressTask.cancel();
-    }
-    slot.suppressTask = new Task(function () {
-        slot.allowOscOut = true;
-    });
+    slot.suppressTask.cancel();
     slot.suppressTask.schedule(OSC_SUPPRESS_MS);
     slot.valueApi.set('value', scaled);
     // read the value back (not the value we wrote) because some params round and
