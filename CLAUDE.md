@@ -188,6 +188,32 @@ The `frozen/` directory contains historical releases (`.amxd` device files and `
 
 Version numbers are manually updated in the changelog and device itself. Releases include the compiled `.amxd` file published to GitHub releases.
 
+## Editing `.amxd` device files
+
+`.amxd` files are a binary header followed by the patcher JSON and a trailing NUL
+(the JSON byte-length is a little-endian uint32 in the 4 bytes right before the
+first `{`). **Never edit a `.amxd` with a text editor / Read+Edit — UTF-8
+round-tripping corrupts the binary header.** Use the helper instead:
+
+```bash
+# extract the JSON to a plain file you can Read/Edit/jq/diff freely
+python3 scripts/amxd.py unpack Project/Knobbler4.amxd /tmp/k4.json
+# ...edit /tmp/k4.json with any tool...
+python3 scripts/amxd.py pack /tmp/k4.json Project/Knobbler4.amxd   # rebuild in place
+
+# or one-shot a jq filter straight into the device (also in place):
+python3 scripts/amxd.py jq Project/Knobbler4.amxd '.patcher.parameters."obj-9" = ["Foo","Foo",0]'
+```
+
+The header is never reconstructed — `pack`/`jq` copy it verbatim from an existing
+`.amxd` (the target itself, or `pack ... --from REF.amxd` to borrow one when
+writing a fresh device), patch only the 4-byte length field, and validate the
+JSON before writing.
+unpack→pack is byte-identical, so it's safe to keep in the loop. Adding/altering
+**parameters** (the `patcher.parameters` registry, `parameterbanks`, modulation
+indices) is fiddly and interlocks — prefer doing parameter changes in the Max
+editor; use this tool for boxes/lines/attributes and inspection.
+
 ## Important Notes
 
 - **Remember to commit compiled JavaScript files** from `Project/` directory - they are build artifacts currently tracked in git
