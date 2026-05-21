@@ -806,7 +806,8 @@ function setupWindow(left, top, right, bottom) {
     totalScenes = querySceneCount();
     applyWindow();
 }
-function doRefresh() {
+function doRefresh(c) {
+    (0, utils_1.setOscSink)(c.osc);
     if (leftTrack < 0)
         return;
     setupWindow(leftTrack, topScene, rightTrack, bottomScene);

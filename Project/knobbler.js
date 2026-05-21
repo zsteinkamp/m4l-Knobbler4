@@ -23,9 +23,10 @@ var settings = require("./k4-settings");
 var shortcuts = require("./k4-shortcuts");
 var system = require("./k4-system");
 var oscBatch = require("./k4-oscBatch");
-// Route every module's utils.osc() through the in-process batch buffer (folded
-// in from the former [v8 k4-oscBatch]). One registration covers all modules —
-// they share this [v8]'s single utils instance. Set before any osc() fires.
+// The entry's own utils instance routes through the in-process batch buffer.
+// Each feature module wires its own utils the same way in init() via ctx.osc —
+// require() gives every file a separate utils instance, so the sink can't be set
+// once globally (same reason siblings are reached through ctx, not imports).
 (0, utils_1.setOscSink)(oscBatch.send);
 autowatch = 1;
 inlets = 1;
@@ -38,6 +39,7 @@ var log = (0, utils_1.logFactory)(config_1.default);
 // live singletons; modules reach siblings through ctx (not direct imports —
 // require() doesn't share module state across files in [v8]).
 var ctx = {
+    osc: oscBatch.send,
     knobbler: { bkMap: KnobblerCore.bkMap },
     sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
     gotoDevice: bluhand.gotoDevice,
@@ -222,13 +224,14 @@ function anything(value) {
 // Called from live.thisdevice on load and from the ---REFRESH chain. Each
 // migrated module's init() is idempotent and re-pushes its state.
 function init() {
+    system.init(ctx);
     bluhand.init(ctx);
-    currentParam.init();
+    currentParam.init(ctx);
     multiMixer.init(ctx);
     sidebarMixer.init(ctx);
-    clipView.init();
+    clipView.init(ctx);
     visibleTracks.init(ctx);
-    tracksDevices.init();
+    tracksDevices.init(ctx);
     shortcuts.init(ctx);
     KnobblerCore.initAll(ctx); // idempotent slot setup
     KnobblerCore.refresh(); // re-push slot names/values/xy state

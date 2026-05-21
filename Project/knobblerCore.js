@@ -302,6 +302,7 @@ function mkMap(slot, mixerPath) {
 }
 exports.mkMap = mkMap;
 function initAll(c) {
+    (0, utils_1.setOscSink)(c.osc);
     ctx = c;
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');

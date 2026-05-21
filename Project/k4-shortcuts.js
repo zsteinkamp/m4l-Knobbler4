@@ -194,6 +194,7 @@ function legacyShortcutPath(slot, path) {
 }
 exports.legacyShortcutPath = legacyShortcutPath;
 function init(c) {
+    (0, utils_1.setOscSink)(c.osc);
     ctx = c;
     if (!slots.length) {
         for (var i = 0; i < NUM_SHORTCUTS; i++) {

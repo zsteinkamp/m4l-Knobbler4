@@ -5,6 +5,7 @@ import {
   fixFloat,
   getVisibleTracksList,
   logFactory,
+  setOscSink,
   meterVal,
   osc,
   pauseUnpause,
@@ -716,6 +717,7 @@ function page(pageNameArg: string) {
 }
 
 function init(c: AppContext) {
+  setOscSink(c.osc)
   ctx = c
   ensureApis()
   metersEnabled = !!ctx.settings.get('metersEnabled')

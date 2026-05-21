@@ -8,6 +8,7 @@ import {
   loadSetting,
   setDictPrefix,
   logFactory,
+  setOscSink,
   osc,
   saveSetting,
 } from './utils'
@@ -312,6 +313,7 @@ function mkMap(slot: number, mixerPath: string) {
 }
 
 function initAll(c: AppContext) {
+  setOscSink(c.osc)
   ctx = c
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
   apiReady = true

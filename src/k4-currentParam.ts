@@ -4,6 +4,7 @@ import {
   dequote,
   fixFloat,
   logFactory,
+  setOscSink,
   osc,
   pauseUnpause,
   PauseState,
@@ -248,7 +249,8 @@ function currentParamDefault() {
   osc('/currentParam/valStr', valStr)
 }
 
-function doRefresh() {
+function doRefresh(c: AppContext) {
+  setOscSink(c.osc)
   if (!active || !currentParamId) return
   sendAllParamInfo(currentParamId)
 }

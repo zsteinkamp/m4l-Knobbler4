@@ -18,7 +18,7 @@
 // transient named dict) because [k4-oscBatch] — a separate object — reads them
 // to decide batching; that cross-object channel is why they aren't in ctx.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setDeviceVersion = exports.routes = void 0;
+exports.init = exports.setDeviceVersion = exports.routes = void 0;
 var config_1 = require("./config");
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
@@ -86,4 +86,10 @@ var routes = [
     { prefix: '/initMenu', parse: 'bare', fn: initMenu },
 ];
 exports.routes = routes;
+// Wire this module's own utils instance to the orchestrator's OSC sink so the
+// handshake replies (/ack, /pong, /sendState, /deviceVersion) are batched too.
+function init(c) {
+    (0, utils_1.setOscSink)(c.osc);
+}
+exports.init = init;
 log('reloaded k4-system');

@@ -18,7 +18,7 @@
 // to decide batching; that cross-object channel is why they aren't in ctx.
 
 import config from './config'
-import { logFactory, osc, saveSetting } from './utils'
+import { logFactory, osc, saveSetting, setOscSink } from './utils'
 import {
   OUTLET_LOOP,
   OUTLET_REFRESH,
@@ -97,6 +97,12 @@ const routes: Route[] = [
   { prefix: '/initMenu', parse: 'bare', fn: initMenu },
 ]
 
+// Wire this module's own utils instance to the orchestrator's OSC sink so the
+// handshake replies (/ack, /pong, /sendState, /deviceVersion) are batched too.
+function init(c: AppContext) {
+  setOscSink(c.osc)
+}
+
 log('reloaded k4-system')
 
-export { routes, setDeviceVersion }
+export { routes, setDeviceVersion, init }

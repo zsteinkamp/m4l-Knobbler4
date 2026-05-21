@@ -198,7 +198,8 @@ function currentParamDefault() {
     (0, utils_1.osc)('/currentParam/val', scaledVal);
     (0, utils_1.osc)('/currentParam/valStr', valStr);
 }
-function doRefresh() {
+function doRefresh(c) {
+    (0, utils_1.setOscSink)(c.osc);
     if (!active || !currentParamId)
         return;
     sendAllParamInfo(currentParamId);

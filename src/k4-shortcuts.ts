@@ -10,7 +10,7 @@
 // plus the device-UI label via OUTLET_SHORTCUT_NAME. Recall navigates through
 // ctx.gotoDevice (bluhand).
 
-import { colorToString, dequote, logFactory, osc } from './utils'
+import { colorToString, dequote, logFactory, osc, setOscSink } from './utils'
 import config from './config'
 import { noFn, OUTLET_SHORTCUT_NAME } from './consts'
 
@@ -222,6 +222,7 @@ function legacyShortcutPath(slot: number, path: string) {
 }
 
 function init(c: AppContext) {
+  setOscSink(c.osc)
   ctx = c
   if (!slots.length) {
     for (let i = 0; i < NUM_SHORTCUTS; i++) {

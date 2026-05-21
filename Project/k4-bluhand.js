@@ -636,6 +636,8 @@ function redo() {
 // observer re-fires it with the current value, so first-time setup pushes all
 // state; pushState() covers the re-refresh case where observers already exist.
 function init(c) {
+    (0, utils_1.setOscSink)(c.osc);
+    Slots.bindOsc(c.osc);
     ctx = c;
     Slots.initSlots();
     initTransportObservers();

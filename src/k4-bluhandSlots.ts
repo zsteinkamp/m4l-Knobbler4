@@ -4,7 +4,7 @@
 // state out over OSC, mirroring knobblerCore's scaling and feedback-suppression
 // approach. Driven by k4-bluhand (the [v8] entry) which owns the patcher I/O.
 
-import { colorToString, dequote, osc } from './utils'
+import { colorToString, dequote, osc, setOscSink } from './utils'
 import {
   propToValue,
   readParamMeta,
@@ -77,6 +77,13 @@ function makeSlotCb(idx: number, prop: string, fn: (idx: number) => void) {
     }
     fn(idx)
   }
+}
+
+// Wire this module's own utils instance to the orchestrator's OSC sink (ctx.osc),
+// called from k4-bluhand.init — require() gives this file a separate utils
+// instance, so its osc() must be pointed at the shared batch buffer too.
+export function bindOsc(fn: (addr: string, val: any) => void) {
+  setOscSink(fn)
 }
 
 export function initSlots() {

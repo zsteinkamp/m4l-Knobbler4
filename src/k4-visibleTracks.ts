@@ -2,6 +2,7 @@ import {
   cleanArr,
   colorToString,
   logFactory,
+  setOscSink,
   sendChunkedData,
   setVisibleTracks,
   truncate,
@@ -188,6 +189,7 @@ function doRefresh() {
 }
 
 function init(c: AppContext) {
+  setOscSink(c.osc)
   ctx = c
   ensureApis()
 

@@ -471,6 +471,7 @@ var onReturnsChange = function (args) {
 // Lifecycle
 // ---------------------------------------------------------------------------
 function doRefresh(c) {
+    (0, utils_1.setOscSink)(c.osc);
     ctx = c;
     state.watchers = [];
     state.trackLookupObj = null;

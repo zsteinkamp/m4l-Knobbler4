@@ -1,4 +1,4 @@
-import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, sendChunkedData } from './utils'
+import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, sendChunkedData, setOscSink } from './utils'
 import config from './config'
 import { noFn, TYPE_RETURN, TYPE_MAIN, TYPE_GROUP } from './consts'
 
@@ -904,7 +904,8 @@ function setupWindow(left: number, top: number, right: number, bottom: number) {
   applyWindow()
 }
 
-function doRefresh() {
+function doRefresh(c: AppContext) {
+  setOscSink(c.osc)
   if (leftTrack < 0) return
   setupWindow(leftTrack, topScene, rightTrack, bottomScene)
 }

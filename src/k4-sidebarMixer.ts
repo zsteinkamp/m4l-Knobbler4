@@ -3,6 +3,7 @@ import {
   colorToString,
   fixFloat,
   logFactory,
+  setOscSink,
   meterVal,
   osc,
   pauseUnpause,
@@ -545,6 +546,7 @@ const onReturnsChange = (args: IdObserverArg) => {
 // ---------------------------------------------------------------------------
 
 function doRefresh(c: AppContext) {
+  setOscSink(c.osc)
   ctx = c
   state.watchers = []
   state.trackLookupObj = null

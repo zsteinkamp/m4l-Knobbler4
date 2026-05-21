@@ -179,7 +179,8 @@ function onCurrTrackChange(val) {
     });
     trackChangeDebounce.schedule(40);
 }
-function init() {
+function init(c) {
+    (0, utils_1.setOscSink)(c.osc);
     if (!state.api) {
         // One-time setup: reset client info and create the selection observers
         // (mode=1 fires once on creation, pushing the initial nav state).

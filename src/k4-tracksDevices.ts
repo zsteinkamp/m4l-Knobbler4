@@ -3,6 +3,7 @@ import {
   colorToString,
   isDeviceSupported,
   logFactory,
+  setOscSink,
   osc,
   saveSetting,
   sendChunkedData,
@@ -215,7 +216,8 @@ function onCurrTrackChange(val: IdObserverArg) {
   trackChangeDebounce.schedule(40)
 }
 
-function init() {
+function init(c: AppContext) {
+  setOscSink(c.osc)
   if (!state.api) {
     // One-time setup: reset client info and create the selection observers
     // (mode=1 fires once on creation, pushing the initial nav state).

@@ -33,6 +33,10 @@ type BluhandBank = {
 // through ctx instead of importing them (require() does not share state across
 // files in [v8], so a direct import would be a separate, dead instance).
 interface AppContext {
+  // Outbound OSC singleton (k4-oscBatch.send). Each module wires its own utils
+  // instance to this in init() via setOscSink(ctx.osc) — require() gives every
+  // file a separate utils instance, so the batch buffer is reached through ctx.
+  osc(addr: string, val: any): void
   knobbler: { bkMap(knobblerSlot: number, paramId: number): void }
   sidebar: { sidebarMeters(val: number): void }
   gotoDevice(deviceId: string): void // recall navigation (-> bluhand)

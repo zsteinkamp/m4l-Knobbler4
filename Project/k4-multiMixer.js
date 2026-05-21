@@ -602,6 +602,7 @@ function page(pageNameArg) {
 }
 exports.page = page;
 function init(c) {
+    (0, utils_1.setOscSink)(c.osc);
     ctx = c;
     ensureApis();
     metersEnabled = !!ctx.settings.get('metersEnabled');

@@ -5,7 +5,7 @@
 // state out over OSC, mirroring knobblerCore's scaling and feedback-suppression
 // approach. Driven by k4-bluhand (the [v8] entry) which owns the patcher I/O.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.NUM_BLU_SLOTS = void 0;
+exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.bindOsc = exports.NUM_BLU_SLOTS = void 0;
 var utils_1 = require("./utils");
 var deviceParam_1 = require("./deviceParam");
 exports.NUM_BLU_SLOTS = 16;
@@ -56,6 +56,13 @@ function makeSlotCb(idx, prop, fn) {
         fn(idx);
     };
 }
+// Wire this module's own utils instance to the orchestrator's OSC sink (ctx.osc),
+// called from k4-bluhand.init — require() gives this file a separate utils
+// instance, so its osc() must be pointed at the shared batch buffer too.
+function bindOsc(fn) {
+    (0, utils_1.setOscSink)(fn);
+}
+exports.bindOsc = bindOsc;
 function initSlots() {
     if (slots.length) {
         return;
