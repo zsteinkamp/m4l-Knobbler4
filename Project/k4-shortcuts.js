@@ -61,15 +61,22 @@ function bindDevice(slot, deviceId) {
     var s = slots[slot - 1];
     if (!s.deviceApi) {
         s.deviceApi = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
-        s.nameApi = new LiveAPI(makeCb(slot, 'name', onName), 'id ' + deviceId);
-        s.nameApi.property = 'name';
-        s.colorApi = new LiveAPI(makeCb(slot, 'color', onColor), 'id ' + deviceId);
-        s.colorApi.property = 'color';
     }
     else {
         s.deviceApi.id = deviceId;
+    }
+    // Devices have no 'color' — the shortcut color comes from the device's
+    // canonical_parent (the track, or chain for rack devices).
+    var parentId = parseInt(s.deviceApi.get('canonical_parent')[1]);
+    if (!s.nameApi) {
+        s.nameApi = new LiveAPI(makeCb(slot, 'name', onName), 'id ' + deviceId);
+        s.nameApi.property = 'name';
+        s.colorApi = new LiveAPI(makeCb(slot, 'color', onColor), 'id ' + parentId);
+        s.colorApi.property = 'color';
+    }
+    else {
         s.nameApi.id = deviceId;
-        s.colorApi.id = deviceId;
+        s.colorApi.id = parentId;
     }
     s.mapped = true;
     onName(slot);
