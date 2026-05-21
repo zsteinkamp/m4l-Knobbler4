@@ -2,6 +2,8 @@
   title: Main Page
 - fname: features.md
   title: Feature Walkthrough
+- fname: mapping.md
+  title: Mapping Mode
 - fname: setup.md
   title: Setup
 - fname: tips.md
