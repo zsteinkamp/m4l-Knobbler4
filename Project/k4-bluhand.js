@@ -14,15 +14,23 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.routes = void 0;
+exports.init = exports.routes = exports.setBkMapHandler = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var deprecatedMethods_1 = require("./deprecatedMethods");
 var k4_bluhandBanks_1 = require("./k4-bluhandBanks");
 var Slots = require("./k4-bluhandSlots");
-var KnobblerCore = require("./knobblerCore");
 var log = (0, utils_1.logFactory)(config_1.default);
+// The entry injects knobblerCore.bkMap here. We can't `import` knobblerCore and
+// call it directly: within a single [v8], require() does NOT share module state
+// across files, so an imported knobblerCore would be a separate, uninitialized
+// instance (not the live one the entry drives).
+var onBkMap = function () { };
+function setBkMapHandler(fn) {
+    onBkMap = fn;
+}
+exports.setBkMapHandler = setBkMapHandler;
 var state = {
     devicePath: null,
     onOffWatcher: null,
@@ -100,9 +108,8 @@ function bkMap(bluSlot, knobblerSlot) {
     if (paramId === 0) {
         return;
     }
-    // Direct call now that knobblerCore is folded into the same [v8] — no more
-    // round-trip through [s ---KNOBBLER].
-    KnobblerCore.bkMap(knobblerSlot, paramId);
+    // Injected by the entry (the live knobblerCore instance) — see setBkMapHandler.
+    onBkMap(knobblerSlot, paramId);
 }
 // --- Selected device parameter tracking ------------------------------------
 var pcDebounce = new Task(onParameterChange);

@@ -19,9 +19,19 @@ import {
 } from './deprecatedMethods'
 import { getBankParamArr } from './k4-bluhandBanks'
 import * as Slots from './k4-bluhandSlots'
-import * as KnobblerCore from './knobblerCore'
 
 const log = logFactory(config)
+
+// The entry injects knobblerCore.bkMap here. We can't `import` knobblerCore and
+// call it directly: within a single [v8], require() does NOT share module state
+// across files, so an imported knobblerCore would be a separate, uninitialized
+// instance (not the live one the entry drives).
+let onBkMap: (knobblerSlot: number, paramId: number) => void = function () {}
+export function setBkMapHandler(
+  fn: (knobblerSlot: number, paramId: number) => void
+) {
+  onBkMap = fn
+}
 
 const state = {
   devicePath: null as string,
@@ -107,9 +117,8 @@ function bkMap(bluSlot: number, knobblerSlot: number) {
   if (paramId === 0) {
     return
   }
-  // Direct call now that knobblerCore is folded into the same [v8] — no more
-  // round-trip through [s ---KNOBBLER].
-  KnobblerCore.bkMap(knobblerSlot, paramId)
+  // Injected by the entry (the live knobblerCore instance) — see setBkMapHandler.
+  onBkMap(knobblerSlot, paramId)
 }
 
 // --- Selected device parameter tracking ------------------------------------

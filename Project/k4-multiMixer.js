@@ -1,12 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.page = exports.visibleTracks = exports.init = exports.routes = void 0;
+exports.page = exports.visibleTracks = exports.init = exports.routes = exports.setSidebarMeters = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var mixerUtils_1 = require("./mixerUtils");
-var sidebarMixer = require("./k4-sidebarMixer");
 var log = (0, utils_1.logFactory)(config_1.default);
+// The entry injects sidebarMixer.sidebarMeters here. A direct `import` won't do:
+// within one [v8], require() doesn't share module state across files, so an
+// imported sidebarMixer would be a separate instance from the live one.
+var onSidebarMeters = function () { };
+function setSidebarMeters(fn) {
+    onSidebarMeters = fn;
+}
+exports.setSidebarMeters = setSidebarMeters;
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -585,7 +592,7 @@ function sendMetersState() {
     if (chk)
         chk.message('set', metersEnabled ? 1 : 0);
     // Direct call now that sidebarMixer is folded into the same [v8].
-    sidebarMixer.sidebarMeters(metersEnabled ? 1 : 0);
+    onSidebarMeters(metersEnabled ? 1 : 0);
 }
 function page(pageNameArg) {
     var pageName = pageNameArg.toString();

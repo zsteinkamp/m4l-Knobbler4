@@ -37,6 +37,12 @@ visibleTracks.setNotify(function () {
   outlet(OUTLET_VISIBLE_TRACKS, 'visibleTracks')
 })
 
+// Inject live-instance references for inter-module calls. require() does NOT
+// share module state across files even within one [v8], so modules can't import
+// each other and call directly — the entry hands them the instance it drives.
+bluhand.setBkMapHandler(KnobblerCore.bkMap)
+multiMixer.setSidebarMeters(sidebarMixer.sidebarMeters)
+
 // Forward the device's dict prefix to the shared utils instance. One call
 // serves every folded-in module — require() caches utils within one [v8], so
 // the per-module setDictPrefix forwarding hack is gone.
