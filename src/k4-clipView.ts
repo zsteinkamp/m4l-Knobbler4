@@ -68,6 +68,7 @@ type SceneInfo = {
 // State
 // ---------------------------------------------------------------------------
 
+let ctx: AppContext = null
 let scratchApi: LiveAPI = null
 let cellInitApi: LiveAPI = null // separate scratchpad for createCellObservers (avoids re-entrancy)
 let viewApi: LiveAPI = null
@@ -124,7 +125,7 @@ function shouldSelectOnLaunch(): boolean {
 }
 
 function selectClipSlot(trackIdx: number, sceneIdx: number) {
-  viewApi.set('selected_track', ['id', trackIds[trackIdx]])
+  ctx.gotoTrack(trackIds[trackIdx].toString()) // shared nav: unfolds enclosing groups
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
   viewApi.set('highlighted_clip_slot', ['id', parseInt(scratchApi.id.toString())])
 }
@@ -906,6 +907,7 @@ function setupWindow(left: number, top: number, right: number, bottom: number) {
 
 function doRefresh(c: AppContext) {
   setOscSink(c.osc)
+  ctx = c
   if (leftTrack < 0) return
   setupWindow(leftTrack, topScene, rightTrack, bottomScene)
 }

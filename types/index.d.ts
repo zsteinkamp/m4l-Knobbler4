@@ -40,6 +40,7 @@ interface AppContext {
   knobbler: { bkMap(knobblerSlot: number, paramId: number): void }
   sidebar: { sidebarMeters(val: number): void }
   gotoDevice(deviceId: string): void // recall navigation (-> bluhand)
+  gotoTrack(trackId: string): void // selects a track, unfolding enclosing groups (-> bluhand)
   notifyVisibleTracks(): void
   // per-instance persistence (---settingsDict); one Dict ref, no key prefixing.
   // legacyGet reads the pre-[v8] shared [dict settingsDict] (prefixed keys) for

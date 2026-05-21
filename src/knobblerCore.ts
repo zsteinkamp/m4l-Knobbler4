@@ -423,8 +423,7 @@ function gotoTrackFor(slot: number) {
   if (!trackObj[slot]) {
     return
   }
-  scratchApi.path = 'live_set view'
-  scratchApi.set('selected_track', ['id', trackObj[slot].id])
+  ctx.gotoTrack(trackObj[slot].id.toString()) // shared nav: unfolds enclosing groups
 }
 
 function setDefault(slot: number) {

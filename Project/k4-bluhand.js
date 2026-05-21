@@ -14,7 +14,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.gotoDevice = exports.init = exports.routes = void 0;
+exports.gotoTrack = exports.gotoDevice = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
@@ -525,6 +525,7 @@ function gotoTrack(trackIdStr) {
     var api = getLiveSetViewApi();
     api.set('selected_track', ['id', trackId]);
 }
+exports.gotoTrack = gotoTrack;
 // --- Reusable LiveAPI handles ----------------------------------------------
 var utilApi = null;
 function getUtilApi() {

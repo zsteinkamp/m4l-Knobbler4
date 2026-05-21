@@ -43,6 +43,7 @@ var ctx = {
     knobbler: { bkMap: KnobblerCore.bkMap },
     sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
     gotoDevice: bluhand.gotoDevice,
+    gotoTrack: bluhand.gotoTrack,
     notifyVisibleTracks: function () {
         clipView.visibleTracks();
         multiMixer.visibleTracks();

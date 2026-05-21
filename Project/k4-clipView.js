@@ -19,6 +19,7 @@ var UPDATE_FLUSH_MS = 50;
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
+var ctx = null;
 var scratchApi = null;
 var cellInitApi = null; // separate scratchpad for createCellObservers (avoids re-entrancy)
 var viewApi = null;
@@ -67,7 +68,7 @@ function shouldSelectOnLaunch() {
     return !!parseInt(scratchApi.get('select_on_launch'));
 }
 function selectClipSlot(trackIdx, sceneIdx) {
-    viewApi.set('selected_track', ['id', trackIds[trackIdx]]);
+    ctx.gotoTrack(trackIds[trackIdx].toString()); // shared nav: unfolds enclosing groups
     scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx;
     viewApi.set('highlighted_clip_slot', ['id', parseInt(scratchApi.id.toString())]);
 }
@@ -808,6 +809,7 @@ function setupWindow(left, top, right, bottom) {
 }
 function doRefresh(c) {
     (0, utils_1.setOscSink)(c.osc);
+    ctx = c;
     if (leftTrack < 0)
         return;
     setupWindow(leftTrack, topScene, rightTrack, bottomScene);
