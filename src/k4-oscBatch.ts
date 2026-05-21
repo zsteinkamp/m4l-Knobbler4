@@ -1,14 +1,16 @@
+// Outbound OSC coalescing — folded into the entry [v8 knobbler]. utils.osc()
+// feeds send() in-process (registered via setOscSink); send() batches numeric
+// values into a /batch JSON envelope (batch-capable clients) or rate-limits
+// per-address (others), then emits to OUTLET_OSC -> [s ---UDPSEND] -> the
+// OSC-out gate -> [udpsend]. Non-numeric payloads (strings, JSON, chunks) are
+// built into raw OSC packets here and sent via udpsend's `rawbytes` message so
+// the variable content never interns into Max's symbol table.
+
 import { buildOscPacket, loadSetting, logFactory } from './utils'
 import config from './config'
-
-autowatch = 1
-inlets = 1
-outlets = 1
+import { OUTLET_OSC } from './consts'
 
 const log = logFactory(config)
-
-setinletassist(0, 'OSC messages to coalesce and batch')
-setoutletassist(0, 'Coalesced/batched OSC messages to [udpsend]')
 
 const BATCH_FLUSH_MS = 10
 const BATCH_MAX_BYTES = 1024
@@ -60,7 +62,7 @@ const rawOut: any[] = ['rawbytes']
 function sendRawBytes(bytes: number[]) {
   rawOut.length = 1
   for (let i = 0; i < bytes.length; i++) rawOut.push(bytes[i])
-  outlet(0, rawOut)
+  outlet(OUTLET_OSC, rawOut)
 }
 
 // For numeric args we keep the existing path — [udpsend]'s default OSC
@@ -73,7 +75,7 @@ function sendDirect(address: string, val: any) {
   if (typeof val === 'number') {
     outMsg[0] = address
     outMsg[1] = val
-    outlet(0, outMsg)
+    outlet(OUTLET_OSC, outMsg)
   } else {
     sendRawBytes(buildOscPacket(address, val))
   }
@@ -190,10 +192,10 @@ function throttleSend(address: string, val: any) {
 
 // --- Entry point ---
 
-function anything(val: any) {
-  const address = messagename
-
-  // Re-check capabilities after handshake or ping (capabilities may arrive in either)
+// Registered as utils' osc() sink. Every module's osc(addr, val) lands here.
+function send(address: string, val: any) {
+  // Capabilities may arrive in the handshake or a ping; both pass through here
+  // (k4-system sends /sendState and /pong via osc()), so re-check on either.
   if (address === '/sendState' || address === '/pong') {
     checkClientCapabilities()
   }
@@ -210,20 +212,6 @@ function anything(val: any) {
   }
 }
 
-// Pre-built OSC packets arriving from upstream (e.g. utils.osc()/sendChunkedData
-// for non-numeric payloads). Pass through to udpsend unchanged — the message
-// IS the complete OSC packet bytes, batching it would corrupt it.
-const rawPassthrough: any[] = ['rawbytes']
-function rawbytes() {
-  rawPassthrough.length = 1
-  const args = arrayfromargs(arguments)
-  for (let i = 0; i < args.length; i++) rawPassthrough.push(args[i])
-  outlet(0, rawPassthrough)
-}
-
 log('reloaded k4-oscBatch')
 
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+export { send }

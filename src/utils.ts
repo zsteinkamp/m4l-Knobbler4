@@ -168,7 +168,20 @@ export function meterVal(raw: any): number {
 const oscOut: any[] = [null, null]
 const oscRawOut: any[] = ['rawbytes']
 
+// OSC output sink. The entry registers k4-oscBatch.send here so osc() feeds the
+// batch/throttle buffer in-process (one shared utils instance per [v8], so this
+// one registration captures every module's sends). When unset — standalone
+// tools, or before the entry wires it — osc() emits directly to OUTLET_OSC.
+let oscSink: ((addr: string, val: any) => void) | null = null
+export function setOscSink(fn: (addr: string, val: any) => void) {
+  oscSink = fn
+}
+
 export function osc(addr: string, val: any) {
+  if (oscSink) {
+    oscSink(addr, val)
+    return
+  }
   if (typeof val === 'number') {
     oscOut[0] = addr
     oscOut[1] = val !== (val | 0) ? Math.round(val * 1000000) / 1000000 : val

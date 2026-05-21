@@ -9,7 +9,11 @@
 // [k4-oscBatch]/[k4-discovery]).
 
 import config from './config'
-import { logFactory, setDictPrefix as utilsSetDictPrefix } from './utils'
+import {
+  logFactory,
+  setDictPrefix as utilsSetDictPrefix,
+  setOscSink,
+} from './utils'
 import { OUTLET_PAGE } from './consts'
 import * as bluhand from './k4-bluhand'
 import * as currentParam from './k4-currentParam'
@@ -22,6 +26,12 @@ import * as KnobblerCore from './knobblerCore'
 import * as settings from './k4-settings'
 import * as shortcuts from './k4-shortcuts'
 import * as system from './k4-system'
+import * as oscBatch from './k4-oscBatch'
+
+// Route every module's utils.osc() through the in-process batch buffer (folded
+// in from the former [v8 k4-oscBatch]). One registration covers all modules —
+// they share this [v8]'s single utils instance. Set before any osc() fires.
+setOscSink(oscBatch.send)
 
 autowatch = 1
 inlets = 1

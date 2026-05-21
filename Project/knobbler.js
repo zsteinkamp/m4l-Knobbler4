@@ -22,6 +22,11 @@ var KnobblerCore = require("./knobblerCore");
 var settings = require("./k4-settings");
 var shortcuts = require("./k4-shortcuts");
 var system = require("./k4-system");
+var oscBatch = require("./k4-oscBatch");
+// Route every module's utils.osc() through the in-process batch buffer (folded
+// in from the former [v8 k4-oscBatch]). One registration covers all modules —
+// they share this [v8]'s single utils instance. Set before any osc() fires.
+(0, utils_1.setOscSink)(oscBatch.send);
 autowatch = 1;
 inlets = 1;
 // Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot

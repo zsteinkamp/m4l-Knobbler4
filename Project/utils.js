@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -155,7 +155,20 @@ exports.meterVal = meterVal;
 // the payload never becomes a Max atom.
 var oscOut = [null, null];
 var oscRawOut = ['rawbytes'];
+// OSC output sink. The entry registers k4-oscBatch.send here so osc() feeds the
+// batch/throttle buffer in-process (one shared utils instance per [v8], so this
+// one registration captures every module's sends). When unset — standalone
+// tools, or before the entry wires it — osc() emits directly to OUTLET_OSC.
+var oscSink = null;
+function setOscSink(fn) {
+    oscSink = fn;
+}
+exports.setOscSink = setOscSink;
 function osc(addr, val) {
+    if (oscSink) {
+        oscSink(addr, val);
+        return;
+    }
     if (typeof val === 'number') {
         oscOut[0] = addr;
         oscOut[1] = val !== (val | 0) ? Math.round(val * 1000000) / 1000000 : val;
