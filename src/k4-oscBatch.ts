@@ -200,7 +200,11 @@ function send(address: string, val: any) {
     checkClientCapabilities()
   }
 
-  if (shouldBypass(address)) {
+  // Only NUMERIC values ever go in the /batch envelope. Non-numeric payloads
+  // (strings, JSON-encoded arrays/objects) are emitted immediately as their own
+  // OSC packet via sendDirect's rawbytes path — the app's /batch parser expects
+  // numeric values only, and pre-fold osc() never batched non-numerics either.
+  if (typeof val !== 'number' || shouldBypass(address)) {
     sendDirect(address, val)
     return
   }
