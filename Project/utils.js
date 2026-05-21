@@ -154,13 +154,10 @@ function meterVal(raw) {
     return Math.round((parseFloat(raw) || 0) * 100) / 100;
 }
 exports.meterVal = meterVal;
-// Reusable outlet arrays. Numeric fast-path uses [addr, val] — udpsend handles
-// numeric atoms cleanly with no symbol-table interaction. Non-numeric payloads
-// (strings, objects, arrays) go through buildOscPacket() and emit as raw OSC
-// packet bytes via udpsend's `rawbytes` message, bypassing its OSC formatter so
-// the payload never becomes a Max atom.
-var oscOut = [null, null];
-var oscRawOut = ['rawbytes'];
+// Reusable output array. All sends ship a complete OSC packet (built here) to
+// the [node.script] sender as `packet <byte…>` — see k4-oscBatch. 'packet' is a
+// fixed selector; the rest are byte ints (no symbol-table interaction).
+var oscPktOut = ['packet'];
 // OSC output sink — the orchestrator's oscBatch singleton, reached via ctx.
 // Each module wires its own utils instance in init() with setOscSink(ctx.osc):
 // Max require() does NOT cache modules, so every file gets its OWN utils
@@ -177,24 +174,24 @@ function osc(addr, val) {
         oscSink(addr, val);
         return;
     }
-    if (typeof val === 'number') {
-        oscOut[0] = addr;
-        oscOut[1] = val !== (val | 0) ? Math.round(val * 1000000) / 1000000 : val;
-        outlet(consts_1.OUTLET_OSC, oscOut);
-        return;
+    // Fallback (no sink wired): build the packet and emit it the same way the
+    // oscBatch sink would, so a node.script sender downstream handles it.
+    var v = typeof val === 'number' && val !== (val | 0)
+        ? Math.round(val * 1000000) / 1000000
+        : val;
+    var bytes = buildOscPacket(addr, v);
+    oscPktOut.length = 1;
+    for (var i = 0; i < bytes.length; i++) {
+        oscPktOut.push(bytes[i]);
     }
-    var bytes = buildOscPacket(addr, val);
-    oscRawOut.length = 1;
-    for (var i = 0; i < bytes.length; i++)
-        oscRawOut.push(bytes[i]);
-    outlet(consts_1.OUTLET_OSC, oscRawOut);
+    outlet(consts_1.OUTLET_OSC, oscPktOut);
 }
 exports.osc = osc;
 // Build an OSC packet (address + single arg) as a flat array of byte values
-// (0..255), suitable for outlet to [udpsend]'s `rawbytes` message. Building
-// the wire packet in JS keeps the payload out of Max's atom system entirely,
-// avoiding the symbol-table bloat that [udpsend]'s default OSC formatter
-// would otherwise create when gensym'ing string args.
+// (0..255), handed to the [node.script] sender to transmit as a raw UDP
+// datagram. Building the wire packet in JS keeps the payload out of Max's atom
+// system entirely, avoiding the symbol-table bloat that emitting string args
+// to a Max object would otherwise create by gensym'ing them.
 //
 // Arg encoding inferred from JS value type:
 //   number (integer in int32 range)  → 'i', 4 bytes big-endian

@@ -2,10 +2,12 @@
 // Outbound OSC coalescing — folded into the entry [v8 knobbler]. utils.osc()
 // feeds send() in-process (registered via setOscSink); send() batches numeric
 // values into a /batch JSON envelope (batch-capable clients) or rate-limits
-// per-address (others), then emits to OUTLET_OSC -> [s ---UDPSEND] -> the
-// OSC-out gate -> [udpsend]. Non-numeric payloads (strings, JSON, chunks) are
-// built into raw OSC packets here and sent via udpsend's `rawbytes` message so
-// the variable content never interns into Max's symbol table.
+// per-address (others). Every send is built into a complete OSC packet here
+// (buildOscPacket) and emitted to OUTLET_OSC as `packet <byte…>` for the
+// [node.script] sender, which transmits it as a raw UDP datagram. This replaces
+// [udpsend] for output: it works on any Max version (no `rawbytes` dependency,
+// which only exists in Max 9.1.0+) and never interns a string into the symbol
+// table.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.send = void 0;
 var utils_1 = require("./utils");
@@ -44,33 +46,21 @@ function checkClientCapabilities() {
     var caps = (0, utils_1.loadSetting)('clientCapabilities');
     batchEnabled = typeof caps === 'string' && caps.indexOf('batch') !== -1;
 }
-// Reusable 2-element output array for numeric fast-path sends.
-var outMsg = ['', ''];
-// Reusable rawbytes output array for non-numeric sends. The first atom is
-// the fixed 'rawbytes' selector (gensym'd once and reused); the rest are
-// byte values (numeric atoms — no symbol-table interaction).
-var rawOut = ['rawbytes'];
-function sendRawBytes(bytes) {
-    rawOut.length = 1;
-    for (var i = 0; i < bytes.length; i++)
-        rawOut.push(bytes[i]);
-    outlet(consts_1.OUTLET_OSC, rawOut);
+// Every send goes out as a complete OSC packet (built here) handed to the
+// [node.script] sender as `packet <byte…>`. 'packet' is a fixed selector
+// (gensym'd once); the rest are byte ints (no symbol-table interaction). This
+// replaces [udpsend] for output entirely — works on any Max version (no
+// `rawbytes` dependency, Live 12.3.x included) and never interns a string.
+var pktOut = ['packet'];
+function sendPacket(bytes) {
+    pktOut.length = 1;
+    for (var i = 0; i < bytes.length; i++) {
+        pktOut.push(bytes[i]);
+    }
+    outlet(consts_1.OUTLET_OSC, pktOut);
 }
-// For numeric args we keep the existing path — [udpsend]'s default OSC
-// formatter handles them cleanly and they don't intern. For anything else
-// (strings, JSON-encoded objects), we build the wire packet ourselves and
-// hand [udpsend] the bytes via its rawbytes message, bypassing its OSC
-// formatter entirely so the variable-content payload never becomes a Max
-// atom.
 function sendDirect(address, val) {
-    if (typeof val === 'number') {
-        outMsg[0] = address;
-        outMsg[1] = val;
-        outlet(consts_1.OUTLET_OSC, outMsg);
-    }
-    else {
-        sendRawBytes((0, utils_1.buildOscPacket)(address, val));
-    }
+    sendPacket((0, utils_1.buildOscPacket)(address, val));
 }
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
 function flushBatchBuffer() {
@@ -86,7 +76,7 @@ function flushBatchBuffer() {
     else {
         // /batch envelope always has a JSON-string arg — build the wire packet
         // here so the JSON never becomes a Max atom.
-        sendRawBytes((0, utils_1.buildOscPacket)('/batch', oscBuffer));
+        sendPacket((0, utils_1.buildOscPacket)('/batch', oscBuffer));
     }
     oscBuffer = {};
     oscBufferSize = 0;
@@ -171,8 +161,8 @@ function send(address, val) {
     }
     // Only NUMERIC values ever go in the /batch envelope. Non-numeric payloads
     // (strings, JSON-encoded arrays/objects) are emitted immediately as their own
-    // OSC packet via sendDirect's rawbytes path — the app's /batch parser expects
-    // numeric values only, and pre-fold osc() never batched non-numerics either.
+    // OSC packet — the app's /batch parser expects numeric values only, and
+    // pre-fold osc() never batched non-numerics either.
     if (typeof val !== 'number' || shouldBypass(address)) {
         sendDirect(address, val);
         return;
