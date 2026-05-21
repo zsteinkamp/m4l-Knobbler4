@@ -11,7 +11,7 @@
 // plus the device-UI label via OUTLET_SHORTCUT_NAME. Recall navigates through
 // ctx.gotoDevice (bluhand).
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.routes = void 0;
+exports.legacyShortcutPath = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
@@ -24,6 +24,13 @@ var ctx = null;
 var slots = [];
 var scratchApi = null; // resolve selected_device / restore paths
 var checkPathTask = null;
+// Carry-forward from pre-[v8] versions: those persisted each shortcut path in a
+// parameter-enabled blob (longname N_shortcutPath, inside the old shortcutPoly).
+// The .amxd now has 8 invisible blob params with matching longnames; on load
+// each fires its restored value here so we can backfill ctx.settings for a slot
+// that hasn't been migrated yet. legacyPaths is populated once per device load
+// (the params fire on Live's parameter restore) and is read settings-first.
+var legacyPaths = [];
 function pathKey(slot) {
     return 'shortcut_' + slot + '_path';
 }
@@ -153,6 +160,39 @@ function refresh() {
         }
     }
 }
+// Resolve one slot: ctx.settings wins; else backfill from the legacy blob param
+// (carry-forward from pre-[v8] sets); else leave it unmapped. Idempotent — safe
+// on every refresh()/reconnect (a value already applied re-binds to the same id).
+function restoreShortcut(slot) {
+    if (!ctx || !slots.length) {
+        return;
+    }
+    var p = ctx.settings.get(pathKey(slot));
+    if (!(typeof p === 'string' && p.length) && legacyPaths[slot]) {
+        p = legacyPaths[slot];
+        ctx.settings.set(pathKey(slot), p); // migrate the old mapping into settings
+    }
+    if (typeof p === 'string' && p.length) {
+        scratchApi.path = p;
+        var id = parseInt(scratchApi.id);
+        if (id !== 0) {
+            bindDevice(slot, id);
+            return;
+        }
+    }
+    slots[slot - 1].mapped = false;
+    resetSlot(slot);
+}
+// Max message from a legacy N_shortcutPath blob param (fires on load). Stash the
+// value and apply it if we're ready; otherwise init() will pick it up.
+function legacyShortcutPath(slot, path) {
+    if (slot < 1 || slot > NUM_SHORTCUTS) {
+        return;
+    }
+    legacyPaths[slot] = path == null ? '' : path.toString();
+    restoreShortcut(slot);
+}
+exports.legacyShortcutPath = legacyShortcutPath;
 function init(c) {
     ctx = c;
     if (!slots.length) {
@@ -168,19 +208,10 @@ function init(c) {
     if (!scratchApi) {
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     }
-    // Restore from persisted paths (kept current by the checkPath poll at save).
+    // Restore from persisted paths (kept current by the checkPath poll at save),
+    // backfilling from legacy blob params for sets saved before the [v8] port.
     for (var i = 1; i <= NUM_SHORTCUTS; i++) {
-        var p = ctx.settings.get(pathKey(i));
-        if (p && typeof p === 'string' && p.length) {
-            scratchApi.path = p;
-            var id = parseInt(scratchApi.id);
-            if (id !== 0) {
-                bindDevice(i, id);
-                continue;
-            }
-        }
-        slots[i - 1].mapped = false;
-        resetSlot(i);
+        restoreShortcut(i);
     }
 }
 exports.init = init;

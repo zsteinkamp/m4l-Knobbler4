@@ -90,6 +90,12 @@ function setDeviceVersion(ver: string) {
   system.setDeviceVersion(ver)
 }
 
+// Max message from a legacy N_shortcutPath blob param (the 8 invisible carry-
+// forward params fire on load): `legacyShortcutPath <slot> <path>`.
+function legacyShortcutPath(slot: number, path: string) {
+  shortcuts.legacyShortcutPath(slot, path)
+}
+
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
 const entryRoutes: Route[] = [
   { prefix: '/page/', parse: 'custom', fn: pageDispatch },

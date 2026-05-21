@@ -34,6 +34,14 @@ const slots: ShortcutSlot[] = []
 let scratchApi: LiveAPI = null // resolve selected_device / restore paths
 let checkPathTask: Task = null
 
+// Carry-forward from pre-[v8] versions: those persisted each shortcut path in a
+// parameter-enabled blob (longname N_shortcutPath, inside the old shortcutPoly).
+// The .amxd now has 8 invisible blob params with matching longnames; on load
+// each fires its restored value here so we can backfill ctx.settings for a slot
+// that hasn't been migrated yet. legacyPaths is populated once per device load
+// (the params fire on Live's parameter restore) and is read settings-first.
+const legacyPaths: string[] = []
+
 function pathKey(slot: number): string {
   return 'shortcut_' + slot + '_path'
 }
@@ -179,6 +187,40 @@ function refresh() {
   }
 }
 
+// Resolve one slot: ctx.settings wins; else backfill from the legacy blob param
+// (carry-forward from pre-[v8] sets); else leave it unmapped. Idempotent — safe
+// on every refresh()/reconnect (a value already applied re-binds to the same id).
+function restoreShortcut(slot: number) {
+  if (!ctx || !slots.length) {
+    return
+  }
+  let p = ctx.settings.get(pathKey(slot))
+  if (!(typeof p === 'string' && p.length) && legacyPaths[slot]) {
+    p = legacyPaths[slot]
+    ctx.settings.set(pathKey(slot), p) // migrate the old mapping into settings
+  }
+  if (typeof p === 'string' && p.length) {
+    scratchApi.path = p
+    const id = parseInt(scratchApi.id as any)
+    if (id !== 0) {
+      bindDevice(slot, id)
+      return
+    }
+  }
+  slots[slot - 1].mapped = false
+  resetSlot(slot)
+}
+
+// Max message from a legacy N_shortcutPath blob param (fires on load). Stash the
+// value and apply it if we're ready; otherwise init() will pick it up.
+function legacyShortcutPath(slot: number, path: string) {
+  if (slot < 1 || slot > NUM_SHORTCUTS) {
+    return
+  }
+  legacyPaths[slot] = path == null ? '' : path.toString()
+  restoreShortcut(slot)
+}
+
 function init(c: AppContext) {
   ctx = c
   if (!slots.length) {
@@ -194,19 +236,10 @@ function init(c: AppContext) {
   if (!scratchApi) {
     scratchApi = new LiveAPI(noFn, 'live_set')
   }
-  // Restore from persisted paths (kept current by the checkPath poll at save).
+  // Restore from persisted paths (kept current by the checkPath poll at save),
+  // backfilling from legacy blob params for sets saved before the [v8] port.
   for (let i = 1; i <= NUM_SHORTCUTS; i++) {
-    const p = ctx.settings.get(pathKey(i))
-    if (p && typeof p === 'string' && p.length) {
-      scratchApi.path = p
-      const id = parseInt(scratchApi.id as any)
-      if (id !== 0) {
-        bindDevice(i, id)
-        continue
-      }
-    }
-    slots[i - 1].mapped = false
-    resetSlot(i)
+    restoreShortcut(i)
   }
 }
 
@@ -217,4 +250,4 @@ const routes: Route[] = [
   { prefix: '/unmapshortcut', parse: 'slot', fn: unmap },
 ]
 
-export { routes, init }
+export { routes, init, legacyShortcutPath }
