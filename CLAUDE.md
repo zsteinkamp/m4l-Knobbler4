@@ -60,6 +60,29 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 
 **Key compilation setting**: `tsconfig.json` targets ES5 with CommonJS modules, output to `Project/` directory.
 
+### Single-`[v8 knobbler]` architecture (current — May 2026)
+
+> ⚠️ The "router.ts / Outlet-Based Distribution / Message Flow" descriptions further down are **pre-consolidation history**. The device is now ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the `[v8 router]` and the per-feature `[v8]` objects are gone.
+
+`knobbler.ts` is the orchestrator/entry. It owns inbound OSC dispatch via a **route registry** (each feature module exports a `routes: Route[]` table; the entry merges them and calls `fn(...)` directly — no outlet fan-out) and builds an **`AppContext` (`ctx`)** that it hands to every module's `init(ctx)`. Modules reach siblings/services **through `ctx`** (`ctx.settings`, `ctx.osc`, `ctx.gotoTrack`, `ctx.gotoDevice`, `ctx.knobbler.bkMap`, …), never by importing each other.
+
+**Why ctx and not imports:** Max `require()` does **not** cache modules — each file that imports another gets a *separate, dead* instance. So inter-module calls go through the single live instances the entry wired into `ctx`. The same tax means each module gets its own `utils` instance, so its `osc()` won't batch until `init` calls `setOscSink(ctx.osc)`.
+
+**Adding a feature module (`k4-foo`):**
+
+1. `src/k4-foo.ts` exports a `routes` table + an `init`:
+   ```ts
+   export const routes: Route[] = [{ prefix: '/foo', parse: 'val', fn: doFoo }]
+   export function init(c: AppContext) {
+     setOscSink(c.osc)   // required: own utils instance, see above
+     ctx = c             // stash for ctx.settings / ctx.gotoTrack / etc.
+     // observers, initial state push…
+   }
+   ```
+   `parse` is one of `bare | val | slot | slotVal | custom` (see the `Route` type in `types/index.d.ts`).
+2. In `knobbler.ts`: `import * as foo from './k4-foo'`, add `foo.routes as any` to the `ROUTES` concat, add `foo.init(ctx)` to `init()`.
+3. Reach siblings/services only via `ctx`. Patcher work is only needed if the module has its own UI or non-OSC outlets.
+
 ### Core Module Responsibilities
 
 **`router.ts`** - Central OSC message dispatcher
