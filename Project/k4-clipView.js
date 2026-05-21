@@ -1,13 +1,10 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.init = exports.visibleTracks = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
-autowatch = 1;
-inlets = 1;
-outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
-setinletassist(consts_1.INLET_MSGS, 'Messages from router');
-setoutletassist(consts_1.OUTLET_OSC, 'OSC messages to [udpsend]');
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -121,6 +118,7 @@ function visibleTracks() {
     teardownAllTrackPlay();
     applyWindow();
 }
+exports.visibleTracks = visibleTracks;
 // ---------------------------------------------------------------------------
 // Scene Count
 // ---------------------------------------------------------------------------
@@ -813,6 +811,7 @@ function doRefresh() {
         return;
     setupWindow(leftTrack, topScene, rightTrack, bottomScene);
 }
+exports.init = doRefresh;
 function requestClipsScenes() {
     sendSceneInfo();
 }
@@ -992,8 +991,21 @@ function captureScene() {
     scratchApi.path = 'live_set';
     scratchApi.call('capture_and_insert_scene');
 }
+var routes = [
+    { prefix: '/requestClipsScenes', parse: 'bare', fn: requestClipsScenes },
+    { prefix: '/clipView', parse: 'val', fn: clipView },
+    { prefix: '/clipLaunch', parse: 'val', fn: clipLaunch },
+    { prefix: '/clipRecord', parse: 'val', fn: clipRecord },
+    { prefix: '/clipDelete', parse: 'val', fn: clipDelete },
+    { prefix: '/clipSetStopButton', parse: 'val', fn: clipSetStopButton },
+    { prefix: '/clipStop', parse: 'val', fn: clipStop },
+    { prefix: '/clipColor', parse: 'val', fn: clipColor },
+    { prefix: '/clips/update', parse: 'val', fn: clipsUpdate },
+    { prefix: '/sceneLaunch', parse: 'val', fn: sceneLaunch },
+    { prefix: '/sceneRename', parse: 'val', fn: sceneRename },
+    { prefix: '/sceneColor', parse: 'val', fn: sceneColor },
+    { prefix: '/stopAll', parse: 'bare', fn: stopAll },
+    { prefix: '/captureScene', parse: 'bare', fn: captureScene },
+];
+exports.routes = routes;
 log('reloaded k4-clipView');
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
-module.exports = {};

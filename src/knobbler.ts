@@ -9,23 +9,45 @@
 // folded in and the router is deleted.
 
 import config from './config'
-import { logFactory } from './utils'
+import { logFactory, setDictPrefix as utilsSetDictPrefix } from './utils'
+import { OUTLET_VISIBLE_TRACKS } from './consts'
 import * as bluhand from './k4-bluhand'
 import * as currentParam from './k4-currentParam'
+import * as multiMixer from './k4-multiMixer'
+import * as clipView from './k4-clipView'
+import * as visibleTracks from './k4-visibleTracks'
 
 autowatch = 1
 inlets = 1
-// outlet 0 = OSC out (utils.osc), outlet 1 = bkMap -> [s ---KNOBBLER].
-// Grows as more modules fold in.
-outlets = 2
+// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = bkMap ->
+// [s ---KNOBBLER], 2 = 'visibleTracks' notify -> still-external consumers.
+outlets = 3
 
 const log = logFactory(config)
+
+// Fan a visibleTracks change to the folded-in consumers directly, and to the
+// still-external ones (sidebarMixer/knobbler4) via the notify outlet.
+visibleTracks.setNotify(function () {
+  clipView.visibleTracks()
+  multiMixer.visibleTracks()
+  outlet(OUTLET_VISIBLE_TRACKS, 'visibleTracks')
+})
+
+// Forward the device's dict prefix to the shared utils instance. One call
+// serves every folded-in module — require() caches utils within one [v8], so
+// the per-module setDictPrefix forwarding hack is gone.
+function setDictPrefix(prefix: any) {
+  utilsSetDictPrefix(prefix)
+}
 
 // --- Route table (merged from every migrated module) -----------------------
 
 const ROUTES: Route[] = [].concat(
   bluhand.routes as any,
-  currentParam.routes as any
+  currentParam.routes as any,
+  multiMixer.routes as any,
+  clipView.routes as any,
+  visibleTracks.routes as any
 ) as Route[]
 ROUTES.sort((a, b) => (a.prefix.length > b.prefix.length ? -1 : 1))
 
@@ -152,6 +174,9 @@ function anything(value: any) {
 function init() {
   bluhand.init()
   currentParam.init()
+  multiMixer.init()
+  clipView.init()
+  visibleTracks.init()
 }
 
 log('reloaded knobbler')

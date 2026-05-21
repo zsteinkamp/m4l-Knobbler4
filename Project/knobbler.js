@@ -10,16 +10,33 @@
 // folded in and the router is deleted.
 var config_1 = require("./config");
 var utils_1 = require("./utils");
+var consts_1 = require("./consts");
 var bluhand = require("./k4-bluhand");
 var currentParam = require("./k4-currentParam");
+var multiMixer = require("./k4-multiMixer");
+var clipView = require("./k4-clipView");
+var visibleTracks = require("./k4-visibleTracks");
 autowatch = 1;
 inlets = 1;
-// outlet 0 = OSC out (utils.osc), outlet 1 = bkMap -> [s ---KNOBBLER].
-// Grows as more modules fold in.
-outlets = 2;
+// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = bkMap ->
+// [s ---KNOBBLER], 2 = 'visibleTracks' notify -> still-external consumers.
+outlets = 3;
 var log = (0, utils_1.logFactory)(config_1.default);
+// Fan a visibleTracks change to the folded-in consumers directly, and to the
+// still-external ones (sidebarMixer/knobbler4) via the notify outlet.
+visibleTracks.setNotify(function () {
+    clipView.visibleTracks();
+    multiMixer.visibleTracks();
+    outlet(consts_1.OUTLET_VISIBLE_TRACKS, 'visibleTracks');
+});
+// Forward the device's dict prefix to the shared utils instance. One call
+// serves every folded-in module — require() caches utils within one [v8], so
+// the per-module setDictPrefix forwarding hack is gone.
+function setDictPrefix(prefix) {
+    (0, utils_1.setDictPrefix)(prefix);
+}
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, currentParam.routes);
+var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, clipView.routes, visibleTracks.routes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -121,6 +138,9 @@ function anything(value) {
 function init() {
     bluhand.init();
     currentParam.init();
+    multiMixer.init();
+    clipView.init();
+    visibleTracks.init();
 }
 log('reloaded knobbler');
 // NOTE: required boilerplate so tsc emits valid CommonJS for the [v8] object.

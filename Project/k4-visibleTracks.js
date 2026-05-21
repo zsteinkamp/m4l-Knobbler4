@@ -1,16 +1,18 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.init = exports.routes = exports.setNotify = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
-autowatch = 1;
-inlets = 1;
-outlets = 2;
-var OUTLET_OSC = 0;
-var OUTLET_TRACK_DATA = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
-setinletassist(consts_1.INLET_MSGS, 'Messages');
-setoutletassist(OUTLET_OSC, 'OSC messages to [udpsend]');
-setoutletassist(OUTLET_TRACK_DATA, 'Track data to mixer/clips');
+// The entry registers a callback that fans a track-list change to the folded-in
+// consumers (clipView/multiMixer) directly and to the still-external ones
+// (sidebarMixer/knobbler4) via an outlet.
+var notify = function () { };
+function setNotify(fn) {
+    notify = fn;
+}
+exports.setNotify = setNotify;
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -86,7 +88,7 @@ function sendVisibleTracks() {
     (0, utils_1.sendChunkedData)('/visibleTracks', items);
     // Write to shared dict, then notify mixer/clips
     (0, utils_1.setVisibleTracks)(trackList);
-    outlet(OUTLET_TRACK_DATA, 'visibleTracks');
+    notify();
 }
 // ---------------------------------------------------------------------------
 // Color Observers
@@ -174,8 +176,9 @@ function init() {
     createColorObservers();
     sendVisibleTracks();
 }
+exports.init = init;
+var routes = [
+    { prefix: '/requestVisibleTracks', parse: 'bare', fn: requestVisibleTracks },
+];
+exports.routes = routes;
 log('reloaded k4-visibleTracks');
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
-module.exports = {};

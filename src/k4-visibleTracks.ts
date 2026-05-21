@@ -10,7 +10,6 @@ import {
 import config from './config'
 import {
   noFn,
-  INLET_MSGS,
   TYPE_TRACK,
   TYPE_RETURN,
   TYPE_MAIN,
@@ -18,18 +17,15 @@ import {
   MAX_NAME_LEN,
 } from './consts'
 
-autowatch = 1
-inlets = 1
-outlets = 2
-
-const OUTLET_OSC = 0
-const OUTLET_TRACK_DATA = 1
-
 const log = logFactory(config)
 
-setinletassist(INLET_MSGS, 'Messages')
-setoutletassist(OUTLET_OSC, 'OSC messages to [udpsend]')
-setoutletassist(OUTLET_TRACK_DATA, 'Track data to mixer/clips')
+// The entry registers a callback that fans a track-list change to the folded-in
+// consumers (clipView/multiMixer) directly and to the still-external ones
+// (sidebarMixer/knobbler4) via an outlet.
+let notify: () => void = function () {}
+export function setNotify(fn: () => void) {
+  notify = fn
+}
 
 // ---------------------------------------------------------------------------
 // State
@@ -115,7 +111,7 @@ function sendVisibleTracks() {
 
   // Write to shared dict, then notify mixer/clips
   setVisibleTracks(trackList)
-  outlet(OUTLET_TRACK_DATA, 'visibleTracks')
+  notify()
 }
 
 // ---------------------------------------------------------------------------
@@ -212,9 +208,10 @@ function init() {
   sendVisibleTracks()
 }
 
+const routes: Route[] = [
+  { prefix: '/requestVisibleTracks', parse: 'bare', fn: requestVisibleTracks },
+]
+
 log('reloaded k4-visibleTracks')
 
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+export { routes, init }

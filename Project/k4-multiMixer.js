@@ -1,16 +1,11 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.visibleTracks = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var mixerUtils_1 = require("./mixerUtils");
-autowatch = 1;
-inlets = 2;
-outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
-var INLET_PAGE = 1;
-setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
-setinletassist(INLET_PAGE, 'Page change messages');
-setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -605,8 +600,8 @@ function sendMetersState() {
     if (sb)
         sb.message('sidebarMeters', metersEnabled ? 1 : 0);
 }
-function page() {
-    var pageName = arguments[0].toString();
+function page(pageNameArg) {
+    var pageName = pageNameArg.toString();
     var wasMixerPage = onMixerPage;
     onMixerPage = pageName === 'mixer' || pageName === 'session';
     if (onMixerPage && !wasMixerPage) {
@@ -617,15 +612,13 @@ function page() {
         stopMeterFlush();
     }
 }
-function setDictPrefix(prefix) {
-    (0, utils_1.setDictPrefix)(prefix);
-}
 function init() {
     ensureApis();
     metersEnabled = !!(0, utils_1.loadInstanceSetting)('metersEnabled');
     sendMetersState();
     setupWindow(0, DEFAULT_VISIBLE_COUNT);
 }
+exports.init = init;
 // ---------------------------------------------------------------------------
 // Helpers: resolve strip from incoming index
 // ---------------------------------------------------------------------------
@@ -827,10 +820,20 @@ function toggleXFadeB(stripIdx) {
 // ---------------------------------------------------------------------------
 // anything() dispatcher — Max calls this with messagename = subCmd,
 // arguments = [stripIdx, val] (from router outlet)
-function anything() {
-    var subCmd = messagename;
-    var stripIdx = parseInt(arguments[0].toString());
-    var val = arguments[1];
+// Parse /mixer/{stripIdx}/{subCmd} and dispatch. NaN stripIdx (e.g. the
+// single-track /mixer/vol) is left for k4-mixerSends (still in the router).
+function mixerCmd(address, val) {
+    var parts = address.split('/'); // ['', 'mixer', '3', 'vol']
+    var stripIdx = parseInt(parts[2]);
+    if (isNaN(stripIdx))
+        return;
+    dispatchMixerSub(parts[3], stripIdx, val);
+}
+// Page-change notifications drive meter flushing on/off.
+function pageDispatch(address) {
+    page(address.split('/')[2]); // page() reads arguments[0]
+}
+function dispatchMixerSub(subCmd, stripIdx, val) {
     if (subCmd === 'vol')
         vol(stripIdx, val);
     else if (subCmd === 'pan')
@@ -915,8 +918,12 @@ function visibleTracks() {
         applyWindow();
     }
 }
+exports.visibleTracks = visibleTracks;
+var routes = [
+    { prefix: '/mixerView', parse: 'val', fn: mixerView },
+    { prefix: '/mixerMeters', parse: 'val', fn: mixerMeters },
+    { prefix: '/mixer/', parse: 'custom', fn: mixerCmd, coalesce: true },
+    { prefix: '/page/', parse: 'custom', fn: pageDispatch },
+];
+exports.routes = routes;
 log('reloaded k4-multiMixer');
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
-module.exports = {};

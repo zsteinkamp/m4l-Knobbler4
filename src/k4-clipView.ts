@@ -1,22 +1,8 @@
 import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, sendChunkedData } from './utils'
 import config from './config'
-import {
-  noFn,
-  INLET_MSGS,
-  OUTLET_OSC,
-  TYPE_RETURN,
-  TYPE_MAIN,
-  TYPE_GROUP,
-} from './consts'
-
-autowatch = 1
-inlets = 1
-outlets = 1
+import { noFn, TYPE_RETURN, TYPE_MAIN, TYPE_GROUP } from './consts'
 
 const log = logFactory(config)
-
-setinletassist(INLET_MSGS, 'Messages from router')
-setoutletassist(OUTLET_OSC, 'OSC messages to [udpsend]')
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1116,9 +1102,25 @@ function captureScene() {
   scratchApi.call('capture_and_insert_scene')
 }
 
+const routes: Route[] = [
+  { prefix: '/requestClipsScenes', parse: 'bare', fn: requestClipsScenes },
+  { prefix: '/clipView', parse: 'val', fn: clipView },
+  { prefix: '/clipLaunch', parse: 'val', fn: clipLaunch },
+  { prefix: '/clipRecord', parse: 'val', fn: clipRecord },
+  { prefix: '/clipDelete', parse: 'val', fn: clipDelete },
+  { prefix: '/clipSetStopButton', parse: 'val', fn: clipSetStopButton },
+  { prefix: '/clipStop', parse: 'val', fn: clipStop },
+  { prefix: '/clipColor', parse: 'val', fn: clipColor },
+  { prefix: '/clips/update', parse: 'val', fn: clipsUpdate },
+  { prefix: '/sceneLaunch', parse: 'val', fn: sceneLaunch },
+  { prefix: '/sceneRename', parse: 'val', fn: sceneRename },
+  { prefix: '/sceneColor', parse: 'val', fn: sceneColor },
+  { prefix: '/stopAll', parse: 'bare', fn: stopAll },
+  { prefix: '/captureScene', parse: 'bare', fn: captureScene },
+]
+
 log('reloaded k4-clipView')
 
-// NOTE: This section must appear in any .ts file that is directly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+// init() re-pushes the grid on refresh (no-op until a window is set).
+export { routes, visibleTracks }
+export { doRefresh as init }

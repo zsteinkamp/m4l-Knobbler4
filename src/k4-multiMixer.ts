@@ -6,7 +6,6 @@ import {
   getVisibleTracksList,
   loadInstanceSetting,
   saveInstanceSetting,
-  setDictPrefix as _setDictPrefix,
   logFactory,
   meterVal,
   osc,
@@ -17,8 +16,6 @@ import {
 import config from './config'
 import {
   noFn,
-  INLET_MSGS,
-  OUTLET_OSC,
   MAX_SENDS,
   PAUSE_MS,
   METER_FLUSH_MS,
@@ -41,17 +38,7 @@ import {
   xfadeAB,
 } from './mixerUtils'
 
-autowatch = 1
-inlets = 2
-outlets = 1
-
 const log = logFactory(config)
-
-const INLET_PAGE = 1
-
-setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
-setinletassist(INLET_PAGE, 'Page change messages')
-setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
 // ---------------------------------------------------------------------------
 // Types
@@ -729,8 +716,8 @@ function sendMetersState() {
   if (sb) sb.message('sidebarMeters', metersEnabled ? 1 : 0)
 }
 
-function page() {
-  const pageName = arguments[0].toString()
+function page(pageNameArg: string) {
+  const pageName = pageNameArg.toString()
   const wasMixerPage = onMixerPage
   onMixerPage = pageName === 'mixer' || pageName === 'session'
 
@@ -739,10 +726,6 @@ function page() {
   } else if (!onMixerPage && wasMixerPage) {
     stopMeterFlush()
   }
-}
-
-function setDictPrefix(prefix: any) {
-  _setDictPrefix(prefix)
 }
 
 function init() {
@@ -956,11 +939,21 @@ function toggleXFadeB(stripIdx: number) {
 
 // anything() dispatcher — Max calls this with messagename = subCmd,
 // arguments = [stripIdx, val] (from router outlet)
-function anything() {
-  const subCmd = messagename
-  const stripIdx = parseInt(arguments[0].toString())
-  const val = arguments[1]
+// Parse /mixer/{stripIdx}/{subCmd} and dispatch. NaN stripIdx (e.g. the
+// single-track /mixer/vol) is left for k4-mixerSends (still in the router).
+function mixerCmd(address: string, val: any) {
+  const parts = address.split('/') // ['', 'mixer', '3', 'vol']
+  const stripIdx = parseInt(parts[2])
+  if (isNaN(stripIdx)) return
+  dispatchMixerSub(parts[3], stripIdx, val)
+}
 
+// Page-change notifications drive meter flushing on/off.
+function pageDispatch(address: string) {
+  page(address.split('/')[2]) // page() reads arguments[0]
+}
+
+function dispatchMixerSub(subCmd: string, stripIdx: number, val: any) {
   if (subCmd === 'vol') vol(stripIdx, val)
   else if (subCmd === 'pan') pan(stripIdx, val)
   else if (subCmd === 'volDefault') volDefault(stripIdx)
@@ -1011,9 +1004,13 @@ function visibleTracks() {
   }
 }
 
+const routes: Route[] = [
+  { prefix: '/mixerView', parse: 'val', fn: mixerView },
+  { prefix: '/mixerMeters', parse: 'val', fn: mixerMeters },
+  { prefix: '/mixer/', parse: 'custom', fn: mixerCmd, coalesce: true },
+  { prefix: '/page/', parse: 'custom', fn: pageDispatch },
+]
+
 log('reloaded k4-multiMixer')
 
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+export { routes, init, visibleTracks }
