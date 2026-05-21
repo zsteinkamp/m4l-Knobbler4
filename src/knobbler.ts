@@ -75,11 +75,6 @@ function legacyPort(port: number) {
   settings.setLegacyPrefix(port)
 }
 
-// Dev button (presentation): dump ---settingsDict to the Max console.
-function dumpSettings() {
-  settings.dump()
-}
-
 // Forward the device's dict prefix to the shared utils instance. One call
 // serves every folded-in module — require() caches utils within one [v8], so
 // the per-module setDictPrefix forwarding hack is gone.
