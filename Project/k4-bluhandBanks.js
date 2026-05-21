@@ -1,4 +1,8 @@
 "use strict";
+// Pure bank-layout computation for bluhand. Given a device's parameter ids,
+// its class name, and a LiveAPI handle to the device, produces the rows of
+// parameter indices that each bluhand "bank" page displays. Imported by
+// k4-bluhand (the [v8] entry); owns no Max I/O or observers.
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
@@ -8,43 +12,24 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     }
     return to.concat(ar || Array.prototype.slice.call(from));
 };
-var utils_1 = require("./utils");
-var config_1 = require("./config");
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getBankParamArr = void 0;
 var consts_1 = require("./consts");
 var k4_deviceParamMaps_1 = require("./k4-deviceParamMaps");
-var deprecatedMethods_1 = require("./deprecatedMethods");
 var deviceParams_1 = require("./deviceParams");
-autowatch = 1;
-inlets = 1;
-outlets = 2;
-var log = (0, utils_1.logFactory)(config_1.default);
-setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
-setinletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
-setinletassist(consts_1.OUTLET_MSGS, 'Output messages to the [poly finger] instances to set their parameter index');
-var paramNameToIdx = null;
-var state = {
-    devicePath: null,
-    onOffWatcher: null,
-    paramsWatcher: null,
-    variationsWatcher: null,
-    currDeviceId: 0,
-    currBank: 1,
-    numBanks: 1,
-    bankParamArr: [],
-    nameLookupCache: {},
-    cuePointsWatcher: null,
-    cuePointNames: [],
-    cuePointTimes: [],
-};
+var nameLookupCache = {};
+var lookupApi = null;
+function getLookupApi() {
+    if (!lookupApi) {
+        lookupApi = new LiveAPI(consts_1.noFn, 'live_set');
+    }
+    return lookupApi;
+}
 function getMaxBanksParamArr(bankCount, deviceObj) {
     var rawBanks = [];
-    //log('BANK_COUNT ' + bankCount)
     for (var i = 0; i < bankCount; i++) {
         var bankName = deviceObj.call('get_bank_name', i);
         var bankParams = deviceObj.call('get_bank_parameters', i);
-        //log(
-        //  ' BANK ROW ' + JSON.stringify({ name: bankName, paramIdxArr: bankParams })
-        //)
         rawBanks.push({ name: bankName, paramIdxArr: bankParams });
     }
     var ret = [];
@@ -64,7 +49,6 @@ function getMaxBanksParamArr(bankCount, deviceObj) {
     return ret;
 }
 function getBasicParamArr(paramIds) {
-    //log('GET BASIC ' + paramIds.join(','))
     var ret = [];
     var currBank = 0;
     var blankRow = function () {
@@ -98,7 +82,6 @@ function getBasicParamArr(paramIds) {
     else {
         ret.push(blankRow());
     }
-    //log('RET ' + JSON.stringify(ret))
     return ret;
 }
 function getBankParamArr(paramIds, deviceType, deviceObj) {
@@ -110,39 +93,30 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         }
     }
     // deviceParamMap is custom or crafted parameter organization
-    //log('BBANKS ' + deviceType)
-    //log('BBANKS INFO ' + deviceObj.info.toString())
     var deviceParamMap = (0, k4_deviceParamMaps_1.deviceParamMapFor)(deviceType);
     if (!deviceParamMap) {
-        var paramArr = getBasicParamArr(paramIds);
         // nothing to customize, return the basic array
-        //log('BASIC RETURN ' + JSON.stringify(paramArr))
-        return paramArr;
+        return getBasicParamArr(paramIds);
     }
-    //log('OUT HERE')
-    var ret = [];
     // cache id to name mapping because it is super slow with giant devices like
     // Operator and honestly it should just be a compile-time step of the data
-    // files that need this information. frankly this is stupid and should be
-    // burned.
+    // files that need this information.
     var lookupCacheKey = deviceObj.id;
-    paramNameToIdx = state.nameLookupCache[lookupCacheKey];
+    var paramNameToIdx = nameLookupCache[lookupCacheKey];
     if (!paramNameToIdx) {
-        //log('CACHE MISS ' + lookupCacheKey)
         paramNameToIdx = {};
-        // more "bespoke" setups get this
-        var param_1 = getUtilApi();
+        var param_1 = getLookupApi();
         paramIds.forEach(function (paramId, idx) {
             if (paramId <= 0) {
                 return;
             }
             param_1.id = paramId;
             paramNameToIdx[param_1.get('name').toString()] = idx;
-            //log(`NAME TO IDX [${param.get('name')}]=${idx}`)
         });
-        state.nameLookupCache[lookupCacheKey] = paramNameToIdx;
+        nameLookupCache[lookupCacheKey] = paramNameToIdx;
     }
-    deviceParamMap.forEach(function (nameBank, idx) {
+    var ret = [];
+    deviceParamMap.forEach(function (nameBank) {
         var row = {
             name: nameBank.name,
             paramIdxArr: [],
@@ -159,7 +133,6 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
                 var singleName = _a[_i];
                 // can have multiple options pipe-separated (e.g. for meld)
                 pIdx = paramNameToIdx[singleName];
-                //log('IS IT ' + pIdx)
                 if (pIdx !== undefined) {
                     found = true;
                     break;
@@ -167,587 +140,12 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
             }
             if (!found) {
                 // the world of parameters is a complicated one
-                //log(
-                //  'ERROR (' +
-                //    deviceType +
-                //    ') NO pIDX FOR NAME ' +
-                //    paramName +
-                //    ' ' +
-                //    JSON.stringify(Object.keys(paramNameToIdx))
-                //)
                 return;
             }
             row.paramIdxArr.push(pIdx + 1);
         });
-        //log('ROW ' + JSON.stringify(row))
         ret.push(row);
     });
-    //log('PARAMARRFINAL ' + JSON.stringify(ret))
     return ret;
 }
-function sendBankNames() {
-    var currBankIdx = state.currBank - 1;
-    var banks = state.bankParamArr.map(function (bank, idx) {
-        return { name: bank.name, sel: idx === currBankIdx };
-    });
-    //log('BANKS: ' + JSON.stringify(banks))
-    (0, utils_1.osc)('/bBanks', banks);
-}
-var sendCurrBankTask = null;
-function debounceSendCurrBank() {
-    if (sendCurrBankTask) {
-        sendCurrBankTask.cancel();
-    }
-    sendCurrBankTask = new Task(sendCurrBank);
-    sendCurrBankTask.schedule(20);
-}
-function sendCurrBank() {
-    //log('SEND CURR BANK ' + JSON.stringify(state))
-    var currBankIdx = Math.max(0, state.currBank - 1);
-    if (!state.bankParamArr || !state.bankParamArr[currBankIdx]) {
-        //log('EARLY ' + JSON.stringify(state.bankParamArr) + ' ' + currBankIdx)
-        sendBankNames();
-        return;
-    }
-    var bluBank = state.bankParamArr[currBankIdx];
-    (0, utils_1.osc)('/bTxtCurrBank', bluBank.name);
-    while (bluBank.paramIdxArr.length < 16) {
-        bluBank.paramIdxArr.push(-1);
-    }
-    //log('MADE IT ' + JSON.stringify(bluBank))
-    bluBank.paramIdxArr.forEach(function (paramIdx, idx) {
-        outlet(consts_1.OUTLET_MSGS, ['target', idx + 1]);
-        outlet(consts_1.OUTLET_MSGS, ['paramIdx', paramIdx]);
-        //log(JSON.stringify({ str: 'MSG', target: idx + 1, paramIdx }))
-    });
-    sendBankNames();
-}
-function unfoldParentTracks(objId) {
-    var util = getUtilApi();
-    util.id = objId;
-    //log('GOTO TRACK ' + trackId + ' ' + util.id)
-    if (+util.id === 0) {
-        // invalid objId (e.g. deleted object)
-        return;
-    }
-    // first we need to surf up the hierarchy to make sure we are not in a
-    // collapsed group
-    var counter = 0;
-    while (counter < 20) {
-        var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
-        //log(util.id + ' isFoldable=' + util.get('is_foldable'))
-        if (isFoldable) {
-            var foldState = parseInt(util.get('fold_state'));
-            if (foldState === 1) {
-                // need to unfold
-                util.set('fold_state', 0);
-            }
-        }
-        util.id = parseInt(util.get('canonical_parent')[1]);
-        //log('TYPE=' + util.type)
-        if (util.type === 'Song') {
-            break;
-        }
-        counter++;
-    }
-}
-function getParentTrackForDevice(deviceId) {
-    var util = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
-    if ((0, utils_1.isDeviceSupported)(util)) {
-        var counter = 0;
-        while (counter < 20) {
-            util.id = parseInt(util.get('canonical_parent')[1]);
-            if (util.type === 'Track') {
-                return +util.id;
-            }
-            counter++;
-        }
-    }
-    return 0;
-}
-function gotoDevice(deviceIdStr) {
-    var deviceId = parseInt(deviceIdStr);
-    if (deviceId === 0) {
-        return;
-    }
-    var api = getLiveSetViewApi();
-    // make sure the track is selected
-    var trackId = getParentTrackForDevice(deviceId);
-    if (trackId === 0) {
-        log('no track for device ' + deviceId);
-    }
-    else {
-        gotoTrack(trackId.toString());
-    }
-    api.call('select_device', ['id', deviceId]);
-}
-function hideChains(deviceId) {
-    //log('HIDE CHAINS ' + JSON.stringify(deviceId))
-    var obj = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
-    if (+obj.id === 0) {
-        return;
-    }
-    if ((0, utils_1.isDeviceSupported)(obj) && +obj.get('can_have_chains')) {
-        // have to go to the 'view' child of the object to set chain device visibility
-        obj.goto('view');
-        obj.set('is_showing_chain_devices', 0);
-    }
-}
-function gotoChain(chainIdStr) {
-    var chainId = parseInt(chainIdStr);
-    //log('GOTO CHAIN ' + chainId + ' ' + typeof chainId)
-    unfoldParentTracks(chainId);
-    var viewApi = getLiveSetViewApi();
-    var api = getUtilApi();
-    api.id = chainId;
-    var devices = (0, utils_1.cleanArr)(api.get('devices'));
-    if (devices && devices[0]) {
-        viewApi.call('select_device', ['id', devices[0]]);
-        return;
-    }
-}
-// Toggle Group Fold State
-// Long press on group item in nav calls this.
-function toggleGroup(groupId) {
-    var util = getUtilApi();
-    util.id = groupId;
-    if (+util.id === 0) {
-        log('ERROR: Invalid id ' + groupId);
-        return;
-    }
-    var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
-    if (!isFoldable) {
-        log('ERROR: Not foldable ' + groupId);
-    }
-    var foldState = parseInt(util.get('fold_state'));
-    util.set('fold_state', foldState ? 0 : 1);
-}
-function gotoTrack(trackIdStr) {
-    var trackId = parseInt(trackIdStr);
-    // Walk up group_track chain to unfold any collapsed parent groups
-    var util = getUtilApi();
-    util.id = trackId;
-    if (+util.id !== 0) {
-        var counter = 0;
-        while (counter < 20) {
-            var groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
-            if (!groupIds.length)
-                break;
-            util.id = groupIds[0];
-            if (+util.id === 0)
-                break;
-            var foldState = parseInt(util.get('fold_state').toString());
-            if (foldState === 1) {
-                util.set('fold_state', 0);
-            }
-            counter++;
-        }
-    }
-    var api = getLiveSetViewApi();
-    api.set('selected_track', ['id', trackId]);
-}
-function onVariationChange() {
-    //log('VARIATIONSCHANGE')
-    var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
-        return;
-    }
-    //log('VARIATIONSCHANGE2')
-    if (!+api.get('can_have_chains')) {
-        // only applies to racks
-        //log('VARIATIONSCHANGE2 -- NO', api.get('name').toString())
-        return;
-    }
-    //log('VARIATIONSCHANGE3')
-    // send variation stuff
-    var varCount = +api.get('variation_count');
-    var varSelected = +api.get('selected_variation_index');
-    (0, utils_1.osc)('/blu/variations', { count: varCount, selected: varSelected });
-}
-function sendCuePoints() {
-    var api = getUtilApi();
-    api.goto('live_set');
-    var numerator = parseFloat(api.get('signature_numerator').toString());
-    if (typeof numerator !== 'number' || numerator <= 0) {
-        // Fallback default if something goes wrong with the API call
-        numerator = 4;
-        // Optional: print warning to Max console
-        log('Warning: Could not retrieve time signature. Defaulting to 4/4.');
-    }
-    var result = state.cuePointNames.map(function (cuePoint, idx) {
-        var cuePointTime = parseFloat(cuePoint.get('time'));
-        var rawBarIndex = Math.floor(cuePointTime / numerator);
-        // Calculate remaining beats into the current bar (0-indexed)
-        var rawBeatIndex = cuePointTime % numerator;
-        var displayBar = rawBarIndex + 1;
-        var displayBeat = rawBeatIndex + 1;
-        displayBeat = Math.floor(displayBeat);
-        var displaySixteenths = Math.floor((cuePointTime % 1.0) * 4) + 1;
-        var disp = displayBar + '.' + displayBeat + '.' + displaySixteenths;
-        //log(cuePointTime, displayTicks, displayBeat, disp)
-        return {
-            idx: idx,
-            name: cuePoint.get('name').toString(),
-            time: cuePointTime,
-            disp: disp,
-        };
-    });
-    //log('CUE POINTS', result)
-    (0, utils_1.osc)('/cuePoints', result);
-}
-var sendCuePointsTask = null;
-function debounceSendCuePoints() {
-    if (sendCuePointsTask) {
-        sendCuePointsTask.cancel();
-    }
-    sendCuePointsTask = new Task(sendCuePoints);
-    sendCuePointsTask.schedule(20);
-}
-function onCuePointNameChange(args) {
-    if (args[0] !== 'name') {
-        return;
-    }
-    debounceSendCuePoints();
-}
-function onCuePointTimeChange(args) {
-    if (args[0] !== 'time') {
-        return;
-    }
-    debounceSendCuePoints();
-}
-function cuePointsChange(args) {
-    if (args[0] !== 'cue_points') {
-        return;
-    }
-    var cuePointIds = (0, utils_1.cleanArr)(arrayfromargs(args));
-    //log('cuePointIds', cuePointIds)
-    state.cuePointNames = [];
-    state.cuePointTimes = [];
-    for (var _i = 0, cuePointIds_1 = cuePointIds; _i < cuePointIds_1.length; _i++) {
-        var cuePointId = cuePointIds_1[_i];
-        // name watcher
-        var nameApi = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId);
-        nameApi.property = 'name';
-        state.cuePointNames.push(nameApi);
-        // time watcher
-        var timeApi = new LiveAPI(onCuePointTimeChange, 'id ' + cuePointId);
-        timeApi.property = 'time';
-        state.cuePointTimes.push(timeApi);
-    }
-    debounceSendCuePoints();
-}
-function init() {
-    state.paramsWatcher = new LiveAPI(debouncedParameterChange, 'live_set view selected_track view selected_device');
-    state.paramsWatcher.mode = 1;
-    state.paramsWatcher.property = 'parameters';
-    state.variationsWatcher = new LiveAPI(onVariationChange, 'live_set view selected_track view selected_device');
-    state.variationsWatcher.mode = 1;
-    state.variationsWatcher.property = 'variation_count';
-    state.cuePointsWatcher = new LiveAPI(cuePointsChange, 'live_set');
-    state.cuePointsWatcher.property = 'cue_points';
-}
-function toggleOnOff() {
-    if (!state.onOffWatcher) {
-        return;
-    }
-    var currVal = parseInt(state.onOffWatcher.get('value'));
-    state.onOffWatcher.set('value', currVal ? 0 : 1);
-}
-function updateDeviceOnOff(iargs) {
-    var args = arrayfromargs(iargs);
-    if (args[0] === 'value') {
-        (0, utils_1.osc)('/bOnOff', parseInt(args[1]));
-    }
-}
-var pcDebounce = null;
-function debouncedParameterChange(args) {
-    if (args[0].toString() !== 'parameters') {
-        return;
-    }
-    if (pcDebounce) {
-        pcDebounce.cancel();
-    }
-    pcDebounce = new Task(function () {
-        onParameterChange(args);
-    });
-    pcDebounce.schedule(20);
-    //log('DEBOUNCE IT')
-}
-function onParameterChange(args) {
-    //log('OPC ' + JSON.stringify(args))
-    var api = state.paramsWatcher;
-    if (+api.id === 0) {
-        return;
-    }
-    //log(api.info)
-    var isSupported = (0, utils_1.isDeviceSupported)(api);
-    var deviceType = isSupported ? api.get('class_name').toString() : api.type;
-    var paramIds = isSupported ? (0, utils_1.cleanArr)(api.get('parameters')) : [];
-    //log('DT', { deviceType })
-    //if (deviceType === 'PluginDevice') {
-    //  //log('POOPP', { paramIds })
-    //  paramIds.pop()
-    //  //log('POOPP2', { paramIds })
-    //}
-    if (paramIds.length === 0) {
-        //log('ZERO LEN PARAMIDS')
-        state.onOffWatcher && (state.onOffWatcher.id = 0);
-    }
-    else {
-        var onOffParamId = paramIds.shift(); // remove device on/off
-        if (!state.onOffWatcher) {
-            state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId);
-            state.onOffWatcher.property = 'value';
-        }
-        else {
-            state.onOffWatcher.id = onOffParamId;
-        }
-    }
-    var canHaveChains = (0, utils_1.isDeviceSupported)(api) && parseInt(api.get('can_have_chains'));
-    //log('CAN_HAVE_CHAINS: ' + canHaveChains)
-    if (canHaveChains) {
-        // see if we should slice off some macros
-        var numMacros = parseInt(api.get('visible_macro_count'));
-        if (numMacros) {
-            //log('GonNNA SlIcE ' + numMacros)
-            paramIds = paramIds.slice(0, numMacros);
-            if (numMacros > 1) {
-                // put filler in the macros to look more like the
-                // even 2-row split that Live shows
-                var halfMacros = numMacros / 2;
-                var filler = Array(8 - halfMacros);
-                for (var i = 0; i < filler.length; i++) {
-                    filler[i] = 0;
-                }
-                paramIds = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], paramIds.slice(0, halfMacros), true), filler, true), paramIds.slice(halfMacros, numMacros), true), filler, true);
-            }
-        }
-    }
-    //log('PARAMIDS ' + JSON.stringify(paramIds))
-    if (state.paramsWatcher.id !== state.currDeviceId) {
-        // changed device, reset bank
-        state.currBank = 1;
-        state.currDeviceId = state.paramsWatcher.id;
-    }
-    state.devicePath = api.unquotedpath;
-    if (!canHaveChains) {
-        // null send variation stuff
-        (0, utils_1.osc)('/blu/variations', '');
-    }
-    state.bankParamArr = getBankParamArr(paramIds, deviceType, api);
-    //log('BANK PARAM ARR', { bpa: state.bankParamArr })
-    state.numBanks = state.bankParamArr.length;
-    if (state.currBank > state.numBanks) {
-        state.currBank = state.numBanks;
-    }
-    //log('STATE CHECK ' + JSON.stringify(state))
-    debounceSendCurrBank();
-}
-function variationNew() {
-    var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
-        return;
-    }
-    if (!+api.get('can_have_chains')) {
-        // only applies to racks
-        return;
-    }
-    api.call('store_variation');
-    var numVariations = +api.get('variation_count') || 1;
-    api.set('selected_variation_index', numVariations - 1);
-    onVariationChange();
-}
-function variationDelete(idx) {
-    var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
-        return;
-    }
-    if (!+api.get('can_have_chains')) {
-        // only applies to racks
-        return;
-    }
-    api.set('selected_variation_index', idx);
-    api.call('delete_selected_variation');
-}
-function variationRecall(idx) {
-    var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
-        return;
-    }
-    if (!+api.get('can_have_chains')) {
-        // only applies to racks
-        return;
-    }
-    api.set('selected_variation_index', idx);
-    api.call('recall_selected_variation');
-    onVariationChange();
-}
-function randomMacros() {
-    var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
-        return;
-    }
-    if (!+api.get('can_have_chains')) {
-        // only applies to racks
-        return;
-    }
-    api.call('randomize_macros');
-}
-function gotoBank(idx) {
-    //log('HERE ' + idx)
-    if (idx > 0 && idx <= state.numBanks) {
-        state.currBank = idx;
-    }
-    sendCurrBank();
-}
-function bankNext() {
-    if (state.currBank < state.numBanks) {
-        state.currBank++;
-    }
-    sendCurrBank();
-}
-function bankPrev() {
-    if (state.currBank > 0) {
-        state.currBank--;
-    }
-    sendCurrBank();
-}
-var utilApi = null;
-function getUtilApi() {
-    if (!utilApi) {
-        utilApi = new LiveAPI(consts_1.noFn, 'live_set');
-    }
-    return utilApi;
-}
-var selectedDeviceApi = null;
-function getSelectedDeviceApi() {
-    if (!selectedDeviceApi) {
-        selectedDeviceApi = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
-        selectedDeviceApi.mode = 1;
-    }
-    return selectedDeviceApi;
-}
-var liveSetViewApi = null;
-function getLiveSetViewApi() {
-    if (!liveSetViewApi) {
-        liveSetViewApi = new LiveAPI(consts_1.noFn, 'live_set view');
-    }
-    return liveSetViewApi;
-}
-var liveSetApi = null;
-function getLiveSetApi() {
-    if (!liveSetApi) {
-        liveSetApi = new LiveAPI(consts_1.noFn, 'live_set');
-    }
-    return liveSetApi;
-}
-function toggleMetronome() {
-    var api = getLiveSetApi();
-    var metroVal = parseInt(api.get('metronome'));
-    api.set('metronome', metroVal ? 0 : 1);
-}
-function tapTempo() {
-    var api = getLiveSetApi();
-    api.call('tap_tempo');
-}
-function setTempo(val) {
-    var api = getLiveSetApi();
-    api.set('tempo', val);
-}
-function playCuePoint(val) {
-    var api = new LiveAPI(null, 'live_set cue_points ' + val);
-    //log('PLAY CUE POINT ' + val + ' ' + api.id)
-    if (api.id) {
-        //log('JUMP ' + val + ' ' + api.id)
-        api.call('jump');
-        var ctlApi = getLiveSetApi();
-        var isPlaying = parseInt(ctlApi.get('is_playing'));
-        //log('PLAY ' + isPlaying)
-        if (!isPlaying) {
-            ctlApi.call('start_playing');
-        }
-    }
-}
-function gotoCuePoint(val) {
-    var api = new LiveAPI(null, 'live_set cue_points ' + val);
-    //log('GOTO CUE POINT ' + val + ' ' + api.id)
-    if (api.id) {
-        //log('JUMP ' + val + ' ' + api.id)
-        api.call('jump');
-    }
-}
-function btnSkipPrev() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('jump_to_prev_cue');
-}
-function btnSkipNext() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('jump_to_next_cue');
-}
-function btnReEnableAutomation() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('re_enable_automation');
-}
-function btnLoop() {
-    var ctlApi = getLiveSetApi();
-    var isLoop = parseInt(ctlApi.get('loop'));
-    ctlApi.set('loop', isLoop ? 0 : 1);
-}
-function btnCaptureMidi() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('capture_midi');
-}
-function btnArrangementOverdub() {
-    var ctlApi = getLiveSetApi();
-    var isOverdub = parseInt(ctlApi.get('arrangement_overdub'));
-    ctlApi.set('arrangement_overdub', isOverdub ? 0 : 1);
-}
-function btnSessionRecord() {
-    var ctlApi = getLiveSetApi();
-    var isRecord = parseInt(ctlApi.get('session_record'));
-    ctlApi.set('session_record', isRecord ? 0 : 1);
-}
-function trackDelta(delta) {
-    return (0, deprecatedMethods_1.deprecatedTrackDelta)(delta);
-}
-function deviceDelta(delta) {
-    return (0, deprecatedMethods_1.deprecatedDeviceDelta)(delta);
-}
-function trackPrev() {
-    trackDelta(-1);
-}
-function trackNext() {
-    trackDelta(1);
-}
-function devPrev() {
-    deviceDelta(-1);
-}
-function devNext() {
-    deviceDelta(1);
-}
-function ctlRec() {
-    var ctlApi = getLiveSetApi();
-    var currMode = parseInt(ctlApi.get('record_mode'));
-    ctlApi.set('record_mode', currMode === 1 ? 0 : 1);
-}
-function ctlPlay() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('start_playing');
-}
-function ctlStop() {
-    var ctlApi = getLiveSetApi();
-    ctlApi.call('stop_playing');
-}
-function undo() {
-    var api = getLiveSetApi();
-    api.call('undo');
-}
-function redo() {
-    var api = getLiveSetApi();
-    api.call('redo');
-}
-log('reloaded k4-bluhandBanks');
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
-module.exports = {};
+exports.getBankParamArr = getBankParamArr;

@@ -393,13 +393,13 @@ const ROUTER: RouterItem[] = [
     outlet: OUTLET_BLUHAND,
     prefix: '/bdefaultbval',
     handler: stdSlot,
-    msg: 'default',
+    msg: 'bSetDefault',
   },
   {
     outlet: OUTLET_BLUHAND,
     prefix: '/bdefault bval',
     handler: stdSlot,
-    msg: 'default',
+    msg: 'bSetDefault',
   },
   {
     outlet: OUTLET_REFRESH,
