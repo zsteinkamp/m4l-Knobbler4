@@ -62,7 +62,7 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 
 ### Single-`[v8 knobbler]` architecture (current — May 2026)
 
-> ⚠️ The "router.ts / Outlet-Based Distribution / Message Flow" descriptions further down are **pre-consolidation history**. The device is now ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the `[v8 router]` and the per-feature `[v8]` objects are gone.
+The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 router]` and the per-feature `[v8]` objects were consolidated into it (only `[v8 k4-discovery]` stays separate).
 
 `knobbler.ts` is the orchestrator/entry. It owns inbound OSC dispatch via a **route registry** (each feature module exports a `routes: Route[]` table; the entry merges them and calls `fn(...)` directly — no outlet fan-out) and builds an **`AppContext` (`ctx`)** that it hands to every module's `init(ctx)`. Modules reach siblings/services **through `ctx`** (`ctx.settings`, `ctx.osc`, `ctx.gotoTrack`, `ctx.gotoDevice`, `ctx.knobbler.bkMap`, …), never by importing each other.
 
@@ -85,12 +85,11 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 
 ### Core Module Responsibilities
 
-**`router.ts`** - Central OSC message dispatcher
+**`knobbler.ts`** - The `[v8 knobbler]` entry / orchestrator
 
-- Receives all incoming OSC messages from the tablet
-- Uses prefix-based routing with ~50 routing rules in the ROUTER array
-- Distributes messages to 11 outlets for different functional areas (knobbler, bluhand, mixer, page, etc.)
-- Handler pattern: `bareMsg`, `bareVal`, `stdVal`, `stdSlot`, `stdSlotVal`
+- Receives all inbound OSC from `[udpreceive]`, disassembles `/batch`, and dispatches by prefix via the merged route registry (direct `fn(...)` calls — no outlet fan-out)
+- Builds the `AppContext` and calls each module's `init(ctx)`; owns the singletons modules reach through `ctx`
+- Hosts the inbound coalescing (leading-edge, ~15ms) and a few entry-owned routes (page dispatch)
 
 **`knobblerCore.ts`** - Core parameter mapping engine (1300+ lines)
 
@@ -99,13 +98,21 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 - Implements LiveAPI observers/watchers for real-time parameter updates
 - Handles debouncing to prevent feedback loops between OSC and Ableton
 - Scales values between OSC range (0-1) and Ableton parameter ranges
-- Stores mapping configuration that persists with Live sets
+- Persists slot path/min/max/customName to `ctx.settings` (`---settingsDict`), dual-written to the legacy bpatcher params for backward compat
 
-**`knobbler4.ts`** - Main entry point wrapper
+**`k4-bluhand.ts`** - Device control ("bluhand")
 
-- Sets up Max [js] object with 1 inlet and 2 outlets
-- Delegates all operations to `knobblerCore`
-- Minimal glue layer between Max and core functionality
+- Transport, parameter banks, rack variations/macros, the 16 device-parameter slots (delegated to `k4-bluhandSlots.ts`), and navigation (`gotoTrack`/`gotoDevice`/`gotoChain` — `gotoTrack`/`gotoDevice` exposed via `ctx`)
+
+**`k4-system.ts`** - Connection + system passthroughs (former router bits)
+
+- Handshake (`/syn`→`/ack`, `/ping`→`/pong`, `/connect`, `deviceVersion`) and the loose Max-side sends (`---LOOP`/`---REFRESH_LOGIC`/`---CONFIGURE`)
+
+**`k4-settings.ts`** - Per-instance persistence service
+
+- ONE `Dict` ref to `---settingsDict` exposed as `ctx.settings`; plus the read-only legacy `[dict settingsDict]` bridge for migrating pre-`[v8]` sets (slated for post-v65 removal)
+
+**`k4-shortcuts.ts`** - 8 device-recall shortcuts (former `[poly~ shortcutPoly]`)
 
 **`k4-tracksDevices.ts`** - Track/device navigation tree builder
 
@@ -119,14 +126,13 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 - Handles Ableton instruments with multiple parameter pages
 - Imports device bank definitions from `deviceParams.ts`
 
-**`k4-mixerSends.ts`** - Mixer control interface
+**`k4-sidebarMixer.ts`** - Single-track mixer (the selected track)
 
-- Manages volume, pan, crossfader, mute, solo, sends
-- Implements pause/unpause logic to prevent feedback during rapid changes
+- Volume, pan, sends, mute, solo, arm, crossfade-assign, record; meters
+- Holds the operational `selected_track` handle and the master-track detach gotchas for mute/xfade
+- Shared command helpers live in `mixerUtils.ts`
 
-**`k4-deviceParamMaps.ts`** - Device parameter lookup utility
-
-- Simple module mapping device names to their parameter banks
+**`k4-clipView.ts`** - Session clip grid (windowed clip-slot/scene observers)
 
 **`k4-currentParam.ts`** - Selected parameter display
 
@@ -142,16 +148,15 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 - Per-strip observers for volume, pan, mute, solo, arm, color, sends, meters, and volume automation state
 - Batched meter output via `/mixer/meters` JSON array
 
-**`k4-oscBatch.ts`** - OSC message batching
+**`k4-oscBatch.ts`** - Outbound OSC batching (in-process)
 
-- Batches outbound OSC messages into single `/batch` JSON payloads
-- Flushes every 10ms or when buffer exceeds 1KB
-- Only active when the client advertises `batch` capability
-- Bypasses batching for chunked data and meter messages
+- Folded in: `utils.osc()` feeds `oscBatch.send` via the `setOscSink(ctx.osc)` hook (not a wire)
+- Batches NUMERIC values into a single `/batch` JSON payload (batch-capable clients), else per-address throttle; non-numeric payloads go straight out as their own packet
+- Flushes every 10ms / >1KB; bypasses chunked + meter messages
 
 **`k4-discovery.ts`** - Network device discovery
 
-- Discovers and filters available Knobbler apps on the network
+- Discovers and filters available Knobbler apps on the network. The one feature that stays a **separate `[v8]`** (own `[udpsend]`/`[udpreceive]` for the discovery protocol)
 
 ### Supporting Modules
 
@@ -159,7 +164,7 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 
 **`utils.ts`** - Helper functions including logging factory, path validation, color conversion, string truncation, debounced task management.
 
-**`consts.ts`** - Constants and type definitions including `MAX_SLOTS = 32`, track types, outlet indices, default colors.
+**`consts.ts`** - Constants and type definitions including `MAX_SLOTS = 32`, track types, the `[v8 knobbler]` entry outlet indices, default colors.
 
 **`toggleInput.ts`** - Track input routing enable/disable functionality.
 
@@ -168,19 +173,21 @@ TypeScript source files in `src/` compile to JavaScript in `Project/` directory.
 ### Message Flow Architecture
 
 ```
-Tablet (OSC) → [udpreceive] → router.js (dispatch by prefix)
-    → Outlets (0-10) → Feature modules (knobbler4, k4-bluhand, k4-mixer, etc.)
-        → LiveAPI ↔ Ableton Live (real-time sync)
-    → [udpsend] → Tablet (OSC responses)
+inbound:  Tablet (OSC) → [udpreceive] → [v8 knobbler] anything()
+              → /batch disassembly → route registry (dispatch by prefix) → module fn(...)
+                  → LiveAPI ↔ Ableton Live (real-time sync)
+outbound: module osc() → ctx.osc → k4-oscBatch.send (in-process batch/throttle)
+              → entry outlet 0 → [s ---UDPSEND] → OSC-out gate → [udpsend] → Tablet
 ```
 
 ### Key Architectural Patterns
 
-1. **Outlet-Based Distribution**: Router immediately distributes messages to appropriate outlets allowing parallel processing in different Max subpatches
-2. **LiveAPI Observer Pattern**: Extensive use of Ableton LiveAPI observers to watch for changes and push updates to controller in real-time
-3. **32-Slot Parallel Arrays**: Core parameter mapping uses indexed parallel arrays for efficient slot management
-4. **Debouncing Strategy**: Multiple debouncing approaches prevent infinite loops when values change from OSC input vs. direct manipulation in Live
-5. **Module Export Pattern**: TypeScript files use `const module = {}; export = {}` pattern to ensure valid CommonJS for Max's JavaScript engine
+1. **Route-registry dispatch**: each module exports a `routes: Route[]` table; the entry merges them and calls `fn(...)` directly (replaces the old outlet fan-out)
+2. **`ctx` orchestration + require()-no-cache**: modules reach siblings/services through the `ctx` the entry injects in `init(ctx)`, never via direct imports (a direct import would be a separate dead instance); each module wires `setOscSink(ctx.osc)` for the same reason
+3. **LiveAPI Observer Pattern**: extensive use of Ableton LiveAPI observers to push real-time updates; distinguish *identity observers* (dedupable) from *operational handles* (per-module, kept)
+4. **32-Slot Parallel Arrays**: core parameter mapping uses indexed parallel arrays
+5. **Debouncing Strategy**: multiple debouncing approaches prevent feedback loops between OSC input and direct manipulation in Live
+6. **Module exports**: the entry (`knobbler.ts`) keeps the `const module = {}; export = {}` boilerplate so tsc emits valid CommonJS for the `[v8]` object; folded feature modules use plain named exports (`export { routes, init }`)
 
 ## OSC Protocol
 
@@ -198,12 +205,11 @@ The device communicates via OSC messages. See `docs/OSC-API.md` for complete pro
 
 **Key Max Objects**:
 
-- `[js router]` - Loads `router.js` for OSC message routing
-- `[js knobbler4]` - Loads `knobbler4.js` for core parameter functionality
-- `[js k4-bluhandBanks]`, `[js k4-mixerSends]`, etc. - Load feature modules
-- `[udpreceive 9000]` / `[udpsend]` - Network communication
+- `[v8 knobbler]` - Loads `knobbler.js`, the single entry/orchestrator (all feature modules `require`d in-process). The old `[v8 router]` and per-feature `[v8]` objects are gone.
+- `[v8 k4-discovery]` - The one remaining separate feature object (network discovery)
+- `[udpreceive]` / `[udpsend]` - Network communication (OSC-out runs through a gate opened on `/connect`)
 - `[poly~ finger]` - Multi-touch gesture detection
-- bpatchers - Repeating UI elements for parameter slots
+- bpatchers - Repeating UI elements for parameter slots; `[dict ---settingsDict @parameter_enable 1]` persists per-instance settings
 
 ## Release Process
 
@@ -245,6 +251,6 @@ editor; use this tool for boxes/lines/attributes and inspection.
 - **Debouncing**: When adding new parameter observers, always implement debouncing to prevent feedback loops
 - **Max Console**: Check Max's console window for JavaScript errors and log output during development
 - **LiveAPI `.id` returns a string**: Always use `+obj.id === 0` (unary plus), never `obj.id === 0` (strict equality `"0" === 0` is `false`). Same for `!== 0` checks. When passing `.id` to another LiveAPI's `.id` setter, use `parseInt()`.
-- **Max `require()` does NOT cache modules**: Each `require('./utils')` call in a different file creates a separate module instance with its own state. If `knobbler4.js` and `knobblerCore.js` both require `utils.js`, they get independent copies. To share state (like `setDictPrefix`), explicitly forward calls between modules.
+- **Max `require()` does NOT cache modules**: Each `require('./utils')` in a different file creates a separate module instance with its own state — even within the single `[v8 knobbler]`. If `knobbler.js` and `knobblerCore.js` both require `utils.js`, they get independent copies (independent `oscSink`, `_instancePrefix`, etc.). So: reach siblings/services through the `ctx` the entry injects (never import another feature module directly — you'd get a dead instance), and each module calls `setOscSink(ctx.osc)` in `init` to point its own `utils` at the shared batch buffer. See the "Single-`[v8 knobbler]` architecture" section.
 - **`new Dict(name)` resets parameter-enabled dicts**: Creating a new `Dict` reference to a parameter-enabled `[dict]` can reset its contents. Cache `Dict` references as singletons instead of creating new ones on each access.
 - **Dict persistence**: One shared `settingsDict` with `parameter_enable` stores all settings. Per-instance keys (xyPairs, metersEnabled) are prefixed with the device's `---` value via `saveInstanceSetting`/`loadInstanceSetting`. Shared keys (clientVersion, clientCapabilities, visibleTracks) use `saveSetting`/`loadSetting` without prefix. The `---` prefix is sent to [js] objects via `setDictPrefix` from the `live.thisdevice` init chain.
