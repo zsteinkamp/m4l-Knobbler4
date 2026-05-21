@@ -173,6 +173,15 @@ function onParameterChange(args) {
         // null send variation stuff
         (0, utils_1.osc)('/blu/variations', '');
     }
+    else {
+        // Push variation state from here (the reliable 'parameters' observer that
+        // fires on every device selection) rather than relying solely on the
+        // variation_count observer, which only exists on racks and fires
+        // unreliably when selection follows into one.
+        var varCount = +api.get('variation_count');
+        var varSelected = +api.get('selected_variation_index');
+        (0, utils_1.osc)('/blu/variations', { count: varCount, selected: varSelected });
+    }
     state.bankParamArr = (0, k4_bluhandBanks_1.getBankParamArr)(paramIds, deviceType, api);
     state.numBanks = state.bankParamArr.length;
     if (state.currBank > state.numBanks) {
@@ -416,6 +425,7 @@ function pushState() {
         (0, utils_1.osc)(pair[1], parseFloat(api.get(pair[0])));
     }
     emitCurrDeviceName();
+    onVariationChange();
     sendCurrBank();
 }
 // --- Navigation ------------------------------------------------------------

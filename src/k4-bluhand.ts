@@ -196,6 +196,14 @@ function onParameterChange(args: IdObserverArg) {
   if (!canHaveChains) {
     // null send variation stuff
     osc('/blu/variations', '')
+  } else {
+    // Push variation state from here (the reliable 'parameters' observer that
+    // fires on every device selection) rather than relying solely on the
+    // variation_count observer, which only exists on racks and fires
+    // unreliably when selection follows into one.
+    const varCount = +api.get('variation_count')
+    const varSelected = +api.get('selected_variation_index')
+    osc('/blu/variations', { count: varCount, selected: varSelected })
   }
   state.bankParamArr = getBankParamArr(paramIds, deviceType, api)
   state.numBanks = state.bankParamArr.length
@@ -463,6 +471,7 @@ function pushState() {
     osc(pair[1], parseFloat(api.get(pair[0])))
   }
   emitCurrDeviceName()
+  onVariationChange()
   sendCurrBank()
 }
 
