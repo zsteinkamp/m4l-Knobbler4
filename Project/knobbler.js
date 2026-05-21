@@ -47,12 +47,22 @@ var ctx = {
         clipView.visibleTracks();
         multiMixer.visibleTracks();
     },
-    settings: { get: settings.get, set: settings.set },
+    settings: {
+        get: settings.get,
+        set: settings.set,
+        legacyGet: settings.legacyGet,
+    },
 };
 // Patcher sends [settingsDictName ---settingsDict( on load (before init) — the
 // resolved per-instance dict name. Open it once.
 function settingsDictName(name) {
     settings.open(name.toString());
+    settings.openLegacy(); // bridge old shared [dict settingsDict] for pre-[v8] sets
+}
+// The device port (from the port field, on load) — the OLD per-instance key
+// prefix for the legacy settingsDict (e.g. 2346 -> "2346_xyPairs").
+function legacyPort(port) {
+    settings.setLegacyPrefix(port);
 }
 // Forward the device's dict prefix to the shared utils instance. One call
 // serves every folded-in module — require() caches utils within one [v8], so

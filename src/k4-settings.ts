@@ -26,3 +26,33 @@ export function set(key: string, value: any) {
     dict.set(key, value)
   }
 }
+
+// --- Legacy bridge -----------------------------------------------------------
+// Pre-[v8] sets persisted per-instance keys in ONE shared [dict settingsDict]
+// (parameter-enabled, fixed name) prefixed by the device's `---` value, e.g.
+// "2346_xyPairs". The new scheme uses this per-instance ---settingsDict with
+// unprefixed keys. We hold a SINGLE ref to the old settingsDict (re-added to the
+// patcher) so old data loads and can be migrated on first open. ONE ref only —
+// same reset-gotcha rule as above.
+let legacyDict: any = null
+let legacyPrefix = ''
+
+export function openLegacy() {
+  if (!legacyDict) {
+    legacyDict = new Dict('settingsDict')
+  }
+}
+
+// The OLD scheme prefixed per-instance keys with the device PORT (e.g. 2346),
+// NOT the `---` device id. The entry feeds the port here (tapped from the port
+// field) so legacyGet builds "<port>_<key>".
+export function setLegacyPrefix(port: any) {
+  legacyPrefix = String(port)
+}
+
+export function legacyGet(key: string): any {
+  if (!legacyDict || !legacyPrefix) {
+    return null
+  }
+  return legacyDict.get(legacyPrefix + '_' + key)
+}

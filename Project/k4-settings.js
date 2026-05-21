@@ -8,7 +8,7 @@
 // parameter-enabled dict can reset its contents), which is why no module builds
 // its own and why this is not in per-module `utils`.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.set = exports.get = exports.open = void 0;
+exports.legacyGet = exports.setLegacyPrefix = exports.openLegacy = exports.set = exports.get = exports.open = void 0;
 var dict = null;
 // name = the resolved `---settingsDict`, delivered by the patcher via the
 // entry's settingsDictName message on load (before init). Created once.
@@ -28,3 +28,32 @@ function set(key, value) {
     }
 }
 exports.set = set;
+// --- Legacy bridge -----------------------------------------------------------
+// Pre-[v8] sets persisted per-instance keys in ONE shared [dict settingsDict]
+// (parameter-enabled, fixed name) prefixed by the device's `---` value, e.g.
+// "2346_xyPairs". The new scheme uses this per-instance ---settingsDict with
+// unprefixed keys. We hold a SINGLE ref to the old settingsDict (re-added to the
+// patcher) so old data loads and can be migrated on first open. ONE ref only —
+// same reset-gotcha rule as above.
+var legacyDict = null;
+var legacyPrefix = '';
+function openLegacy() {
+    if (!legacyDict) {
+        legacyDict = new Dict('settingsDict');
+    }
+}
+exports.openLegacy = openLegacy;
+// The OLD scheme prefixed per-instance keys with the device PORT (e.g. 2346),
+// NOT the `---` device id. The entry feeds the port here (tapped from the port
+// field) so legacyGet builds "<port>_<key>".
+function setLegacyPrefix(port) {
+    legacyPrefix = String(port);
+}
+exports.setLegacyPrefix = setLegacyPrefix;
+function legacyGet(key) {
+    if (!legacyDict || !legacyPrefix) {
+        return null;
+    }
+    return legacyDict.get(legacyPrefix + '_' + key);
+}
+exports.legacyGet = legacyGet;

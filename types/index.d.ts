@@ -41,8 +41,14 @@ interface AppContext {
   sidebar: { sidebarMeters(val: number): void }
   gotoDevice(deviceId: string): void // recall navigation (-> bluhand)
   notifyVisibleTracks(): void
-  // per-instance persistence (---settingsDict); one Dict ref, no key prefixing
-  settings: { get(key: string): any; set(key: string, value: any): void }
+  // per-instance persistence (---settingsDict); one Dict ref, no key prefixing.
+  // legacyGet reads the pre-[v8] shared [dict settingsDict] (prefixed keys) for
+  // one-time migration of old sets.
+  settings: {
+    get(key: string): any
+    set(key: string, value: any): void
+    legacyGet(key: string): any
+  }
 }
 
 // In-process route descriptor for the [v8 knobbler] dispatcher. Replaces the

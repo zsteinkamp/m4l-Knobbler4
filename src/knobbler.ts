@@ -55,13 +55,24 @@ const ctx: AppContext = {
     clipView.visibleTracks()
     multiMixer.visibleTracks()
   },
-  settings: { get: settings.get, set: settings.set },
+  settings: {
+    get: settings.get,
+    set: settings.set,
+    legacyGet: settings.legacyGet,
+  },
 }
 
 // Patcher sends [settingsDictName ---settingsDict( on load (before init) — the
 // resolved per-instance dict name. Open it once.
 function settingsDictName(name: string) {
   settings.open(name.toString())
+  settings.openLegacy() // bridge old shared [dict settingsDict] for pre-[v8] sets
+}
+
+// The device port (from the port field, on load) — the OLD per-instance key
+// prefix for the legacy settingsDict (e.g. 2346 -> "2346_xyPairs").
+function legacyPort(port: number) {
+  settings.setLegacyPrefix(port)
 }
 
 // Forward the device's dict prefix to the shared utils instance. One call

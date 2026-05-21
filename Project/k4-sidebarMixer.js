@@ -557,8 +557,17 @@ function init() {
         state.crossfaderObj.property = 'value';
         state.crossfaderObj.mode = 1;
     }
-    // Restore meters state from settings dict
-    state.metersEnabled = !!ctx.settings.get('metersEnabled');
+    // Restore meters state from settings dict; carry forward from pre-[v8] sets
+    // (old key "<--->_metersEnabled" in the shared [dict settingsDict]).
+    var meters = ctx.settings.get('metersEnabled');
+    if (meters === null || meters === undefined) {
+        var legacy = ctx.settings.legacyGet('metersEnabled');
+        if (legacy !== null && legacy !== undefined) {
+            meters = legacy;
+            ctx.settings.set('metersEnabled', legacy);
+        }
+    }
+    state.metersEnabled = !!meters;
     (0, utils_1.osc)('/sidebarMeters', state.metersEnabled ? 1 : 0);
 }
 // Route table — the single-track mixer commands (old router OUTLET_MIXER).

@@ -84,7 +84,13 @@ function debouncedTask(key, slot, task, delayMs) {
     tasks[key][slot].schedule(delayMs);
 }
 exports.debouncedTask = debouncedTask;
-var _settingsDict = new Dict('settingsDict');
+// Cross-instance RUNTIME store (clientCapabilities, visibleTracks) — re-derived
+// each session, never persisted. Named (not ---) so every module's utils
+// instance shares it. Deliberately NOT 'settingsDict': that name now belongs to
+// the re-added parameter-enabled [dict settingsDict] (the legacy-set bridge,
+// read via a single ref in k4-settings) — pointing utils' ~15 instances at a
+// parameter-enabled dict would risk the new-Dict-resets-contents gotcha.
+var _settingsDict = new Dict('k4Runtime');
 var _instancePrefix = '';
 function setDictPrefix(prefix) {
     _instancePrefix = String(prefix) + '_';

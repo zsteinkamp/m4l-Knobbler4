@@ -77,6 +77,15 @@ function saveXYPairs() {
 }
 function loadXYPairs() {
     var val = ctx.settings.get(XY_PAIRS_KEY);
+    // Carry forward from pre-[v8] sets: old xyPairs lived in the shared
+    // [dict settingsDict] under "<--->_xyPairs". Migrate it once.
+    if (!(val && typeof val === 'object')) {
+        var legacy = ctx.settings.legacyGet(XY_PAIRS_KEY);
+        if (legacy && typeof legacy === 'object') {
+            val = legacy;
+            ctx.settings.set(XY_PAIRS_KEY, legacy);
+        }
+    }
     //log('LOAD XY PAIRS val=' + JSON.stringify(val))
     if (val && typeof val === 'object') {
         xyPairs = val.filter(function (n) {

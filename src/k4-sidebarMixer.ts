@@ -655,8 +655,17 @@ function init() {
     state.crossfaderObj.mode = 1
   }
 
-  // Restore meters state from settings dict
-  state.metersEnabled = !!ctx.settings.get('metersEnabled')
+  // Restore meters state from settings dict; carry forward from pre-[v8] sets
+  // (old key "<--->_metersEnabled" in the shared [dict settingsDict]).
+  let meters = ctx.settings.get('metersEnabled')
+  if (meters === null || meters === undefined) {
+    const legacy = ctx.settings.legacyGet('metersEnabled')
+    if (legacy !== null && legacy !== undefined) {
+      meters = legacy
+      ctx.settings.set('metersEnabled', legacy)
+    }
+  }
+  state.metersEnabled = !!meters
   osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
 }
 
