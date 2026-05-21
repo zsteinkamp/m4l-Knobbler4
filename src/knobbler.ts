@@ -3,10 +3,10 @@
 // (replacing the old [v8 router]'s outlet fan-out). Feature modules each export
 // a `routes` table (the well-defined interface) and an optional `init`.
 //
-// Migration is incremental: this object and the old [v8 router] both sit on
-// [udpreceive]. Routes that live here are removed from the router; unmatched
-// addresses fall through (the router still handles them) until every module is
-// folded in and the router is deleted.
+// This is now the only [v8] object: every feature module + the connection
+// handshake (k4-system) is folded in, and [v8 router] has been deleted. The
+// only siblings left are the UI and the I/O objects ([udpsend]/[udpreceive]/
+// [k4-oscBatch]/[k4-discovery]).
 
 import config from './config'
 import { logFactory, setDictPrefix as utilsSetDictPrefix } from './utils'
@@ -232,8 +232,8 @@ function dispatch(address: string, value: any) {
       return callRoute(route, address, value)
     }
   }
-  // Unmatched: ignore. During the dual-run migration the old [v8 router]
-  // still handles addresses that haven't been folded in here yet.
+  // Unmatched: ignore (no router fallback remains — every address the app
+  // sends is covered by a route above).
 }
 
 function anything(value: any) {
