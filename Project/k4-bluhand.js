@@ -49,12 +49,9 @@ function sendBankNames() {
     });
     (0, utils_1.osc)('/bBanks', banks);
 }
-var sendCurrBankTask = null;
+var sendCurrBankTask = new Task(sendCurrBank);
 function debounceSendCurrBank() {
-    if (sendCurrBankTask) {
-        sendCurrBankTask.cancel();
-    }
-    sendCurrBankTask = new Task(sendCurrBank);
+    sendCurrBankTask.cancel();
     sendCurrBankTask.schedule(20);
 }
 function sendCurrBank() {
@@ -111,20 +108,15 @@ function bkMap(bluSlot, knobblerSlot) {
     outlet(OUTLET_KNOBBLER, 'bkMap', knobblerSlot, paramId);
 }
 // --- Selected device parameter tracking ------------------------------------
-var pcDebounce = null;
+var pcDebounce = new Task(onParameterChange);
 function debouncedParameterChange(args) {
     if (args[0].toString() !== 'parameters') {
         return;
     }
-    if (pcDebounce) {
-        pcDebounce.cancel();
-    }
-    pcDebounce = new Task(function () {
-        onParameterChange(args);
-    });
+    pcDebounce.cancel();
     pcDebounce.schedule(20);
 }
-function onParameterChange(args) {
+function onParameterChange() {
     var api = state.paramsWatcher;
     if (+api.id === 0) {
         return;
@@ -289,12 +281,9 @@ function sendCuePoints() {
     });
     (0, utils_1.osc)('/cuePoints', result);
 }
-var sendCuePointsTask = null;
+var sendCuePointsTask = new Task(sendCuePoints);
 function debounceSendCuePoints() {
-    if (sendCuePointsTask) {
-        sendCuePointsTask.cancel();
-    }
-    sendCuePointsTask = new Task(sendCuePoints);
+    sendCuePointsTask.cancel();
     sendCuePointsTask.schedule(20);
 }
 function onCuePointNameChange(args) {

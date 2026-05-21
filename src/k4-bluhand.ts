@@ -57,12 +57,9 @@ function sendBankNames() {
   osc('/bBanks', banks)
 }
 
-let sendCurrBankTask = null as Task
+const sendCurrBankTask = new Task(sendCurrBank)
 function debounceSendCurrBank() {
-  if (sendCurrBankTask) {
-    sendCurrBankTask.cancel()
-  }
-  sendCurrBankTask = new Task(sendCurrBank)
+  sendCurrBankTask.cancel()
   sendCurrBankTask.schedule(20)
 }
 
@@ -125,21 +122,16 @@ function bkMap(bluSlot: number, knobblerSlot: number) {
 
 // --- Selected device parameter tracking ------------------------------------
 
-let pcDebounce = null as Task
+const pcDebounce = new Task(onParameterChange)
 function debouncedParameterChange(args: IdObserverArg) {
   if (args[0].toString() !== 'parameters') {
     return
   }
-  if (pcDebounce) {
-    pcDebounce.cancel()
-  }
-  pcDebounce = new Task(() => {
-    onParameterChange(args)
-  })
+  pcDebounce.cancel()
   pcDebounce.schedule(20)
 }
 
-function onParameterChange(args: IdObserverArg) {
+function onParameterChange() {
   const api = state.paramsWatcher
   if (+api.id === 0) {
     return
@@ -324,12 +316,9 @@ function sendCuePoints() {
   osc('/cuePoints', result)
 }
 
-let sendCuePointsTask = null as Task
+const sendCuePointsTask = new Task(sendCuePoints)
 function debounceSendCuePoints() {
-  if (sendCuePointsTask) {
-    sendCuePointsTask.cancel()
-  }
-  sendCuePointsTask = new Task(sendCuePoints)
+  sendCuePointsTask.cancel()
   sendCuePointsTask.schedule(20)
 }
 
