@@ -13,6 +13,7 @@ exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath
 var utils_1 = require("./utils");
 Object.defineProperty(exports, "setDictPrefix", { enumerable: true, get: function () { return utils_1.setDictPrefix; } });
 var consts_1 = require("./consts");
+var deviceParam_1 = require("./deviceParam");
 var config_1 = require("./config");
 var log = (0, utils_1.logFactory)(config_1.default);
 // Pre-computed OSC address strings (indexed 1–32)
@@ -601,18 +602,8 @@ function sendVal(slot) {
         (0, utils_1.osc)(ADDR_VALSTR[slot], consts_1.nullString);
         return;
     }
-    // the value, expressed as a proportion between the param min and max
-    var valProp = (param[slot].val - param[slot].min) / (param[slot].max - param[slot].min);
-    //log('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
-    // scale the param proportion value to the output min/max proportion
-    var scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot]);
-    scaledValProp = Math.min(scaledValProp, 1);
-    scaledValProp = Math.max(scaledValProp, 0);
-    //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
-    (0, utils_1.osc)(ADDR_VAL[slot], scaledValProp);
-    (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot]
-        ? paramObj[slot].call('str_for_value', (0, utils_1.fixFloat)(param[slot].val))
-        : consts_1.nullString);
+    (0, utils_1.osc)(ADDR_VAL[slot], (0, deviceParam_1.valueToProp)(param[slot].val, param[slot].min, param[slot].max, outMin[slot], outMax[slot]));
+    (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot] ? (0, deviceParam_1.valueString)(paramObj[slot], param[slot].val) : consts_1.nullString);
 }
 // new value received over OSC
 function val(slot, val) {
@@ -620,9 +611,7 @@ function val(slot, val) {
     if (paramObj[slot]) {
         if (allowUpdateFromOsc[slot]) {
             // scale the 0..1 value to the param's min/max range
-            var scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot];
-            param[slot].val =
-                (param[slot].max - param[slot].min) * scaledVal + param[slot].min;
+            param[slot].val = (0, deviceParam_1.propToValue)(val, param[slot].min, param[slot].max, outMin[slot], outMax[slot]);
             // prevent updates from params directly being sent to OSC for 500ms
             if (param[slot].allowParamValueUpdates) {
                 param[slot].allowParamValueUpdates = false;
@@ -638,7 +627,7 @@ function val(slot, val) {
             // string value due to what looks like a rounding bug inside of
             // those params (e.g. str_for_value(0.9) yields "on" even though
             // the device shows up as "off"
-            (0, utils_1.osc)(ADDR_VALSTR[slot], paramObj[slot].call('str_for_value', (0, utils_1.fixFloat)(parseFloat(paramObj[slot].get('value')))));
+            (0, utils_1.osc)(ADDR_VALSTR[slot], (0, deviceParam_1.valueString)(paramObj[slot], parseFloat(paramObj[slot].get('value'))));
         }
     }
     else {

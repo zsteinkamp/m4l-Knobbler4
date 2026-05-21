@@ -3,7 +3,6 @@ import {
   debouncedTask,
   dequote,
   detach,
-  fixFloat,
   getVisibleTracksList,
   isValidPath,
   loadInstanceSetting,
@@ -21,6 +20,8 @@ import {
   nullString,
   OUTLET_MSGS,
 } from './consts'
+
+import { propToValue, valueString, valueToProp } from './deviceParam'
 
 import config from './config'
 const log = logFactory(config)
@@ -672,24 +673,19 @@ function sendVal(slot: number) {
     return
   }
 
-  // the value, expressed as a proportion between the param min and max
-  const valProp =
-    (param[slot].val - param[slot].min) / (param[slot].max - param[slot].min)
-
-  //log('VALPROP', valProp, JSON.stringify(param), 'OUTMINMAX', outMin, outMax)
-
-  // scale the param proportion value to the output min/max proportion
-  let scaledValProp = (valProp - outMin[slot]) / (outMax[slot] - outMin[slot])
-  scaledValProp = Math.min(scaledValProp, 1)
-  scaledValProp = Math.max(scaledValProp, 0)
-
-  //log(`SCALEDVALPROP slot=${slot} val=${scaledValProp}`)
-  osc(ADDR_VAL[slot], scaledValProp)
+  osc(
+    ADDR_VAL[slot],
+    valueToProp(
+      param[slot].val,
+      param[slot].min,
+      param[slot].max,
+      outMin[slot],
+      outMax[slot]
+    )
+  )
   osc(
     ADDR_VALSTR[slot],
-    paramObj[slot]
-      ? paramObj[slot].call('str_for_value', fixFloat(param[slot].val))
-      : nullString
+    paramObj[slot] ? valueString(paramObj[slot], param[slot].val) : nullString
   )
 }
 
@@ -699,9 +695,13 @@ function val(slot: number, val: number) {
   if (paramObj[slot]) {
     if (allowUpdateFromOsc[slot]) {
       // scale the 0..1 value to the param's min/max range
-      const scaledVal = (outMax[slot] - outMin[slot]) * val + outMin[slot]
-      param[slot].val =
-        (param[slot].max - param[slot].min) * scaledVal + param[slot].min
+      param[slot].val = propToValue(
+        val,
+        param[slot].min,
+        param[slot].max,
+        outMin[slot],
+        outMax[slot]
+      )
 
       // prevent updates from params directly being sent to OSC for 500ms
       if (param[slot].allowParamValueUpdates) {
@@ -720,7 +720,7 @@ function val(slot: number, val: number) {
       // the device shows up as "off"
       osc(
         ADDR_VALSTR[slot],
-        paramObj[slot].call('str_for_value', fixFloat(parseFloat(paramObj[slot].get('value'))))
+        valueString(paramObj[slot], parseFloat(paramObj[slot].get('value')))
       )
     }
   } else {

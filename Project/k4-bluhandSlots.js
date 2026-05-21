@@ -7,6 +7,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.NUM_BLU_SLOTS = void 0;
 var utils_1 = require("./utils");
+var deviceParam_1 = require("./deviceParam");
 exports.NUM_BLU_SLOTS = 16;
 var OSC_SUPPRESS_MS = 300;
 var INVALID_COLOR = '333333ff';
@@ -18,9 +19,8 @@ function emitSlotValue(idx) {
         return;
     }
     var v = parseFloat(slot.valueApi.get('value'));
-    var prop = slot.range ? (v - slot.min) / slot.range : 0;
-    (0, utils_1.osc)('/bval' + idx, Math.max(0, Math.min(1, prop)));
-    (0, utils_1.osc)('/bvalStr' + idx, slot.valueApi.call('str_for_value', (0, utils_1.fixFloat)(v)));
+    (0, utils_1.osc)('/bval' + idx, (0, deviceParam_1.valueToProp)(v, slot.min, slot.max));
+    (0, utils_1.osc)('/bvalStr' + idx, (0, deviceParam_1.valueString)(slot.valueApi, v));
 }
 function emitSlotName(idx) {
     var slot = slots[idx - 1];
@@ -68,7 +68,6 @@ function initSlots() {
             paramId: 0,
             min: 0,
             max: 1,
-            range: 1,
             binding: false,
             allowOscOut: true,
             suppressTask: null,
@@ -116,19 +115,11 @@ function setParamIdx(idx, paramIdx) {
     }
     slot.nameApi.path = path;
     slot.autoApi.path = path;
-    slot.min = parseFloat(slot.valueApi.get('min')) || 0;
-    slot.max = parseFloat(slot.valueApi.get('max')) || 1;
-    slot.range = slot.max - slot.min;
-    if (parseInt(slot.valueApi.get('is_quantized')) > 0) {
-        var items = slot.valueApi.get('value_items') || [];
-        var strItems = items.map(function (it) { return (0, utils_1.dequote)(it.toString()); });
-        (0, utils_1.osc)('/bquant' + idx, strItems.length);
-        (0, utils_1.osc)('/bquantItems' + idx, strItems);
-    }
-    else {
-        (0, utils_1.osc)('/bquant' + idx, 0);
-        (0, utils_1.osc)('/bquantItems' + idx, []);
-    }
+    var meta = (0, deviceParam_1.readParamMeta)(slot.valueApi);
+    slot.min = meta.min;
+    slot.max = meta.max;
+    (0, utils_1.osc)('/bquant' + idx, meta.quantCount);
+    (0, utils_1.osc)('/bquantItems' + idx, meta.quantItems);
     (0, utils_1.osc)('/bval' + idx + 'color', slotColor);
     slot.binding = false;
     emitSlotName(idx);
@@ -143,14 +134,13 @@ function val(idx, value) {
     if (!slot || slot.paramId === 0) {
         return;
     }
-    var scaled = slot.range * value + slot.min;
     slot.allowOscOut = false;
     slot.suppressTask.cancel();
     slot.suppressTask.schedule(OSC_SUPPRESS_MS);
-    slot.valueApi.set('value', scaled);
+    slot.valueApi.set('value', (0, deviceParam_1.propToValue)(value, slot.min, slot.max));
     // read the value back (not the value we wrote) because some params round and
     // would report the wrong string for the value we set
-    (0, utils_1.osc)('/bvalStr' + idx, slot.valueApi.call('str_for_value', (0, utils_1.fixFloat)(parseFloat(slot.valueApi.get('value')))));
+    (0, utils_1.osc)('/bvalStr' + idx, (0, deviceParam_1.valueString)(slot.valueApi, parseFloat(slot.valueApi.get('value'))));
 }
 exports.val = val;
 function setDefault(idx) {

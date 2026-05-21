@@ -4,7 +4,13 @@
 // state out over OSC, mirroring knobblerCore's scaling and feedback-suppression
 // approach. Driven by k4-bluhand (the [v8] entry) which owns the patcher I/O.
 
-import { colorToString, dequote, fixFloat, osc } from './utils'
+import { colorToString, dequote, osc } from './utils'
+import {
+  propToValue,
+  readParamMeta,
+  valueString,
+  valueToProp,
+} from './deviceParam'
 
 export const NUM_BLU_SLOTS = 16
 const OSC_SUPPRESS_MS = 300
@@ -17,7 +23,6 @@ interface BluSlot {
   paramId: number
   min: number
   max: number
-  range: number
   binding: boolean
   allowOscOut: boolean
   suppressTask: Task
@@ -32,12 +37,8 @@ function emitSlotValue(idx: number) {
     return
   }
   const v = parseFloat(slot.valueApi.get('value'))
-  const prop = slot.range ? (v - slot.min) / slot.range : 0
-  osc('/bval' + idx, Math.max(0, Math.min(1, prop)))
-  osc(
-    '/bvalStr' + idx,
-    slot.valueApi.call('str_for_value', fixFloat(v)) as unknown as string
-  )
+  osc('/bval' + idx, valueToProp(v, slot.min, slot.max))
+  osc('/bvalStr' + idx, valueString(slot.valueApi, v))
 }
 
 function emitSlotName(idx: number) {
@@ -90,7 +91,6 @@ export function initSlots() {
       paramId: 0,
       min: 0,
       max: 1,
-      range: 1,
       binding: false,
       allowOscOut: true,
       suppressTask: null,
@@ -139,19 +139,11 @@ export function setParamIdx(idx: number, paramIdx: number) {
   slot.nameApi.path = path
   slot.autoApi.path = path
 
-  slot.min = parseFloat(slot.valueApi.get('min')) || 0
-  slot.max = parseFloat(slot.valueApi.get('max')) || 1
-  slot.range = slot.max - slot.min
-
-  if (parseInt(slot.valueApi.get('is_quantized')) > 0) {
-    const items = (slot.valueApi.get('value_items') as unknown as any[]) || []
-    const strItems = items.map((it) => dequote(it.toString()))
-    osc('/bquant' + idx, strItems.length)
-    osc('/bquantItems' + idx, strItems)
-  } else {
-    osc('/bquant' + idx, 0)
-    osc('/bquantItems' + idx, [])
-  }
+  const meta = readParamMeta(slot.valueApi)
+  slot.min = meta.min
+  slot.max = meta.max
+  osc('/bquant' + idx, meta.quantCount)
+  osc('/bquantItems' + idx, meta.quantItems)
   osc('/bval' + idx + 'color', slotColor)
 
   slot.binding = false
@@ -167,22 +159,14 @@ export function val(idx: number, value: number) {
   if (!slot || slot.paramId === 0) {
     return
   }
-  const scaled = slot.range * value + slot.min
-
   slot.allowOscOut = false
   slot.suppressTask.cancel()
   slot.suppressTask.schedule(OSC_SUPPRESS_MS)
 
-  slot.valueApi.set('value', scaled)
+  slot.valueApi.set('value', propToValue(value, slot.min, slot.max))
   // read the value back (not the value we wrote) because some params round and
   // would report the wrong string for the value we set
-  osc(
-    '/bvalStr' + idx,
-    slot.valueApi.call(
-      'str_for_value',
-      fixFloat(parseFloat(slot.valueApi.get('value')))
-    ) as unknown as string
-  )
+  osc('/bvalStr' + idx, valueString(slot.valueApi, parseFloat(slot.valueApi.get('value'))))
 }
 
 export function setDefault(idx: number) {
