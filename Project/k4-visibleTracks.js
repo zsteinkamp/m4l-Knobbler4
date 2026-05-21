@@ -1,18 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.routes = exports.setNotify = void 0;
+exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(config_1.default);
-// The entry registers a callback that fans a track-list change to the folded-in
-// consumers (clipView/multiMixer) directly and to the still-external ones
-// (sidebarMixer/knobbler4) via an outlet.
-var notify = function () { };
-function setNotify(fn) {
-    notify = fn;
-}
-exports.setNotify = setNotify;
+// Orchestrator context (set in init) — its notifyVisibleTracks() fans a
+// track-list change out to the consumers (clip/mixer) + the notify outlet.
+var ctx = null;
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -88,7 +83,7 @@ function sendVisibleTracks() {
     (0, utils_1.sendChunkedData)('/visibleTracks', items);
     // Write to shared dict, then notify mixer/clips
     (0, utils_1.setVisibleTracks)(trackList);
-    notify();
+    ctx.notifyVisibleTracks();
 }
 // ---------------------------------------------------------------------------
 // Color Observers
@@ -162,7 +157,8 @@ function doRefresh() {
     createColorObservers();
     sendVisibleTracks();
 }
-function init() {
+function init(c) {
+    ctx = c;
     ensureApis();
     if (!visibleTracksWatcher) {
         visibleTracksWatcher = new LiveAPI(onVisibleTracksChange, 'live_set');

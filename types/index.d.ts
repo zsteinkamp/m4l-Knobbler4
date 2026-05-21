@@ -28,6 +28,16 @@ type BluhandBank = {
   paramIdxArr: number[]
 }
 
+// Orchestrator context: the entry owns the live module singletons + shared
+// services and hands them to each module via init(ctx). Modules reach siblings
+// through ctx instead of importing them (require() does not share state across
+// files in [v8], so a direct import would be a separate, dead instance).
+interface AppContext {
+  knobbler: { bkMap(knobblerSlot: number, paramId: number): void }
+  sidebar: { sidebarMeters(val: number): void }
+  notifyVisibleTracks(): void
+}
+
 // In-process route descriptor for the [v8 knobbler] dispatcher. Replaces the
 // old router's (outlet, msgName) fan-out with a direct function reference.
 // parse describes how the OSC address+value map to the handler's args:

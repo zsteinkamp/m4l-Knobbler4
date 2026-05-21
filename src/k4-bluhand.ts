@@ -22,16 +22,8 @@ import * as Slots from './k4-bluhandSlots'
 
 const log = logFactory(config)
 
-// The entry injects knobblerCore.bkMap here. We can't `import` knobblerCore and
-// call it directly: within a single [v8], require() does NOT share module state
-// across files, so an imported knobblerCore would be a separate, uninitialized
-// instance (not the live one the entry drives).
-let onBkMap: (knobblerSlot: number, paramId: number) => void = function () {}
-export function setBkMapHandler(
-  fn: (knobblerSlot: number, paramId: number) => void
-) {
-  onBkMap = fn
-}
+// Orchestrator context (set in init) — used for the cross-module bkMap call.
+let ctx: AppContext = null
 
 const state = {
   devicePath: null as string,
@@ -117,8 +109,7 @@ function bkMap(bluSlot: number, knobblerSlot: number) {
   if (paramId === 0) {
     return
   }
-  // Injected by the entry (the live knobblerCore instance) — see setBkMapHandler.
-  onBkMap(knobblerSlot, paramId)
+  ctx.knobbler.bkMap(knobblerSlot, paramId)
 }
 
 // --- Selected device parameter tracking ------------------------------------
@@ -702,7 +693,8 @@ function redo() {
 // Idempotent: 'init' fires on every app refresh, not just load. Creating an
 // observer re-fires it with the current value, so first-time setup pushes all
 // state; pushState() covers the re-refresh case where observers already exist.
-function init() {
+function init(c: AppContext) {
+  ctx = c
   Slots.initSlots()
   initTransportObservers()
   initNameColorObservers()

@@ -40,13 +40,8 @@ import {
 
 const log = logFactory(config)
 
-// The entry injects sidebarMixer.sidebarMeters here. A direct `import` won't do:
-// within one [v8], require() doesn't share module state across files, so an
-// imported sidebarMixer would be a separate instance from the live one.
-let onSidebarMeters: (val: number) => void = function () {}
-export function setSidebarMeters(fn: (val: number) => void) {
-  onSidebarMeters = fn
-}
+// Orchestrator context (set in init) — used to reach the sidebar mixer.
+let ctx: AppContext = null
 
 // ---------------------------------------------------------------------------
 // Types
@@ -707,7 +702,7 @@ function sendMetersState() {
   var chk = patcher.getnamed('chkMeters')
   if (chk) chk.message('set', metersEnabled ? 1 : 0)
   // Direct call now that sidebarMixer is folded into the same [v8].
-  onSidebarMeters(metersEnabled ? 1 : 0)
+  ctx.sidebar.sidebarMeters(metersEnabled ? 1 : 0)
 }
 
 function page(pageNameArg: string) {
@@ -722,7 +717,8 @@ function page(pageNameArg: string) {
   }
 }
 
-function init() {
+function init(c: AppContext) {
+  ctx = c
   ensureApis()
   metersEnabled = !!loadInstanceSetting('metersEnabled')
   sendMetersState()

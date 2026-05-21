@@ -19,13 +19,9 @@ import {
 
 const log = logFactory(config)
 
-// The entry registers a callback that fans a track-list change to the folded-in
-// consumers (clipView/multiMixer) directly and to the still-external ones
-// (sidebarMixer/knobbler4) via an outlet.
-let notify: () => void = function () {}
-export function setNotify(fn: () => void) {
-  notify = fn
-}
+// Orchestrator context (set in init) — its notifyVisibleTracks() fans a
+// track-list change out to the consumers (clip/mixer) + the notify outlet.
+let ctx: AppContext = null
 
 // ---------------------------------------------------------------------------
 // State
@@ -111,7 +107,7 @@ function sendVisibleTracks() {
 
   // Write to shared dict, then notify mixer/clips
   setVisibleTracks(trackList)
-  notify()
+  ctx.notifyVisibleTracks()
 }
 
 // ---------------------------------------------------------------------------
@@ -191,7 +187,8 @@ function doRefresh() {
   sendVisibleTracks()
 }
 
-function init() {
+function init(c: AppContext) {
+  ctx = c
   ensureApis()
 
   if (!visibleTracksWatcher) {

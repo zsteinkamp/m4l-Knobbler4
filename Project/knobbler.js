@@ -26,18 +26,18 @@ inlets = 1;
 // still-external consumers.
 outlets = 3;
 var log = (0, utils_1.logFactory)(config_1.default);
-// Fan a visibleTracks change to the folded-in consumers directly, and to the
-// still-external ones (knobbler4's mkMap) via the notify outlet.
-visibleTracks.setNotify(function () {
-    clipView.visibleTracks();
-    multiMixer.visibleTracks();
-    outlet(consts_1.OUTLET_VISIBLE_TRACKS, 'visibleTracks');
-});
-// Inject live-instance references for inter-module calls. require() does NOT
-// share module state across files even within one [v8], so modules can't import
-// each other and call directly — the entry hands them the instance it drives.
-bluhand.setBkMapHandler(KnobblerCore.bkMap);
-multiMixer.setSidebarMeters(sidebarMixer.sidebarMeters);
+// Orchestrator context handed to each module's init(ctx). The entry owns the
+// live singletons; modules reach siblings through ctx (not direct imports —
+// require() doesn't share module state across files in [v8]).
+var ctx = {
+    knobbler: { bkMap: KnobblerCore.bkMap },
+    sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
+    notifyVisibleTracks: function () {
+        clipView.visibleTracks();
+        multiMixer.visibleTracks();
+        outlet(consts_1.OUTLET_VISIBLE_TRACKS, 'visibleTracks');
+    },
+};
 // Forward the device's dict prefix to the shared utils instance. One call
 // serves every folded-in module — require() caches utils within one [v8], so
 // the per-module setDictPrefix forwarding hack is gone.
@@ -196,12 +196,12 @@ function anything(value) {
 // Called from live.thisdevice on load and from the ---REFRESH chain. Each
 // migrated module's init() is idempotent and re-pushes its state.
 function init() {
-    bluhand.init();
+    bluhand.init(ctx);
     currentParam.init();
-    multiMixer.init();
+    multiMixer.init(ctx);
     sidebarMixer.init();
     clipView.init();
-    visibleTracks.init();
+    visibleTracks.init(ctx);
     tracksDevices.init();
     KnobblerCore.initAll(); // idempotent slot setup
     KnobblerCore.refresh(); // re-push slot names/values/xy state
