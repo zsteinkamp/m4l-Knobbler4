@@ -28,6 +28,13 @@ export function set(key: string, value: any) {
 }
 
 // --- Legacy bridge -----------------------------------------------------------
+// TODO(cleanup, after 2026-07-01 or once v65 ships): remove this whole bridge —
+// it only migrates pre-[v8] sets one time. Delete: openLegacy/setLegacyPrefix/
+// legacyGet here; the entry's legacyPort handler + openLegacy call + ctx.legacyGet;
+// the legacyGet backfill branches in knobblerCore.loadXYPairs and
+// k4-sidebarMixer (meters); and in the patcher the [dict settingsDict] bridge
+// object + the [prepend legacyPort] tap. (utils stays on 'k4Runtime'.)
+//
 // Pre-[v8] sets persisted per-instance keys in ONE shared [dict settingsDict]
 // (parameter-enabled, fixed name) prefixed by the device's `---` value, e.g.
 // "2346_xyPairs". The new scheme uses this per-instance ---settingsDict with

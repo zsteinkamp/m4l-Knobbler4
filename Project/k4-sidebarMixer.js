@@ -558,7 +558,8 @@ function init() {
         state.crossfaderObj.mode = 1;
     }
     // Restore meters state from settings dict; carry forward from pre-[v8] sets
-    // (old key "<--->_metersEnabled" in the shared [dict settingsDict]).
+    // (old key "<port>_metersEnabled" in the shared [dict settingsDict]).
+    // TODO(cleanup, after 2026-07-01 / v65): remove — see k4-settings legacy bridge.
     var meters = ctx.settings.get('metersEnabled');
     if (meters === null || meters === undefined) {
         var legacy = ctx.settings.legacyGet('metersEnabled');

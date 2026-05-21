@@ -94,7 +94,8 @@ function saveXYPairs() {
 function loadXYPairs() {
   let val = ctx.settings.get(XY_PAIRS_KEY)
   // Carry forward from pre-[v8] sets: old xyPairs lived in the shared
-  // [dict settingsDict] under "<--->_xyPairs". Migrate it once.
+  // [dict settingsDict] under "<port>_xyPairs". Migrate it once.
+  // TODO(cleanup, after 2026-07-01 / v65): remove — see k4-settings legacy bridge.
   if (!(val && typeof val === 'object')) {
     const legacy = ctx.settings.legacyGet(XY_PAIRS_KEY)
     if (legacy && typeof legacy === 'object') {
