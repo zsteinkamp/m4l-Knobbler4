@@ -92,10 +92,18 @@ function setDeviceVersion(ver: string) {
   system.setDeviceVersion(ver)
 }
 
-// Max message from a legacy N_shortcutPath blob param (the 8 invisible carry-
-// forward params fire on load): `legacyShortcutPath <slot> <path>`.
-function legacyShortcutPath(slot: number, path: string) {
-  shortcuts.legacyShortcutPath(slot, path)
+// Max message from a legacy N_shortcutPath blob param (the 8 carry-forward
+// params fire on load). The textedit emits its restored value as `text <path…>`,
+// and LiveAPI paths contain spaces, so it arrives as: slot, "text", word, word…
+// Drop the "text" selector and rejoin the rest into the full path.
+function legacyShortcutPath() {
+  const args = arrayfromargs(arguments)
+  const slot = parseInt(args[0] as any)
+  let parts = args.slice(1)
+  if (parts.length && parts[0] === 'text') {
+    parts = parts.slice(1)
+  }
+  shortcuts.legacyShortcutPath(slot, parts.join(' '))
 }
 
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
