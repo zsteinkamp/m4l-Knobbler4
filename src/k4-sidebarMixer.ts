@@ -2,7 +2,6 @@ import {
   cleanArr,
   colorToString,
   fixFloat,
-  loadInstanceSetting,
   logFactory,
   meterVal,
   osc,
@@ -38,6 +37,9 @@ import {
 } from './mixerUtils'
 
 const log = logFactory(config)
+
+// Orchestrator context (set in doRefresh/init) — per-instance persistence.
+let ctx: AppContext = null
 
 log('loaded k4-sidebarMixer')
 
@@ -542,7 +544,8 @@ const onReturnsChange = (args: IdObserverArg) => {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-function doRefresh() {
+function doRefresh(c: AppContext) {
+  ctx = c
   state.watchers = []
   state.trackLookupObj = null
   state.returnsObj = null
@@ -651,7 +654,7 @@ function init() {
   }
 
   // Restore meters state from settings dict
-  state.metersEnabled = !!loadInstanceSetting('metersEnabled')
+  state.metersEnabled = !!ctx.settings.get('metersEnabled')
   osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
 }
 

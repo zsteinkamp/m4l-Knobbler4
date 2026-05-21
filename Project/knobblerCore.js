@@ -16,6 +16,8 @@ var consts_1 = require("./consts");
 var deviceParam_1 = require("./deviceParam");
 var config_1 = require("./config");
 var log = (0, utils_1.logFactory)(config_1.default);
+// Orchestrator context (set in initAll) — per-instance persistence via ctx.settings.
+var ctx = null;
 // Pre-computed OSC address strings (indexed 1–32)
 var ADDR_VAL = [];
 var ADDR_VALSTR = [];
@@ -71,10 +73,10 @@ function isSlotInPair(slot) {
     return null;
 }
 function saveXYPairs() {
-    (0, utils_1.saveInstanceSetting)(XY_PAIRS_KEY, xyPairs);
+    ctx.settings.set(XY_PAIRS_KEY, xyPairs);
 }
 function loadXYPairs() {
-    var val = (0, utils_1.loadInstanceSetting)(XY_PAIRS_KEY);
+    var val = ctx.settings.get(XY_PAIRS_KEY);
     //log('LOAD XY PAIRS val=' + JSON.stringify(val))
     if (val && typeof val === 'object') {
         xyPairs = val.filter(function (n) {
@@ -231,7 +233,8 @@ function mkMap(slot, mixerPath) {
     setPath(slot, paramPath);
 }
 exports.mkMap = mkMap;
-function initAll() {
+function initAll(c) {
+    ctx = c;
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     apiReady = true;

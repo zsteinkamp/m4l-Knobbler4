@@ -5,12 +5,10 @@ import {
   detach,
   getVisibleTracksList,
   isValidPath,
-  loadInstanceSetting,
   loadSetting,
   setDictPrefix,
   logFactory,
   osc,
-  saveInstanceSetting,
   saveSetting,
 } from './utils'
 import {
@@ -25,6 +23,9 @@ import { propToValue, valueString, valueToProp } from './deviceParam'
 
 import config from './config'
 const log = logFactory(config)
+
+// Orchestrator context (set in initAll) — per-instance persistence via ctx.settings.
+let ctx: AppContext = null
 
 // Pre-computed OSC address strings (indexed 1–32)
 const ADDR_VAL: string[] = []
@@ -86,11 +87,11 @@ function isSlotInPair(slot: number): number | null {
 }
 
 function saveXYPairs() {
-  saveInstanceSetting(XY_PAIRS_KEY, xyPairs)
+  ctx.settings.set(XY_PAIRS_KEY, xyPairs)
 }
 
 function loadXYPairs() {
-  const val = loadInstanceSetting(XY_PAIRS_KEY)
+  const val = ctx.settings.get(XY_PAIRS_KEY)
   //log('LOAD XY PAIRS val=' + JSON.stringify(val))
   if (val && typeof val === 'object') {
     xyPairs = (val as number[]).filter(function (n) {
@@ -244,7 +245,8 @@ function mkMap(slot: number, mixerPath: string) {
   setPath(slot, paramPath)
 }
 
-function initAll() {
+function initAll(c: AppContext) {
+  ctx = c
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
   apiReady = true
   for (let i = 1; i <= MAX_SLOTS; i++) {

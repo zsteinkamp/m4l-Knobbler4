@@ -6,6 +6,8 @@ var config_1 = require("./config");
 var consts_1 = require("./consts");
 var mixerUtils_1 = require("./mixerUtils");
 var log = (0, utils_1.logFactory)(config_1.default);
+// Orchestrator context (set in doRefresh/init) — per-instance persistence.
+var ctx = null;
 log('loaded k4-sidebarMixer');
 var state = {
     trackLookupObj: null,
@@ -468,7 +470,8 @@ var onReturnsChange = function (args) {
 // ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
-function doRefresh() {
+function doRefresh(c) {
+    ctx = c;
     state.watchers = [];
     state.trackLookupObj = null;
     state.returnsObj = null;
@@ -554,7 +557,7 @@ function init() {
         state.crossfaderObj.mode = 1;
     }
     // Restore meters state from settings dict
-    state.metersEnabled = !!(0, utils_1.loadInstanceSetting)('metersEnabled');
+    state.metersEnabled = !!ctx.settings.get('metersEnabled');
     (0, utils_1.osc)('/sidebarMeters', state.metersEnabled ? 1 : 0);
 }
 // Route table — the single-track mixer commands (old router OUTLET_MIXER).

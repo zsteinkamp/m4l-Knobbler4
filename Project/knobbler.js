@@ -19,6 +19,7 @@ var clipView = require("./k4-clipView");
 var visibleTracks = require("./k4-visibleTracks");
 var tracksDevices = require("./k4-tracksDevices");
 var KnobblerCore = require("./knobblerCore");
+var settings = require("./k4-settings");
 autowatch = 1;
 inlets = 1;
 // Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = knobblerCore ->
@@ -37,7 +38,13 @@ var ctx = {
         multiMixer.visibleTracks();
         outlet(consts_1.OUTLET_VISIBLE_TRACKS, 'visibleTracks');
     },
+    settings: { get: settings.get, set: settings.set },
 };
+// Patcher sends [settingsDictName ---settingsDict( on load (before init) — the
+// resolved per-instance dict name. Open it once.
+function settingsDictName(name) {
+    settings.open(name.toString());
+}
 // Forward the device's dict prefix to the shared utils instance. One call
 // serves every folded-in module — require() caches utils within one [v8], so
 // the per-module setDictPrefix forwarding hack is gone.
@@ -92,7 +99,7 @@ function clearPath(slot) {
 }
 // Load-chain trigger (was [v8 knobbler4]'s initAll).
 function initAll() {
-    KnobblerCore.initAll();
+    KnobblerCore.initAll(ctx);
     KnobblerCore.refresh();
 }
 // --- Route table (merged from every migrated module) -----------------------
@@ -199,11 +206,11 @@ function init() {
     bluhand.init(ctx);
     currentParam.init();
     multiMixer.init(ctx);
-    sidebarMixer.init();
+    sidebarMixer.init(ctx);
     clipView.init();
     visibleTracks.init(ctx);
     tracksDevices.init();
-    KnobblerCore.initAll(); // idempotent slot setup
+    KnobblerCore.initAll(ctx); // idempotent slot setup
     KnobblerCore.refresh(); // re-push slot names/values/xy state
 }
 log('reloaded knobbler');

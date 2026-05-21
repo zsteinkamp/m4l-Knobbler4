@@ -4,8 +4,6 @@ import {
   detach,
   fixFloat,
   getVisibleTracksList,
-  loadInstanceSetting,
-  saveInstanceSetting,
   logFactory,
   meterVal,
   osc,
@@ -675,7 +673,7 @@ function mixerMeters(val: number) {
   const enabled = !!parseInt(val.toString())
   if (enabled === metersEnabled) return
   metersEnabled = enabled
-  saveInstanceSetting('metersEnabled', metersEnabled ? 1 : 0)
+  ctx.settings.set('metersEnabled', metersEnabled ? 1 : 0)
   sendMetersState()
 
   if (metersEnabled) {
@@ -720,7 +718,7 @@ function page(pageNameArg: string) {
 function init(c: AppContext) {
   ctx = c
   ensureApis()
-  metersEnabled = !!loadInstanceSetting('metersEnabled')
+  metersEnabled = !!ctx.settings.get('metersEnabled')
   sendMetersState()
   setupWindow(0, DEFAULT_VISIBLE_COUNT)
 }

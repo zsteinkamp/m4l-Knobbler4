@@ -558,7 +558,7 @@ function mixerMeters(val) {
     if (enabled === metersEnabled)
         return;
     metersEnabled = enabled;
-    (0, utils_1.saveInstanceSetting)('metersEnabled', metersEnabled ? 1 : 0);
+    ctx.settings.set('metersEnabled', metersEnabled ? 1 : 0);
     sendMetersState();
     if (metersEnabled) {
         // Only create meter observers for visible tracks, not buffer
@@ -604,7 +604,7 @@ exports.page = page;
 function init(c) {
     ctx = c;
     ensureApis();
-    metersEnabled = !!(0, utils_1.loadInstanceSetting)('metersEnabled');
+    metersEnabled = !!ctx.settings.get('metersEnabled');
     sendMetersState();
     setupWindow(0, DEFAULT_VISIBLE_COUNT);
 }

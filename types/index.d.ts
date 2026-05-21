@@ -36,6 +36,8 @@ interface AppContext {
   knobbler: { bkMap(knobblerSlot: number, paramId: number): void }
   sidebar: { sidebarMeters(val: number): void }
   notifyVisibleTracks(): void
+  // per-instance persistence (---settingsDict); one Dict ref, no key prefixing
+  settings: { get(key: string): any; set(key: string, value: any): void }
 }
 
 // In-process route descriptor for the [v8 knobbler] dispatcher. Replaces the

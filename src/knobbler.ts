@@ -19,6 +19,7 @@ import * as clipView from './k4-clipView'
 import * as visibleTracks from './k4-visibleTracks'
 import * as tracksDevices from './k4-tracksDevices'
 import * as KnobblerCore from './knobblerCore'
+import * as settings from './k4-settings'
 
 autowatch = 1
 inlets = 1
@@ -40,6 +41,13 @@ const ctx: AppContext = {
     multiMixer.visibleTracks()
     outlet(OUTLET_VISIBLE_TRACKS, 'visibleTracks')
   },
+  settings: { get: settings.get, set: settings.set },
+}
+
+// Patcher sends [settingsDictName ---settingsDict( on load (before init) — the
+// resolved per-instance dict name. Open it once.
+function settingsDictName(name: string) {
+  settings.open(name.toString())
 }
 
 // Forward the device's dict prefix to the shared utils instance. One call
@@ -101,7 +109,7 @@ function clearPath(slot: number) {
 }
 // Load-chain trigger (was [v8 knobbler4]'s initAll).
 function initAll() {
-  KnobblerCore.initAll()
+  KnobblerCore.initAll(ctx)
   KnobblerCore.refresh()
 }
 
@@ -243,11 +251,11 @@ function init() {
   bluhand.init(ctx)
   currentParam.init()
   multiMixer.init(ctx)
-  sidebarMixer.init()
+  sidebarMixer.init(ctx)
   clipView.init()
   visibleTracks.init(ctx)
   tracksDevices.init()
-  KnobblerCore.initAll() // idempotent slot setup
+  KnobblerCore.initAll(ctx) // idempotent slot setup
   KnobblerCore.refresh() // re-push slot names/values/xy state
 }
 
