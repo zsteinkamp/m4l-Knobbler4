@@ -14,6 +14,7 @@ var consts_1 = require("./consts");
 var bluhand = require("./k4-bluhand");
 var currentParam = require("./k4-currentParam");
 var multiMixer = require("./k4-multiMixer");
+var sidebarMixer = require("./k4-sidebarMixer");
 var clipView = require("./k4-clipView");
 var visibleTracks = require("./k4-visibleTracks");
 autowatch = 1;
@@ -23,7 +24,7 @@ inlets = 1;
 outlets = 3;
 var log = (0, utils_1.logFactory)(config_1.default);
 // Fan a visibleTracks change to the folded-in consumers directly, and to the
-// still-external ones (sidebarMixer/knobbler4) via the notify outlet.
+// still-external ones (knobbler4's mkMap) via the notify outlet.
 visibleTracks.setNotify(function () {
     clipView.visibleTracks();
     multiMixer.visibleTracks();
@@ -35,8 +36,18 @@ visibleTracks.setNotify(function () {
 function setDictPrefix(prefix) {
     (0, utils_1.setDictPrefix)(prefix);
 }
+// Page changes drive meter flushing in both mixer modules.
+function pageDispatch(address) {
+    var pageName = address.split('/')[2];
+    multiMixer.page(pageName);
+    sidebarMixer.page(pageName);
+}
+// Routes owned by the entry itself (fan-outs that touch multiple modules).
+var entryRoutes = [
+    { prefix: '/page/', parse: 'custom', fn: pageDispatch },
+];
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, clipView.routes, visibleTracks.routes);
+var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -139,6 +150,7 @@ function init() {
     bluhand.init();
     currentParam.init();
     multiMixer.init();
+    sidebarMixer.init();
     clipView.init();
     visibleTracks.init();
 }

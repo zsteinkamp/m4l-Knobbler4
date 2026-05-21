@@ -14,6 +14,7 @@ import { OUTLET_VISIBLE_TRACKS } from './consts'
 import * as bluhand from './k4-bluhand'
 import * as currentParam from './k4-currentParam'
 import * as multiMixer from './k4-multiMixer'
+import * as sidebarMixer from './k4-sidebarMixer'
 import * as clipView from './k4-clipView'
 import * as visibleTracks from './k4-visibleTracks'
 
@@ -26,7 +27,7 @@ outlets = 3
 const log = logFactory(config)
 
 // Fan a visibleTracks change to the folded-in consumers directly, and to the
-// still-external ones (sidebarMixer/knobbler4) via the notify outlet.
+// still-external ones (knobbler4's mkMap) via the notify outlet.
 visibleTracks.setNotify(function () {
   clipView.visibleTracks()
   multiMixer.visibleTracks()
@@ -40,14 +41,28 @@ function setDictPrefix(prefix: any) {
   utilsSetDictPrefix(prefix)
 }
 
+// Page changes drive meter flushing in both mixer modules.
+function pageDispatch(address: string) {
+  const pageName = address.split('/')[2]
+  multiMixer.page(pageName)
+  sidebarMixer.page(pageName)
+}
+
+// Routes owned by the entry itself (fan-outs that touch multiple modules).
+const entryRoutes: Route[] = [
+  { prefix: '/page/', parse: 'custom', fn: pageDispatch },
+]
+
 // --- Route table (merged from every migrated module) -----------------------
 
 const ROUTES: Route[] = [].concat(
   bluhand.routes as any,
   currentParam.routes as any,
   multiMixer.routes as any,
+  sidebarMixer.routes as any,
   clipView.routes as any,
-  visibleTracks.routes as any
+  visibleTracks.routes as any,
+  entryRoutes as any
 ) as Route[]
 ROUTES.sort((a, b) => (a.prefix.length > b.prefix.length ? -1 : 1))
 
@@ -175,6 +190,7 @@ function init() {
   bluhand.init()
   currentParam.init()
   multiMixer.init()
+  sidebarMixer.init()
   clipView.init()
   visibleTracks.init()
 }

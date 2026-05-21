@@ -37,6 +37,7 @@ import {
   toggleSolo as toggleSoloShared,
   xfadeAB,
 } from './mixerUtils'
+import * as sidebarMixer from './k4-sidebarMixer'
 
 const log = logFactory(config)
 
@@ -694,26 +695,12 @@ function mixerMeters(val: number) {
   }
 }
 
-var sidebarMixerObj: any = null
-
-function getSidebarMixer() {
-  if (sidebarMixerObj) return sidebarMixerObj
-  patcher.apply(function (obj: any) {
-    if (obj.getattr && obj.getattr('filename') === 'k4-sidebarMixer.js') {
-      sidebarMixerObj = obj
-      return false
-    }
-    return true
-  })
-  return sidebarMixerObj
-}
-
 function sendMetersState() {
   osc('/mixerMeters', metersEnabled ? 1 : 0)
   var chk = patcher.getnamed('chkMeters')
   if (chk) chk.message('set', metersEnabled ? 1 : 0)
-  var sb = getSidebarMixer()
-  if (sb) sb.message('sidebarMeters', metersEnabled ? 1 : 0)
+  // Direct call now that sidebarMixer is folded into the same [v8].
+  sidebarMixer.sidebarMeters(metersEnabled ? 1 : 0)
 }
 
 function page(pageNameArg: string) {
@@ -948,11 +935,6 @@ function mixerCmd(address: string, val: any) {
   dispatchMixerSub(parts[3], stripIdx, val)
 }
 
-// Page-change notifications drive meter flushing on/off.
-function pageDispatch(address: string) {
-  page(address.split('/')[2]) // page() reads arguments[0]
-}
-
 function dispatchMixerSub(subCmd: string, stripIdx: number, val: any) {
   if (subCmd === 'vol') vol(stripIdx, val)
   else if (subCmd === 'pan') pan(stripIdx, val)
@@ -1008,9 +990,8 @@ const routes: Route[] = [
   { prefix: '/mixerView', parse: 'val', fn: mixerView },
   { prefix: '/mixerMeters', parse: 'val', fn: mixerMeters },
   { prefix: '/mixer/', parse: 'custom', fn: mixerCmd, coalesce: true },
-  { prefix: '/page/', parse: 'custom', fn: pageDispatch },
 ]
 
 log('reloaded k4-multiMixer')
 
-export { routes, init, visibleTracks }
+export { routes, init, visibleTracks, page }

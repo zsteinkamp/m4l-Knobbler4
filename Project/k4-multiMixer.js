@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.visibleTracks = exports.init = exports.routes = void 0;
+exports.page = exports.visibleTracks = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var mixerUtils_1 = require("./mixerUtils");
+var sidebarMixer = require("./k4-sidebarMixer");
 var log = (0, utils_1.logFactory)(config_1.default);
 // ---------------------------------------------------------------------------
 // Constants
@@ -578,27 +579,13 @@ function mixerMeters(val) {
         }
     }
 }
-var sidebarMixerObj = null;
-function getSidebarMixer() {
-    if (sidebarMixerObj)
-        return sidebarMixerObj;
-    patcher.apply(function (obj) {
-        if (obj.getattr && obj.getattr('filename') === 'k4-sidebarMixer.js') {
-            sidebarMixerObj = obj;
-            return false;
-        }
-        return true;
-    });
-    return sidebarMixerObj;
-}
 function sendMetersState() {
     (0, utils_1.osc)('/mixerMeters', metersEnabled ? 1 : 0);
     var chk = patcher.getnamed('chkMeters');
     if (chk)
         chk.message('set', metersEnabled ? 1 : 0);
-    var sb = getSidebarMixer();
-    if (sb)
-        sb.message('sidebarMeters', metersEnabled ? 1 : 0);
+    // Direct call now that sidebarMixer is folded into the same [v8].
+    sidebarMixer.sidebarMeters(metersEnabled ? 1 : 0);
 }
 function page(pageNameArg) {
     var pageName = pageNameArg.toString();
@@ -612,6 +599,7 @@ function page(pageNameArg) {
         stopMeterFlush();
     }
 }
+exports.page = page;
 function init() {
     ensureApis();
     metersEnabled = !!(0, utils_1.loadInstanceSetting)('metersEnabled');
@@ -829,10 +817,6 @@ function mixerCmd(address, val) {
         return;
     dispatchMixerSub(parts[3], stripIdx, val);
 }
-// Page-change notifications drive meter flushing on/off.
-function pageDispatch(address) {
-    page(address.split('/')[2]); // page() reads arguments[0]
-}
 function dispatchMixerSub(subCmd, stripIdx, val) {
     if (subCmd === 'vol')
         vol(stripIdx, val);
@@ -923,7 +907,6 @@ var routes = [
     { prefix: '/mixerView', parse: 'val', fn: mixerView },
     { prefix: '/mixerMeters', parse: 'val', fn: mixerMeters },
     { prefix: '/mixer/', parse: 'custom', fn: mixerCmd, coalesce: true },
-    { prefix: '/page/', parse: 'custom', fn: pageDispatch },
 ];
 exports.routes = routes;
 log('reloaded k4-multiMixer');

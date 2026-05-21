@@ -9,14 +9,11 @@ import {
   pauseUnpause,
   PauseState,
   SEND_ADDR,
-  setDictPrefix as _setDictPrefix,
 } from './utils'
 import config from './config'
 import {
   noFn,
   DEFAULT_COLOR,
-  INLET_MSGS,
-  OUTLET_OSC,
   MAX_SENDS,
   PAUSE_MS,
   METER_FLUSH_MS,
@@ -40,16 +37,7 @@ import {
   xfadeAB,
 } from './mixerUtils'
 
-autowatch = 1
-inlets = 2
-outlets = 1
-
 const log = logFactory(config)
-const INLET_PAGE = 1
-
-setinletassist(INLET_MSGS, 'Receives messages and args to call JS functions')
-setinletassist(INLET_PAGE, 'Page change messages')
-setoutletassist(OUTLET_OSC, 'Output OSC messages to [udpsend]')
 
 log('loaded k4-sidebarMixer')
 
@@ -171,8 +159,8 @@ function sidebarMeters(val: number) {
   }
 }
 
-function page() {
-  const pageName = arguments[0].toString()
+function page(pageNameArg: string) {
+  const pageName = pageNameArg.toString()
   const wasMixerPage = state.onMixerPage
   state.onMixerPage = pageName === 'mixer' || pageName === 'session'
 
@@ -567,10 +555,6 @@ function doRefresh() {
   init()
 }
 
-function setDictPrefix(prefix: any) {
-  _setDictPrefix(prefix)
-}
-
 function init() {
   if (state.watchers.length === MAX_SENDS) {
     return
@@ -671,9 +655,28 @@ function init() {
   osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
 }
 
+// Route table — the single-track mixer commands (old router OUTLET_MIXER).
+const routes: Route[] = [
+  { prefix: '/mixer/volDefault', parse: 'val', fn: handleVolDefault },
+  { prefix: '/mixer/panDefault', parse: 'bare', fn: handlePanDefault },
+  { prefix: '/mixer/crossfaderDefault', parse: 'bare', fn: handleCrossfaderDefault },
+  { prefix: '/mixer/sendDefault', parse: 'slot', fn: handleSendDefault },
+  { prefix: '/mixer/send', parse: 'slotVal', fn: updateSendVal, coalesce: true },
+  { prefix: '/mixer/toggleXFadeA', parse: 'bare', fn: toggleXFadeA },
+  { prefix: '/mixer/toggleXFadeB', parse: 'bare', fn: toggleXFadeB },
+  { prefix: '/mixer/disableInput', parse: 'bare', fn: disableInput },
+  { prefix: '/mixer/enableRecord', parse: 'bare', fn: enableRecord },
+  { prefix: '/mixer/disableRecord', parse: 'bare', fn: disableRecord },
+  { prefix: '/mixer/toggleSolo', parse: 'bare', fn: toggleSolo },
+  { prefix: '/mixer/toggleMute', parse: 'bare', fn: toggleMute },
+  { prefix: '/mixer/pan', parse: 'val', fn: handlePan, coalesce: true },
+  { prefix: '/mixer/vol', parse: 'val', fn: handleVol, coalesce: true },
+  { prefix: '/mixer/crossfader', parse: 'val', fn: handleCrossfader, coalesce: true },
+]
+
 log('reloaded k4-sidebarMixer')
 
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-const module = {}
-export = {}
+// init() early-returns once observers exist, so use doRefresh (full reset +
+// rebuild) as the entry's init/refresh hook to re-push on app reconnect.
+export { routes, page, sidebarMeters }
+export { doRefresh as init }

@@ -1,16 +1,11 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.init = exports.sidebarMeters = exports.page = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
 var mixerUtils_1 = require("./mixerUtils");
-autowatch = 1;
-inlets = 2;
-outlets = 1;
 var log = (0, utils_1.logFactory)(config_1.default);
-var INLET_PAGE = 1;
-setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
-setinletassist(INLET_PAGE, 'Page change messages');
-setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 log('loaded k4-sidebarMixer');
 var state = {
     trackLookupObj: null,
@@ -129,8 +124,9 @@ function sidebarMeters(val) {
         disableMeters();
     }
 }
-function page() {
-    var pageName = arguments[0].toString();
+exports.sidebarMeters = sidebarMeters;
+function page(pageNameArg) {
+    var pageName = pageNameArg.toString();
     var wasMixerPage = state.onMixerPage;
     state.onMixerPage = pageName === 'mixer' || pageName === 'session';
     if (!state.onMixerPage && wasMixerPage) {
@@ -141,6 +137,7 @@ function page() {
         stopMeterFlush();
     }
 }
+exports.page = page;
 // ---------------------------------------------------------------------------
 // Send watcher management
 // ---------------------------------------------------------------------------
@@ -483,9 +480,7 @@ function doRefresh() {
     state.lastTrackId = 0;
     init();
 }
-function setDictPrefix(prefix) {
-    (0, utils_1.setDictPrefix)(prefix);
-}
+exports.init = doRefresh;
 function init() {
     if (state.watchers.length === consts_1.MAX_SENDS) {
         return;
@@ -562,8 +557,23 @@ function init() {
     state.metersEnabled = !!(0, utils_1.loadInstanceSetting)('metersEnabled');
     (0, utils_1.osc)('/sidebarMeters', state.metersEnabled ? 1 : 0);
 }
+// Route table — the single-track mixer commands (old router OUTLET_MIXER).
+var routes = [
+    { prefix: '/mixer/volDefault', parse: 'val', fn: handleVolDefault },
+    { prefix: '/mixer/panDefault', parse: 'bare', fn: handlePanDefault },
+    { prefix: '/mixer/crossfaderDefault', parse: 'bare', fn: handleCrossfaderDefault },
+    { prefix: '/mixer/sendDefault', parse: 'slot', fn: handleSendDefault },
+    { prefix: '/mixer/send', parse: 'slotVal', fn: updateSendVal, coalesce: true },
+    { prefix: '/mixer/toggleXFadeA', parse: 'bare', fn: toggleXFadeA },
+    { prefix: '/mixer/toggleXFadeB', parse: 'bare', fn: toggleXFadeB },
+    { prefix: '/mixer/disableInput', parse: 'bare', fn: disableInput },
+    { prefix: '/mixer/enableRecord', parse: 'bare', fn: enableRecord },
+    { prefix: '/mixer/disableRecord', parse: 'bare', fn: disableRecord },
+    { prefix: '/mixer/toggleSolo', parse: 'bare', fn: toggleSolo },
+    { prefix: '/mixer/toggleMute', parse: 'bare', fn: toggleMute },
+    { prefix: '/mixer/pan', parse: 'val', fn: handlePan, coalesce: true },
+    { prefix: '/mixer/vol', parse: 'val', fn: handleVol, coalesce: true },
+    { prefix: '/mixer/crossfader', parse: 'val', fn: handleCrossfader, coalesce: true },
+];
+exports.routes = routes;
 log('reloaded k4-sidebarMixer');
-// NOTE: This section must appear in any .ts file that is directuly used by a
-// [js] or [jsui] object so that tsc generates valid JS for Max.
-var module = {};
-module.exports = {};
