@@ -12,19 +12,16 @@ import {
   osc,
 } from './utils'
 import config from './config'
-import { noFn, OUTLET_MSGS } from './consts'
+import { noFn } from './consts'
 import {
   deprecatedDeviceDelta,
   deprecatedTrackDelta,
 } from './deprecatedMethods'
 import { getBankParamArr } from './k4-bluhandBanks'
 import * as Slots from './k4-bluhandSlots'
+import * as KnobblerCore from './knobblerCore'
 
 const log = logFactory(config)
-
-// On the [v8 knobbler] entry, outlet 1 carries bkMap messages to the
-// [s ---KNOBBLER] receiver. (Same index the standalone object used.)
-const OUTLET_KNOBBLER = OUTLET_MSGS
 
 const state = {
   devicePath: null as string,
@@ -110,7 +107,9 @@ function bkMap(bluSlot: number, knobblerSlot: number) {
   if (paramId === 0) {
     return
   }
-  outlet(OUTLET_KNOBBLER, 'bkMap', knobblerSlot, paramId)
+  // Direct call now that knobblerCore is folded into the same [v8] — no more
+  // round-trip through [s ---KNOBBLER].
+  KnobblerCore.bkMap(knobblerSlot, paramId)
 }
 
 // --- Selected device parameter tracking ------------------------------------

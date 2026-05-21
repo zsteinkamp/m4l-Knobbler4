@@ -18,11 +18,13 @@ import * as sidebarMixer from './k4-sidebarMixer'
 import * as clipView from './k4-clipView'
 import * as visibleTracks from './k4-visibleTracks'
 import * as tracksDevices from './k4-tracksDevices'
+import * as KnobblerCore from './knobblerCore'
 
 autowatch = 1
 inlets = 1
-// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = bkMap ->
-// [s ---KNOBBLER], 2 = 'visibleTracks' notify -> still-external consumers.
+// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = knobblerCore ->
+// knob-slot bpatcher messages (OUTLET_MSGS), 2 = 'visibleTracks' notify ->
+// still-external consumers.
 outlets = 3
 
 const log = logFactory(config)
@@ -60,6 +62,44 @@ const entryRoutes: Route[] = [
   { prefix: '/page/', parse: 'custom', fn: pageDispatch },
 ]
 
+// knobblerCore (the former [v8 knobbler4]) — OSC routes.
+const knobblerRoutes: Route[] = [
+  { prefix: '/val', parse: 'slotVal', fn: KnobblerCore.val, coalesce: true },
+  { prefix: '/unmap', parse: 'slot', fn: KnobblerCore.unmap },
+  { prefix: '/xyJoin', parse: 'val', fn: KnobblerCore.xyJoin },
+  { prefix: '/xySplit', parse: 'val', fn: KnobblerCore.xySplit },
+  { prefix: '/defaultval', parse: 'slot', fn: KnobblerCore.setDefault },
+  { prefix: '/default val', parse: 'slot', fn: KnobblerCore.setDefault },
+  { prefix: '/track', parse: 'slot', fn: KnobblerCore.gotoTrackFor },
+  { prefix: '/mkMap', parse: 'slotVal', fn: KnobblerCore.mkMap },
+]
+
+// Max-message handlers from the knob-slot bpatchers (UI / persistence params).
+// These arrive as selectors on the entry inlet, not OSC.
+function setMin(slot: number, val: number) {
+  KnobblerCore.setMin(slot, val)
+}
+function setMax(slot: number, val: number) {
+  KnobblerCore.setMax(slot, val)
+}
+function setPath(slot: number, paramPath: string) {
+  KnobblerCore.setPath(slot, paramPath)
+}
+function setCustomName(slot: number, args: string) {
+  KnobblerCore.setCustomName(slot, args)
+}
+function clearCustomName(slot: number) {
+  KnobblerCore.clearCustomName(slot)
+}
+function clearPath(slot: number) {
+  KnobblerCore.clearPath(slot)
+}
+// Load-chain trigger (was [v8 knobbler4]'s initAll).
+function initAll() {
+  KnobblerCore.initAll()
+  KnobblerCore.refresh()
+}
+
 // --- Route table (merged from every migrated module) -----------------------
 
 const ROUTES: Route[] = [].concat(
@@ -69,6 +109,7 @@ const ROUTES: Route[] = [].concat(
   sidebarMixer.routes as any,
   clipView.routes as any,
   visibleTracks.routes as any,
+  knobblerRoutes as any,
   entryRoutes as any
 ) as Route[]
 ROUTES.sort((a, b) => (a.prefix.length > b.prefix.length ? -1 : 1))
@@ -201,6 +242,8 @@ function init() {
   clipView.init()
   visibleTracks.init()
   tracksDevices.init()
+  KnobblerCore.initAll() // idempotent slot setup
+  KnobblerCore.refresh() // re-push slot names/values/xy state
 }
 
 log('reloaded knobbler')

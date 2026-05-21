@@ -21,10 +21,8 @@ var consts_1 = require("./consts");
 var deprecatedMethods_1 = require("./deprecatedMethods");
 var k4_bluhandBanks_1 = require("./k4-bluhandBanks");
 var Slots = require("./k4-bluhandSlots");
+var KnobblerCore = require("./knobblerCore");
 var log = (0, utils_1.logFactory)(config_1.default);
-// On the [v8 knobbler] entry, outlet 1 carries bkMap messages to the
-// [s ---KNOBBLER] receiver. (Same index the standalone object used.)
-var OUTLET_KNOBBLER = consts_1.OUTLET_MSGS;
 var state = {
     devicePath: null,
     onOffWatcher: null,
@@ -102,7 +100,9 @@ function bkMap(bluSlot, knobblerSlot) {
     if (paramId === 0) {
         return;
     }
-    outlet(OUTLET_KNOBBLER, 'bkMap', knobblerSlot, paramId);
+    // Direct call now that knobblerCore is folded into the same [v8] — no more
+    // round-trip through [s ---KNOBBLER].
+    KnobblerCore.bkMap(knobblerSlot, paramId);
 }
 // --- Selected device parameter tracking ------------------------------------
 var pcDebounce = new Task(onParameterChange);

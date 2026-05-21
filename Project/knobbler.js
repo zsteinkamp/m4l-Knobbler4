@@ -18,10 +18,12 @@ var sidebarMixer = require("./k4-sidebarMixer");
 var clipView = require("./k4-clipView");
 var visibleTracks = require("./k4-visibleTracks");
 var tracksDevices = require("./k4-tracksDevices");
+var KnobblerCore = require("./knobblerCore");
 autowatch = 1;
 inlets = 1;
-// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = bkMap ->
-// [s ---KNOBBLER], 2 = 'visibleTracks' notify -> still-external consumers.
+// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = knobblerCore ->
+// knob-slot bpatcher messages (OUTLET_MSGS), 2 = 'visibleTracks' notify ->
+// still-external consumers.
 outlets = 3;
 var log = (0, utils_1.logFactory)(config_1.default);
 // Fan a visibleTracks change to the folded-in consumers directly, and to the
@@ -52,8 +54,44 @@ function pageDispatch(address) {
 var entryRoutes = [
     { prefix: '/page/', parse: 'custom', fn: pageDispatch },
 ];
+// knobblerCore (the former [v8 knobbler4]) — OSC routes.
+var knobblerRoutes = [
+    { prefix: '/val', parse: 'slotVal', fn: KnobblerCore.val, coalesce: true },
+    { prefix: '/unmap', parse: 'slot', fn: KnobblerCore.unmap },
+    { prefix: '/xyJoin', parse: 'val', fn: KnobblerCore.xyJoin },
+    { prefix: '/xySplit', parse: 'val', fn: KnobblerCore.xySplit },
+    { prefix: '/defaultval', parse: 'slot', fn: KnobblerCore.setDefault },
+    { prefix: '/default val', parse: 'slot', fn: KnobblerCore.setDefault },
+    { prefix: '/track', parse: 'slot', fn: KnobblerCore.gotoTrackFor },
+    { prefix: '/mkMap', parse: 'slotVal', fn: KnobblerCore.mkMap },
+];
+// Max-message handlers from the knob-slot bpatchers (UI / persistence params).
+// These arrive as selectors on the entry inlet, not OSC.
+function setMin(slot, val) {
+    KnobblerCore.setMin(slot, val);
+}
+function setMax(slot, val) {
+    KnobblerCore.setMax(slot, val);
+}
+function setPath(slot, paramPath) {
+    KnobblerCore.setPath(slot, paramPath);
+}
+function setCustomName(slot, args) {
+    KnobblerCore.setCustomName(slot, args);
+}
+function clearCustomName(slot) {
+    KnobblerCore.clearCustomName(slot);
+}
+function clearPath(slot) {
+    KnobblerCore.clearPath(slot);
+}
+// Load-chain trigger (was [v8 knobbler4]'s initAll).
+function initAll() {
+    KnobblerCore.initAll();
+    KnobblerCore.refresh();
+}
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, entryRoutes);
+var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, knobblerRoutes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -160,6 +198,8 @@ function init() {
     clipView.init();
     visibleTracks.init();
     tracksDevices.init();
+    KnobblerCore.initAll(); // idempotent slot setup
+    KnobblerCore.refresh(); // re-push slot names/values/xy state
 }
 log('reloaded knobbler');
 // NOTE: required boilerplate so tsc emits valid CommonJS for the [v8] object.
