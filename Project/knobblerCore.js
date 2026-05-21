@@ -91,6 +91,73 @@ function sendXYPairs() {
     //log('SEND XY PAIRS', JSON.stringify(xyPairs))
     (0, utils_1.osc)('/xyPairs', xyPairs);
 }
+// --- Slot persistence (migrating off the bpatcher #N_* params) -------------
+//
+// Transition strategy (read-with-backfill): slot path/min/max/customName are
+// mirrored into ctx.settings (---settingsDict) on every mutation. On load the
+// legacy bpatcher widgets still fire setPath/setMin/setMax first (and still
+// persist themselves, so older versions keep working), then restoreSlot()
+// reconciles: a settings value wins; if settings is empty it backfills from the
+// value the widget just supplied. A future version deletes the #N_* params and
+// setPathParam(), leaving ctx.settings as the sole source.
+function slotKey(slot, field) {
+    return 'slot_' + slot + '_' + field;
+}
+function persistSlotPath(slot, path) {
+    if (ctx)
+        ctx.settings.set(slotKey(slot, 'path'), path || '');
+}
+// Restore one slot from ctx.settings, or backfill settings from the legacy
+// widget value the slot currently holds. Idempotent — safe to re-run on every
+// refresh()/reconnect (matched values are no-ops).
+function restoreSlot(slot) {
+    if (!ctx)
+        return;
+    // path: settings authoritative; else backfill from the legacy widget value
+    var sPath = ctx.settings.get(slotKey(slot, 'path'));
+    if (typeof sPath === 'string' && sPath.length) {
+        if (!param[slot] || param[slot].path !== sPath) {
+            setPath(slot, sPath);
+        }
+    }
+    else if (param[slot] && param[slot].path) {
+        ctx.settings.set(slotKey(slot, 'path'), param[slot].path);
+    }
+    // min / max are stored as the 0–100 integers the widget/setMin use
+    var sMin = ctx.settings.get(slotKey(slot, 'min'));
+    if (typeof sMin === 'number') {
+        if (outMin[slot] !== sMin / 100.0)
+            setMin(slot, sMin);
+    }
+    else if (outMin[slot] !== undefined) {
+        ctx.settings.set(slotKey(slot, 'min'), Math.round(outMin[slot] * 100));
+    }
+    var sMax = ctx.settings.get(slotKey(slot, 'max'));
+    if (typeof sMax === 'number') {
+        if (outMax[slot] !== sMax / 100.0)
+            setMax(slot, sMax);
+    }
+    else if (outMax[slot] !== undefined) {
+        ctx.settings.set(slotKey(slot, 'max'), Math.round(outMax[slot] * 100));
+    }
+    // customName never persisted before — settings is its only home
+    var sName = ctx.settings.get(slotKey(slot, 'customName'));
+    if (typeof sName === 'string' && sName.length) {
+        if (param[slot] && param[slot].customName !== sName) {
+            setCustomName(slot, sName);
+        }
+    }
+    else if (param[slot] && param[slot].customName) {
+        ctx.settings.set(slotKey(slot, 'customName'), param[slot].customName);
+    }
+}
+// Clear a slot's persisted state (explicit user unmap, not the startup init()).
+function clearSlotSettings(slot) {
+    if (!ctx)
+        return;
+    ctx.settings.set(slotKey(slot, 'path'), '');
+    ctx.settings.set(slotKey(slot, 'customName'), '');
+}
 function xyJoin(leftIdx) {
     //log('xyJOIN', leftIdx)
     if (leftIdx < 1 || leftIdx >= consts_1.MAX_SLOTS) {
@@ -124,6 +191,7 @@ function unmap(slot) {
         xySplit(pairLeft);
     }
     init(slot);
+    clearSlotSettings(slot); // explicit user unmap — drop persisted mapping
     refreshSlotUI(slot);
 }
 exports.unmap = unmap;
@@ -293,6 +361,8 @@ function setMin(slot, val) {
     //log(`SETMIN ${slot}: ${val}`)
     initSlotIfNecessary(slot);
     outMin[slot] = val / 100.0;
+    if (ctx)
+        ctx.settings.set(slotKey(slot, 'min'), val);
     sendVal(slot);
 }
 exports.setMin = setMin;
@@ -300,12 +370,16 @@ function setMax(slot, val) {
     //log(`SETMAX ${slot}: ${val}`)
     initSlotIfNecessary(slot);
     outMax[slot] = val / 100.0;
+    if (ctx)
+        ctx.settings.set(slotKey(slot, 'max'), val);
     sendVal(slot);
 }
 exports.setMax = setMax;
 function clearCustomName(slot) {
     //log()
     param[slot].customName = null;
+    if (ctx)
+        ctx.settings.set(slotKey(slot, 'customName'), '');
     sendParamName(slot);
 }
 exports.clearCustomName = clearCustomName;
@@ -314,6 +388,8 @@ function setCustomName(slot, args) {
     if (!param[slot]) {
         return;
     }
+    if (ctx)
+        ctx.settings.set(slotKey(slot, 'customName'), args || '');
     param[slot].customName = args;
     sendParamName(slot);
 }
@@ -491,7 +567,8 @@ function setPath(slot, paramPath) {
     }
     //log("PARAM DATA", JSON.stringify(param), "\n");
     sendMsg(slot, ['mapped', true]);
-    setPathParam(slot, param[slot].path);
+    setPathParam(slot, param[slot].path); // legacy bpatcher persistence (dual-write)
+    persistSlotPath(slot, param[slot].path); // ctx.settings (migration target)
     // Defer outputting the new param val because the controller
     // will not process it since it was just sending other vals
     // that triggered the mapping.
@@ -511,6 +588,7 @@ function refresh() {
     loadXYPairs();
     sendXYPairs();
     for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
+        restoreSlot(i); // settings-first, backfill from legacy widgets
         refreshSlotUI(i);
     }
 }
