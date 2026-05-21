@@ -772,4 +772,4 @@ const routes: Route[] = [
 
 log('reloaded k4-bluhand')
 
-export { routes, init }
+export { routes, init, gotoDevice }

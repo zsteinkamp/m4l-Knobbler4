@@ -1,8 +1,9 @@
 export const INLET_MSGS = 0
 // [v8 knobbler] entry outlet map (shared by all folded-in modules):
 export const OUTLET_OSC = 0 // OSC out -> [udpsend]
-export const OUTLET_MSGS = 1 // bkMap -> [s ---KNOBBLER]
+export const OUTLET_MSGS = 1 // knobblerCore -> knob-slot bpatcher messages
 export const OUTLET_VISIBLE_TRACKS = 2 // 'visibleTracks' notify -> mixer/clip consumers (until they fold in)
+export const OUTLET_SHORTCUT_NAME = 3 // [slot, name] -> [s ---shortcutName] (device-UI labels)
 export const MAX_SLOTS = 32
 
 export const TYPE_TRACK = 0

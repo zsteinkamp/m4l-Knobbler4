@@ -14,7 +14,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.routes = void 0;
+exports.gotoDevice = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
@@ -465,6 +465,7 @@ function gotoDevice(deviceIdStr) {
     }
     api.call('select_device', ['id', deviceId]);
 }
+exports.gotoDevice = gotoDevice;
 function hideChains(deviceId) {
     var obj = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
     if (+obj.id === 0) {

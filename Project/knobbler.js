@@ -20,12 +20,12 @@ var visibleTracks = require("./k4-visibleTracks");
 var tracksDevices = require("./k4-tracksDevices");
 var KnobblerCore = require("./knobblerCore");
 var settings = require("./k4-settings");
+var shortcuts = require("./k4-shortcuts");
 autowatch = 1;
 inlets = 1;
-// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = knobblerCore ->
-// knob-slot bpatcher messages (OUTLET_MSGS), 2 = 'visibleTracks' notify ->
-// still-external consumers.
-outlets = 3;
+// Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot
+// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI.
+outlets = 4;
 var log = (0, utils_1.logFactory)(config_1.default);
 // Orchestrator context handed to each module's init(ctx). The entry owns the
 // live singletons; modules reach siblings through ctx (not direct imports —
@@ -33,6 +33,7 @@ var log = (0, utils_1.logFactory)(config_1.default);
 var ctx = {
     knobbler: { bkMap: KnobblerCore.bkMap },
     sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
+    gotoDevice: bluhand.gotoDevice,
     notifyVisibleTracks: function () {
         clipView.visibleTracks();
         multiMixer.visibleTracks();
@@ -103,7 +104,7 @@ function initAll() {
     KnobblerCore.refresh();
 }
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, knobblerRoutes, entryRoutes);
+var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, knobblerRoutes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -210,6 +211,7 @@ function init() {
     clipView.init();
     visibleTracks.init(ctx);
     tracksDevices.init();
+    shortcuts.init(ctx);
     KnobblerCore.initAll(ctx); // idempotent slot setup
     KnobblerCore.refresh(); // re-push slot names/values/xy state
 }

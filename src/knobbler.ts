@@ -20,13 +20,13 @@ import * as visibleTracks from './k4-visibleTracks'
 import * as tracksDevices from './k4-tracksDevices'
 import * as KnobblerCore from './knobblerCore'
 import * as settings from './k4-settings'
+import * as shortcuts from './k4-shortcuts'
 
 autowatch = 1
 inlets = 1
-// Entry outlet map (see consts): 0 = OSC out (utils.osc), 1 = knobblerCore ->
-// knob-slot bpatcher messages (OUTLET_MSGS), 2 = 'visibleTracks' notify ->
-// still-external consumers.
-outlets = 3
+// Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot
+// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI.
+outlets = 4
 
 const log = logFactory(config)
 
@@ -36,6 +36,7 @@ const log = logFactory(config)
 const ctx: AppContext = {
   knobbler: { bkMap: KnobblerCore.bkMap },
   sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
+  gotoDevice: bluhand.gotoDevice,
   notifyVisibleTracks: function () {
     clipView.visibleTracks()
     multiMixer.visibleTracks()
@@ -122,6 +123,7 @@ const ROUTES: Route[] = [].concat(
   sidebarMixer.routes as any,
   clipView.routes as any,
   visibleTracks.routes as any,
+  shortcuts.routes as any,
   knobblerRoutes as any,
   entryRoutes as any
 ) as Route[]
@@ -255,6 +257,7 @@ function init() {
   clipView.init()
   visibleTracks.init(ctx)
   tracksDevices.init()
+  shortcuts.init(ctx)
   KnobblerCore.initAll(ctx) // idempotent slot setup
   KnobblerCore.refresh() // re-push slot names/values/xy state
 }
