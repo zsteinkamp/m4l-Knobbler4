@@ -225,9 +225,7 @@ function toggleMute() {
     if (!state.trackObj || +state.trackObj.id === 0) {
         return;
     }
-    var currState = parseInt(state.trackObj.get('mute'));
-    var newState = currState ? 0 : 1;
-    state.trackObj.set('mute', newState);
+    (0, mixerUtils_1.toggleMute)(state.trackObj);
     emitEffectiveMute();
 }
 // Effective mute = mute || muted_via_solo (the user sees both as "muted").
@@ -236,9 +234,7 @@ function toggleMute() {
 function emitEffectiveMute() {
     if (!state.trackLookupObj || +state.trackLookupObj.id === 0)
         return;
-    var m = parseInt(state.trackLookupObj.get('mute').toString()) || 0;
-    var mvs = parseInt(state.trackLookupObj.get('muted_via_solo').toString()) || 0;
-    (0, utils_1.osc)('/mixer/mute', m || mvs ? 1 : 0);
+    (0, utils_1.osc)('/mixer/mute', (0, mixerUtils_1.effectiveMute)(state.trackLookupObj));
 }
 function handleMuteChange(args) {
     if (args[0] === 'mute' || args[0] === 'muted_via_solo') {
@@ -248,9 +244,9 @@ function handleMuteChange(args) {
 function emitXfadeAssign() {
     if (!state.mixerObj || +state.mixerObj.id === 0)
         return;
-    var xfade = parseInt(state.mixerObj.get('crossfade_assign').toString()) || 0;
-    (0, utils_1.osc)('/mixer/xFadeA', xfade === 0 ? 1 : 0);
-    (0, utils_1.osc)('/mixer/xFadeB', xfade === 2 ? 1 : 0);
+    var _a = (0, mixerUtils_1.xfadeAB)(state.mixerObj), aOn = _a[0], bOn = _a[1];
+    (0, utils_1.osc)('/mixer/xFadeA', aOn);
+    (0, utils_1.osc)('/mixer/xFadeB', bOn);
 }
 function handleXfadeAssignChange(args) {
     if (args[0] === 'crossfade_assign') {
@@ -261,12 +257,7 @@ function toggleSolo() {
     if (!state.trackObj || +state.trackObj.id === 0) {
         return;
     }
-    var currState = parseInt(state.trackObj.get('solo'));
-    var newState = currState ? 0 : 1;
-    if (newState) {
-        (0, mixerUtils_1.handleExclusiveSolo)(parseInt(state.trackObj.id.toString()), state.trackLookupObj);
-    }
-    state.trackObj.set('solo', newState);
+    var newState = (0, mixerUtils_1.toggleSolo)(state.trackObj, state.trackLookupObj);
     (0, utils_1.osc)('/mixer/solo', newState);
 }
 function handleCrossfader(val) {
@@ -287,40 +278,28 @@ function handlePan(val) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['pan'], consts_1.PAUSE_MS);
-    var fVal = parseFloat(val);
-    state.panObj.set('value', fVal);
-    var str = state.panObj.call('str_for_value', (0, utils_1.fixFloat)(fVal));
-    (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
+    (0, utils_1.osc)('/mixer/panStr', (0, mixerUtils_1.setParamValue)(state.panObj, val));
 }
 function handlePanDefault() {
-    if (!state.panObj || +state.panObj.id === 0) {
+    var res = (0, mixerUtils_1.resetParamValue)(state.panObj);
+    if (!res)
         return;
-    }
-    var defVal = parseFloat(state.panObj.get('default_value'));
-    state.panObj.set('value', defVal);
-    (0, utils_1.osc)('/mixer/pan', defVal);
-    var str = state.panObj.call('str_for_value', (0, utils_1.fixFloat)(defVal));
-    (0, utils_1.osc)('/mixer/panStr', str ? str.toString() : '');
+    (0, utils_1.osc)('/mixer/pan', res.value);
+    (0, utils_1.osc)('/mixer/panStr', res.str);
 }
 function handleVol(val) {
     if (!state.volObj || +state.volObj.id === 0) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['vol'], consts_1.PAUSE_MS);
-    var fVal = parseFloat(val);
-    state.volObj.set('value', fVal);
-    var str = state.volObj.call('str_for_value', (0, utils_1.fixFloat)(fVal));
-    (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
+    (0, utils_1.osc)('/mixer/volStr', (0, mixerUtils_1.setParamValue)(state.volObj, val));
 }
 function handleVolDefault() {
-    if (!state.volObj || +state.volObj.id === 0) {
+    var res = (0, mixerUtils_1.resetParamValue)(state.volObj);
+    if (!res)
         return;
-    }
-    var defVal = parseFloat(state.volObj.get('default_value'));
-    state.volObj.set('value', defVal);
-    (0, utils_1.osc)('/mixer/vol', defVal);
-    var str = state.volObj.call('str_for_value', (0, utils_1.fixFloat)(defVal));
-    (0, utils_1.osc)('/mixer/volStr', str ? str.toString() : '');
+    (0, utils_1.osc)('/mixer/vol', res.value);
+    (0, utils_1.osc)('/mixer/volStr', res.str);
 }
 // ---------------------------------------------------------------------------
 // Observer callbacks

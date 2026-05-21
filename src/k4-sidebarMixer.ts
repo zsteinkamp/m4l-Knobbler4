@@ -26,13 +26,18 @@ import {
   TYPE_GROUP,
 } from './consts'
 import {
-  handleExclusiveSolo,
   handleExclusiveArm,
   toggleXFade,
   enableArm,
   disableArm,
   disableTrackInput,
   getRecordStatus,
+  setParamValue,
+  resetParamValue,
+  effectiveMute,
+  toggleMute as toggleMuteShared,
+  toggleSolo as toggleSoloShared,
+  xfadeAB,
 } from './mixerUtils'
 
 autowatch = 1
@@ -274,9 +279,7 @@ function toggleMute() {
   if (!state.trackObj || +state.trackObj.id === 0) {
     return
   }
-  const currState = parseInt(state.trackObj.get('mute'))
-  const newState = currState ? 0 : 1
-  state.trackObj.set('mute', newState)
+  toggleMuteShared(state.trackObj)
   emitEffectiveMute()
 }
 
@@ -285,9 +288,7 @@ function toggleMute() {
 // track; toggleMute writes via trackObj but the result is the same row.
 function emitEffectiveMute() {
   if (!state.trackLookupObj || +state.trackLookupObj.id === 0) return
-  const m = parseInt(state.trackLookupObj.get('mute').toString()) || 0
-  const mvs = parseInt(state.trackLookupObj.get('muted_via_solo').toString()) || 0
-  osc('/mixer/mute', m || mvs ? 1 : 0)
+  osc('/mixer/mute', effectiveMute(state.trackLookupObj))
 }
 
 function handleMuteChange(args: IArguments) {
@@ -298,9 +299,9 @@ function handleMuteChange(args: IArguments) {
 
 function emitXfadeAssign() {
   if (!state.mixerObj || +state.mixerObj.id === 0) return
-  const xfade = parseInt(state.mixerObj.get('crossfade_assign').toString()) || 0
-  osc('/mixer/xFadeA', xfade === 0 ? 1 : 0)
-  osc('/mixer/xFadeB', xfade === 2 ? 1 : 0)
+  const [aOn, bOn] = xfadeAB(state.mixerObj)
+  osc('/mixer/xFadeA', aOn)
+  osc('/mixer/xFadeB', bOn)
 }
 
 function handleXfadeAssignChange(args: IArguments) {
@@ -313,16 +314,7 @@ function toggleSolo() {
   if (!state.trackObj || +state.trackObj.id === 0) {
     return
   }
-  const currState = parseInt(state.trackObj.get('solo'))
-  const newState = currState ? 0 : 1
-
-  if (newState) {
-    handleExclusiveSolo(
-      parseInt(state.trackObj.id.toString()),
-      state.trackLookupObj
-    )
-  }
-  state.trackObj.set('solo', newState)
+  const newState = toggleSoloShared(state.trackObj, state.trackLookupObj)
   osc('/mixer/solo', newState)
 }
 
@@ -349,21 +341,14 @@ function handlePan(val: string) {
     return
   }
   pauseUnpause(state.pause['pan'], PAUSE_MS)
-  const fVal = parseFloat(val)
-  state.panObj.set('value', fVal)
-  const str = state.panObj.call('str_for_value', fixFloat(fVal)) as any
-  osc('/mixer/panStr', str ? str.toString() : '')
+  osc('/mixer/panStr', setParamValue(state.panObj, val))
 }
 
 function handlePanDefault() {
-  if (!state.panObj || +state.panObj.id === 0) {
-    return
-  }
-  const defVal = parseFloat(state.panObj.get('default_value'))
-  state.panObj.set('value', defVal)
-  osc('/mixer/pan', defVal)
-  const str = state.panObj.call('str_for_value', fixFloat(defVal)) as any
-  osc('/mixer/panStr', str ? str.toString() : '')
+  const res = resetParamValue(state.panObj)
+  if (!res) return
+  osc('/mixer/pan', res.value)
+  osc('/mixer/panStr', res.str)
 }
 
 function handleVol(val: string) {
@@ -371,21 +356,14 @@ function handleVol(val: string) {
     return
   }
   pauseUnpause(state.pause['vol'], PAUSE_MS)
-  const fVal = parseFloat(val)
-  state.volObj.set('value', fVal)
-  const str = state.volObj.call('str_for_value', fixFloat(fVal)) as any
-  osc('/mixer/volStr', str ? str.toString() : '')
+  osc('/mixer/volStr', setParamValue(state.volObj, val))
 }
 
 function handleVolDefault() {
-  if (!state.volObj || +state.volObj.id === 0) {
-    return
-  }
-  const defVal = parseFloat(state.volObj.get('default_value'))
-  state.volObj.set('value', defVal)
-  osc('/mixer/vol', defVal)
-  const str = state.volObj.call('str_for_value', fixFloat(defVal)) as any
-  osc('/mixer/volStr', str ? str.toString() : '')
+  const res = resetParamValue(state.volObj)
+  if (!res) return
+  osc('/mixer/vol', res.value)
+  osc('/mixer/volStr', res.str)
 }
 
 // ---------------------------------------------------------------------------

@@ -27,13 +27,18 @@ import {
   DEFAULT_COLOR,
 } from './consts'
 import {
-  handleExclusiveSolo,
   handleExclusiveArm,
   toggleXFade as toggleXFadeShared,
   enableArm,
   disableArm,
   disableTrackInput,
   getRecordStatus,
+  setParamValue,
+  resetParamValue,
+  effectiveMute,
+  toggleMute as toggleMuteShared,
+  toggleSolo as toggleSoloShared,
+  xfadeAB,
 } from './mixerUtils'
 
 autowatch = 1
@@ -460,12 +465,11 @@ function createStripObservers(
   return strip
 }
 
-// Effective mute = mute || muted_via_solo (the user sees both as "muted")
+// Effective mute = mute || muted_via_solo (the user sees both as "muted").
+// Master lacks both properties, so skip it.
 function emitEffectiveMute(strip: StripObservers) {
   if (strip.isMain) return
-  const m = parseInt(strip.trackApi.get('mute').toString()) || 0
-  const mvs = parseInt(strip.trackApi.get('muted_via_solo').toString()) || 0
-  osc(SA_MUTE[strip.stripIndex], m || mvs ? 1 : 0)
+  osc(SA_MUTE[strip.stripIndex], effectiveMute(strip.trackApi))
 }
 
 function teardownStripObservers(strip: StripObservers) {
@@ -544,9 +548,9 @@ function sendStripState(n: number, strip: StripObservers) {
   osc(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0)
 
   if (!strip.isMain) {
-    const xFadeAssign = parseInt(strip.mixerApi.get('crossfade_assign').toString())
-    osc(SA_XFADEA[n], xFadeAssign === 0 ? 1 : 0)
-    osc(SA_XFADEB[n], xFadeAssign === 2 ? 1 : 0)
+    const [aOn, bOn] = xfadeAB(strip.mixerApi)
+    osc(SA_XFADEA[n], aOn)
+    osc(SA_XFADEB[n], bOn)
   }
 
   for (let i = 0; i < strip.sendApis.length; i++) {
@@ -768,39 +772,31 @@ function vol(stripIdx: number, val: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
   stripPause(strip, 'vol')
-  const fVal = parseFloat(val.toString())
-  strip.volApi.set('value', fVal)
-  const str = strip.volApi.call('str_for_value', fixFloat(fVal)) as any
-  osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
+  osc(SA_VOLSTR[strip.stripIndex], setParamValue(strip.volApi, val))
 }
 
 function pan(stripIdx: number, val: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
   stripPause(strip, 'pan')
-  const fVal = parseFloat(val.toString())
-  strip.panApi.set('value', fVal)
-  const str = strip.panApi.call('str_for_value', fixFloat(fVal)) as any
-  osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
+  osc(SA_PANSTR[strip.stripIndex], setParamValue(strip.panApi, val))
 }
 
 function volDefault(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  const defVal = parseFloat(strip.volApi.get('default_value').toString())
-  strip.volApi.set('value', defVal)
-  osc(SA_VOL[strip.stripIndex], defVal)
-  const str = strip.volApi.call('str_for_value', fixFloat(defVal)) as any
-  osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
+  const res = resetParamValue(strip.volApi)
+  if (!res) return
+  osc(SA_VOL[strip.stripIndex], res.value)
+  osc(SA_VOLSTR[strip.stripIndex], res.str)
 }
 
 function panDefault(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  const defVal = parseFloat(strip.panApi.get('default_value').toString())
-  strip.panApi.set('value', defVal)
-  const str = strip.panApi.call('str_for_value', fixFloat(defVal)) as any
-  osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
+  const res = resetParamValue(strip.panApi)
+  if (!res) return
+  osc(SA_PANSTR[strip.stripIndex], res.str)
 }
 
 // Send handlers — send1 through send12
@@ -902,22 +898,14 @@ function sendDefault12(stripIdx: number) {
 function toggleMute(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  const curr = parseInt(strip.trackApi.get('mute').toString())
-  const newState = curr ? 0 : 1
-  strip.trackApi.set('mute', newState)
+  toggleMuteShared(strip.trackApi)
   emitEffectiveMute(strip)
 }
 
 function toggleSolo(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
-  const curr = parseInt(strip.trackApi.get('solo').toString())
-  const newState = curr ? 0 : 1
-
-  if (newState) {
-    handleExclusiveSolo(strip.trackId, scratchApi)
-  }
-  strip.trackApi.set('solo', newState)
+  const newState = toggleSoloShared(strip.trackApi, scratchApi)
   osc(SA_SOLO[strip.stripIndex], newState)
   sendSoloCount()
 }

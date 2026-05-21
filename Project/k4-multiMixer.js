@@ -361,13 +361,12 @@ function createStripObservers(trackId, stripIdx) {
     strip.initialized = true;
     return strip;
 }
-// Effective mute = mute || muted_via_solo (the user sees both as "muted")
+// Effective mute = mute || muted_via_solo (the user sees both as "muted").
+// Master lacks both properties, so skip it.
 function emitEffectiveMute(strip) {
     if (strip.isMain)
         return;
-    var m = parseInt(strip.trackApi.get('mute').toString()) || 0;
-    var mvs = parseInt(strip.trackApi.get('muted_via_solo').toString()) || 0;
-    (0, utils_1.osc)(SA_MUTE[strip.stripIndex], m || mvs ? 1 : 0);
+    (0, utils_1.osc)(SA_MUTE[strip.stripIndex], (0, mixerUtils_1.effectiveMute)(strip.trackApi));
 }
 function teardownStripObservers(strip) {
     (0, utils_1.detach)(strip.colorApi);
@@ -437,9 +436,9 @@ function sendStripState(n, strip) {
     (0, utils_1.osc)(SA_INPUT[n], strip.canBeArmed && recordStatus.inputEnabled ? 1 : 0);
     (0, utils_1.osc)(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0);
     if (!strip.isMain) {
-        var xFadeAssign = parseInt(strip.mixerApi.get('crossfade_assign').toString());
-        (0, utils_1.osc)(SA_XFADEA[n], xFadeAssign === 0 ? 1 : 0);
-        (0, utils_1.osc)(SA_XFADEB[n], xFadeAssign === 2 ? 1 : 0);
+        var _a = (0, mixerUtils_1.xfadeAB)(strip.mixerApi), aOn = _a[0], bOn = _a[1];
+        (0, utils_1.osc)(SA_XFADEA[n], aOn);
+        (0, utils_1.osc)(SA_XFADEB[n], bOn);
     }
     for (var i = 0; i < strip.sendApis.length; i++) {
         (0, utils_1.osc)(SA_SEND[n][i], parseFloat(strip.sendApis[i].get('value').toString()) || 0);
@@ -647,39 +646,33 @@ function vol(stripIdx, val) {
     if (!strip)
         return;
     stripPause(strip, 'vol');
-    var fVal = parseFloat(val.toString());
-    strip.volApi.set('value', fVal);
-    var str = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
-    (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '');
+    (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], (0, mixerUtils_1.setParamValue)(strip.volApi, val));
 }
 function pan(stripIdx, val) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
     stripPause(strip, 'pan');
-    var fVal = parseFloat(val.toString());
-    strip.panApi.set('value', fVal);
-    var str = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
-    (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], str ? str.toString() : '');
+    (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], (0, mixerUtils_1.setParamValue)(strip.panApi, val));
 }
 function volDefault(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    var defVal = parseFloat(strip.volApi.get('default_value').toString());
-    strip.volApi.set('value', defVal);
-    (0, utils_1.osc)(SA_VOL[strip.stripIndex], defVal);
-    var str = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(defVal));
-    (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '');
+    var res = (0, mixerUtils_1.resetParamValue)(strip.volApi);
+    if (!res)
+        return;
+    (0, utils_1.osc)(SA_VOL[strip.stripIndex], res.value);
+    (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], res.str);
 }
 function panDefault(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    var defVal = parseFloat(strip.panApi.get('default_value').toString());
-    strip.panApi.set('value', defVal);
-    var str = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(defVal));
-    (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], str ? str.toString() : '');
+    var res = (0, mixerUtils_1.resetParamValue)(strip.panApi);
+    if (!res)
+        return;
+    (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], res.str);
 }
 // Send handlers — send1 through send12
 function handleSend(stripIdx, sendNum, val) {
@@ -779,21 +772,14 @@ function toggleMute(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    var curr = parseInt(strip.trackApi.get('mute').toString());
-    var newState = curr ? 0 : 1;
-    strip.trackApi.set('mute', newState);
+    (0, mixerUtils_1.toggleMute)(strip.trackApi);
     emitEffectiveMute(strip);
 }
 function toggleSolo(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
-    var curr = parseInt(strip.trackApi.get('solo').toString());
-    var newState = curr ? 0 : 1;
-    if (newState) {
-        (0, mixerUtils_1.handleExclusiveSolo)(strip.trackId, scratchApi);
-    }
-    strip.trackApi.set('solo', newState);
+    var newState = (0, mixerUtils_1.toggleSolo)(strip.trackApi, scratchApi);
     (0, utils_1.osc)(SA_SOLO[strip.stripIndex], newState);
     sendSoloCount();
 }
