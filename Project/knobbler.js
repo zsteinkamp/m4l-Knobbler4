@@ -25,9 +25,9 @@ var system = require("./k4-system");
 autowatch = 1;
 inlets = 1;
 // Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot
-// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI,
-// 4 = ---LOOP, 5 = ---REFRESH_LOGIC, 6 = ---PAGE, 7 = ---CONFIGURE (udpsend).
-outlets = 8;
+// bpatcher messages, 2 = shortcut name -> UI, 3 = ---LOOP, 4 = ---REFRESH_LOGIC,
+// 5 = ---PAGE, 6 = ---CONFIGURE (udpsend).
+outlets = 7;
 var log = (0, utils_1.logFactory)(config_1.default);
 // Orchestrator context handed to each module's init(ctx). The entry owns the
 // live singletons; modules reach siblings through ctx (not direct imports —
@@ -39,7 +39,6 @@ var ctx = {
     notifyVisibleTracks: function () {
         clipView.visibleTracks();
         multiMixer.visibleTracks();
-        outlet(consts_1.OUTLET_VISIBLE_TRACKS, 'visibleTracks');
     },
     settings: { get: settings.get, set: settings.set },
 };

@@ -10,7 +10,7 @@
 
 import config from './config'
 import { logFactory, setDictPrefix as utilsSetDictPrefix } from './utils'
-import { OUTLET_VISIBLE_TRACKS, OUTLET_PAGE } from './consts'
+import { OUTLET_PAGE } from './consts'
 import * as bluhand from './k4-bluhand'
 import * as currentParam from './k4-currentParam'
 import * as multiMixer from './k4-multiMixer'
@@ -26,9 +26,9 @@ import * as system from './k4-system'
 autowatch = 1
 inlets = 1
 // Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot
-// bpatcher messages, 2 = 'visibleTracks' notify, 3 = shortcut name -> UI,
-// 4 = ---LOOP, 5 = ---REFRESH_LOGIC, 6 = ---PAGE, 7 = ---CONFIGURE (udpsend).
-outlets = 8
+// bpatcher messages, 2 = shortcut name -> UI, 3 = ---LOOP, 4 = ---REFRESH_LOGIC,
+// 5 = ---PAGE, 6 = ---CONFIGURE (udpsend).
+outlets = 7
 
 const log = logFactory(config)
 
@@ -42,7 +42,6 @@ const ctx: AppContext = {
   notifyVisibleTracks: function () {
     clipView.visibleTracks()
     multiMixer.visibleTracks()
-    outlet(OUTLET_VISIBLE_TRACKS, 'visibleTracks')
   },
   settings: { get: settings.get, set: settings.set },
 }
