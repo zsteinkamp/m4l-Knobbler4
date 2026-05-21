@@ -41,6 +41,12 @@ function setDictPrefix(prefix: any) {
   utilsSetDictPrefix(prefix)
 }
 
+// The Max UI "Meters" checkbox (chkMeters -> [sidebarMeters $1]) sends this
+// Max message to the entry; forward it to the sidebar mixer.
+function sidebarMeters(val: number) {
+  sidebarMixer.sidebarMeters(val)
+}
+
 // Page changes drive meter flushing in both mixer modules.
 function pageDispatch(address: string) {
   const pageName = address.split('/')[2]
