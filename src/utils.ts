@@ -217,6 +217,17 @@ const _f32view = new DataView(_f32buf)
 const _f32bytes = new Uint8Array(_f32buf)
 
 export function buildOscPacket(addr: string, value: any): number[] {
+  // No-arg OSC message (value omitted): just the address + an empty type-tag
+  // string ",". Used for bare control sends like /page/X and /loop.
+  if (value === undefined) {
+    const noArg: number[] = []
+    for (let i = 0; i < addr.length; i++) noArg.push(addr.charCodeAt(i) & 0xff)
+    noArg.push(0)
+    while (noArg.length & 0x3) noArg.push(0)
+    noArg.push(0x2c, 0, 0, 0) // "," null + pad, no arg bytes
+    return noArg
+  }
+
   let tag: string
   let intVal = 0
   let floatVal = 0

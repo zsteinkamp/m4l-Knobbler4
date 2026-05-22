@@ -9,7 +9,7 @@
 // which only exists in Max 9.1.0+) and never interns a string into the symbol
 // table.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.send = void 0;
+exports.send = exports.setOutputBlocked = void 0;
 var utils_1 = require("./utils");
 var config_1 = require("./config");
 var consts_1 = require("./consts");
@@ -52,7 +52,20 @@ function checkClientCapabilities() {
 // replaces [udpsend] for output entirely — works on any Max version (no
 // `rawbytes` dependency, Live 12.3.x included) and never interns a string.
 var pktOut = ['packet'];
+// Feedback-loop guard: when the configured output host:port equals our own
+// [udpreceive], every packet echoes straight back and storms. knobbler.ts pings
+// /loop on connect and, on hearing the echo, blocks output here. The probe ping
+// is sent while unblocked (the entry clears this first), so it always goes out;
+// a fresh /connect re-probes. See the /loop guard in knobbler.ts.
+var outputBlocked = false;
+function setOutputBlocked(v) {
+    outputBlocked = v;
+}
+exports.setOutputBlocked = setOutputBlocked;
 function sendPacket(bytes) {
+    if (outputBlocked) {
+        return;
+    }
     pktOut.length = 1;
     for (var i = 0; i < bytes.length; i++) {
         pktOut.push(bytes[i]);

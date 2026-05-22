@@ -42,6 +42,7 @@ interface AppContext {
   gotoDevice(deviceId: string): void // recall navigation (-> bluhand)
   gotoTrack(trackId: string): void // selects a track, unfolding enclosing groups (-> bluhand)
   notifyVisibleTracks(): void
+  loopProbe(): void // feedback-loop guard: re-enable output + ping /loop (-> knobbler entry)
   // per-instance persistence (---settingsDict); one Dict ref, no key prefixing.
   // legacyGet reads the pre-[v8] shared [dict settingsDict] (prefixed keys) for
   // one-time migration of old sets.

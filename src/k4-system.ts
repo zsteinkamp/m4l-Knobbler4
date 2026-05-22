@@ -6,8 +6,8 @@
 // Inbound OSC (via the entry dispatcher):
 //   /syn        -> /ack <ver> caps, /sendState 1, + deferred full re-push
 //   /ping       -> /pong <ver> caps
-//   /connect <ip>:<port> -> [s ---CONFIGURE] host/port for [udpsend]
-//   /loop       -> [s ---LOOP] 'loop'
+//   /connect <ip>:<port> -> [s ---CONFIGURE] host/port for the node sender,
+//                           then ctx.loopProbe() (knobbler.ts owns /loop)
 //   /btnRefresh -> [s ---REFRESH_LOGIC] 'refresh'
 //   /initMenu   -> [s ---REFRESH_LOGIC] 'initMenuOnly'
 // Inbound Max message (entry top-level fn -> setDeviceVersion):
@@ -19,11 +19,7 @@
 
 import config from './config'
 import { logFactory, osc, saveSetting, setOscSink } from './utils'
-import {
-  OUTLET_LOOP,
-  OUTLET_REFRESH,
-  OUTLET_CONFIGURE,
-} from './consts'
+import { OUTLET_REFRESH, OUTLET_CONFIGURE } from './consts'
 
 const log = logFactory(config)
 
@@ -32,6 +28,7 @@ const REPLY_CAPS = ' mxr mkMap'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null
+let ctx: AppContext = null
 
 function saveClient(val: string | number) {
   if (!val) {
@@ -69,18 +66,17 @@ function ping(val: string | number) {
   osc('/pong', deviceVersion + REPLY_CAPS)
 }
 
-// /connect <ip>:<port> — configure the [udpsend] target.
+// /connect <ip>:<port> — configure the node sender's target, then fire the
+// feedback-loop probe (knobbler.ts owns the /loop guard).
 function connect(val: string | number) {
   const parts = val.toString().split(':')
   if (parts.length === 2) {
     outlet(OUTLET_CONFIGURE, 'host', parts[0])
     outlet(OUTLET_CONFIGURE, 'port', parseInt(parts[1]))
+    ctx.loopProbe()
   }
 }
 
-function loop() {
-  outlet(OUTLET_LOOP, 'loop')
-}
 function btnRefresh() {
   outlet(OUTLET_REFRESH, 'refresh')
 }
@@ -92,7 +88,6 @@ const routes: Route[] = [
   { prefix: '/syn', parse: 'val', fn: synAck },
   { prefix: '/ping', parse: 'val', fn: ping },
   { prefix: '/connect', parse: 'val', fn: connect },
-  { prefix: '/loop', parse: 'bare', fn: loop },
   { prefix: '/btnRefresh', parse: 'bare', fn: btnRefresh },
   { prefix: '/initMenu', parse: 'bare', fn: initMenu },
 ]
@@ -101,6 +96,7 @@ const routes: Route[] = [
 // handshake replies (/ack, /pong, /sendState, /deviceVersion) are batched too.
 function init(c: AppContext) {
   setOscSink(c.osc)
+  ctx = c
 }
 
 log('reloaded k4-system')

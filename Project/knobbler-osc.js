@@ -23,6 +23,7 @@ let sent = 0
 let bytes = 0
 let dropped = 0
 let errors = 0
+let debug = false
 
 maxApi.addHandler('host', (h) => {
   host = String(h)
@@ -31,12 +32,47 @@ maxApi.addHandler('port', (p) => {
   port = parseInt(p)
 })
 
+// Debug checkbox ([prepend debugOutput] -> node.script). When on, log every
+// outgoing packet (address + decoded payload). Floods at meter rates — only for
+// dev inspection.
+maxApi.addHandler('debugOutput', (v) => {
+  debug = !!parseInt(v)
+})
+
+// Decode an outgoing OSC packet back to "<address> <payload>" for logging.
+// Mirrors buildOscPacket: 4-byte-aligned address, ",<tag>" type tag, then one
+// arg — i (int32 BE), f (float32 BE), s (null-terminated string), or none.
+function oscDescribe(buf) {
+  let n = 0
+  while (n < buf.length && buf[n] !== 0) n++
+  const addr = buf.toString('ascii', 0, n)
+  const tagOff = (n + 1 + 3) & ~3 // past null, padded to 4
+  const tag = buf[tagOff + 1] // char after ','
+  const argOff = tagOff + 4
+  let payload
+  if (tag === 0x69) {
+    payload = buf.readInt32BE(argOff) // 'i'
+  } else if (tag === 0x66) {
+    payload = buf.readFloatBE(argOff) // 'f'
+  } else if (tag === 0x73) {
+    let e = argOff // 's'
+    while (e < buf.length && buf[e] !== 0) e++
+    payload = buf.toString('ascii', argOff, e)
+  } else {
+    payload = '(no arg)'
+  }
+  return addr + ' ' + payload
+}
+
 maxApi.addHandler('packet', (...packet) => {
   if (host === null || port === null) {
     dropped++ // self-gate: nothing until /connect has set host+port
     return
   }
   const buf = Buffer.from(packet)
+  if (debug) {
+    maxApi.post('knobbler-osc out: ' + oscDescribe(buf) + ' -> ' + host + ':' + port)
+  }
   socket.send(buf, port, host, (err) => {
     if (err) {
       errors++

@@ -1,13 +1,12 @@
 export const INLET_MSGS = 0
 // [v8 knobbler] entry outlet map (shared by all folded-in modules):
-export const OUTLET_OSC = 0 // OSC out -> [udpsend]
+export const OUTLET_OSC = 0 // OSC out -> [gate] -> [node.script] sender
 export const OUTLET_MSGS = 1 // knobblerCore -> knob-slot bpatcher messages
 export const OUTLET_SHORTCUT_NAME = 2 // [slot, name] -> [s ---shortcutName] (device-UI labels)
 // k4-system (former [v8 router]) Max-side passthroughs:
-export const OUTLET_LOOP = 3 // 'loop' -> [s ---LOOP]
-export const OUTLET_REFRESH = 4 // 'refresh'/'initMenuOnly' -> [s ---REFRESH_LOGIC]
-export const OUTLET_PAGE = 5 // 'page' <name> -> [s ---PAGE] (page UI)
-export const OUTLET_CONFIGURE = 6 // 'host'/'port' -> [s ---CONFIGURE] ([udpsend] target)
+export const OUTLET_REFRESH = 3 // 'refresh'/'initMenuOnly' -> [s ---REFRESH_LOGIC]
+export const OUTLET_PAGE = 4 // 'page' <name> -> [s ---PAGE] (page UI)
+export const OUTLET_CONFIGURE = 5 // 'host'/'port' -> [s ---CONFIGURE] (node sender target)
 export const MAX_SLOTS = 32
 
 export const TYPE_TRACK = 0

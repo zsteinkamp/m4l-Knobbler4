@@ -7,8 +7,8 @@
 // Inbound OSC (via the entry dispatcher):
 //   /syn        -> /ack <ver> caps, /sendState 1, + deferred full re-push
 //   /ping       -> /pong <ver> caps
-//   /connect <ip>:<port> -> [s ---CONFIGURE] host/port for [udpsend]
-//   /loop       -> [s ---LOOP] 'loop'
+//   /connect <ip>:<port> -> [s ---CONFIGURE] host/port for the node sender,
+//                           then ctx.loopProbe() (knobbler.ts owns /loop)
 //   /btnRefresh -> [s ---REFRESH_LOGIC] 'refresh'
 //   /initMenu   -> [s ---REFRESH_LOGIC] 'initMenuOnly'
 // Inbound Max message (entry top-level fn -> setDeviceVersion):
@@ -27,6 +27,7 @@ var log = (0, utils_1.logFactory)(config_1.default);
 var REPLY_CAPS = ' mxr mkMap';
 var deviceVersion = '';
 var synRefreshTask = null;
+var ctx = null;
 function saveClient(val) {
     if (!val) {
         return;
@@ -60,16 +61,15 @@ function ping(val) {
     saveClient(val);
     (0, utils_1.osc)('/pong', deviceVersion + REPLY_CAPS);
 }
-// /connect <ip>:<port> — configure the [udpsend] target.
+// /connect <ip>:<port> — configure the node sender's target, then fire the
+// feedback-loop probe (knobbler.ts owns the /loop guard).
 function connect(val) {
     var parts = val.toString().split(':');
     if (parts.length === 2) {
         outlet(consts_1.OUTLET_CONFIGURE, 'host', parts[0]);
         outlet(consts_1.OUTLET_CONFIGURE, 'port', parseInt(parts[1]));
+        ctx.loopProbe();
     }
-}
-function loop() {
-    outlet(consts_1.OUTLET_LOOP, 'loop');
 }
 function btnRefresh() {
     outlet(consts_1.OUTLET_REFRESH, 'refresh');
@@ -81,7 +81,6 @@ var routes = [
     { prefix: '/syn', parse: 'val', fn: synAck },
     { prefix: '/ping', parse: 'val', fn: ping },
     { prefix: '/connect', parse: 'val', fn: connect },
-    { prefix: '/loop', parse: 'bare', fn: loop },
     { prefix: '/btnRefresh', parse: 'bare', fn: btnRefresh },
     { prefix: '/initMenu', parse: 'bare', fn: initMenu },
 ];
@@ -90,6 +89,7 @@ exports.routes = routes;
 // handshake replies (/ack, /pong, /sendState, /deviceVersion) are batched too.
 function init(c) {
     (0, utils_1.setOscSink)(c.osc);
+    ctx = c;
 }
 exports.init = init;
 log('reloaded k4-system');

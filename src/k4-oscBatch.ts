@@ -60,7 +60,20 @@ function checkClientCapabilities() {
 // `rawbytes` dependency, Live 12.3.x included) and never interns a string.
 const pktOut: any[] = ['packet']
 
+// Feedback-loop guard: when the configured output host:port equals our own
+// [udpreceive], every packet echoes straight back and storms. knobbler.ts pings
+// /loop on connect and, on hearing the echo, blocks output here. The probe ping
+// is sent while unblocked (the entry clears this first), so it always goes out;
+// a fresh /connect re-probes. See the /loop guard in knobbler.ts.
+let outputBlocked = false
+export function setOutputBlocked(v: boolean) {
+  outputBlocked = v
+}
+
 function sendPacket(bytes: number[]) {
+  if (outputBlocked) {
+    return
+  }
   pktOut.length = 1
   for (let i = 0; i < bytes.length; i++) {
     pktOut.push(bytes[i])

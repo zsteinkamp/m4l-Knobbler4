@@ -36,10 +36,10 @@ setOscSink(oscBatch.send)
 
 autowatch = 1
 inlets = 1
-// Entry outlet map (see consts): 0 = OSC out, 1 = knobblerCore knob-slot
-// bpatcher messages, 2 = shortcut name -> UI, 3 = ---LOOP, 4 = ---REFRESH_LOGIC,
-// 5 = ---PAGE, 6 = ---CONFIGURE (udpsend).
-outlets = 7
+// Entry outlet map (see consts): 0 = OSC out (-> gate -> node.script), 1 =
+// knobblerCore knob-slot bpatcher messages, 2 = shortcut name -> UI,
+// 3 = ---REFRESH_LOGIC, 4 = ---PAGE, 5 = ---CONFIGURE (node sender target).
+outlets = 6
 
 const log = logFactory(config)
 
@@ -56,6 +56,7 @@ const ctx: AppContext = {
     clipView.visibleTracks()
     multiMixer.visibleTracks()
   },
+  loopProbe: sendLoopProbe,
   settings: {
     get: settings.get,
     set: settings.set,
@@ -118,9 +119,44 @@ function legacyShortcutPath() {
   shortcuts.legacyShortcutPath(slot, parts.join(' '))
 }
 
+// Native UI sends that used to go straight to [udpsend] as bare OSC — the page
+// tabs (/page/X) and /loop. Now tapped off the ---UDPSEND bus and routed here
+// (---UDPSEND -> [prepend udpSend] -> entry) so they ship through the node
+// sender like everything else, letting [udpsend] be removed. First arg is the
+// OSC address; the rest (if any — these are currently all bare) is the value.
+function udpSend() {
+  const args = arrayfromargs(arguments)
+  const address = String(args[0])
+  if (args.length === 1) {
+    oscBatch.send(address, undefined) // no-arg packet
+  } else if (args.length === 2) {
+    oscBatch.send(address, args[1])
+  } else {
+    oscBatch.send(address, args.slice(1))
+  }
+}
+
+// Feedback-loop guard, fully in JS (replaces the native /loop patcher cluster).
+// k4-system.connect() calls ctx.loopProbe() once host:port is configured: we
+// clear any prior block and ping /loop to that target. If output host:port ==
+// our own [udpreceive], the ping echoes straight back and arrives as inbound
+// /loop (loopDetected) — proof of a self-send loop — so we block all output to
+// stop the storm. A clean probe (no echo) leaves output enabled; the next
+// /connect re-probes. The probe ping goes out while unblocked, so it's never
+// dropped by its own guard.
+function sendLoopProbe() {
+  oscBatch.setOutputBlocked(false)
+  oscBatch.send('/loop', undefined) // bare OSC, no arg
+}
+function loopDetected() {
+  oscBatch.setOutputBlocked(true)
+  log('feedback loop: output host:port == input — output blocked until reconnect')
+}
+
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
 const entryRoutes: Route[] = [
   { prefix: '/page/', parse: 'custom', fn: pageDispatch },
+  { prefix: '/loop', parse: 'bare', fn: loopDetected },
 ]
 
 // knobblerCore (the former [v8 knobbler4]) — OSC routes.
