@@ -1,5 +1,5 @@
 import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, sendChunkedData, setOscSink } from './utils'
-import config from './config'
+import config from './k4-config'
 import { noFn, TYPE_RETURN, TYPE_MAIN, TYPE_GROUP } from './consts'
 
 const log = logFactory(config)

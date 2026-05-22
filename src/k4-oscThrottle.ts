@@ -1,5 +1,5 @@
 import { logFactory } from './utils'
-import config from './config'
+import config from './k4-config'
 
 // Coalescing and throttling now handled by k4-oscBatch.
 // This module is a passthrough to avoid .amxd patching.

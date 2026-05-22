@@ -19,10 +19,10 @@
 // to decide batching; that cross-object channel is why they aren't in ctx.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.setDeviceVersion = exports.routes = void 0;
-var config_1 = require("./config");
+var k4_config_1 = require("./k4-config");
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
-var log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Device capabilities advertised back to the app in /ack and /pong replies.
 var REPLY_CAPS = ' mxr mkMap';
 var deviceVersion = '';

@@ -1,4 +1,4 @@
-import config from './config'
+import config from './k4-config'
 import {
   detach,
   dequote,

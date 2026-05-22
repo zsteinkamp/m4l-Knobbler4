@@ -11,11 +11,11 @@
 // plus the device-UI label via OUTLET_SHORTCUT_NAME. Recall navigates through
 // ctx.gotoDevice (bluhand).
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.legacyShortcutPath = exports.init = exports.routes = void 0;
+exports.unmap = exports.legacyShortcutPath = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
-var config_1 = require("./config");
+var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
-var log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 var NUM_SHORTCUTS = 8;
 var RESET_NAME = '- - -';
 var RESET_COLOR = '990000ff';
@@ -132,6 +132,7 @@ function unmap(slot) {
     s.mapped = false;
     resetSlot(slot);
 }
+exports.unmap = unmap;
 // --- path revalidation (one shared poll for all mapped slots) ----------------
 function ensureCheckPath() {
     if (checkPathTask) {

@@ -12,7 +12,7 @@ import {
   PauseState,
   TrackInfo,
 } from './utils'
-import config from './config'
+import config from './k4-config'
 import {
   noFn,
   MAX_SENDS,

@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.routes = void 0;
-var config_1 = require("./config");
+var k4_config_1 = require("./k4-config");
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
-var log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Extract track path from a device canonical path
 // e.g. "live_set tracks 3 devices 1" → "live_set tracks 3"
 var TRACK_PATH_RE = /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/;

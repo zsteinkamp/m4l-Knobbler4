@@ -8,7 +8,7 @@
 // handshake (k4-system) is folded in, and [v8 router] has been deleted. The
 // only siblings left are the UI and the I/O objects ([udpsend]/[udpreceive]/
 // [k4-oscBatch]/[k4-discovery]).
-var config_1 = require("./config");
+var k4_config_1 = require("./k4-config");
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
 var bluhand = require("./k4-bluhand");
@@ -34,7 +34,7 @@ inlets = 1;
 // knobblerCore knob-slot bpatcher messages, 2 = shortcut name -> UI,
 // 3 = ---REFRESH_LOGIC, 4 = ---PAGE, 5 = ---CONFIGURE (node sender target).
 outlets = 6;
-var log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Orchestrator context handed to each module's init(ctx). The entry owns the
 // live singletons; modules reach siblings through ctx (not direct imports —
 // require() doesn't share module state across files in [v8]).
@@ -102,6 +102,13 @@ function legacyShortcutPath() {
         parts = parts.slice(1);
     }
     shortcuts.legacyShortcutPath(slot, parts.join(' '));
+}
+// Max message from the device-side shortcut bpatcher's unmap [X] button:
+// `unmap <slot>` via [r ---toShortcuts]. The receiver was dropped when
+// k4-shortcuts was folded into the entry. (App-side unmap comes through the
+// /unmapshortcut OSC route; both land in shortcuts.unmap.)
+function unmap(slot) {
+    shortcuts.unmap(slot);
 }
 // Native UI sends that used to go straight to [udpsend] as bare OSC — the page
 // tabs (/page/X) and /loop. Now tapped off the ---UDPSEND bus and routed here

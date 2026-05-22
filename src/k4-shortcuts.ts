@@ -11,7 +11,7 @@
 // ctx.gotoDevice (bluhand).
 
 import { colorToString, dequote, logFactory, osc, setOscSink } from './utils'
-import config from './config'
+import config from './k4-config'
 import { noFn, OUTLET_SHORTCUT_NAME } from './consts'
 
 const log = logFactory(config)
@@ -251,4 +251,4 @@ const routes: Route[] = [
   { prefix: '/unmapshortcut', parse: 'slot', fn: unmap },
 ]
 
-export { routes, init, legacyShortcutPath }
+export { routes, init, legacyShortcutPath, unmap }

@@ -10,7 +10,7 @@ import {
   PauseState,
   SEND_ADDR,
 } from './utils'
-import config from './config'
+import config from './k4-config'
 import {
   noFn,
   DEFAULT_COLOR,

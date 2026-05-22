@@ -1,5 +1,5 @@
 import { logFactory } from './utils'
-import config from './config'
+import config from './k4-config'
 import { noFn } from './consts'
 
 const origInputs = {} as Record<string, any>

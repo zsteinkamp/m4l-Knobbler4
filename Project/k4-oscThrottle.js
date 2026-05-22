@@ -1,12 +1,12 @@
 "use strict";
 var utils_1 = require("./utils");
-var config_1 = require("./config");
+var k4_config_1 = require("./k4-config");
 // Coalescing and throttling now handled by k4-oscBatch.
 // This module is a passthrough to avoid .amxd patching.
 autowatch = 1;
 inlets = 1;
 outlets = 1;
-var log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 setinletassist(0, 'OSC passthrough');
 setoutletassist(0, 'OSC passthrough');
 function anything(val) {

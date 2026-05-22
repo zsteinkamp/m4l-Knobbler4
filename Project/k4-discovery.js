@@ -1,12 +1,12 @@
 "use strict";
 var utils_1 = require("./utils");
-var config_1 = require("./config");
+var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var OUTLET_MSGS = 0;
 autowatch = 1;
 inlets = 1;
 outlets = 1;
-var log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Receives messages and args to call JS functions');
 setoutletassist(OUTLET_MSGS, 'Output messages to umenu');
 log('reloaded k4-discovery');

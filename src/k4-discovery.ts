@@ -1,5 +1,5 @@
 import { logFactory } from './utils'
-import config from './config'
+import config from './k4-config'
 import { INLET_MSGS } from './consts'
 const OUTLET_MSGS = 0
 

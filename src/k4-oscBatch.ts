@@ -9,7 +9,7 @@
 // table.
 
 import { buildOscPacket, loadSetting, logFactory } from './utils'
-import config from './config'
+import config from './k4-config'
 import { OUTLET_OSC } from './consts'
 
 const log = logFactory(config)

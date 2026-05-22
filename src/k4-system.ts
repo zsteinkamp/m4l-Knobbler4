@@ -17,7 +17,7 @@
 // transient named dict) because [k4-oscBatch] — a separate object — reads them
 // to decide batching; that cross-object channel is why they aren't in ctx.
 
-import config from './config'
+import config from './k4-config'
 import { logFactory, osc, saveSetting, setOscSink } from './utils'
 import { OUTLET_REFRESH, OUTLET_CONFIGURE } from './consts'
 

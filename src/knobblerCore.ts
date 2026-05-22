@@ -22,7 +22,7 @@ import {
 
 import { propToValue, valueString, valueToProp } from './deviceParam'
 
-import config from './config'
+import config from './k4-config'
 const log = logFactory(config)
 
 // Orchestrator context (set in initAll) — per-instance persistence via ctx.settings.

@@ -8,7 +8,7 @@
 // only siblings left are the UI and the I/O objects ([udpsend]/[udpreceive]/
 // [k4-oscBatch]/[k4-discovery]).
 
-import config from './config'
+import config from './k4-config'
 import {
   logFactory,
   setDictPrefix as utilsSetDictPrefix,
@@ -117,6 +117,14 @@ function legacyShortcutPath() {
     parts = parts.slice(1)
   }
   shortcuts.legacyShortcutPath(slot, parts.join(' '))
+}
+
+// Max message from the device-side shortcut bpatcher's unmap [X] button:
+// `unmap <slot>` via [r ---toShortcuts]. The receiver was dropped when
+// k4-shortcuts was folded into the entry. (App-side unmap comes through the
+// /unmapshortcut OSC route; both land in shortcuts.unmap.)
+function unmap(slot: number) {
+  shortcuts.unmap(slot)
 }
 
 // Native UI sends that used to go straight to [udpsend] as bare OSC — the page

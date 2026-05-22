@@ -1,5 +1,5 @@
 import { cleanArr, logFactory, osc, sendChunkedData } from './utils'
-import config from './config'
+import config from './k4-config'
 import { INLET_MSGS, OUTLET_MSGS, OUTLET_OSC, noFn } from './consts'
 
 autowatch = 1

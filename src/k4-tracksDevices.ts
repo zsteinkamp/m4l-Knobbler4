@@ -9,7 +9,7 @@ import {
   sendChunkedData,
   truncate,
 } from './utils'
-import config from './config'
+import config from './k4-config'
 import {
   FIELD_INDENT,
   MAX_NAME_LEN,

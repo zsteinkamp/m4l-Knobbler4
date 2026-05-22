@@ -1,5 +1,5 @@
 import { logFactory } from './utils'
-import config from './config'
+import config from './k4-config'
 const log = logFactory(config)
 
 import { BANK_NAME_DICT, DEVICE_DICT } from './deviceParams'

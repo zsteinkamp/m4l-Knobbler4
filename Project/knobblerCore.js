@@ -14,8 +14,8 @@ var utils_1 = require("./utils");
 Object.defineProperty(exports, "setDictPrefix", { enumerable: true, get: function () { return utils_1.setDictPrefix; } });
 var consts_1 = require("./consts");
 var deviceParam_1 = require("./deviceParam");
-var config_1 = require("./config");
-var log = (0, utils_1.logFactory)(config_1.default);
+var k4_config_1 = require("./k4-config");
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Orchestrator context (set in initAll) — per-instance persistence via ctx.settings.
 var ctx = null;
 // Pre-computed OSC address strings (indexed 1–32)

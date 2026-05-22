@@ -1,11 +1,11 @@
 "use strict";
 var utils_1 = require("./utils");
-var config_1 = require("./config");
+var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 autowatch = 1;
 inlets = 1;
 outlets = 2;
-var log = (0, utils_1.logFactory)(config_1.default);
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 setinletassist(consts_1.INLET_MSGS, 'Browser navigation/load OSC messages');
 setoutletassist(consts_1.OUTLET_OSC, 'Output OSC messages to [udpsend]');
 setoutletassist(consts_1.OUTLET_MSGS, 'Messages');

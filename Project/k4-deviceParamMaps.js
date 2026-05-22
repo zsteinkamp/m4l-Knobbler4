@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deviceParamMapFor = void 0;
 var utils_1 = require("./utils");
-var config_1 = require("./config");
-var log = (0, utils_1.logFactory)(config_1.default);
+var k4_config_1 = require("./k4-config");
+var log = (0, utils_1.logFactory)(k4_config_1.default);
 var deviceParams_1 = require("./deviceParams");
 function deviceParamMapFor(deviceName) {
     if (!deviceParams_1.BANK_NAME_DICT[deviceName]) {
