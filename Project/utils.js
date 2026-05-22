@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -154,10 +154,43 @@ function meterVal(raw) {
     return Math.round((parseFloat(raw) || 0) * 100) / 100;
 }
 exports.meterVal = meterVal;
-// Reusable output array. All sends ship a complete OSC packet (built here) to
-// the [node.script] sender as `packet <byte…>` — see k4-oscBatch. 'packet' is a
-// fixed selector; the rest are byte ints (no symbol-table interaction).
-var oscPktOut = ['packet'];
+// [udpsend]'s `rawbytes` message — which lets us ship a JS-built OSC packet as
+// a byte list (no string interning, no app-side crash) — only exists in Max
+// 9.1.0+ (Live 12.4+). Below that, `rawbytes` is OSC-formatted as a literal
+// address and crashes the app's parser. So gate on the Max version and fall
+// back to native `addr value` sends (which intern strings, but never crash).
+//
+// max.version concatenates each version component as a single hex char (Max
+// 4.5.1 -> "451", 9.0.10 -> "90a", 9.1.0 -> "910"). So compare major/minor by
+// position — NOT parseInt the whole string, which would mis-read a hex patch
+// (e.g. parseInt("91a") = 91). rawbytes (udpsend) needs >= 9.1.0; default to
+// native (the safe path — no crash) if the version can't be read.
+exports.RAWBYTES_OK = (function () {
+    try {
+        var s = String(max.version);
+        var major = parseInt(s.charAt(0), 16);
+        var minor = parseInt(s.charAt(1), 16);
+        if (isNaN(major) || isNaN(minor)) {
+            return false;
+        }
+        return major > 9 || (major === 9 && minor >= 1);
+    }
+    catch (e) {
+        return false;
+    }
+})();
+exports.MAX_VERSION_RAW = (function () {
+    try {
+        return String(max.version);
+    }
+    catch (e) {
+        return '(unknown)';
+    }
+})();
+// Reusable output arrays for the fallback path (osc() with no sink wired — only
+// hit pre-init/standalone). rawbytes ships the JS-built packet; native sends the
+// address + value for [udpsend] to format. The primary path is k4-oscBatch.send.
+var oscRawOut = ['rawbytes'];
 // OSC output sink — the orchestrator's oscBatch singleton, reached via ctx.
 // Each module wires its own utils instance in init() with setOscSink(ctx.osc):
 // Max require() does NOT cache modules, so every file gets its OWN utils
@@ -174,17 +207,28 @@ function osc(addr, val) {
         oscSink(addr, val);
         return;
     }
-    // Fallback (no sink wired): build the packet and emit it the same way the
-    // oscBatch sink would, so a node.script sender downstream handles it.
+    // Fallback (no sink wired): emit straight to [udpsend], matching the oscBatch
+    // sink's version-gated behavior.
     var v = typeof val === 'number' && val !== (val | 0)
         ? Math.round(val * 1000000) / 1000000
         : val;
-    var bytes = buildOscPacket(addr, v);
-    oscPktOut.length = 1;
-    for (var i = 0; i < bytes.length; i++) {
-        oscPktOut.push(bytes[i]);
+    if (exports.RAWBYTES_OK) {
+        var bytes = buildOscPacket(addr, v);
+        oscRawOut.length = 1;
+        for (var i = 0; i < bytes.length; i++) {
+            oscRawOut.push(bytes[i]);
+        }
+        outlet(consts_1.OUTLET_OSC, oscRawOut);
     }
-    outlet(consts_1.OUTLET_OSC, oscPktOut);
+    else if (v === undefined) {
+        outlet(consts_1.OUTLET_OSC, addr); // bare address, no arg
+    }
+    else if (typeof v === 'object' && v !== null) {
+        outlet(consts_1.OUTLET_OSC, addr, JSON.stringify(v));
+    }
+    else {
+        outlet(consts_1.OUTLET_OSC, addr, v);
+    }
 }
 exports.osc = osc;
 // Build an OSC packet (address + single arg) as a flat array of byte values

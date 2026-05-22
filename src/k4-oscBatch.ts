@@ -1,18 +1,21 @@
 // Outbound OSC coalescing — folded into the entry [v8 knobbler]. utils.osc()
 // feeds send() in-process (registered via setOscSink); send() batches numeric
 // values into a /batch JSON envelope (batch-capable clients) or rate-limits
-// per-address (others). Every send is built into a complete OSC packet here
-// (buildOscPacket) and emitted to OUTLET_OSC as `packet <byte…>` for the
-// [node.script] sender, which transmits it as a raw UDP datagram. This replaces
-// [udpsend] for output: it works on any Max version (no `rawbytes` dependency,
-// which only exists in Max 9.1.0+) and never interns a string into the symbol
-// table.
+// per-address (others). Output goes to [udpsend] via OUTLET_OSC, version-gated:
+//   Max 9.1.0+ (Live 12.4+): build the OSC packet in JS and ship it as
+//     `rawbytes <byte…>` — no string interning, /batch JSON rides as bytes.
+//   Max < 9.1.0 (Live 12.3.x): `rawbytes` would crash the app's parser, so send
+//     native `addr value` for [udpsend] to format. Numerics don't intern; only
+//     low-churn strings (names/colors) do, and batching is disabled (its /batch
+//     JSON would be the big interning source).
+// See RAWBYTES_OK in utils.
 
-import { buildOscPacket, loadSetting, logFactory } from './utils'
+import { buildOscPacket, loadSetting, logFactory, RAWBYTES_OK, MAX_VERSION_RAW } from './utils'
 import config from './k4-config'
 import { OUTLET_OSC } from './consts'
 
 const log = logFactory(config)
+log('reloaded k4-oscBatch: max.version=' + MAX_VERSION_RAW + ' rawbytes=' + RAWBYTES_OK)
 
 const BATCH_FLUSH_MS = 10
 const BATCH_MAX_BYTES = 1024
@@ -50,15 +53,16 @@ function shouldBypass(address: string) {
 
 function checkClientCapabilities() {
   const caps = loadSetting('clientCapabilities')
-  batchEnabled = typeof caps === 'string' && caps.indexOf('batch') !== -1
+  // Only batch when the client supports it AND we can ship the /batch JSON as
+  // rawbytes — on older Max the envelope would intern a fresh string per flush.
+  batchEnabled =
+    RAWBYTES_OK && typeof caps === 'string' && caps.indexOf('batch') !== -1
 }
 
-// Every send goes out as a complete OSC packet (built here) handed to the
-// [node.script] sender as `packet <byte…>`. 'packet' is a fixed selector
-// (gensym'd once); the rest are byte ints (no symbol-table interaction). This
-// replaces [udpsend] for output entirely — works on any Max version (no
-// `rawbytes` dependency, Live 12.3.x included) and never interns a string.
-const pktOut: any[] = ['packet']
+// rawbytes path: a complete OSC packet (built in JS) shipped to [udpsend] as
+// `rawbytes <byte…>`. 'rawbytes' is a fixed selector (gensym'd once); the rest
+// are byte ints — no symbol-table interaction. Max 9.1.0+ only.
+const rawOut: any[] = ['rawbytes']
 
 // Feedback-loop guard: when the configured output host:port equals our own
 // [udpreceive], every packet echoes straight back and storms. knobbler.ts pings
@@ -70,19 +74,38 @@ export function setOutputBlocked(v: boolean) {
   outputBlocked = v
 }
 
-function sendPacket(bytes: number[]) {
+function emitRawbytes(bytes: number[]) {
   if (outputBlocked) {
     return
   }
-  pktOut.length = 1
+  rawOut.length = 1
   for (let i = 0; i < bytes.length; i++) {
-    pktOut.push(bytes[i])
+    rawOut.push(bytes[i])
   }
-  outlet(OUTLET_OSC, pktOut)
+  outlet(OUTLET_OSC, rawOut)
+}
+
+// Native path (Max < 9.1.0): emit `addr value` for [udpsend] to OSC-format.
+// Objects/arrays are stringified; undefined sends a bare (no-arg) address.
+function sendNative(address: string, val: any) {
+  if (outputBlocked) {
+    return
+  }
+  if (val === undefined) {
+    outlet(OUTLET_OSC, address)
+  } else if (typeof val === 'object' && val !== null) {
+    outlet(OUTLET_OSC, address, JSON.stringify(val))
+  } else {
+    outlet(OUTLET_OSC, address, val)
+  }
 }
 
 function sendDirect(address: string, val: any) {
-  sendPacket(buildOscPacket(address, val))
+  if (RAWBYTES_OK) {
+    emitRawbytes(buildOscPacket(address, val))
+  } else {
+    sendNative(address, val)
+  }
 }
 
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
@@ -97,9 +120,10 @@ function flushBatchBuffer() {
       sendDirect(address, oscBuffer[address])
     }
   } else {
-    // /batch envelope always has a JSON-string arg — build the wire packet
-    // here so the JSON never becomes a Max atom.
-    sendPacket(buildOscPacket('/batch', oscBuffer))
+    // /batch envelope always has a JSON-string arg — ship as rawbytes so the
+    // JSON never becomes a Max atom. (Only reached when batchEnabled, which
+    // requires RAWBYTES_OK.)
+    emitRawbytes(buildOscPacket('/batch', oscBuffer))
   }
   oscBuffer = {}
   oscBufferSize = 0
@@ -219,7 +243,5 @@ function send(address: string, val: any) {
     throttleSend(address, val)
   }
 }
-
-log('reloaded k4-oscBatch')
 
 export { send }

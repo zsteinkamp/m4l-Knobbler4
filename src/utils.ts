@@ -166,10 +166,42 @@ export function meterVal(raw: any): number {
   return Math.round((parseFloat(raw) || 0) * 100) / 100
 }
 
-// Reusable output array. All sends ship a complete OSC packet (built here) to
-// the [node.script] sender as `packet <byte…>` — see k4-oscBatch. 'packet' is a
-// fixed selector; the rest are byte ints (no symbol-table interaction).
-const oscPktOut: any[] = ['packet']
+// [udpsend]'s `rawbytes` message — which lets us ship a JS-built OSC packet as
+// a byte list (no string interning, no app-side crash) — only exists in Max
+// 9.1.0+ (Live 12.4+). Below that, `rawbytes` is OSC-formatted as a literal
+// address and crashes the app's parser. So gate on the Max version and fall
+// back to native `addr value` sends (which intern strings, but never crash).
+//
+// max.version concatenates each version component as a single hex char (Max
+// 4.5.1 -> "451", 9.0.10 -> "90a", 9.1.0 -> "910"). So compare major/minor by
+// position — NOT parseInt the whole string, which would mis-read a hex patch
+// (e.g. parseInt("91a") = 91). rawbytes (udpsend) needs >= 9.1.0; default to
+// native (the safe path — no crash) if the version can't be read.
+export const RAWBYTES_OK: boolean = (function () {
+  try {
+    const s = String(max.version)
+    const major = parseInt(s.charAt(0), 16)
+    const minor = parseInt(s.charAt(1), 16)
+    if (isNaN(major) || isNaN(minor)) {
+      return false
+    }
+    return major > 9 || (major === 9 && minor >= 1)
+  } catch (e) {
+    return false
+  }
+})()
+export const MAX_VERSION_RAW: string = (function () {
+  try {
+    return String(max.version)
+  } catch (e) {
+    return '(unknown)'
+  }
+})()
+
+// Reusable output arrays for the fallback path (osc() with no sink wired — only
+// hit pre-init/standalone). rawbytes ships the JS-built packet; native sends the
+// address + value for [udpsend] to format. The primary path is k4-oscBatch.send.
+const oscRawOut: any[] = ['rawbytes']
 
 // OSC output sink — the orchestrator's oscBatch singleton, reached via ctx.
 // Each module wires its own utils instance in init() with setOscSink(ctx.osc):
@@ -187,18 +219,26 @@ export function osc(addr: string, val: any) {
     oscSink(addr, val)
     return
   }
-  // Fallback (no sink wired): build the packet and emit it the same way the
-  // oscBatch sink would, so a node.script sender downstream handles it.
+  // Fallback (no sink wired): emit straight to [udpsend], matching the oscBatch
+  // sink's version-gated behavior.
   const v =
     typeof val === 'number' && val !== (val | 0)
       ? Math.round(val * 1000000) / 1000000
       : val
-  const bytes = buildOscPacket(addr, v)
-  oscPktOut.length = 1
-  for (let i = 0; i < bytes.length; i++) {
-    oscPktOut.push(bytes[i])
+  if (RAWBYTES_OK) {
+    const bytes = buildOscPacket(addr, v)
+    oscRawOut.length = 1
+    for (let i = 0; i < bytes.length; i++) {
+      oscRawOut.push(bytes[i])
+    }
+    outlet(OUTLET_OSC, oscRawOut)
+  } else if (v === undefined) {
+    outlet(OUTLET_OSC, addr) // bare address, no arg
+  } else if (typeof v === 'object' && v !== null) {
+    outlet(OUTLET_OSC, addr, JSON.stringify(v))
+  } else {
+    outlet(OUTLET_OSC, addr, v)
   }
-  outlet(OUTLET_OSC, oscPktOut)
 }
 
 // Build an OSC packet (address + single arg) as a flat array of byte values
