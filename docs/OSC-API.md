@@ -2,6 +2,10 @@
 
 This document exists to catalog the full set of OSC messages used for control and display between the Knobbler4 Max for Live device and a physical interface, such as an app or TouchOSC running on an iPad. Because the standard OSC protocol is used, you are free to develop alternative interfaces to interact with Knobbler4.
 
+Throughout this document, a trailing **`N`** on an address (e.g. `/valN`, `/bparamN`) means the slot/index is appended directly to the address string (`/val0`, `/val1`, …). Where an index is instead carried as the message **argument**, it is written as `{N}` (e.g. `/xyJoin {N}`). Knobbler parameter slots are 0-indexed (`MAX_SLOTS = 32`); Bluhand device slots are 1-indexed (1–16).
+
+> **Implementation note:** The device dispatches inbound OSC through a per-module route registry (`src/k4-*.ts`, each exporting a `routes: Route[]` table merged in `src/knobbler.ts`). Outbound addresses are emitted via `osc(...)`. This document is kept in sync with those tables.
+
 ## Knobbler
 
 ### Tablet to Knobbler4
@@ -14,21 +18,25 @@ Sets the value of Slot N, as a float between 0 and 1, inclusive. If Slot N is al
 
 Removes the mapping for Slot N. Has side effects of messages sent from Knobbler to tablet to update name, color, and value to unassigned values.
 
-#### /default valN
+#### /defaultvalN
 
-Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet.
+Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet. (A legacy space-separated alias `/default val` with the slot as a suffix is also accepted.)
+
+#### /mkMapN {mapId}
+
+Maps the device parameter identified by `mapId` (the Bluhand map identifier) to Knobbler Slot N. Used to promote a Bluhand device parameter into a persistent Knobbler slot.
 
 #### /trackNtouch 1
 
 Switch the Live display to the track corresponding to Slot N.
 
-#### /xyJoinN
+#### /xyJoin {N}
 
-Join Slot N and Slot N+1 into an X-Y pad pair. N must be between 1 and 31. Both slots must not already be part of a pair. Triggers an `/xyPairs` response. Knobbler pairs persist with the Live set.
+Join Slot N and Slot N+1 into an X-Y pad pair, where N (the left slot index) is the message **argument**, not an address suffix. Both slots must not already be part of a pair. Triggers an `/xyPairs` response. Knobbler pairs persist with the Live set.
 
-#### /xySplitN
+#### /xySplit {N}
 
-Split a previously joined X-Y pad pair where N is the left slot index. Triggers an `/xyPairs` response.
+Split a previously joined X-Y pad pair, where N (the left slot index) is the message **argument**. Triggers an `/xyPairs` response.
 
 ### Knobbler4 to Tablet
 
@@ -52,7 +60,7 @@ The number of quantization steps for the parameter in Slot N. Continuous (non-qu
 
 A JSON-encoded array of individual item names for each quantized step. The array is empty if a parameter is not quantized.
 
-#### /track {string}
+#### /trackN {string}
 
 Updates the track name for Slot N.
 
@@ -74,15 +82,21 @@ A JSON-encoded array of left slot indices for active X-Y pad pairs. e.g. `[3, 7]
 
 ## Bluhand
 
+The Bluhand page controls the **selected device** in Live: 16 device-parameter slots, parameter banks, rack variations/macros, transport, and device/track navigation.
+
 ### Tablet to Knobbler4
 
 #### /bvalN {float}
 
-Sets the value of Slot N, as a float between 0 and 1, inclusive. Knobbler will then quietly update the corresponding parameter in the selected device in the Live set with the value.
+Sets the value of Slot N (1–16), as a float between 0 and 1, inclusive. Knobbler will then quietly update the corresponding parameter in the selected device in the Live set with the value.
 
-#### /bdefault bvalN
+#### /bdefaultbvalN
 
-Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet.
+Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet. (A legacy space-separated alias `/bdefault bval` with the slot as a suffix is also accepted.)
+
+#### /bkMapN {mapId}
+
+Maps the Bluhand device parameter identified by `mapId` into Bluhand Slot N.
 
 #### /bBankN
 
@@ -96,6 +110,42 @@ If not looking at the first bank, has the effect of switching the Tablet to the 
 
 If more banks of parameters are available, then switch the Tablet to the next bank of parameters. Causes a full update of slot names and values.
 
+#### /toggleOnOff
+
+Toggles the on/off (activator) state of the currently selected device.
+
+#### /bPrevTrack
+
+Select the previous track.
+
+#### /bNextTrack
+
+Select the next track.
+
+#### /bPrevDev
+
+Select the previous device on the current track.
+
+#### /bNextDev
+
+Select the next device on the current track.
+
+#### /blu/macros/random
+
+Randomize the macro controls of the currently selected rack.
+
+#### /blu/variation/new
+
+Create a new rack variation from the current macro state.
+
+#### /blu/variation/delete {idx}
+
+Delete the rack variation at index `idx`.
+
+#### /blu/variation/select {idx}
+
+Recall (select) the rack variation at index `idx`.
+
 #### /undo
 
 Triggers an undo action in the Live set, reverting the last change.
@@ -104,23 +154,35 @@ Triggers an undo action in the Live set, reverting the last change.
 
 Triggers a redo action in the Live set, reapplying the last undone change.
 
-#### /shortcutNMap
+#### /mapshortcutN
 
-For shortcut button N, will map the button if it is not yet mapped. If mapped already, it will focus the Live UI on the mapped device.
+For shortcut button N (1–8), maps the button to the selected device if it is not yet mapped. If already mapped, focuses the Live UI on the mapped device.
 
-#### /shortcutNUnmap
+#### /unmapshortcutN
 
-For shortcut button N, will unmap the button.
+For shortcut button N (1–8), removes the mapping.
 
 ### Knobbler4 to Tablet
 
 #### /bcurrDeviceName {string}
 
-Updates the current track / device name in the display.
+Updates the current track / device name in the display (format: `TrackName > DeviceName`).
+
+#### /bBanks {JSON string}
+
+JSON-encoded array of available parameter banks for the selected device, each `{ name, sel }`.
 
 #### /bTxtCurrBank {string}
 
 Updates the text that indicates the current bank, e.g. "Bank 2 of 6".
+
+#### /bOnOff { 0 | 1 }
+
+The on/off (activator) state of the currently selected device.
+
+#### /blu/variations {JSON string | ""}
+
+Rack variation state for the selected device: `{ count, selected }`, or an empty string when the selected device has no variations.
 
 #### /bparamN {string}
 
@@ -164,13 +226,13 @@ Updates the device name displayed beneath the shortcut button N.
 
 #### /nav/currTrackId {integer}
 
-Live object ID number for the currently selected track.
+Live object ID number for the currently selected track (−1 if none).
 
 #### /nav/currDeviceId {integer}
 
-Live object ID number for the currently selected device.
+Live object ID number for the currently selected device (−1 if none).
 
-#### /nav/devices`
+#### /nav/devices
 
 JSON-stringified array of device objects. See the source file `src/consts.ts` to see the field ID definitions. e.g.
 
@@ -203,6 +265,70 @@ If collapsing a rack, this message is sent to Live so that it can hide the chain
 Toggles the fold state (expand / collapse) of a group.
 
 ## Mixer / Channel Strip
+
+The single-track ("sidebar") mixer controls the currently selected track. Addresses have no strip index — they always target the selected track. (For the multi-strip mixer, see "Multi-Track Mixer" below, where addresses are indexed `/mixer/{N}/...`.)
+
+### Tablet to Knobbler4
+
+#### /mixer/vol {float}
+
+Sets the volume of the selected track (0.0–1.0).
+
+#### /mixer/pan {float}
+
+Sets the pan of the selected track (−1.0 to 1.0).
+
+#### /mixer/crossfader {float}
+
+Sets the crossfader assignment value of the selected track.
+
+#### /mixer/sendN {float}
+
+Sets the level of send N (1–12) on the selected track.
+
+#### /mixer/volDefault
+
+Resets the selected track's volume to its default value.
+
+#### /mixer/panDefault
+
+Resets the selected track's pan to center.
+
+#### /mixer/crossfaderDefault
+
+Resets the selected track's crossfader assignment to its default.
+
+#### /mixer/sendDefaultN
+
+Resets send N on the selected track to its default value.
+
+#### /mixer/toggleMute
+
+Toggles the mute state of the selected track.
+
+#### /mixer/toggleSolo
+
+Toggles the solo state of the selected track.
+
+#### /mixer/toggleXFadeA
+
+Toggles crossfader assignment A for the selected track.
+
+#### /mixer/toggleXFadeB
+
+Toggles crossfader assignment B for the selected track.
+
+#### /mixer/enableRecord
+
+Arms the selected track for recording.
+
+#### /mixer/disableRecord
+
+Disarms the selected track.
+
+#### /mixer/disableInput
+
+Disables input monitoring/routing for the selected track.
 
 ### Knobbler4 to Tablet
 
@@ -257,6 +383,10 @@ The number of return tracks.
 
 Indicates if the A or B crossfader buttons are selected for the given track.
 
+#### /mixer/volAuto {integer}
+
+The volume automation state for the selected track (0 = none, 1 = playing, 2 = overridden).
+
 #### /mixer/solo { 0 | 1 }
 
 Indicates the Solo state of the track.
@@ -280,6 +410,14 @@ Indicates whether the track has audio output. Controls the enabled state of some
 #### /mixer/volStr {string}
 
 String value of the current track volume level. Displayed above the volume slider in the mixer.
+
+#### /mixer/panStr {string}
+
+String representation of the selected track's pan (e.g. "20L").
+
+#### /sidebarMeters { 0 | 1 }
+
+Confirms the current enabled/disabled state of the single-track mixer's output meters.
 
 #### /track/isFrozen { 0 | 1 }
 
@@ -495,6 +633,10 @@ The string representation of the parameter's maximum value.
 
 ## Toolbar
 
+The toolbar mixes transport state (pushed from the device) with button presses (sent by the tablet). `/metronome` and `/tempo` flow in both directions — the device pushes the current state, and the tablet sends them to change it.
+
+### Knobbler4 to Tablet
+
 #### /arrangementOverdub { 0 | 1 }
 
 Indicates if the arrangement overdub button is engaged.
@@ -505,7 +647,7 @@ JSON-encoded array of cue point objects.
 
 ```
 [
-  { 
+  {
     "name": {string},
     "idx": {number},
     "time": {number},
@@ -534,13 +676,35 @@ Indicates if Live is playing.
 
 Indicates if Live is recording.
 
+#### /loop { 0 | 1 }
+
+Indicates whether the arrangement loop is enabled. (Distinct from the network feedback-loop `/loop` message in the Misc section, which is sent by the tablet and carries no argument.)
+
 #### /tempo {float}
 
 The current tempo value.
 
+### Tablet to Knobbler4
+
+#### /metronome
+
+Toggles the metronome.
+
+#### /tempo {float}
+
+Sets the tempo in BPM.
+
+#### /tapTempo
+
+Tap-tempo input; successive taps set the tempo.
+
 #### /gotoCuePoint {idx}
 
 Jumps to the cue point at `live_set cue_points {idx}`.
+
+#### /playCuePoint {idx}
+
+Jumps to the cue point at index `idx` and starts playback from there.
 
 #### /btnSkipPrev
 
@@ -550,25 +714,74 @@ Jumps to the previous cue point.
 
 Jumps to the next cue point.
 
+#### /btnLoop
+
+Toggles the arrangement loop.
+
+#### /btnCaptureMidi
+
+Triggers Live's "Capture MIDI".
+
+#### /btnArrangementOverdub
+
+Toggles arrangement overdub.
+
+#### /btnSessionRecord
+
+Toggles session automation record.
+
+#### /btnReEnableAutomation
+
+Re-enables automation that has been overridden.
+
+#### /bCtlPlay
+
+Starts playback.
+
+#### /bCtlStop
+
+Stops playback.
+
+#### /bCtlRec
+
+Toggles record mode.
+
 ## Misc
 
 ### Knobbler4 to Tablet
 
 #### /ack {string}
 
-Response to a `/syn` message to facilitate connection setup. The value is a string containing the device version number followed by capability flags (e.g. `53 mxr`). The `mxr` capability indicates support for the multi-track mixer.
+Response to a `/syn` message to facilitate connection setup. The value is a string containing the device version number followed by capability flags (e.g. `61 mxr mkMap`). `mxr` indicates support for the multi-track mixer; `mkMap` indicates support for mapping Bluhand parameters into Knobbler slots.
+
+#### /pong {string}
+
+Response to a `/ping` message to keep the network connection "warmed up". Like `/ack`, the value contains the device version and capability flags (e.g. `61 mxr mkMap`).
+
+#### /deviceVersion {string}
+
+The device version string, sent on connect.
+
+#### /sendState {1}
+
+Asks the app to push its full state to the device (current page, current-parameter visibility, mixer view, etc.). Sent after a `/syn` handshake.
+
+#### /clearAll
+
+Tells the app to clear all cached OSC data (full reset).
 
 #### /page/X
 
-Sent when one of the tabs in the Max for Live device is clicked. `X` can be:
+Sent when one of the tabs in the Max for Live device is clicked, to keep the app's page in sync. The tablet may also send `/page/X` to drive the device. `X` can be:
 
 - knobbler1
 - knobbler2
 - bluhand
-
-#### /pong {string}
-
-Response to a `/ping` message to keep the network connection "warmed up". Like `/ack`, the value contains the device version and capability flags (e.g. `53 mxr`).
+- mixer
+- clips
+- nav
+- setup
+- session
 
 #### /batch {JSON string}
 
@@ -586,9 +799,25 @@ Update the "active" state of the Toggle Input interface button.
 
 ### Tablet to Knobbler4
 
+#### /syn {string}
+
+A request for an `/ack` response to facilitate a UX feedback loop when configuring the connections. The value is an optional string containing the client version followed by capability flags (e.g. `1.2.0 batch`). The device stores the client version and capabilities for feature negotiation. Triggers a `/sendState` message internally to push full state to the app.
+
 #### /ping
 
-Sent every 5 seconds when a connection is configured. Intended to keep the network connection "warm".
+Sent every 5 seconds when a connection is configured. Intended to keep the network connection "warm". May carry a client version + capability string like `/syn`.
+
+#### /connect {host:port}
+
+Configures the device's output target (the tablet's reachable `host:port`). Sent during connection setup so the device knows where to send outbound OSC.
+
+#### /btnRefresh
+
+Requests a full refresh of all device state to the app.
+
+#### /initMenu
+
+Requests (re)initialization of the device's menu state.
 
 #### /toggleInput {0,1}
 
@@ -600,11 +829,7 @@ This is useful when recording automation over existing MIDI clips, since the rec
 
 #### /loop
 
-Sent out as part of the network startup sequence to detect network loops (e.g. the send and receive destination being the same). If `/loop` is received, then network communication is halted until the `host` or `port` values are changed.
-
-#### /syn {string}
-
-A request for an `/ack` response to facilitate a UX feedback loop when configuring the connections. The value is an optional string containing the client version followed by capability flags (e.g. `1.2.0 batch`). The device stores the client version and capabilities for feature negotiation. Triggers a `/sendState` message internally to push full state to the app.
+Sent out as part of the network startup sequence to detect network loops (e.g. the send and receive destination being the same). If the device receives its own `/loop` echo, outbound communication is halted until the `host` or `port` values are changed (a fresh `/connect` re-probes).
 
 ## Clip View
 
@@ -660,7 +885,7 @@ Set a scene's color: `[sceneIdx, hexStr]`.
 
 Set a clip's color: `[trackIdx, sceneIdx, hexStr]`.
 
-#### /clipsUpdate {JSON array}
+#### /clips/update {JSON array}
 
 Bulk update clip properties. Array of `{t, sc, n?}` objects. Currently supports setting clip name.
 
@@ -689,3 +914,17 @@ The index of the currently selected scene.
 #### /clips/trackInfo {JSON object}
 
 Track info updates. Either a full batch `{ left, tracks: [{n, c}] }` or an individual update `{ t, n?, c? }` for name or color changes.
+
+## Chunked Data
+
+Large payloads (e.g. `/visibleTracks`, `/clips/scenes`) are split into chunks so they survive UDP packet-size limits. A chunked transfer for prefix `/foo` is:
+
+- `/foo/start {count}` — begins the transfer, value is the total item count
+- `/foo/chunk {JSON array}` — one or more chunks of items
+- `/foo/end {checksum}` — ends the transfer
+
+Chunked data is never batched (see `/batch`). Whether a payload is chunked depends on client capabilities negotiated in the `/syn` handshake; clients lacking the capability receive the full payload as a single `/foo` message.
+
+## Not Yet In The Protocol
+
+The source contains a `src/k4-browser.ts` module that emits `/browser/view`, `/browser/items` (chunked), and `/browser/error`, intended for browsing/loading Live's device browser. **It is not currently wired into the entry route registry (`src/knobbler.ts`) and has no inbound routes**, so it is not part of the active protocol. Document it here once it is integrated.
