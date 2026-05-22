@@ -106,7 +106,7 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 
 **`k4-system.ts`** - Connection + system passthroughs (former router bits)
 
-- Handshake (`/syn`→`/ack`, `/ping`→`/pong`, `/connect`, `deviceVersion`) and the loose Max-side sends (`---LOOP`/`---REFRESH_LOGIC`/`---CONFIGURE`)
+- Handshake (`/syn`→`/ack`, `/ping`→`/pong`, `/connect`, `deviceVersion`) and the loose Max-side sends (`---REFRESH_LOGIC`/`---CONFIGURE`). On `/connect` it also fires the JS feedback-loop probe (`ctx.loopProbe()` — see Message Flow / `/loop` guard)
 
 **`k4-settings.ts`** - Per-instance persistence service
 
@@ -177,8 +177,41 @@ inbound:  Tablet (OSC) → [udpreceive] → [v8 knobbler] anything()
               → /batch disassembly → route registry (dispatch by prefix) → module fn(...)
                   → LiveAPI ↔ Ableton Live (real-time sync)
 outbound: module osc() → ctx.osc → k4-oscBatch.send (in-process batch/throttle)
-              → entry outlet 0 → [s ---UDPSEND] → OSC-out gate → [udpsend] → Tablet
+              → entry outlet 0 → [udpsend] → Tablet
+                  ≥9.1.0: rawbytes <byte…>  (packet built in JS, no interning)
+                  <9.1.0: native `addr value` (udpsend OSC-formats; batching off)
 ```
+
+**Outbound is version-gated (`RAWBYTES_OK` in `utils.ts`).** `[udpsend]`'s
+`rawbytes` message — ship a JS-built OSC packet as a byte list, no string
+interning, no app-side crash — only exists in **Max 9.1.0+ (Live 12.4+)**. Below
+that it's OSC-formatted as a literal address and crashes the app's parser. So:
+
+- **≥ 9.1.0:** `k4-oscBatch` builds the packet (`buildOscPacket`) and emits
+  `rawbytes <byte…>`; batching on (the `/batch` JSON rides as bytes).
+- **< 9.1.0:** emit native `addr value` for `[udpsend]` to format; batching
+  **off** (its per-flush `/batch` JSON would be the big interning source).
+  Numerics don't intern; only low-churn strings (names/colors) do.
+
+`max.version` is a per-component hex string (`9.0.10 → "90a"`, `9.1.0 → "910"`),
+so compare major/minor by character — NOT `parseInt` the whole string. We removed
+the old `[node.script]`+`dgram` sender (it fought M4L's per-set lifecycle: fresh
+~1s boot + no re-handshake on set switch). `[udpsend]` is native and instant, and
+gets its target from the persisted host/port fields on load — so a **set switch
+repopulates the tablet with no handshake** (no 'Test' tap). `k4-discovery` keeps
+its own `[udpsend]`/`[udpreceive]` for the discovery protocol.
+
+**Feedback-loop guard (`/loop`):** lives entirely in JS. On `/connect`,
+`k4-system` pings `/loop` to the configured target; if output host:port == our
+own `[udpreceive]`, the ping echoes back as inbound `/loop` and
+`oscBatch.setOutputBlocked(true)` stops the storm (a fresh `/connect` re-probes).
+`/page` (device→app page sync) is tapped off the `---UDPSEND` bus into the entry
+(`[prepend udpSend]` → `udpSend()` → `osc()`).
+
+**Set-switch gotcha:** the device does an HTTP version check on load via
+`[maxurl]` (`plugins.steinkamp.us/version/...`). An in-flight `maxurl` racing the
+set teardown crashes Max **9.0.x** (fixed in 9.1.0). It's deferred `[delay 5000]`
+so a quick set switch cancels it on unload before it fires.
 
 ### Key Architectural Patterns
 
@@ -206,8 +239,8 @@ The device communicates via OSC messages. See `docs/OSC-API.md` for complete pro
 **Key Max Objects**:
 
 - `[v8 knobbler]` - Loads `knobbler.js`, the single entry/orchestrator (all feature modules `require`d in-process). The old `[v8 router]` and per-feature `[v8]` objects are gone.
-- `[v8 k4-discovery]` - The one remaining separate feature object (network discovery)
-- `[udpreceive]` / `[udpsend]` - Network communication (OSC-out runs through a gate opened on `/connect`)
+- `[v8 k4-discovery]` - The one remaining separate feature object (network discovery; keeps its own `[udpsend]`/`[udpreceive]`)
+- `[udpsend]` / `[udpreceive]` - Network I/O. Outbound is version-gated (`rawbytes` vs native — see Message Flow Architecture); the target comes from the persisted host/port fields on load.
 - `[poly~ finger]` - Multi-touch gesture detection
 - bpatchers - Repeating UI elements for parameter slots; `[dict ---settingsDict @parameter_enable 1]` persists per-instance settings
 
@@ -216,6 +249,13 @@ The device communicates via OSC messages. See `docs/OSC-API.md` for complete pro
 The `frozen/` directory contains historical releases (`.amxd` device files and `.tosc` TouchOSC templates). Current development happens in `src/` and `Project/`. After building, the `Project/Knobbler4.amxd` file is the distributable device.
 
 Version numbers are manually updated in the changelog and device itself. Releases include the compiled `.amxd` file published to GitHub releases.
+
+**`Knobbler4-P3SA.amxd` (Push 3 standalone)** is identical to `Knobbler4.amxd`
+except for one group of objects built around the `zero.*` externals (zeroconf
+discovery), which Push 3 standalone doesn't support. To regenerate it after a
+`Knobbler4.amxd` change: open `Knobbler4`, select that `zero` group, delete it,
+and Save As `Knobbler4-P3SA`. (Both load the same compiled `Project/*.js`, so JS
+changes apply to both automatically — only patcher edits need this re-sync.)
 
 ## Editing `.amxd` device files
 
