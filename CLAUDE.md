@@ -27,6 +27,15 @@ devcontainer open .
 
 **Workflow:** Edit TypeScript files in `src/` within the devcontainer → auto-compile via watch mode → compiled `.js` files appear in `Project/` → test changes in Ableton Live with the device reloaded.
 
+**IMPORTANT — run node/build/test inside the devcontainer, never on the host.** The container is `m4l-knobbler4-node-1` (repo mounted at `/app`). Examples:
+```bash
+docker start m4l-knobbler4-node-1                      # if stopped
+docker exec m4l-knobbler4-node-1 sh -c "cd /app && yarn build"
+docker exec m4l-knobbler4-node-1 sh -c "cd /app && yarn tsc --noEmit"
+docker exec m4l-knobbler4-node-1 sh -c "cd /app && yarn test"
+```
+The container usually runs `npm run dev` (tsc --watch) on startup, so saving a `src/*.ts` edit auto-recompiles into `Project/`.
+
 ## Development Commands
 
 ### Build & Development
