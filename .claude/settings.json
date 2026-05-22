@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm test:*)",
+      "Bash(python3 scripts/amxd.py:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(git tag:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

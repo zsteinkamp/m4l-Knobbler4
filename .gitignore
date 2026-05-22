@@ -3,3 +3,4 @@ dist
 node_modules
 Ableton\ Folder\ Info
 frozen/*.zip
+.claude/settings.local.json
