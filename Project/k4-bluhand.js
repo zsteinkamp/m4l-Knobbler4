@@ -299,6 +299,11 @@ function cuePointsChange(args) {
         return;
     }
     var cuePointIds = (0, utils_1.cleanArr)(arrayfromargs(args));
+    // Detach the previous per-cue-point observers before dropping them. An armed
+    // LiveAPI left for GC fires its callback during finalization (jsliveapi_free
+    // inside a V8 weak-callback), which executes JS mid-GC and aborts Live.
+    state.cuePointNames.forEach(utils_1.detach);
+    state.cuePointTimes.forEach(utils_1.detach);
     state.cuePointNames = [];
     state.cuePointTimes = [];
     for (var _i = 0, cuePointIds_1 = cuePointIds; _i < cuePointIds_1.length; _i++) {

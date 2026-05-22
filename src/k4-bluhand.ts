@@ -7,6 +7,7 @@
 import {
   cleanArr,
   dequote,
+  detach,
   isDeviceSupported,
   logFactory,
   setOscSink,
@@ -334,6 +335,11 @@ function cuePointsChange(args: IArguments) {
   }
   const cuePointIds = cleanArr(arrayfromargs(args) as IdObserverArg)
 
+  // Detach the previous per-cue-point observers before dropping them. An armed
+  // LiveAPI left for GC fires its callback during finalization (jsliveapi_free
+  // inside a V8 weak-callback), which executes JS mid-GC and aborts Live.
+  state.cuePointNames.forEach(detach)
+  state.cuePointTimes.forEach(detach)
   state.cuePointNames = []
   state.cuePointTimes = []
   for (const cuePointId of cuePointIds) {
