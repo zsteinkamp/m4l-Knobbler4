@@ -722,6 +722,12 @@ function init(c: AppContext) {
   ensureApis()
   metersEnabled = !!ctx.settings.get('metersEnabled')
   sendMetersState()
+  // Force visible strips to re-send on the /syn re-push. Their state was first
+  // pushed at LOAD while output was still gated (node sender not yet ready), so
+  // it was dropped; the visibleStateSet cache would otherwise mark them "sent"
+  // and skip them here, leaving the initial strips dead until scrolled away and
+  // back. Clearing it makes applyWindow re-emit state for the visible window.
+  visibleStateSet = {}
   setupWindow(0, DEFAULT_VISIBLE_COUNT)
 }
 
