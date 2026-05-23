@@ -365,6 +365,100 @@ function initTransportObservers() {
         transportObservers.push(api);
     }
 }
+// --- Song position (transport playhead, 'pos' capability) ------------------
+// The playhead is OBSERVED (`current_song_time`) and the outbound send is
+// throttled to ~20Hz (trailing edge) — the observer fires every few ms during
+// playback, so an unthrottled send would flood OSC. This also covers the
+// stopped case: a cue-point jump or /scrub moves current_song_time, the
+// observer fires, and the new position is sent. Song length (`last_event_time`)
+// is NOT observable, so it is polled on a slow always-on timer (it grows during
+// recording / arrangement edits). The time signature IS observable. The app
+// uses songPos/songLen for the graphical timeline and songSig to render
+// bar.beat.16th. Inbound /scrub sets current_song_time.
+var SONG_POS_THROTTLE_MS = 50;
+var SONG_LEN_POLL_MS = 500;
+var songPosApi = null;
+var songPosTask = null;
+var songPosPending = false;
+var pendingSongPos = 0;
+var songLenTask = null;
+var lastSongPos = -1;
+var lastSongLen = -1;
+var songSigNumApi = null;
+var songSigDenApi = null;
+// Trailing-edge flush: emit at most one /songPos per throttle window.
+function flushSongPos() {
+    if (!songPosPending) {
+        return;
+    }
+    songPosPending = false;
+    if (pendingSongPos !== lastSongPos) {
+        lastSongPos = pendingSongPos;
+        (0, utils_1.osc)('/songPos', pendingSongPos);
+    }
+}
+function onSongPosChange(args) {
+    if (args[0] !== 'current_song_time') {
+        return;
+    }
+    pendingSongPos = parseFloat(args[1]);
+    if (!songPosPending) {
+        songPosPending = true;
+        songPosTask.schedule(SONG_POS_THROTTLE_MS);
+    }
+}
+// Force-read and send the current position (reconnect / refresh path).
+function sendSongPos() {
+    var pos = parseFloat(getLiveSetApi().get('current_song_time'));
+    if (pos !== lastSongPos) {
+        lastSongPos = pos;
+        (0, utils_1.osc)('/songPos', pos);
+    }
+}
+function sendSongLen() {
+    var len = parseFloat(getLiveSetApi().get('last_event_time'));
+    if (len !== lastSongLen) {
+        lastSongLen = len;
+        (0, utils_1.osc)('/songLen', len);
+    }
+}
+function sendSongSig() {
+    var api = getLiveSetApi();
+    (0, utils_1.osc)('/songSig', [
+        parseInt(api.get('signature_numerator')),
+        parseInt(api.get('signature_denominator')),
+    ]);
+}
+function initSongPosObservers() {
+    if (songLenTask) {
+        return;
+    }
+    songPosTask = new Task(flushSongPos);
+    songPosApi = new LiveAPI(onSongPosChange, 'live_set');
+    songPosApi.property = 'current_song_time';
+    // last_event_time isn't observable — poll it on a slow always-on timer.
+    songLenTask = new Task(function () {
+        sendSongLen();
+        songLenTask.schedule(SONG_LEN_POLL_MS);
+    });
+    songLenTask.schedule(SONG_LEN_POLL_MS);
+    songSigNumApi = new LiveAPI(function (args) {
+        if (args[0] === 'signature_numerator') {
+            sendSongSig();
+        }
+    }, 'live_set');
+    songSigNumApi.property = 'signature_numerator';
+    songSigDenApi = new LiveAPI(function (args) {
+        if (args[0] === 'signature_denominator') {
+            sendSongSig();
+        }
+    }, 'live_set');
+    songSigDenApi.property = 'signature_denominator';
+}
+function scrub(beats) {
+    getLiveSetApi().set('current_song_time', Math.max(0, beats));
+    sendSongPos();
+}
 // --- Selected track/device name + track color ------------------------------
 var trackName = '';
 var deviceName = '';
@@ -414,6 +508,16 @@ function pushState() {
         var pair = TRANSPORT_MAP_2[_i];
         (0, utils_1.osc)(pair[1], parseFloat(api.get(pair[0])));
     }
+    sendSongSig();
+    // Force a fresh push for a reconnecting/refreshing client.
+    lastSongPos = -1;
+    lastSongLen = -1;
+    sendSongPos();
+    sendSongLen();
+    // Cue points aren't re-emitted by the cue_points watcher on a refresh (it
+    // only fires on creation), so re-push them here for a reconnecting client
+    // whose osc cache was cleared on /ack.
+    debounceSendCuePoints();
     emitCurrDeviceName();
     onVariationChange();
     sendCurrBank();
@@ -647,6 +751,7 @@ function init(c) {
     ctx = c;
     Slots.initSlots();
     initTransportObservers();
+    initSongPosObservers();
     initNameColorObservers();
     if (!state.paramsWatcher) {
         state.paramsWatcher = new LiveAPI(debouncedParameterChange, 'live_set view selected_track view selected_device');
@@ -703,6 +808,7 @@ var routes = [
     { prefix: '/bCtlRec', parse: 'bare', fn: ctlRec },
     { prefix: '/bCtlPlay', parse: 'bare', fn: ctlPlay },
     { prefix: '/bCtlStop', parse: 'bare', fn: ctlStop },
+    { prefix: '/scrub', parse: 'val', fn: scrub, coalesce: true },
     { prefix: '/metronome', parse: 'bare', fn: toggleMetronome },
     { prefix: '/tapTempo', parse: 'bare', fn: tapTempo },
     { prefix: '/tempo', parse: 'val', fn: setTempo, coalesce: true },
