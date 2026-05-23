@@ -58,6 +58,49 @@ to match its track. Mapping Mode turns off automatically.
 
 ![Mapped slider showing Track Volume / Mixer / 4-Audio](images/mapping/mapping-07-knobbler-mapped.jpg)
 
+### Rearranging sliders with Swap
+
+Mapping Mode also lets you **swap two Knobbler sliders** — pick up the mapping
+on one slider and drop it onto another to trade their positions. This is the
+fastest way to tidy up a page: group related controls together, move a
+frequently-used parameter to a more comfortable spot, or shuffle an XY pad
+without re-mapping anything.
+
+Here's a Knobbler page with three controls — a teal slider, a blue XY pad, and a
+yellow slider:
+
+![A Knobbler page before swapping](images/mapping/mapping-xy-gradient.jpg)
+
+#### 1. Enter Mapping Mode
+
+Tap the crosshair (⊕) button in the toolbar.
+
+![Tapping the Map button to enter Mapping Mode](images/mapping/mapping-xy-initialize.jpg)
+
+#### 2. Tap the source, then the destination
+
+Tap the slider you want to move — it gets a **flashing green outline** to show
+it's selected. Every valid destination shows a **steady green outline**; tap the
+one you want to swap it with.
+
+![Tapping a source then a destination slider](images/mapping/mapping-xy-destination.jpg)
+
+#### 3. Done — the two are swapped
+
+The source and destination trade places, keeping their labels, colors, and
+ranges. Mapping Mode turns off automatically.
+
+![The two sliders after swapping](images/mapping/mapping-xy-swapped.jpg)
+
+> **Move vs. swap:** if the destination slider is empty, this is a *move* — the
+> source ends up on the destination and its old slot is left empty. If both
+> sliders are mapped, it's a true *swap*.
+>
+> **XY pads survive a swap.** Because an XY pad is just two slots grouped
+> together, swapping a parameter into one half of a pad keeps the pairing intact
+> — only the parameter shown changes. (A *move* that would leave a pad half-empty
+> splits the pad back into two separate sliders.)
+
 ### Notes
 
 - Tap the Map button again at any point to cancel and exit Mapping Mode without
