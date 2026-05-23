@@ -221,6 +221,66 @@ function unmap(slot: number) {
   refreshSlotUI(slot)
 }
 
+// Swap (or move) the full mapping between two slots. Driven by the app's
+// map-mode "swap source -> target" gesture (OSC /swapN [m]). If the target is
+// unmapped this is a move (source ends up empty).
+//
+// We rebuild via setPath rather than swapping the parallel-array refs directly:
+// each slot's observers close over their slot index (paramValueCallback(slot)),
+// so moving the LiveAPI ref to the other index would drive the wrong slot's UI.
+// Snapshot both slots' identifying state first, then re-map each from the
+// other's path — setPath recreates observers with the correct closure.
+type SlotSnapshot = {
+  path: string
+  min: number // 0–100 (as stored in settings / used by setMin)
+  max: number
+  customName: string
+}
+
+function captureSlot(slot: number): SlotSnapshot {
+  const p = param[slot]
+  return {
+    path: p && p.path ? p.path : '',
+    min: outMin[slot] !== undefined ? Math.round(outMin[slot] * 100) : 0,
+    max: outMax[slot] !== undefined ? Math.round(outMax[slot] * 100) : 100,
+    customName: p && p.customName ? p.customName : '',
+  }
+}
+
+function applySnapshot(slot: number, snap: SlotSnapshot) {
+  init(slot)
+  if (snap.path) {
+    setPath(slot, snap.path)
+    setMin(slot, snap.min)
+    setMax(slot, snap.max)
+    if (snap.customName) setCustomName(slot, snap.customName)
+  } else {
+    clearSlotSettings(slot)
+    refreshSlotUI(slot)
+  }
+}
+
+function swap(slotA: number, slotB: number) {
+  if (!apiReady) {
+    pendingCalls.push(function () { swap(slotA, slotB) })
+    return
+  }
+  if (slotA === slotB) return
+  if (slotA < 1 || slotA > MAX_SLOTS || slotB < 1 || slotB > MAX_SLOTS) return
+
+  // XY pairs don't survive a swap — split any pair either slot belongs to.
+  const pairA = isSlotInPair(slotA)
+  if (pairA !== null) xySplit(pairA)
+  const pairB = isSlotInPair(slotB)
+  if (pairB !== null) xySplit(pairB)
+
+  // Snapshot both before tearing down (each references the other).
+  const snapA = captureSlot(slotA)
+  const snapB = captureSlot(slotB)
+  applySnapshot(slotA, snapB)
+  applySnapshot(slotB, snapA)
+}
+
 function sendMsg(slot: number, msg: MessageType) {
   //log(`${slot} - ${msg.join(' ')}`)
   outlet(OUTLET_MSGS, [slot, ...msg])
@@ -865,6 +925,7 @@ export {
   setMax,
   setMin,
   setPath,
+  swap,
   unmap,
   val,
   xyJoin,

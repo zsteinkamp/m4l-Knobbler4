@@ -26,6 +26,10 @@ Sets the value of the parameter mapped to Slot N to its default value. Does so i
 
 Maps the device parameter identified by `mapId` (the Bluhand map identifier) to Knobbler Slot N. Used to promote a Bluhand device parameter into a persistent Knobbler slot.
 
+#### /swapN {m}
+
+Swaps the full mapping (parameter, output min/max range, custom name, persisted settings) between Knobbler Slot N and Slot `m`. If Slot `m` is unmapped this is effectively a move (Slot N ends up empty). XY pad pairs involving either slot are split first. Triggers a state re-push for both slots. Only sent when the device advertises the `swap` capability in its `/ack`/`/pong` reply.
+
 #### /trackNtouch 1
 
 Switch the Live display to the track corresponding to Slot N.
@@ -752,11 +756,11 @@ Toggles record mode.
 
 #### /ack {string}
 
-Response to a `/syn` message to facilitate connection setup. The value is a string containing the device version number followed by capability flags (e.g. `61 mxr mkMap`). `mxr` indicates support for the multi-track mixer; `mkMap` indicates support for mapping Bluhand parameters into Knobbler slots.
+Response to a `/syn` message to facilitate connection setup. The value is a string containing the device version number followed by capability flags (e.g. `61 mxr mkMap swap`). `mxr` indicates support for the multi-track mixer; `mkMap` indicates support for mapping Bluhand parameters into Knobbler slots.
 
 #### /pong {string}
 
-Response to a `/ping` message to keep the network connection "warmed up". Like `/ack`, the value contains the device version and capability flags (e.g. `61 mxr mkMap`).
+Response to a `/ping` message to keep the network connection "warmed up". Like `/ack`, the value contains the device version and capability flags (e.g. `61 mxr mkMap swap`).
 
 #### /deviceVersion {string}
 

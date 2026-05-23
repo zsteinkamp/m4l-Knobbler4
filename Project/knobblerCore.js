@@ -9,7 +9,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.setPath = exports.setMin = exports.setMax = exports.setDictPrefix = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.mkMap = exports.bkMap = void 0;
+exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.swap = exports.setPath = exports.setMin = exports.setMax = exports.setDictPrefix = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.mkMap = exports.bkMap = void 0;
 var utils_1 = require("./utils");
 Object.defineProperty(exports, "setDictPrefix", { enumerable: true, get: function () { return utils_1.setDictPrefix; } });
 var consts_1 = require("./consts");
@@ -205,6 +205,52 @@ function unmap(slot) {
     refreshSlotUI(slot);
 }
 exports.unmap = unmap;
+function captureSlot(slot) {
+    var p = param[slot];
+    return {
+        path: p && p.path ? p.path : '',
+        min: outMin[slot] !== undefined ? Math.round(outMin[slot] * 100) : 0,
+        max: outMax[slot] !== undefined ? Math.round(outMax[slot] * 100) : 100,
+        customName: p && p.customName ? p.customName : '',
+    };
+}
+function applySnapshot(slot, snap) {
+    init(slot);
+    if (snap.path) {
+        setPath(slot, snap.path);
+        setMin(slot, snap.min);
+        setMax(slot, snap.max);
+        if (snap.customName)
+            setCustomName(slot, snap.customName);
+    }
+    else {
+        clearSlotSettings(slot);
+        refreshSlotUI(slot);
+    }
+}
+function swap(slotA, slotB) {
+    if (!apiReady) {
+        pendingCalls.push(function () { swap(slotA, slotB); });
+        return;
+    }
+    if (slotA === slotB)
+        return;
+    if (slotA < 1 || slotA > consts_1.MAX_SLOTS || slotB < 1 || slotB > consts_1.MAX_SLOTS)
+        return;
+    // XY pairs don't survive a swap — split any pair either slot belongs to.
+    var pairA = isSlotInPair(slotA);
+    if (pairA !== null)
+        xySplit(pairA);
+    var pairB = isSlotInPair(slotB);
+    if (pairB !== null)
+        xySplit(pairB);
+    // Snapshot both before tearing down (each references the other).
+    var snapA = captureSlot(slotA);
+    var snapB = captureSlot(slotB);
+    applySnapshot(slotA, snapB);
+    applySnapshot(slotB, snapA);
+}
+exports.swap = swap;
 function sendMsg(slot, msg) {
     //log(`${slot} - ${msg.join(' ')}`)
     outlet(consts_1.OUTLET_MSGS, __spreadArray([slot], msg, true));

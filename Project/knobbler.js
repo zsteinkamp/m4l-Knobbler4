@@ -159,6 +159,7 @@ var knobblerRoutes = [
     { prefix: '/default val', parse: 'slot', fn: KnobblerCore.setDefault },
     { prefix: '/track', parse: 'slot', fn: KnobblerCore.gotoTrackFor },
     { prefix: '/mkMap', parse: 'slotVal', fn: KnobblerCore.mkMap },
+    { prefix: '/swap', parse: 'slotVal', fn: KnobblerCore.swap },
 ];
 // Max-message handlers from the knob-slot bpatchers (UI / persistence params).
 // These arrive as selectors on the entry inlet, not OSC.

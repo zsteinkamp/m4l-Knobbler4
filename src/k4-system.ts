@@ -24,7 +24,7 @@ import { OUTLET_REFRESH, OUTLET_CONFIGURE } from './consts'
 const log = logFactory(config)
 
 // Device capabilities advertised back to the app in /ack and /pong replies.
-const REPLY_CAPS = ' mxr mkMap'
+const REPLY_CAPS = ' mxr mkMap swap'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null
