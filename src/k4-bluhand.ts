@@ -384,6 +384,8 @@ const TRANSPORT_MAP: [string, string][] = [
   ['session_record', '/sessionRecord'],
   ['arrangement_overdub', '/arrangementOverdub'],
   ['re_enable_automation_enabled', '/reEnableAutomationEnabled'],
+  ['loop_start', '/loopStart'],
+  ['loop_length', '/loopLength'],
 ]
 function makeTransportCb(prop: string, addr: string) {
   return function (args: IArguments) {
@@ -508,6 +510,15 @@ function initSongPosObservers() {
 function scrub(beats: number) {
   getLiveSetApi().set('current_song_time', Math.max(0, beats))
   sendSongPos()
+}
+
+// Arrangement loop brace. loop_start / loop_length echo back via the transport
+// observers, so the app's loop handles converge after a drag.
+function setLoopStart(beats: number) {
+  getLiveSetApi().set('loop_start', Math.max(0, beats))
+}
+function setLoopLength(beats: number) {
+  getLiveSetApi().set('loop_length', Math.max(0, beats))
 }
 
 // --- Selected track/device name + track color ------------------------------
@@ -890,6 +901,8 @@ const routes: Route[] = [
   { prefix: '/bCtlPlay', parse: 'bare', fn: ctlPlay },
   { prefix: '/bCtlStop', parse: 'bare', fn: ctlStop },
   { prefix: '/scrub', parse: 'val', fn: scrub, coalesce: true },
+  { prefix: '/loopStart', parse: 'val', fn: setLoopStart, coalesce: true },
+  { prefix: '/loopLength', parse: 'val', fn: setLoopLength, coalesce: true },
   { prefix: '/metronome', parse: 'bare', fn: toggleMetronome },
   { prefix: '/tapTempo', parse: 'bare', fn: tapTempo },
   { prefix: '/tempo', parse: 'val', fn: setTempo, coalesce: true },
