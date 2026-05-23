@@ -371,6 +371,31 @@ function gotoCuePoint(val: number) {
     api.call('jump')
   }
 }
+// Toggle a cue point at the current playhead (Live's transport 'Set' button).
+// The cue_points observer re-pushes /cuePoints afterward.
+function addCuePoint() {
+  getLiveSetApi().call('set_or_delete_cue')
+}
+// Rename: /renameCuePoint/<idx> carries the new name as its value.
+function renameCuePoint(address: string, value: any) {
+  const m = address.match(/\/(\d+)$/)
+  if (!m) {
+    return
+  }
+  const api = new LiveAPI(null, 'live_set cue_points ' + parseInt(m[1]))
+  if (api.id) {
+    api.set('name', String(value))
+  }
+}
+// Delete: jump to the cue (so the playhead sits on it) then toggle it off —
+// there's no direct cue-point delete in the Live API.
+function deleteCuePoint(val: number) {
+  const api = new LiveAPI(null, 'live_set cue_points ' + val)
+  if (api.id) {
+    api.call('jump')
+    getLiveSetApi().call('set_or_delete_cue')
+  }
+}
 
 // --- Transport observers ---------------------------------------------------
 
@@ -890,6 +915,9 @@ const routes: Route[] = [
   { prefix: '/blu/variation/select', parse: 'val', fn: variationRecall },
   { prefix: '/gotoCuePoint', parse: 'val', fn: gotoCuePoint },
   { prefix: '/playCuePoint', parse: 'val', fn: playCuePoint },
+  { prefix: '/addCuePoint', parse: 'bare', fn: addCuePoint },
+  { prefix: '/renameCuePoint', parse: 'custom', fn: renameCuePoint },
+  { prefix: '/deleteCuePoint', parse: 'val', fn: deleteCuePoint },
   { prefix: '/btnSkipPrev', parse: 'bare', fn: btnSkipPrev },
   { prefix: '/btnSkipNext', parse: 'bare', fn: btnSkipNext },
   { prefix: '/btnReEnableAutomation', parse: 'bare', fn: btnReEnableAutomation },
