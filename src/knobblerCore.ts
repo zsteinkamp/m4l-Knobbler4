@@ -268,15 +268,22 @@ function swap(slotA: number, slotB: number) {
   if (slotA === slotB) return
   if (slotA < 1 || slotA > MAX_SLOTS || slotB < 1 || slotB > MAX_SLOTS) return
 
-  // XY pairs don't survive a swap — split any pair either slot belongs to.
-  const pairA = isSlotInPair(slotA)
-  if (pairA !== null) xySplit(pairA)
-  const pairB = isSlotInPair(slotB)
-  if (pairB !== null) xySplit(pairB)
-
   // Snapshot both before tearing down (each references the other).
   const snapA = captureSlot(slotA)
   const snapB = captureSlot(slotB)
+
+  // A true swap (both slots mapped) keeps any XY pairs: a pair is a slot-INDEX
+  // grouping, so swapping the params in those slots doesn't change which indices
+  // are paired — mapping onto half a pad just shows the new param. But a MOVE
+  // (one slot empty) leaves a paired slot half-empty, so split any pair either
+  // slot belongs to.
+  if (!snapA.path || !snapB.path) {
+    const pairA = isSlotInPair(slotA)
+    if (pairA !== null) xySplit(pairA)
+    const pairB = isSlotInPair(slotB)
+    if (pairB !== null) xySplit(pairB)
+  }
+
   applySnapshot(slotA, snapB)
   applySnapshot(slotB, snapA)
 }
