@@ -652,13 +652,16 @@ JSON-encoded array of cue point objects.
 ```
 [
   {
-    "name": {string},
     "idx": {number},
+    "name": {string},
     "time": {number},
+    "disp": {string},
   },
   ...
 }
 ```
+
+`time` is in beats; `disp` is a formatted `bar.beat.16th` string.
 
 #### /sessionRecord { 0 | 1 }
 
@@ -688,6 +691,26 @@ Indicates whether the arrangement loop is enabled. (Distinct from the network fe
 
 The current tempo value.
 
+#### /songPos {float}
+
+The arrangement playhead position, in beats. Streamed while playing (trailing-edge throttle, ~20Hz) and re-pushed on reconnect.
+
+#### /songLen {float}
+
+The length of the arrangement (Live's `last_event_time`), in beats. Polled (not observable) and re-pushed on reconnect.
+
+#### /songSig { numerator, denominator }
+
+The arrangement time signature, as two integers. Used by the app to render `/songPos` as `bar.beat.16th`.
+
+#### /loopStart {float}
+
+The arrangement loop brace start, in beats. Echoed back after an inbound `/loopStart` so the app's loop handles converge after a drag.
+
+#### /loopLength {float}
+
+The arrangement loop brace length, in beats.
+
 ### Tablet to Knobbler4
 
 #### /metronome
@@ -709,6 +732,30 @@ Jumps to the cue point at `live_set cue_points {idx}`.
 #### /playCuePoint {idx}
 
 Jumps to the cue point at index `idx` and starts playback from there.
+
+#### /scrub {float}
+
+Sets the arrangement playhead (`current_song_time`) to the given position in beats (clamped to ≥ 0). Immediately echoes the new position back via `/songPos`.
+
+#### /loopStart {float}
+
+Sets the arrangement loop brace start, in beats (clamped to ≥ 0).
+
+#### /loopLength {float}
+
+Sets the arrangement loop brace length, in beats (clamped to ≥ 0).
+
+#### /addCuePoint
+
+Toggles a cue point at the current playhead position (Live's `set_or_delete_cue`).
+
+#### /renameCuePoint/{idx} {string}
+
+Renames the cue point at `live_set cue_points {idx}`; the new name is the message argument.
+
+#### /deleteCuePoint {idx}
+
+Deletes the cue point at index `idx` by jumping to it and toggling it off (the Live API has no direct cue-point delete).
 
 #### /btnSkipPrev
 
