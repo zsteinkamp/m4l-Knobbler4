@@ -259,6 +259,18 @@ The `frozen/` directory contains historical releases (`.amxd` device files and `
 
 Version numbers are manually updated in the changelog and device itself. Releases include the compiled `.amxd` file published to GitHub releases.
 
+**GitHub release assets: only the `.zip` — never images.** plugins.steinkamp.us
+serves the device download from `release.assets[0].browser_download_url` (see
+`plugins/components/KnobblerSite.tsx` and `DownloadButton.tsx`), i.e. the first
+asset. If an announcement image is uploaded as a release *asset*, it can sort
+ahead of the `.zip` and the site will hand out the PNG as the device download.
+Embed announcement images as GitHub *attachments* (`gh`/API can't create these —
+upload via the web release editor, which yields a `github.com/user-attachments/…`
+URL) or reference a `raw.githubusercontent.com` URL; do not `gh release upload`
+them. `scripts/release.sh <vNN>` builds the correct zip (README.txt + the
+`frozen/Knobbler4-<vNN>*.amxd` devices); the zip is uploaded to the release, not
+committed to the repo.
+
 **`Knobbler4-P3SA.amxd` (Push 3 standalone)** is identical to `Knobbler4.amxd`
 except for one group of objects built around the `zero.*` externals (zeroconf
 discovery), which Push 3 standalone doesn't support. To regenerate it after a
