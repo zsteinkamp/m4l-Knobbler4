@@ -300,6 +300,34 @@ Assign tracks to crossfader side A or B directly from the mixer.
 
 Output level meters are shown for all visible strips, displaying left channel, right channel, and combined output levels in real time. Toggle their display with the Meters button in the toolbar (on the right, looks like a graph).
 
+### Cue Points & Transport
+
+![Transport / Cue Points](images/cue-points.png)
+
+Tap the Cue Points button in the [Toolbar](#toolbar) to open the Transport / Cue Points window — a focused view of the Arrangement timeline, its loop, and its locators. (Requires Knobbler device v63 or newer.)
+
+#### Playhead and Scrubbing
+
+The current playhead position is shown at the top left in bar.beat.16th and updates live as the song plays; the total song length is shown on the right. Drag the timeline to scrub the playhead to any point in the arrangement, or use the jog strip below it to nudge the position for finer placement.
+
+#### Transport
+
+Play, Stop, and Record are available right in the window, so you can start, audition, and capture a section without leaving the page.
+
+#### Loop
+
+The Arrangement loop region is drawn as a brace on the timeline. Drag either handle to move the loop's start or end. The **⟦ In** and **Out ⟧** buttons snap the corresponding loop edge to the current playhead position, and the loop toggle (the cycle icon) turns the Arrangement loop on and off.
+
+#### Cue Points (Locators)
+
+Every Arrangement locator is listed with its position and name, and the one the playhead currently sits in is highlighted:
+
+- Tap the play icon on a row to jump the playhead to that cue point.
+- Tap **Set Cue** (the **+** button) to drop a new locator at the current playhead position.
+- Tap the pencil icon to rename a cue point — or delete it — from the edit view.
+
+Cue points and the playhead position are re-sent whenever the app reconnects, so the window always reflects the current state of your set.
+
 ### Toolbar
 
 ![Toolbar](images/ipad-toolbar.png)
