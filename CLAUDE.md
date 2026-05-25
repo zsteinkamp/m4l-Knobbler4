@@ -112,6 +112,17 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 **`k4-bluhand.ts`** - Device control ("bluhand")
 
 - Transport, parameter banks, rack variations/macros, the 16 device-parameter slots (delegated to `k4-bluhandSlots.ts`), and navigation (`gotoTrack`/`gotoDevice`/`gotoChain` — `gotoTrack`/`gotoDevice` exposed via `ctx`)
+- Its "current track/device" observers (name/color, `paramsWatcher`, `variationsWatcher`, `selectedDeviceApi`) bind via `ctx.focus.trackPath()`/`devicePath()` and re-point on `ctx.focus.onChange` — they do NOT hardcode Live's selection paths. See `k4-focus.ts`.
+
+**`k4-focus.ts`** - Knobbler's "current target" (the lock feature)
+
+- Single source of truth for which track/device the device surface points at, which may differ from Live's `selected_track`/`selected_device`. Exposed as `ctx.focus`.
+- **Locked (default):** `trackPath()`/`devicePath()` return Live's selection paths (observers auto-follow); `selectTrack`/`selectDevice` write Live's selection → bidirectional sync (legacy behavior).
+- **Unlocked:** holds its own pointer; navigating in Knobbler retargets it WITHOUT writing Live's selection, and `onChange` listeners re-point their id-bound observers. Pointer persists as canonical PATHS (positional, like mapped-slot paths; stale paths fall back to Live's selection).
+- `/focusLock <0|1>` toggles; lock state + pointer persist in `ctx.settings`. All in-Knobbler nav must funnel through `ctx.gotoTrack`/`gotoDevice` (→ focus) — a direct `set('selected_track', …)` would leak and move Live's selection in unlocked mode.
+- **`trackPath()`/`devicePath()` return canonical, APPENDABLE paths** (so consumers append ` mixer_device volume`, ` parameters N`, etc.). Locked → Live's selection paths (auto-follow); unlocked → the pinned canonical path (`devicePath()` may be `''` = no device, treat as cleared).
+- **No module hardcodes `live_set view selected_track[…]` anymore** — every current-track/device observer/read goes through `ctx.focus`, and observer modules re-point on `ctx.focus.onChange`: `k4-bluhand` (+`k4-bluhandSlots` via `setDevicePath`), `k4-tracksDevices` (nav tree), `k4-sidebarMixer` (track strip), `k4-shortcuts` + `knobblerCore` (scratch reads). `k4-currentParam` intentionally still follows Live's `selected_parameter`.
+- App side: gated on the **`focus` capability** (`REPLY_CAPS` in `k4-system.ts` ↔ `CAPABILITY_FOCUS`); the "Follow Sel" toolbar button drives `/focusLock`.
 
 **`k4-system.ts`** - Connection + system passthroughs (former router bits)
 
@@ -176,8 +187,6 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 **`consts.ts`** - Constants and type definitions including `MAX_SLOTS = 32`, track types, the `[v8 knobbler]` entry outlet indices, default colors.
 
 **`toggleInput.ts`** - Track input routing enable/disable functionality.
-
-**`deprecatedMethods.ts`** - Legacy track/device navigation functions kept for backward compatibility.
 
 ### Message Flow Architecture
 

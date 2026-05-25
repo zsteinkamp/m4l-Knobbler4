@@ -316,8 +316,9 @@ function mkMap(slot, mixerPath) {
     }
     var trackPath = null;
     if (stripIdx === null || isNaN(stripIdx)) {
-        // Single-strip variant: resolve against the currently selected track
-        scratchApi.path = 'live_set view selected_track';
+        // Single-strip variant: resolve against Knobbler's current track (focus;
+        // Live's selection when locked).
+        scratchApi.path = ctx.focus.trackPath();
         trackPath = scratchApi.unquotedpath;
     }
     else {

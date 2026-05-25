@@ -105,7 +105,11 @@ function shortcut(slot) {
     if (!scratchApi) {
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     }
-    scratchApi.path = 'live_set view selected_track view selected_device';
+    var dp = ctx.focus.devicePath(); // current device (focus); Live's sel when locked
+    if (!dp) {
+        return; // no current device
+    }
+    scratchApi.path = dp;
     var id = parseInt(scratchApi.id);
     if (id === 0) {
         return; // nothing selected

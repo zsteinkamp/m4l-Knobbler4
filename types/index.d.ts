@@ -41,6 +41,16 @@ interface AppContext {
   sidebar: { sidebarMeters(val: number): void }
   gotoDevice(deviceId: string): void // recall navigation (-> bluhand)
   gotoTrack(trackId: string): void // selects a track, unfolding enclosing groups (-> bluhand)
+  // Knobbler's current track/device pointer (-> k4-focus). Locked = sync with
+  // Live's selection; unlocked = Knobbler's own pointer (phase 2+).
+  focus: {
+    trackPath(): string // bind path for a "current track" observer
+    devicePath(): string // bind path for a "current device" observer
+    isLocked(): boolean
+    selectTrack(trackId: number): void // set current track (writes Live sel when locked)
+    selectDevice(deviceId: number): void // set current device (writes Live sel when locked)
+    onChange(cb: () => void): void // re-point handles on focus change (unlocked)
+  }
   notifyVisibleTracks(): void
   loopProbe(): void // feedback-loop guard: re-enable output + ping /loop (-> knobbler entry)
   // per-instance persistence (---settingsDict); one Dict ref, no key prefixing.

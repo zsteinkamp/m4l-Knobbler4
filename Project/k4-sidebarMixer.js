@@ -345,6 +345,35 @@ var handleSendVal = function (idx, val) {
 // Track change handler
 // ---------------------------------------------------------------------------
 var trackChangeDebounce = null;
+// Re-point the focus-following strip observers at Knobbler's current track.
+// Order matters: mixer/vol/pan first, trackObj LAST — setting trackObj's
+// property fires onTrackChange synchronously, which reads the others and
+// re-points mute/solo/xfade by id (see handleTrackChange).
+function rebindMixerHandles() {
+    var tp = ctx.focus.trackPath();
+    if (state.mixerObj) {
+        state.mixerObj.path = tp + ' mixer_device';
+        state.mixerObj.mode = 1;
+    }
+    if (state.volObj) {
+        state.volObj.property = '';
+        state.volObj.path = tp + ' mixer_device volume';
+        state.volObj.mode = 1;
+        state.volObj.property = 'value';
+    }
+    if (state.panObj) {
+        state.panObj.property = '';
+        state.panObj.path = tp + ' mixer_device panning';
+        state.panObj.mode = 1;
+        state.panObj.property = 'value';
+    }
+    if (state.trackObj) {
+        state.trackObj.property = '';
+        state.trackObj.path = tp;
+        state.trackObj.mode = 1;
+        state.trackObj.property = 'id';
+    }
+}
 var onTrackChange = function (args) {
     if (!state.trackObj) {
         return;
@@ -508,14 +537,14 @@ function init() {
         state.returnsObj.property = 'return_tracks';
         state.returnsObj.mode = 1;
     }
-    // Mixer obj (follows selected track)
+    // Mixer obj (follows Knobbler's focus track — Live's selection when locked)
     if (!state.mixerObj) {
-        state.mixerObj = new LiveAPI(consts_1.noFn, 'live_set view selected_track mixer_device');
+        state.mixerObj = new LiveAPI(consts_1.noFn, ctx.focus.trackPath() + ' mixer_device');
         state.mixerObj.mode = 1;
     }
-    // Volume obj (follows selected track)
+    // Volume obj (follows focus track)
     if (!state.volObj) {
-        state.volObj = new LiveAPI(handleVolVal, 'live_set view selected_track mixer_device volume');
+        state.volObj = new LiveAPI(handleVolVal, ctx.focus.trackPath() + ' mixer_device volume');
         state.volObj.mode = 1;
         state.volObj.property = 'value';
     }
@@ -536,20 +565,24 @@ function init() {
     if (!state.xfadeAssignObj) {
         state.xfadeAssignObj = new LiveAPI(handleXfadeAssignChange, 'live_set');
     }
-    // Pan obj (follows selected track)
+    // Pan obj (follows focus track)
     if (!state.panObj) {
-        state.panObj = new LiveAPI(handlePanVal, 'live_set view selected_track mixer_device panning');
+        state.panObj = new LiveAPI(handlePanVal, ctx.focus.trackPath() + ' mixer_device panning');
         state.panObj.property = 'value';
         state.panObj.mode = 1;
     }
-    // Track obj (follows selected track)
+    // Track obj (follows focus track)
     // NOTE: must be created AFTER volObj, panObj, mixerObj because setting
     // trackObj.property = 'id' fires onTrackChange synchronously, which
     // reads from those objects.
     if (!state.trackObj) {
-        state.trackObj = new LiveAPI(onTrackChange, 'live_set view selected_track');
+        state.trackObj = new LiveAPI(onTrackChange, ctx.focus.trackPath());
         state.trackObj.mode = 1;
         state.trackObj.property = 'id';
+        // Re-point the strip at Knobbler's current track on every focus change.
+        // Registered once (guarded). Dormant in locked mode (focus doesn't emit;
+        // the observers path-follow Live's selection there).
+        ctx.focus.onChange(rebindMixerHandles);
     }
     // Crossfader obj (always master track)
     if (!state.crossfaderObj) {

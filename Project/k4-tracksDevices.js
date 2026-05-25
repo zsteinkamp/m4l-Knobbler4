@@ -5,6 +5,7 @@ var utils_1 = require("./utils");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
+var ctx = null;
 var state = {
     api: null,
     currDeviceId: null,
@@ -45,6 +46,16 @@ function updateDeviceNav() {
     var utilObj = state.api;
     utilObj.path = 'live_set';
     var currDeviceObj = new LiveAPI(consts_1.noFn, 'id ' + state.currDeviceId);
+    // Guard: the track/device watchers are independently debounced, so state can
+    // be transiently inconsistent during a focus retarget. If the id resolved to
+    // a Track/Song instead of a device, skip this pass — the next watcher fire
+    // builds the correct tree. Prevents walking parents up to the Song.
+    var currType = currDeviceObj.type;
+    if (+currDeviceObj.id === 0 || currType === 'Track' || currType === 'Song') {
+        (0, utils_1.osc)('/nav/currDeviceId', -1);
+        (0, utils_1.sendChunkedData)('/nav/devices', []);
+        return;
+    }
     var currIsSupported = (0, utils_1.isDeviceSupported)(currDeviceObj);
     var parentObj = new LiveAPI(consts_1.noFn, currIsSupported
         ? currDeviceObj.get('canonical_parent')
@@ -110,6 +121,13 @@ function updateDeviceNav() {
     var indent = 0;
     var watchdog = 0;
     while (parentObj.type !== 'Track' && watchdog < 20) {
+        // Stop if the chain ran off the end (invalid object / no canonical_parent)
+        // rather than dereferencing undefined and crashing.
+        if (+parentObj.id === 0)
+            break;
+        var parentObjParentRaw = (0, utils_1.cleanArr)(parentObj.get('canonical_parent'))[0];
+        if (parentObjParentRaw === undefined)
+            break;
         var isChain = parentObj.type === 'Chain' || parentObj.type === 'DrumChain';
         var color = null;
         if (isChain) {
@@ -120,7 +138,7 @@ function updateDeviceNav() {
             utilObj.id = grandparentId;
             color = (0, utils_1.colorToString)(utilObj.get('color').toString());
         }
-        var parentObjParentId = (0, utils_1.cleanArr)(parentObj.get('canonical_parent'))[0];
+        var parentObjParentId = parentObjParentRaw;
         ret.unshift([
             /* TYPE   */ isChain ? consts_1.TYPE_CHAIN : consts_1.TYPE_RACK,
             /* ID     */ parentObj.id,
@@ -166,33 +184,58 @@ function onCurrTrackChange(val) {
     }
     trackChangeDebounce = new Task(function () {
         (0, utils_1.osc)('/nav/currTrackId', state.currTrackId);
-        // ensure a device is selected if one exists
-        state.api.path = 'live_set view selected_track view selected_device';
-        if (+state.api.id === 0) {
-            state.api.path = 'live_set view selected_track';
+        // Ensure the current (focus) device exists; if the focus track has none yet,
+        // adopt its first device. Routed through focus, so it writes Live's
+        // selection only when locked — unlocked it just retargets Knobbler.
+        var dp = ctx.focus.devicePath();
+        state.api.path = dp || 'live_set';
+        if (!dp || +state.api.id === 0) {
+            state.api.id = state.currTrackId;
             var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
             if (devices.length > 0) {
-                state.api.path = 'live_set view';
-                state.api.call('select_device', 'id ' + devices[0]);
+                ctx.focus.selectDevice(parseInt(devices[0]));
             }
         }
     });
     trackChangeDebounce.schedule(40);
 }
+// Re-point a mode-1 'id' observer at a new canonical path; an empty target
+// (focus track with no device) detaches it. Re-setting property re-fires the
+// callback, pushing fresh nav state.
+function repoint(api, target) {
+    if (!api)
+        return;
+    api.property = '';
+    if (target) {
+        api.path = target;
+        api.mode = 1;
+        api.property = 'id';
+    }
+    else {
+        api.id = 0;
+    }
+}
+// Focus changed: re-point the nav-tree watchers at Knobbler's current
+// track/device so the navigation panel shows the right devices/chains. Dormant
+// in locked mode (focus doesn't emit) — the watchers path-follow Live there.
+function rebindNavHandles() {
+    repoint(state.currTrackWatcher, ctx.focus.trackPath());
+    repoint(state.currDeviceWatcher, ctx.focus.devicePath());
+}
 function init(c) {
     (0, utils_1.setOscSink)(c.osc);
+    ctx = c;
     if (!state.api) {
-        // One-time setup: reset client info and create the selection observers
-        // (mode=1 fires once on creation, pushing the initial nav state).
+        // One-time setup: reset client info and create the focus-driven observers.
         (0, utils_1.saveSetting)('clientVersion', '');
         (0, utils_1.saveSetting)('clientCapabilities', '');
         state.api = new LiveAPI(consts_1.noFn, 'live_set');
-        state.currTrackWatcher = new LiveAPI(onCurrTrackChange, 'live_set view selected_track');
-        state.currTrackWatcher.mode = 1;
-        state.currTrackWatcher.property = 'id';
-        state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set view selected_track view selected_device');
-        state.currDeviceWatcher.mode = 1;
-        state.currDeviceWatcher.property = 'id';
+        state.currTrackWatcher = new LiveAPI(onCurrTrackChange, 'live_set');
+        state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set');
+        // Point them at the current focus target (fires the callbacks → initial nav
+        // push) and re-point on every focus change.
+        c.focus.onChange(rebindNavHandles);
+        rebindNavHandles();
         return;
     }
     // Refresh (e.g. app reconnect): re-push current nav without recreating

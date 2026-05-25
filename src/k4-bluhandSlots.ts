@@ -86,6 +86,15 @@ export function bindOsc(fn: (addr: string, val: any) => void) {
   setOscSink(fn)
 }
 
+// Canonical path of the device whose parameters the slots currently bind to.
+// Set by k4-bluhand from ctx.focus.devicePath() before (re)binding the bank, so
+// the slots follow Knobbler's focus (Live's selection when locked). '' = no
+// device → slots clear.
+let devicePath = ''
+export function setDevicePath(path: string) {
+  devicePath = path
+}
+
 export function initSlots() {
   if (slots.length) {
     return
@@ -121,7 +130,7 @@ export function setParamIdx(idx: number, paramIdx: number) {
   const slot = slots[idx - 1]
   slot.binding = true
 
-  if (paramIdx <= 0) {
+  if (paramIdx <= 0 || !devicePath) {
     slot.paramId = 0
     if (slot.valueApi) {
       // detach without setting .path (which [v8] would log for id 0)
@@ -134,8 +143,7 @@ export function setParamIdx(idx: number, paramIdx: number) {
     return
   }
 
-  const path =
-    'live_set view selected_track view selected_device parameters ' + paramIdx
+  const path = devicePath + ' parameters ' + paramIdx
 
   // Lazy-create the value observer on first bind with the real path; reuse it
   // (reassign .path) thereafter.

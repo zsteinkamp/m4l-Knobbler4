@@ -12,6 +12,7 @@ var k4_config_1 = require("./k4-config");
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
 var bluhand = require("./k4-bluhand");
+var focus = require("./k4-focus");
 var currentParam = require("./k4-currentParam");
 var multiMixer = require("./k4-multiMixer");
 var sidebarMixer = require("./k4-sidebarMixer");
@@ -44,6 +45,14 @@ var ctx = {
     sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
     gotoDevice: bluhand.gotoDevice,
     gotoTrack: bluhand.gotoTrack,
+    focus: {
+        trackPath: focus.trackPath,
+        devicePath: focus.devicePath,
+        isLocked: focus.isLocked,
+        selectTrack: focus.selectTrack,
+        selectDevice: focus.selectDevice,
+        onChange: focus.onChange,
+    },
     notifyVisibleTracks: function () {
         clipView.visibleTracks();
         multiMixer.visibleTracks();
@@ -187,7 +196,7 @@ function initAll() {
     KnobblerCore.refresh();
 }
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, system.routes, knobblerRoutes, entryRoutes);
+var ROUTES = [].concat(bluhand.routes, focus.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, system.routes, knobblerRoutes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -288,6 +297,7 @@ function anything(value) {
 // migrated module's init() is idempotent and re-pushes its state.
 function init() {
     system.init(ctx);
+    focus.init(ctx);
     bluhand.init(ctx);
     currentParam.init(ctx);
     multiMixer.init(ctx);

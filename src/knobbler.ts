@@ -16,6 +16,7 @@ import {
 } from './utils'
 import { OUTLET_PAGE } from './consts'
 import * as bluhand from './k4-bluhand'
+import * as focus from './k4-focus'
 import * as currentParam from './k4-currentParam'
 import * as multiMixer from './k4-multiMixer'
 import * as sidebarMixer from './k4-sidebarMixer'
@@ -52,6 +53,14 @@ const ctx: AppContext = {
   sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
   gotoDevice: bluhand.gotoDevice,
   gotoTrack: bluhand.gotoTrack,
+  focus: {
+    trackPath: focus.trackPath,
+    devicePath: focus.devicePath,
+    isLocked: focus.isLocked,
+    selectTrack: focus.selectTrack,
+    selectDevice: focus.selectDevice,
+    onChange: focus.onChange,
+  },
   notifyVisibleTracks: function () {
     clipView.visibleTracks()
     multiMixer.visibleTracks()
@@ -210,6 +219,7 @@ function initAll() {
 
 const ROUTES: Route[] = [].concat(
   bluhand.routes as any,
+  focus.routes as any,
   currentParam.routes as any,
   multiMixer.routes as any,
   sidebarMixer.routes as any,
@@ -344,6 +354,7 @@ function anything(value: any) {
 // migrated module's init() is idempotent and re-pushes its state.
 function init() {
   system.init(ctx)
+  focus.init(ctx)
   bluhand.init(ctx)
   currentParam.init(ctx)
   multiMixer.init(ctx)

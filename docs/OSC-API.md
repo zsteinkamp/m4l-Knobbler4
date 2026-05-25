@@ -118,22 +118,6 @@ If more banks of parameters are available, then switch the Tablet to the next ba
 
 Toggles the on/off (activator) state of the currently selected device.
 
-#### /bPrevTrack
-
-Select the previous track.
-
-#### /bNextTrack
-
-Select the next track.
-
-#### /bPrevDev
-
-Select the previous device on the current track.
-
-#### /bNextDev
-
-Select the next device on the current track.
-
 #### /blu/macros/random
 
 Randomize the macro controls of the currently selected rack.

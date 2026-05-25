@@ -5,7 +5,7 @@
 // state out over OSC, mirroring knobblerCore's scaling and feedback-suppression
 // approach. Driven by k4-bluhand (the [v8] entry) which owns the patcher I/O.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.bindOsc = exports.NUM_BLU_SLOTS = void 0;
+exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.setDevicePath = exports.bindOsc = exports.NUM_BLU_SLOTS = void 0;
 var utils_1 = require("./utils");
 var deviceParam_1 = require("./deviceParam");
 exports.NUM_BLU_SLOTS = 16;
@@ -63,6 +63,15 @@ function bindOsc(fn) {
     (0, utils_1.setOscSink)(fn);
 }
 exports.bindOsc = bindOsc;
+// Canonical path of the device whose parameters the slots currently bind to.
+// Set by k4-bluhand from ctx.focus.devicePath() before (re)binding the bank, so
+// the slots follow Knobbler's focus (Live's selection when locked). '' = no
+// device → slots clear.
+var devicePath = '';
+function setDevicePath(path) {
+    devicePath = path;
+}
+exports.setDevicePath = setDevicePath;
 function initSlots() {
     if (slots.length) {
         return;
@@ -100,7 +109,7 @@ exports.initSlots = initSlots;
 function setParamIdx(idx, paramIdx) {
     var slot = slots[idx - 1];
     slot.binding = true;
-    if (paramIdx <= 0) {
+    if (paramIdx <= 0 || !devicePath) {
         slot.paramId = 0;
         if (slot.valueApi) {
             // detach without setting .path (which [v8] would log for id 0)
@@ -112,7 +121,7 @@ function setParamIdx(idx, paramIdx) {
         emitEmptySlot(idx);
         return;
     }
-    var path = 'live_set view selected_track view selected_device parameters ' + paramIdx;
+    var path = devicePath + ' parameters ' + paramIdx;
     // Lazy-create the value observer on first bind with the real path; reuse it
     // (reassign .path) thereafter.
     if (!slot.valueApi) {

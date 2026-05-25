@@ -18,7 +18,6 @@ exports.gotoTrack = exports.gotoDevice = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
-var deprecatedMethods_1 = require("./deprecatedMethods");
 var k4_bluhandBanks_1 = require("./k4-bluhandBanks");
 var Slots = require("./k4-bluhandSlots");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
@@ -58,6 +57,9 @@ function sendCurrBank() {
     }
     var bluBank = state.bankParamArr[currBankIdx];
     (0, utils_1.osc)('/bTxtCurrBank', bluBank.name);
+    // Bind slots against Knobbler's current device (focus) — Live's selection
+    // when locked, its own pointer when unlocked.
+    Slots.setDevicePath(ctx.focus.devicePath());
     while (bluBank.paramIdxArr.length < Slots.NUM_BLU_SLOTS) {
         bluBank.paramIdxArr.push(-1);
     }
@@ -507,13 +509,16 @@ function initNameColorObservers() {
     if (trackNameApi) {
         return;
     }
+    // Registered once (this block is guarded): re-point our current-track/device
+    // observers whenever Knobbler's focus pointer moves (unlocked nav / lock flip).
+    ctx.focus.onChange(rebindFocusHandles);
     trackNameApi = new LiveAPI(function (args) {
         if (args[0] !== 'name') {
             return;
         }
         trackName = (0, utils_1.dequote)(args[1].toString());
         emitCurrDeviceName();
-    }, 'live_set view selected_track');
+    }, ctx.focus.trackPath());
     trackNameApi.mode = 1;
     trackNameApi.property = 'name';
     deviceNameApi = new LiveAPI(function (args) {
@@ -522,7 +527,7 @@ function initNameColorObservers() {
         }
         deviceName = (0, utils_1.dequote)(args[1].toString());
         emitCurrDeviceName();
-    }, 'live_set view selected_track view selected_device');
+    }, ctx.focus.devicePath());
     deviceNameApi.mode = 1;
     deviceNameApi.property = 'name';
     trackColorApi = new LiveAPI(function (args) {
@@ -530,9 +535,50 @@ function initNameColorObservers() {
             return;
         }
         Slots.setColor(args[1].toString());
-    }, 'live_set view selected_track');
+    }, ctx.focus.trackPath());
     trackColorApi.mode = 1;
     trackColorApi.property = 'color';
+}
+// Re-point a mode-1 property observer at a new canonical path. Clearing the
+// property first, then re-setting it, re-fires the callback with the new
+// target's current value — so the surface re-syncs on retarget. An empty target
+// (unlocked track with no device) detaches the observer (id 0 → reads nothing).
+function repoint(api, target, prop) {
+    if (!api)
+        return;
+    api.property = '';
+    if (target) {
+        api.path = target;
+        api.mode = 1;
+        api.property = prop;
+    }
+    else {
+        api.id = 0;
+    }
+}
+// Focus changed (unlocked nav, or a lock/unlock transition): re-point every
+// "current track/device" observer at Knobbler's new target. In locked mode the
+// targets are Live's selection paths (auto-following), so this only fires on
+// unlock-mode navigation and lock transitions — see k4-focus.
+function rebindFocusHandles() {
+    var tp = ctx.focus.trackPath();
+    var dp = ctx.focus.devicePath();
+    repoint(trackNameApi, tp, 'name');
+    repoint(trackColorApi, tp, 'color');
+    repoint(deviceNameApi, dp, 'name');
+    repoint(state.paramsWatcher, dp, 'parameters');
+    repoint(state.variationsWatcher, dp, 'variation_count');
+    if (selectedDeviceApi) {
+        if (dp) {
+            selectedDeviceApi.path = dp;
+            selectedDeviceApi.mode = 1;
+        }
+        else {
+            selectedDeviceApi.id = 0;
+        }
+    }
+    // Slots + banks follow the new device: paramsWatcher's repoint re-fires
+    // debouncedParameterChange, which rebuilds the bank/slot bindings.
 }
 // Re-push all bluhand state to a (re)connecting client. Called at the end of
 // init() so the existing 'init' trigger (fired on app refresh) re-syncs the
@@ -599,7 +645,6 @@ function gotoDevice(deviceIdStr) {
     if (deviceId === 0) {
         return;
     }
-    var api = getLiveSetViewApi();
     var trackId = getParentTrackForDevice(deviceId);
     if (trackId === 0) {
         log('no track for device ' + deviceId);
@@ -607,7 +652,7 @@ function gotoDevice(deviceIdStr) {
     else {
         gotoTrack(trackId.toString());
     }
-    api.call('select_device', ['id', deviceId]);
+    ctx.focus.selectDevice(deviceId);
 }
 exports.gotoDevice = gotoDevice;
 function hideChains(deviceId) {
@@ -623,12 +668,11 @@ function hideChains(deviceId) {
 function gotoChain(chainIdStr) {
     var chainId = parseInt(chainIdStr);
     unfoldParentTracks(chainId);
-    var viewApi = getLiveSetViewApi();
     var api = getUtilApi();
     api.id = chainId;
     var devices = (0, utils_1.cleanArr)(api.get('devices'));
     if (devices && devices[0]) {
-        viewApi.call('select_device', ['id', devices[0]]);
+        ctx.focus.selectDevice(parseInt(devices[0]));
         return;
     }
 }
@@ -666,8 +710,7 @@ function gotoTrack(trackIdStr) {
             counter++;
         }
     }
-    var api = getLiveSetViewApi();
-    api.set('selected_track', ['id', trackId]);
+    ctx.focus.selectTrack(trackId);
 }
 exports.gotoTrack = gotoTrack;
 // --- Reusable LiveAPI handles ----------------------------------------------
@@ -681,17 +724,10 @@ function getUtilApi() {
 var selectedDeviceApi = null;
 function getSelectedDeviceApi() {
     if (!selectedDeviceApi) {
-        selectedDeviceApi = new LiveAPI(consts_1.noFn, 'live_set view selected_track view selected_device');
+        selectedDeviceApi = new LiveAPI(consts_1.noFn, ctx.focus.devicePath());
         selectedDeviceApi.mode = 1;
     }
     return selectedDeviceApi;
-}
-var liveSetViewApi = null;
-function getLiveSetViewApi() {
-    if (!liveSetViewApi) {
-        liveSetViewApi = new LiveAPI(consts_1.noFn, 'live_set view');
-    }
-    return liveSetViewApi;
 }
 var liveSetApi = null;
 function getLiveSetApi() {
@@ -741,24 +777,6 @@ function btnSessionRecord() {
     var isRecord = parseInt(ctlApi.get('session_record'));
     ctlApi.set('session_record', isRecord ? 0 : 1);
 }
-function trackDelta(delta) {
-    return (0, deprecatedMethods_1.deprecatedTrackDelta)(delta);
-}
-function deviceDelta(delta) {
-    return (0, deprecatedMethods_1.deprecatedDeviceDelta)(delta);
-}
-function trackPrev() {
-    trackDelta(-1);
-}
-function trackNext() {
-    trackDelta(1);
-}
-function devPrev() {
-    deviceDelta(-1);
-}
-function devNext() {
-    deviceDelta(1);
-}
 function ctlRec() {
     var ctlApi = getLiveSetApi();
     var currMode = parseInt(ctlApi.get('record_mode'));
@@ -789,12 +807,12 @@ function init(c) {
     initSongPosObservers();
     initNameColorObservers();
     if (!state.paramsWatcher) {
-        state.paramsWatcher = new LiveAPI(debouncedParameterChange, 'live_set view selected_track view selected_device');
+        state.paramsWatcher = new LiveAPI(debouncedParameterChange, ctx.focus.devicePath());
         state.paramsWatcher.mode = 1;
         state.paramsWatcher.property = 'parameters';
     }
     if (!state.variationsWatcher) {
-        state.variationsWatcher = new LiveAPI(onVariationChange, 'live_set view selected_track view selected_device');
+        state.variationsWatcher = new LiveAPI(onVariationChange, ctx.focus.devicePath());
         state.variationsWatcher.mode = 1;
         state.variationsWatcher.property = 'variation_count';
     }
@@ -823,10 +841,6 @@ var routes = [
     { prefix: '/gotoTrack', parse: 'val', fn: gotoTrack },
     { prefix: '/gotoChain', parse: 'val', fn: gotoChain },
     { prefix: '/gotoDevice', parse: 'val', fn: gotoDevice },
-    { prefix: '/bPrevTrack', parse: 'bare', fn: trackPrev },
-    { prefix: '/bNextTrack', parse: 'bare', fn: trackNext },
-    { prefix: '/bPrevDev', parse: 'bare', fn: devPrev },
-    { prefix: '/bNextDev', parse: 'bare', fn: devNext },
     { prefix: '/blu/macros/random', parse: 'bare', fn: randomMacros },
     { prefix: '/blu/variation/new', parse: 'bare', fn: variationNew },
     { prefix: '/blu/variation/delete', parse: 'val', fn: variationDelete },

@@ -15,10 +15,6 @@ import {
 } from './utils'
 import config from './k4-config'
 import { noFn } from './consts'
-import {
-  deprecatedDeviceDelta,
-  deprecatedTrackDelta,
-} from './deprecatedMethods'
 import { getBankParamArr } from './k4-bluhandBanks'
 import * as Slots from './k4-bluhandSlots'
 
@@ -65,6 +61,9 @@ function sendCurrBank() {
   }
   const bluBank = state.bankParamArr[currBankIdx]
   osc('/bTxtCurrBank', bluBank.name)
+  // Bind slots against Knobbler's current device (focus) — Live's selection
+  // when locked, its own pointer when unlocked.
+  Slots.setDevicePath(ctx.focus.devicePath())
   while (bluBank.paramIdxArr.length < Slots.NUM_BLU_SLOTS) {
     bluBank.paramIdxArr.push(-1)
   }
@@ -562,13 +561,16 @@ function initNameColorObservers() {
   if (trackNameApi) {
     return
   }
+  // Registered once (this block is guarded): re-point our current-track/device
+  // observers whenever Knobbler's focus pointer moves (unlocked nav / lock flip).
+  ctx.focus.onChange(rebindFocusHandles)
   trackNameApi = new LiveAPI(function (args: IArguments) {
     if (args[0] !== 'name') {
       return
     }
     trackName = dequote(args[1].toString())
     emitCurrDeviceName()
-  }, 'live_set view selected_track')
+  }, ctx.focus.trackPath())
   trackNameApi.mode = 1
   trackNameApi.property = 'name'
 
@@ -578,7 +580,7 @@ function initNameColorObservers() {
     }
     deviceName = dequote(args[1].toString())
     emitCurrDeviceName()
-  }, 'live_set view selected_track view selected_device')
+  }, ctx.focus.devicePath())
   deviceNameApi.mode = 1
   deviceNameApi.property = 'name'
 
@@ -587,9 +589,49 @@ function initNameColorObservers() {
       return
     }
     Slots.setColor(args[1].toString())
-  }, 'live_set view selected_track')
+  }, ctx.focus.trackPath())
   trackColorApi.mode = 1
   trackColorApi.property = 'color'
+}
+
+// Re-point a mode-1 property observer at a new canonical path. Clearing the
+// property first, then re-setting it, re-fires the callback with the new
+// target's current value — so the surface re-syncs on retarget. An empty target
+// (unlocked track with no device) detaches the observer (id 0 → reads nothing).
+function repoint(api: LiveAPI, target: string, prop: string) {
+  if (!api) return
+  api.property = ''
+  if (target) {
+    api.path = target
+    api.mode = 1
+    api.property = prop
+  } else {
+    api.id = 0
+  }
+}
+
+// Focus changed (unlocked nav, or a lock/unlock transition): re-point every
+// "current track/device" observer at Knobbler's new target. In locked mode the
+// targets are Live's selection paths (auto-following), so this only fires on
+// unlock-mode navigation and lock transitions — see k4-focus.
+function rebindFocusHandles() {
+  const tp = ctx.focus.trackPath()
+  const dp = ctx.focus.devicePath()
+  repoint(trackNameApi, tp, 'name')
+  repoint(trackColorApi, tp, 'color')
+  repoint(deviceNameApi, dp, 'name')
+  repoint(state.paramsWatcher, dp, 'parameters')
+  repoint(state.variationsWatcher, dp, 'variation_count')
+  if (selectedDeviceApi) {
+    if (dp) {
+      selectedDeviceApi.path = dp
+      selectedDeviceApi.mode = 1
+    } else {
+      selectedDeviceApi.id = 0
+    }
+  }
+  // Slots + banks follow the new device: paramsWatcher's repoint re-fires
+  // debouncedParameterChange, which rebuilds the bank/slot bindings.
 }
 
 // Re-push all bluhand state to a (re)connecting client. Called at the end of
@@ -661,14 +703,13 @@ function gotoDevice(deviceIdStr: string) {
   if (deviceId === 0) {
     return
   }
-  const api = getLiveSetViewApi()
   const trackId = getParentTrackForDevice(deviceId)
   if (trackId === 0) {
     log('no track for device ' + deviceId)
   } else {
     gotoTrack(trackId.toString())
   }
-  api.call('select_device', ['id', deviceId])
+  ctx.focus.selectDevice(deviceId)
 }
 
 function hideChains(deviceId: string) {
@@ -685,12 +726,11 @@ function hideChains(deviceId: string) {
 function gotoChain(chainIdStr: string) {
   const chainId = parseInt(chainIdStr)
   unfoldParentTracks(chainId)
-  const viewApi = getLiveSetViewApi()
   const api = getUtilApi()
   api.id = chainId
   const devices = cleanArr(api.get('devices'))
   if (devices && devices[0]) {
-    viewApi.call('select_device', ['id', devices[0]])
+    ctx.focus.selectDevice(parseInt(devices[0] as any))
     return
   }
 }
@@ -728,8 +768,7 @@ function gotoTrack(trackIdStr: string) {
       counter++
     }
   }
-  const api = getLiveSetViewApi()
-  api.set('selected_track', ['id', trackId])
+  ctx.focus.selectTrack(trackId)
 }
 
 // --- Reusable LiveAPI handles ----------------------------------------------
@@ -744,20 +783,10 @@ function getUtilApi() {
 let selectedDeviceApi: LiveAPI = null
 function getSelectedDeviceApi() {
   if (!selectedDeviceApi) {
-    selectedDeviceApi = new LiveAPI(
-      noFn,
-      'live_set view selected_track view selected_device'
-    )
+    selectedDeviceApi = new LiveAPI(noFn, ctx.focus.devicePath())
     selectedDeviceApi.mode = 1
   }
   return selectedDeviceApi
-}
-let liveSetViewApi: LiveAPI = null
-function getLiveSetViewApi() {
-  if (!liveSetViewApi) {
-    liveSetViewApi = new LiveAPI(noFn, 'live_set view')
-  }
-  return liveSetViewApi
 }
 let liveSetApi: LiveAPI = null
 function getLiveSetApi() {
@@ -810,25 +839,6 @@ function btnSessionRecord() {
   ctlApi.set('session_record', isRecord ? 0 : 1)
 }
 
-function trackDelta(delta: -1 | 1) {
-  return deprecatedTrackDelta(delta)
-}
-function deviceDelta(delta: -1 | 1) {
-  return deprecatedDeviceDelta(delta)
-}
-function trackPrev() {
-  trackDelta(-1)
-}
-function trackNext() {
-  trackDelta(1)
-}
-function devPrev() {
-  deviceDelta(-1)
-}
-function devNext() {
-  deviceDelta(1)
-}
-
 function ctlRec() {
   const ctlApi = getLiveSetApi()
   const currMode = parseInt(ctlApi.get('record_mode'))
@@ -864,7 +874,7 @@ function init(c: AppContext) {
   if (!state.paramsWatcher) {
     state.paramsWatcher = new LiveAPI(
       debouncedParameterChange,
-      'live_set view selected_track view selected_device'
+      ctx.focus.devicePath()
     )
     state.paramsWatcher.mode = 1
     state.paramsWatcher.property = 'parameters'
@@ -873,7 +883,7 @@ function init(c: AppContext) {
   if (!state.variationsWatcher) {
     state.variationsWatcher = new LiveAPI(
       onVariationChange,
-      'live_set view selected_track view selected_device'
+      ctx.focus.devicePath()
     )
     state.variationsWatcher.mode = 1
     state.variationsWatcher.property = 'variation_count'
@@ -905,10 +915,6 @@ const routes: Route[] = [
   { prefix: '/gotoTrack', parse: 'val', fn: gotoTrack },
   { prefix: '/gotoChain', parse: 'val', fn: gotoChain },
   { prefix: '/gotoDevice', parse: 'val', fn: gotoDevice },
-  { prefix: '/bPrevTrack', parse: 'bare', fn: trackPrev },
-  { prefix: '/bNextTrack', parse: 'bare', fn: trackNext },
-  { prefix: '/bPrevDev', parse: 'bare', fn: devPrev },
-  { prefix: '/bNextDev', parse: 'bare', fn: devNext },
   { prefix: '/blu/macros/random', parse: 'bare', fn: randomMacros },
   { prefix: '/blu/variation/new', parse: 'bare', fn: variationNew },
   { prefix: '/blu/variation/delete', parse: 'val', fn: variationDelete },
