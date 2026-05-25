@@ -17,6 +17,10 @@ exports.getBankParamArr = void 0;
 var consts_1 = require("./consts");
 var k4_deviceParamMaps_1 = require("./k4-deviceParamMaps");
 var deviceParams_1 = require("./deviceParams");
+// Keyed by `${deviceId}_${paramCount}` — NOT device id alone. A device's
+// parameter list can change in place (e.g. enabling Simpler's filter exposes
+// the filter params), which shifts both names and indices; folding the count
+// into the key rebuilds the map instead of serving a stale one.
 var nameLookupCache = {};
 var lookupApi = null;
 function getLookupApi() {
@@ -101,7 +105,7 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
     // cache id to name mapping because it is super slow with giant devices like
     // Operator and honestly it should just be a compile-time step of the data
     // files that need this information.
-    var lookupCacheKey = deviceObj.id;
+    var lookupCacheKey = deviceObj.id + '_' + paramIds.length;
     var paramNameToIdx = nameLookupCache[lookupCacheKey];
     if (!paramNameToIdx) {
         paramNameToIdx = {};

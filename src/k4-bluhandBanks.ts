@@ -9,7 +9,11 @@ import { MAX_DEVICES } from './deviceParams'
 
 type RecordNameToIdx = Record<string, number>
 
-const nameLookupCache: Record<number, RecordNameToIdx> = {}
+// Keyed by `${deviceId}_${paramCount}` — NOT device id alone. A device's
+// parameter list can change in place (e.g. enabling Simpler's filter exposes
+// the filter params), which shifts both names and indices; folding the count
+// into the key rebuilds the map instead of serving a stale one.
+const nameLookupCache: Record<string, RecordNameToIdx> = {}
 
 let lookupApi: LiveAPI = null
 function getLookupApi(): LiveAPI {
@@ -112,7 +116,7 @@ export function getBankParamArr(
   // cache id to name mapping because it is super slow with giant devices like
   // Operator and honestly it should just be a compile-time step of the data
   // files that need this information.
-  const lookupCacheKey = deviceObj.id
+  const lookupCacheKey = deviceObj.id + '_' + paramIds.length
   let paramNameToIdx = nameLookupCache[lookupCacheKey]
   if (!paramNameToIdx) {
     paramNameToIdx = {} as RecordNameToIdx

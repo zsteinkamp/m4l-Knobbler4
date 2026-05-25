@@ -972,14 +972,14 @@ OriginalSimpler:
     - S Length
     - S Loop Fade
   Filter:
-    - Fe Attack
-    - Fe Decay
-    - Fe Sustain
-    - Fe Release
+    - F On
     - Filter Freq
     - Filter Res
     - Filt < Vel
     - Fe < Env
+    - Fe Attack
+    - Fe Decay
+    - Fe Release
   LFO:
     - L Attack
     - L Rate
@@ -1125,7 +1125,7 @@ StereoGain:
     - Stereo Width
     - Mono
     - Balance
-    - Gain
+    - Gain|Output
     - Mute
   Low Frequency:
     - Bass Mono
