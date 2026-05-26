@@ -10,7 +10,7 @@
 //     JSON would be the big interning source).
 // See RAWBYTES_OK in utils.
 
-import { buildOscPacket, loadSetting, logFactory, parseOscPacket, simpleHash, RAWBYTES_OK, MAX_VERSION_RAW } from './utils'
+import { buildOscPacket, loadSetting, logFactory, simpleHash, RAWBYTES_OK, MAX_VERSION_RAW } from './utils'
 import config from './k4-config'
 import { OUTLET_OSC } from './consts'
 
@@ -91,20 +91,21 @@ export function setOutputBlocked(v: boolean) {
 }
 
 // Debug-output logging — driven by the patcher's debug checkbox (`debug 1`/`0`
-// -> entry -> setDebug). When on, the OSC outlet path logs each outgoing
-// message; rawbytes packets are decoded back to a readable address+value via
-// parseOscPacket rather than dumped as a wall of byte ints.
+// -> entry -> setDebug). When on, each outgoing OSC message is logged from the
+// send path BEFORE encoding, so we log the original address+value directly (no
+// need to decode the rawbytes packet) tagged with the transport that was used.
 let debugOut = false
 export function setDebug(v: boolean) {
   debugOut = !!v
 }
 
-// transport: 'rawbytes' or 'native' — so the log shows which path was used.
+// transport: 'rawbytes' or 'native'. byteLen < 0 = unknown (native, unencoded).
 function logOut(transport: string, address: string, value: any, byteLen: number) {
-  const vs =
-    typeof value === 'string' && value.length > 120
-      ? value.slice(0, 120) + '…(' + value.length + ' chars)'
-      : value
+  let vs: any = value
+  if (typeof vs === 'object' && vs !== null) vs = JSON.stringify(vs)
+  if (typeof vs === 'string' && vs.length > 120) {
+    vs = vs.slice(0, 120) + '…(' + vs.length + ' chars)'
+  }
   const sz = byteLen >= 0 ? '  [' + byteLen + ' bytes]' : ''
   log('OSC OUT [' + transport + '] ' + address + ' ' + vs + sz)
 }
@@ -112,10 +113,6 @@ function logOut(transport: string, address: string, value: any, byteLen: number)
 function emitRawbytes(bytes: number[]) {
   if (outputBlocked) {
     return
-  }
-  if (debugOut) {
-    const m = parseOscPacket(bytes)
-    logOut('rawbytes', m.address, m.value, bytes.length)
   }
   rawOut.length = 1
   for (let i = 0; i < bytes.length; i++) {
@@ -130,14 +127,6 @@ function sendNative(address: string, val: any) {
   if (outputBlocked) {
     return
   }
-  if (debugOut) {
-    logOut(
-      'native',
-      address,
-      typeof val === 'object' && val !== null ? JSON.stringify(val) : val,
-      -1
-    )
-  }
   if (val === undefined) {
     outlet(OUTLET_OSC, address)
   } else if (typeof val === 'object' && val !== null) {
@@ -149,8 +138,11 @@ function sendNative(address: string, val: any) {
 
 function sendDirect(address: string, val: any) {
   if (RAWBYTES_OK) {
-    emitRawbytes(buildOscPacket(address, val))
+    const bytes = buildOscPacket(address, val)
+    if (debugOut) logOut('rawbytes', address, val, bytes.length)
+    emitRawbytes(bytes)
   } else {
+    if (debugOut) logOut('native', address, val, -1)
     sendNative(address, val)
   }
 }
@@ -222,7 +214,9 @@ function flushBatchBuffer() {
     // /batch envelope always has a JSON-string arg — ship as rawbytes so the
     // JSON never becomes a Max atom. (Only reached when batchEnabled, which
     // requires RAWBYTES_OK.)
-    emitRawbytes(buildOscPacket('/batch', oscBuffer))
+    const bytes = buildOscPacket('/batch', oscBuffer)
+    if (debugOut) logOut('rawbytes', '/batch', oscBuffer, bytes.length)
+    emitRawbytes(bytes)
   }
   oscBuffer = {}
   oscBufferSize = 0

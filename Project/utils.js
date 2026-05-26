@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.parseOscPacket = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -340,77 +340,6 @@ function buildOscPacket(addr, value) {
     return out;
 }
 exports.buildOscPacket = buildOscPacket;
-// Decode a run of UTF-8 bytes [start, end) back to a JS string (inverse of
-// pushUtf8). Used by parseOscPacket for debug logging of outbound rawbytes.
-function utf8Decode(bytes, start, end) {
-    var out = '';
-    var i = start;
-    while (i < end) {
-        var c = bytes[i++];
-        if (c < 0x80) {
-            out += String.fromCharCode(c);
-        }
-        else if (c < 0xe0) {
-            out += String.fromCharCode(((c & 0x1f) << 6) | (bytes[i++] & 0x3f));
-        }
-        else if (c < 0xf0) {
-            out += String.fromCharCode(((c & 0x0f) << 12) | ((bytes[i++] & 0x3f) << 6) | (bytes[i++] & 0x3f));
-        }
-        else {
-            var cp = ((c & 0x07) << 18) |
-                ((bytes[i++] & 0x3f) << 12) |
-                ((bytes[i++] & 0x3f) << 6) |
-                (bytes[i++] & 0x3f);
-            cp -= 0x10000;
-            out += String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 0x3ff));
-        }
-    }
-    return out;
-}
-// Decode an OSC packet (address + single arg) built by buildOscPacket back into
-// { address, value } — the inverse, for debug-logging what's actually on the
-// wire in the rawbytes path. Type tag drives the arg: 'i' int32, 'f' float32,
-// 's' string, none = no-arg.
-function parseOscPacket(bytes) {
-    var i = 0;
-    var align = function () {
-        i++; // skip the null terminator
-        while (i & 0x3)
-            i++; // pad to 4-byte boundary
-    };
-    var readStr = function () {
-        var start = i;
-        while (i < bytes.length && bytes[i] !== 0)
-            i++;
-        var s = utf8Decode(bytes, start, i);
-        align();
-        return s;
-    };
-    var address = readStr();
-    var tag = readStr(); // ",i" / ",f" / ",s" / ","
-    var t = tag.charAt(1);
-    var value = undefined;
-    if (t === 'i') {
-        value =
-            ((bytes[i] << 24) |
-                (bytes[i + 1] << 16) |
-                (bytes[i + 2] << 8) |
-                bytes[i + 3]) |
-                0;
-    }
-    else if (t === 'f') {
-        _f32bytes[0] = bytes[i];
-        _f32bytes[1] = bytes[i + 1];
-        _f32bytes[2] = bytes[i + 2];
-        _f32bytes[3] = bytes[i + 3];
-        value = _f32view.getFloat32(0, false);
-    }
-    else if (t === 's') {
-        value = readStr();
-    }
-    return { address: address, value: value };
-}
-exports.parseOscPacket = parseOscPacket;
 function pauseUnpause(p, delayMs) {
     if (p.task) {
         p.task.cancel();

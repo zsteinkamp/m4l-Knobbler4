@@ -82,29 +82,28 @@ function setOutputBlocked(v) {
 }
 exports.setOutputBlocked = setOutputBlocked;
 // Debug-output logging — driven by the patcher's debug checkbox (`debug 1`/`0`
-// -> entry -> setDebug). When on, the OSC outlet path logs each outgoing
-// message; rawbytes packets are decoded back to a readable address+value via
-// parseOscPacket rather than dumped as a wall of byte ints.
+// -> entry -> setDebug). When on, each outgoing OSC message is logged from the
+// send path BEFORE encoding, so we log the original address+value directly (no
+// need to decode the rawbytes packet) tagged with the transport that was used.
 var debugOut = false;
 function setDebug(v) {
     debugOut = !!v;
 }
 exports.setDebug = setDebug;
-// transport: 'rawbytes' or 'native' — so the log shows which path was used.
+// transport: 'rawbytes' or 'native'. byteLen < 0 = unknown (native, unencoded).
 function logOut(transport, address, value, byteLen) {
-    var vs = typeof value === 'string' && value.length > 120
-        ? value.slice(0, 120) + '…(' + value.length + ' chars)'
-        : value;
+    var vs = value;
+    if (typeof vs === 'object' && vs !== null)
+        vs = JSON.stringify(vs);
+    if (typeof vs === 'string' && vs.length > 120) {
+        vs = vs.slice(0, 120) + '…(' + vs.length + ' chars)';
+    }
     var sz = byteLen >= 0 ? '  [' + byteLen + ' bytes]' : '';
     log('OSC OUT [' + transport + '] ' + address + ' ' + vs + sz);
 }
 function emitRawbytes(bytes) {
     if (outputBlocked) {
         return;
-    }
-    if (debugOut) {
-        var m = (0, utils_1.parseOscPacket)(bytes);
-        logOut('rawbytes', m.address, m.value, bytes.length);
     }
     rawOut.length = 1;
     for (var i = 0; i < bytes.length; i++) {
@@ -118,9 +117,6 @@ function sendNative(address, val) {
     if (outputBlocked) {
         return;
     }
-    if (debugOut) {
-        logOut('native', address, typeof val === 'object' && val !== null ? JSON.stringify(val) : val, -1);
-    }
     if (val === undefined) {
         outlet(consts_1.OUTLET_OSC, address);
     }
@@ -133,9 +129,14 @@ function sendNative(address, val) {
 }
 function sendDirect(address, val) {
     if (utils_1.RAWBYTES_OK) {
-        emitRawbytes((0, utils_1.buildOscPacket)(address, val));
+        var bytes = (0, utils_1.buildOscPacket)(address, val);
+        if (debugOut)
+            logOut('rawbytes', address, val, bytes.length);
+        emitRawbytes(bytes);
     }
     else {
+        if (debugOut)
+            logOut('native', address, val, -1);
         sendNative(address, val);
     }
 }
@@ -203,7 +204,10 @@ function flushBatchBuffer() {
         // /batch envelope always has a JSON-string arg — ship as rawbytes so the
         // JSON never becomes a Max atom. (Only reached when batchEnabled, which
         // requires RAWBYTES_OK.)
-        emitRawbytes((0, utils_1.buildOscPacket)('/batch', oscBuffer));
+        var bytes = (0, utils_1.buildOscPacket)('/batch', oscBuffer);
+        if (debugOut)
+            logOut('rawbytes', '/batch', oscBuffer, bytes.length);
+        emitRawbytes(bytes);
     }
     oscBuffer = {};
     oscBufferSize = 0;
