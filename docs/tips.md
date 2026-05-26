@@ -36,6 +36,7 @@
 
 - Use Racks to build reusable instruments or effects chains, and develop muscle memory around their Macro parameter layout on the Bluhand page.
 - Capture MIDI is invaluable for quickly building clips or preserving the magic of the moment.
+- Long-press the Tempo box, then slide left or right to nudge the tempo in 1 BPM steps. A quick tap still opens it for typing.
 
 ### Setup
 
