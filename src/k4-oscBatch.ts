@@ -103,15 +103,17 @@ export function setDebug(v: boolean) {
 // each log an OSC OUT line — chunked sends get one summary line instead.
 let suppressOutLog = false
 
-// transport: 'rawbytes' or 'native'. byteLen < 0 = unknown (native, unencoded).
+// Format: OSC OUT <bytes> <transport> <address> <value>
+//   e.g.   OSC OUT 1203 raw /mixer/foo {"bar":"baz"}
+// transport: 'raw' | 'native'. byteLen < 0 = unknown (native, unencoded) -> '?'.
 function logOut(transport: string, address: string, value: any, byteLen: number) {
   let vs: any = value
   if (typeof vs === 'object' && vs !== null) vs = JSON.stringify(vs)
   if (typeof vs === 'string' && vs.length > 120) {
     vs = vs.slice(0, 120) + '…(' + vs.length + ' chars)'
   }
-  const sz = byteLen >= 0 ? '  [' + byteLen + ' bytes]' : ''
-  log('OSC OUT [' + transport + '] ' + address + ' ' + vs + sz)
+  const sz = byteLen >= 0 ? byteLen : '?'
+  log('OSC OUT ' + sz + ' ' + transport + ' ' + address + ' ' + vs)
 }
 
 function emitRawbytes(bytes: number[]) {
@@ -143,7 +145,7 @@ function sendNative(address: string, val: any) {
 function sendDirect(address: string, val: any) {
   if (RAWBYTES_OK) {
     const bytes = buildOscPacket(address, val)
-    if (debugOut && !suppressOutLog) logOut('rawbytes', address, val, bytes.length)
+    if (debugOut && !suppressOutLog) logOut('raw', address, val, bytes.length)
     emitRawbytes(bytes)
   } else {
     if (debugOut && !suppressOutLog) logOut('native', address, val, -1)
@@ -196,15 +198,15 @@ function sendChunked(address: string, items: any[]) {
 
   if (debugOut) {
     log(
-      'OSC OUT [chunked] ' +
+      'OSC OUT ' +
+        totalBytes +
+        ' chunked ' +
         address +
-        ': ' +
+        ' (' +
         items.length +
         ' items, ' +
-        totalBytes +
-        ' bytes, ' +
         chunkCount +
-        ' chunks'
+        ' chunks)'
     )
   }
 }
@@ -225,7 +227,7 @@ function flushBatchBuffer() {
     // JSON never becomes a Max atom. (Only reached when batchEnabled, which
     // requires RAWBYTES_OK.)
     const bytes = buildOscPacket('/batch', oscBuffer)
-    if (debugOut) logOut('rawbytes', '/batch', oscBuffer, bytes.length)
+    if (debugOut) logOut('raw', '/batch', oscBuffer, bytes.length)
     emitRawbytes(bytes)
   }
   oscBuffer = {}

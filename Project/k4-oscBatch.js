@@ -93,7 +93,9 @@ exports.setDebug = setDebug;
 // Set true while sendChunked emits its /start//chunk//end pieces, so they don't
 // each log an OSC OUT line — chunked sends get one summary line instead.
 var suppressOutLog = false;
-// transport: 'rawbytes' or 'native'. byteLen < 0 = unknown (native, unencoded).
+// Format: OSC OUT <bytes> <transport> <address> <value>
+//   e.g.   OSC OUT 1203 raw /mixer/foo {"bar":"baz"}
+// transport: 'raw' | 'native'. byteLen < 0 = unknown (native, unencoded) -> '?'.
 function logOut(transport, address, value, byteLen) {
     var vs = value;
     if (typeof vs === 'object' && vs !== null)
@@ -101,8 +103,8 @@ function logOut(transport, address, value, byteLen) {
     if (typeof vs === 'string' && vs.length > 120) {
         vs = vs.slice(0, 120) + '…(' + vs.length + ' chars)';
     }
-    var sz = byteLen >= 0 ? '  [' + byteLen + ' bytes]' : '';
-    log('OSC OUT [' + transport + '] ' + address + ' ' + vs + sz);
+    var sz = byteLen >= 0 ? byteLen : '?';
+    log('OSC OUT ' + sz + ' ' + transport + ' ' + address + ' ' + vs);
 }
 function emitRawbytes(bytes) {
     if (outputBlocked) {
@@ -134,7 +136,7 @@ function sendDirect(address, val) {
     if (utils_1.RAWBYTES_OK) {
         var bytes = (0, utils_1.buildOscPacket)(address, val);
         if (debugOut && !suppressOutLog)
-            logOut('rawbytes', address, val, bytes.length);
+            logOut('raw', address, val, bytes.length);
         emitRawbytes(bytes);
     }
     else {
@@ -186,15 +188,15 @@ function sendChunked(address, items) {
     sendDirect(address + '/end', (0, utils_1.simpleHash)('[' + allParts.join(',') + ']'));
     suppressOutLog = false;
     if (debugOut) {
-        log('OSC OUT [chunked] ' +
+        log('OSC OUT ' +
+            totalBytes +
+            ' chunked ' +
             address +
-            ': ' +
+            ' (' +
             items.length +
             ' items, ' +
-            totalBytes +
-            ' bytes, ' +
             chunkCount +
-            ' chunks');
+            ' chunks)');
     }
 }
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
@@ -214,7 +216,7 @@ function flushBatchBuffer() {
         // requires RAWBYTES_OK.)
         var bytes = (0, utils_1.buildOscPacket)('/batch', oscBuffer);
         if (debugOut)
-            logOut('rawbytes', '/batch', oscBuffer, bytes.length);
+            logOut('raw', '/batch', oscBuffer, bytes.length);
         emitRawbytes(bytes);
     }
     oscBuffer = {};
