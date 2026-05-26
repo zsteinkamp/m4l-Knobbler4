@@ -10,7 +10,7 @@
 //     JSON would be the big interning source).
 // See RAWBYTES_OK in utils.
 
-import { buildOscPacket, loadSetting, logFactory, simpleHash, RAWBYTES_OK, MAX_VERSION_RAW } from './utils'
+import { buildOscPacket, loadSetting, logFactory, parseOscPacket, simpleHash, RAWBYTES_OK, MAX_VERSION_RAW } from './utils'
 import config from './k4-config'
 import { OUTLET_OSC } from './consts'
 
@@ -90,9 +90,32 @@ export function setOutputBlocked(v: boolean) {
   outputBlocked = v
 }
 
+// Debug-output logging — driven by the patcher's debug checkbox (`debug 1`/`0`
+// -> entry -> setDebug). When on, the OSC outlet path logs each outgoing
+// message; rawbytes packets are decoded back to a readable address+value via
+// parseOscPacket rather than dumped as a wall of byte ints.
+let debugOut = false
+export function setDebug(v: boolean) {
+  debugOut = !!v
+}
+
+// transport: 'rawbytes' or 'native' — so the log shows which path was used.
+function logOut(transport: string, address: string, value: any, byteLen: number) {
+  const vs =
+    typeof value === 'string' && value.length > 120
+      ? value.slice(0, 120) + '…(' + value.length + ' chars)'
+      : value
+  const sz = byteLen >= 0 ? '  [' + byteLen + ' bytes]' : ''
+  log('OSC OUT [' + transport + '] ' + address + ' ' + vs + sz)
+}
+
 function emitRawbytes(bytes: number[]) {
   if (outputBlocked) {
     return
+  }
+  if (debugOut) {
+    const m = parseOscPacket(bytes)
+    logOut('rawbytes', m.address, m.value, bytes.length)
   }
   rawOut.length = 1
   for (let i = 0; i < bytes.length; i++) {
@@ -106,6 +129,14 @@ function emitRawbytes(bytes: number[]) {
 function sendNative(address: string, val: any) {
   if (outputBlocked) {
     return
+  }
+  if (debugOut) {
+    logOut(
+      'native',
+      address,
+      typeof val === 'object' && val !== null ? JSON.stringify(val) : val,
+      -1
+    )
   }
   if (val === undefined) {
     outlet(OUTLET_OSC, address)

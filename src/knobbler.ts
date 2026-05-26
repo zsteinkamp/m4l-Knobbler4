@@ -99,6 +99,12 @@ function sidebarMeters(val: number) {
   sidebarMixer.sidebarMeters(val)
 }
 
+// Debug checkbox in the patcher sends `debug 1` / `debug 0` to the entry; toggle
+// the OSC-outlet debug logging (rawbytes packets are decoded for readability).
+function debug(val: number) {
+  oscBatch.setDebug(!!val)
+}
+
 // Page changes drive meter flushing in both mixer modules AND switch the
 // device's page UI (---PAGE), the latter formerly the router's pageHandler.
 function pageDispatch(address: string) {
