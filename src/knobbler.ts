@@ -10,6 +10,7 @@
 
 import config from './k4-config'
 import {
+  buildOscPacket,
   logFactory,
   setDictPrefix as utilsSetDictPrefix,
   setOscSink,
@@ -107,15 +108,19 @@ function debug(val: number) {
   oscBatch.setDebug(!!val)
 }
 
-// Log an inbound OSC message: `OSC IN <address> <value>` (mirrors OSC OUT;
-// inbound arrives as parsed atoms, so there's no byte count / transport).
+// Log an inbound OSC message: `OSC IN <bytes> <address> <value>`. Inbound
+// arrives as parsed atoms (no raw bytes), so re-encode with buildOscPacket to
+// report the wire size — matching how the OUT side counts bytes. No transport
+// field (that's an output-only concept). Debug-gated, so the re-encode is free
+// when off.
 function logIn(address: string, value: any) {
   let vs: any = value
   if (typeof vs === 'object' && vs !== null) vs = JSON.stringify(vs)
   if (typeof vs === 'string' && vs.length > 120) {
     vs = vs.slice(0, 120) + '…(' + vs.length + ' chars)'
   }
-  log('OSC IN ' + address + ' ' + vs)
+  const bytes = buildOscPacket(address, value).length
+  log('OSC IN ' + bytes + ' ' + address + ' ' + vs)
 }
 
 // Page changes drive meter flushing in both mixer modules AND switch the
