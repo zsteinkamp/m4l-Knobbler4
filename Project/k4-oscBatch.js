@@ -133,6 +133,7 @@ function sendChunked(address, items) {
     sendDirect(address + '/start', items.length);
     var chunkItems = [];
     var chunkSize = 2;
+    var chunkCount = 0;
     var allParts = [];
     for (var i = 0; i < items.length; i++) {
         var itemJson = JSON.stringify(items[i]);
@@ -140,6 +141,7 @@ function sendChunked(address, items) {
         var added = (chunkItems.length > 0 ? 1 : 0) + itemJson.length;
         if (chunkItems.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
             sendDirect(address + '/chunk', chunkItems);
+            chunkCount++;
             chunkItems = [];
             chunkSize = 2;
         }
@@ -148,8 +150,19 @@ function sendChunked(address, items) {
     }
     if (chunkItems.length > 0) {
         sendDirect(address + '/chunk', chunkItems);
+        chunkCount++;
     }
+    var totalBytes = allParts.join(',').length + 2; // ~JSON.stringify(items) length
     sendDirect(address + '/end', (0, utils_1.simpleHash)('[' + allParts.join(',') + ']'));
+    log('chunked ' +
+        address +
+        ': ' +
+        items.length +
+        ' items, ' +
+        totalBytes +
+        ' bytes, ' +
+        chunkCount +
+        ' chunks');
 }
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
 function flushBatchBuffer() {

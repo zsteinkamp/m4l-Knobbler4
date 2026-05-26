@@ -142,6 +142,7 @@ function sendChunked(address: string, items: any[]) {
   sendDirect(address + '/start', items.length)
   let chunkItems: any[] = []
   let chunkSize = 2
+  let chunkCount = 0
   const allParts: string[] = []
   for (let i = 0; i < items.length; i++) {
     const itemJson = JSON.stringify(items[i])
@@ -149,6 +150,7 @@ function sendChunked(address: string, items: any[]) {
     const added = (chunkItems.length > 0 ? 1 : 0) + itemJson.length
     if (chunkItems.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
       sendDirect(address + '/chunk', chunkItems)
+      chunkCount++
       chunkItems = []
       chunkSize = 2
     }
@@ -157,8 +159,21 @@ function sendChunked(address: string, items: any[]) {
   }
   if (chunkItems.length > 0) {
     sendDirect(address + '/chunk', chunkItems)
+    chunkCount++
   }
+  const totalBytes = allParts.join(',').length + 2 // ~JSON.stringify(items) length
   sendDirect(address + '/end', simpleHash('[' + allParts.join(',') + ']'))
+  log(
+    'chunked ' +
+      address +
+      ': ' +
+      items.length +
+      ' items, ' +
+      totalBytes +
+      ' bytes, ' +
+      chunkCount +
+      ' chunks'
+  )
 }
 
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
