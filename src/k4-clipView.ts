@@ -729,6 +729,22 @@ function teardownAll() {
 // Window Management
 // ---------------------------------------------------------------------------
 
+// INTENTIONAL: observers ACCUMULATE — they are not torn down when a cell/track/
+// scene scrolls out of view. The `if (!…)` guards below only create observers
+// for newly-visited cells; revisiting a previously-seen area reuses the existing
+// observer (instant, no GC churn). See commit 94e86ea ("Accumulate observers
+// instead of recycling on scroll"). Full teardown happens only on a
+// visible-tracks-list or scene-count change (onVisibleTracksChange /
+// onSceneCountChange), so the resident count is bounded per instance by the full
+// grid (trackPaths.length × totalScenes).
+//
+// CAVEAT (multiplayer / large sets): N device instances accumulate against the
+// SAME Live set, so the aggregate observer count is N× per-instance and can
+// approach Live's LiveAPI observer/notification ceiling — at which point Live
+// stops delivering change notifications and playing-clip visuals freeze while
+// launches (a separate path) keep working. If that's confirmed, the fix is a
+// BOUNDED warm cache (viewport + margin, evict least-recently-visited past a
+// cap), NOT reverting to tear-down-on-scroll.
 function applyWindow() {
   if (leftTrack < 0 || topScene < 0) return
 

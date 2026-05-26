@@ -133,7 +133,13 @@ let trackList: TrackInfo[] = []
 let leftIndex = -1
 let visibleCount = 0
 
-// Observers keyed by track ID — accumulate over session, never torn down on scroll
+// Observers keyed by track ID — accumulate over session, never torn down on
+// scroll (see commit 94e86ea; reduces GC, makes scroll-back instant). Bounded
+// per instance by the track count.
+// CAVEAT (multiplayer): N instances accumulate against the same Live set, so
+// this + the clip-view accumulation (see k4-clipView applyWindow) can approach
+// Live's LiveAPI observer ceiling and freeze change notifications. If hit, cap
+// with a bounded warm cache rather than tearing down on scroll.
 let observersByTrackId: Record<number, StripObservers> = {}
 
 // Track IDs for which sendStripState has been called in the current visible window.
