@@ -11,6 +11,7 @@ import {
   numArrToJson,
   cleanArr,
   buildOscPacket,
+  columnarize,
 } from './utils'
 
 describe('dequote', () => {
@@ -201,5 +202,48 @@ describe('buildOscPacket', () => {
     expect(buildOscPacket('/x', '🔊').slice(8)).toEqual([
       0xf0, 0x9f, 0x94, 0x8a, 0, 0, 0, 0,
     ])
+  })
+})
+
+describe('columnarize', () => {
+  // Mirror the app's /columnar decoder so we can assert a true round-trip:
+  // flat array [key, columns, ...rows] -> { key, objs }, null = absent field.
+  const decolumnarize = (arr: any[]) => {
+    const cols: string[] = arr[1]
+    const objs: any[] = []
+    for (let i = 2; i < arr.length; i++) {
+      const row = arr[i]
+      const o: Record<string, any> = {}
+      for (let j = 0; j < cols.length; j++) {
+        if (row[j] !== null) o[cols[j]] = row[j]
+      }
+      objs.push(o)
+    }
+    return { key: arr[0] as string, objs }
+  }
+
+  it('flattens to [key, columns, ...rows]', () => {
+    expect(columnarize('/x', [{ a: 1, b: 2 }, { a: 3, b: 4 }])).toEqual([
+      '/x',
+      ['a', 'b'],
+      [1, 2],
+      [3, 4],
+    ])
+  })
+
+  it('columns = union of keys (first-seen order); absent fields are null', () => {
+    expect(columnarize('/x', [{ a: 1, b: 2 }, { a: 3, c: 9 }])).toEqual([
+      '/x',
+      ['a', 'b', 'c'],
+      [1, 2, null],
+      [3, null, 9],
+    ])
+  })
+
+  it('round-trips losslessly — absent keys omitted, present 0 preserved', () => {
+    const records = [{ s: 0, n: 'kick' }, { s: 2 }, { s: 1, c: '#fff' }]
+    const { key, objs } = decolumnarize(columnarize('/clips/update', records))
+    expect(key).toBe('/clips/update')
+    expect(objs).toEqual(records)
   })
 })

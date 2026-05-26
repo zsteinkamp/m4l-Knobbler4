@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.columnarize = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -373,6 +373,35 @@ function simpleHash(str) {
     return hash;
 }
 exports.simpleHash = simpleHash;
+// Columnar-encode an array of plain objects into a flat array
+// [ key, columns, ...rows ]: columns = union of record keys (first-seen order);
+// each row holds values in column order, absent fields as null. Lossless — the
+// decoder omits null fields, so a present 0 stays 0. The flat-array shape lets a
+// large /columnar payload ride the OSC array chunker. See k4-oscBatch.send.
+function columnarize(address, arr) {
+    var columns = [];
+    var seen = {};
+    for (var i = 0; i < arr.length; i++) {
+        for (var k in arr[i]) {
+            if (!seen[k]) {
+                seen[k] = true;
+                columns.push(k);
+            }
+        }
+    }
+    var out = [address, columns];
+    for (var i = 0; i < arr.length; i++) {
+        var rec = arr[i];
+        var row = [];
+        for (var j = 0; j < columns.length; j++) {
+            var v = rec[columns[j]];
+            row.push(v === undefined ? null : v);
+        }
+        out.push(row);
+    }
+    return out;
+}
+exports.columnarize = columnarize;
 // Filter an id-observer arg down to its numeric ids, returning them AS
 // numbers. The arg comes from LiveAPI as strings (e.g. ["id", "42", "id",
 // "55"]); each numeric-looking string round-trips through parseInt and the

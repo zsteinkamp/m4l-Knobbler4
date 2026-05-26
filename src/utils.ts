@@ -390,6 +390,35 @@ export function simpleHash(str: string): number {
   return hash
 }
 
+// Columnar-encode an array of plain objects into a flat array
+// [ key, columns, ...rows ]: columns = union of record keys (first-seen order);
+// each row holds values in column order, absent fields as null. Lossless — the
+// decoder omits null fields, so a present 0 stays 0. The flat-array shape lets a
+// large /columnar payload ride the OSC array chunker. See k4-oscBatch.send.
+export function columnarize(address: string, arr: any[]): any[] {
+  const columns: string[] = []
+  const seen: Record<string, boolean> = {}
+  for (let i = 0; i < arr.length; i++) {
+    for (const k in arr[i]) {
+      if (!seen[k]) {
+        seen[k] = true
+        columns.push(k)
+      }
+    }
+  }
+  const out: any[] = [address, columns]
+  for (let i = 0; i < arr.length; i++) {
+    const rec = arr[i]
+    const row: any[] = []
+    for (let j = 0; j < columns.length; j++) {
+      const v = rec[columns[j]]
+      row.push(v === undefined ? null : v)
+    }
+    out.push(row)
+  }
+  return out
+}
+
 // Filter an id-observer arg down to its numeric ids, returning them AS
 // numbers. The arg comes from LiveAPI as strings (e.g. ["id", "42", "id",
 // "55"]); each numeric-looking string round-trips through parseInt and the

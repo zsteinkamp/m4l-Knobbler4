@@ -305,34 +305,7 @@ function isArrayOfObjects(v) {
         v[0] !== null &&
         !Array.isArray(v[0]));
 }
-// Flat array: [ originalKey, columns, ...rows ]. columns = union of record keys
-// (first-seen order); each row holds values in column order, absent fields as
-// null. Lossless — the app omits null fields on decode, so a present 0 stays 0.
-// The flat-array shape (vs an object) lets a large /columnar ride the existing
-// array chunker; element 0 is a string, so it's never re-columnarized.
-function columnarize(address, arr) {
-    var columns = [];
-    var seen = {};
-    for (var i = 0; i < arr.length; i++) {
-        for (var k in arr[i]) {
-            if (!seen[k]) {
-                seen[k] = true;
-                columns.push(k);
-            }
-        }
-    }
-    var out = [address, columns];
-    for (var i = 0; i < arr.length; i++) {
-        var rec = arr[i];
-        var row = [];
-        for (var j = 0; j < columns.length; j++) {
-            var v = rec[columns[j]];
-            row.push(v === undefined ? null : v);
-        }
-        out.push(row);
-    }
-    return out;
-}
+// columnarize() lives in utils (pure + unit-tested round-trip).
 // --- Entry point ---
 // Registered as utils' osc() sink. Every module's osc(addr, val) lands here.
 function send(address, val) {
@@ -348,7 +321,7 @@ function send(address, val) {
     // array — so a large one chunks via the normal path below (and element 0 is a
     // string, so isArrayOfObjects won't re-columnarize it).
     if (columnarEnabled && address !== '/columnar' && isArrayOfObjects(val)) {
-        send('/columnar', columnarize(address, val));
+        send('/columnar', (0, utils_1.columnarize)(address, val));
         return;
     }
     // Only NUMERIC values ever go in the /batch envelope. Non-numeric payloads

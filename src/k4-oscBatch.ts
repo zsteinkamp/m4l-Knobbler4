@@ -10,7 +10,7 @@
 //     JSON would be the big interning source).
 // See RAWBYTES_OK in utils.
 
-import { buildOscPacket, loadSetting, logFactory, simpleHash, RAWBYTES_OK, MAX_VERSION_RAW } from './utils'
+import { buildOscPacket, columnarize, loadSetting, logFactory, simpleHash, RAWBYTES_OK, MAX_VERSION_RAW } from './utils'
 import config from './k4-config'
 import { OUTLET_OSC } from './consts'
 
@@ -340,34 +340,7 @@ function isArrayOfObjects(v: any): boolean {
   )
 }
 
-// Flat array: [ originalKey, columns, ...rows ]. columns = union of record keys
-// (first-seen order); each row holds values in column order, absent fields as
-// null. Lossless — the app omits null fields on decode, so a present 0 stays 0.
-// The flat-array shape (vs an object) lets a large /columnar ride the existing
-// array chunker; element 0 is a string, so it's never re-columnarized.
-function columnarize(address: string, arr: any[]): any[] {
-  const columns: string[] = []
-  const seen: Record<string, boolean> = {}
-  for (let i = 0; i < arr.length; i++) {
-    for (const k in arr[i]) {
-      if (!seen[k]) {
-        seen[k] = true
-        columns.push(k)
-      }
-    }
-  }
-  const out: any[] = [address, columns]
-  for (let i = 0; i < arr.length; i++) {
-    const rec = arr[i]
-    const row: any[] = []
-    for (let j = 0; j < columns.length; j++) {
-      const v = rec[columns[j]]
-      row.push(v === undefined ? null : v)
-    }
-    out.push(row)
-  }
-  return out
-}
+// columnarize() lives in utils (pure + unit-tested round-trip).
 
 // --- Entry point ---
 
