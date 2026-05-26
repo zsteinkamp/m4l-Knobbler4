@@ -103,7 +103,7 @@ function logIn(address, value) {
     if (typeof vs === 'object' && vs !== null)
         vs = JSON.stringify(vs);
     if (typeof vs === 'string' && vs.length > 120) {
-        vs = vs.slice(0, 120) + '…(' + vs.length + ' chars)';
+        vs = vs.slice(0, 120) + '…';
     }
     var bytes = (0, utils_1.buildOscPacket)(address, value).length;
     log('OSC IN ' + bytes + ' ' + address + ' ' + vs);
