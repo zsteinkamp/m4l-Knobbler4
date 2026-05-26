@@ -80,7 +80,7 @@ function sendVisibleTracks() {
     var items = trackList.map(function (t) {
         return [t.type, t.id, t.name, t.color, null, null, t.parentId];
     });
-    (0, utils_1.sendChunkedData)('/visibleTracks', items);
+    (0, utils_1.osc)('/visibleTracks', items);
     // Write to shared dict, then notify mixer/clips
     (0, utils_1.setVisibleTracks)(trackList);
     ctx.notifyVisibleTracks();

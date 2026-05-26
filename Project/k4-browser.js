@@ -146,7 +146,7 @@ function emitView(token) {
         itemCount: items.length,
     };
     (0, utils_1.osc)('/browser/view', JSON.stringify(header));
-    (0, utils_1.sendChunkedData)('/browser/items', items);
+    (0, utils_1.osc)('/browser/items', items);
 }
 // /browser/navigate <token> — request a new view
 function navigate(token) {

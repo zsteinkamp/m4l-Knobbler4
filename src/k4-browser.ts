@@ -1,4 +1,4 @@
-import { cleanArr, logFactory, osc, sendChunkedData } from './utils'
+import { cleanArr, logFactory, osc } from './utils'
 import config from './k4-config'
 import { INLET_MSGS, OUTLET_MSGS, OUTLET_OSC, noFn } from './consts'
 
@@ -159,7 +159,7 @@ function emitView(token: string) {
     itemCount: items.length,
   }
   osc('/browser/view', JSON.stringify(header))
-  sendChunkedData('/browser/items', items)
+  osc('/browser/items', items)
 }
 
 // /browser/navigate <token> — request a new view

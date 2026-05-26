@@ -2,8 +2,8 @@ import {
   cleanArr,
   colorToString,
   logFactory,
+  osc,
   setOscSink,
-  sendChunkedData,
   setVisibleTracks,
   truncate,
   TrackInfo,
@@ -104,7 +104,7 @@ function sendVisibleTracks() {
   const items = trackList.map(function (t) {
     return [t.type, t.id, t.name, t.color, null, null, t.parentId]
   })
-  sendChunkedData('/visibleTracks', items)
+  osc('/visibleTracks', items)
 
   // Write to shared dict, then notify mixer/clips
   setVisibleTracks(trackList)

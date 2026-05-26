@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.sendChunkedData = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -362,7 +362,9 @@ function numArrToJson(arr) {
     return '[' + arr.join(',') + ']';
 }
 exports.numArrToJson = numArrToJson;
-var CHUNK_MAX_BYTES = 1024;
+// Chunking now lives in the outbound pipeline (k4-oscBatch): callers just
+// osc(addr, array) and large arrays are split transparently. simpleHash is the
+// chunk checksum, exported for that stage (and matched by the app).
 function simpleHash(str) {
     var hash = 0;
     for (var i = 0; i < str.length; i++) {
@@ -370,37 +372,7 @@ function simpleHash(str) {
     }
     return hash;
 }
-function sendChunkedData(prefix, items) {
-    var caps = loadSetting('clientCapabilities');
-    var chunked = caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1;
-    if (chunked) {
-        osc(prefix + '/start', items.length);
-        var chunkItems = [];
-        var chunkSize = 2;
-        var allParts = [];
-        for (var i = 0; i < items.length; i++) {
-            var itemJson = JSON.stringify(items[i]);
-            allParts.push(itemJson);
-            var added = (chunkItems.length > 0 ? 1 : 0) + itemJson.length;
-            if (chunkItems.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-                osc(prefix + '/chunk', chunkItems);
-                chunkItems = [];
-                chunkSize = 2;
-            }
-            chunkItems.push(items[i]);
-            chunkSize += added;
-        }
-        if (chunkItems.length > 0) {
-            osc(prefix + '/chunk', chunkItems);
-        }
-        var checksum = simpleHash('[' + allParts.join(',') + ']');
-        osc(prefix + '/end', checksum);
-    }
-    if (!chunked) {
-        osc(prefix, items);
-    }
-}
-exports.sendChunkedData = sendChunkedData;
+exports.simpleHash = simpleHash;
 // Filter an id-observer arg down to its numeric ids, returning them AS
 // numbers. The arg comes from LiveAPI as strings (e.g. ["id", "42", "id",
 // "55"]); each numeric-looking string round-trips through parseInt and the

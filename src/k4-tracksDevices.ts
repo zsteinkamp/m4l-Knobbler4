@@ -6,7 +6,6 @@ import {
   setOscSink,
   osc,
   saveSetting,
-  sendChunkedData,
   truncate,
 } from './utils'
 import config from './k4-config'
@@ -59,7 +58,7 @@ function updateDeviceNav() {
     // if no device is selected, null out the devices list
     osc('/nav/currDeviceId', -1)
     //log('/nav/devices=' + JSON.stringify([]))
-    sendChunkedData('/nav/devices', [])
+    osc('/nav/devices', [])
     return
   }
 
@@ -77,7 +76,7 @@ function updateDeviceNav() {
   const currType = currDeviceObj.type as string
   if (+currDeviceObj.id === 0 || currType === 'Track' || currType === 'Song') {
     osc('/nav/currDeviceId', -1)
-    sendChunkedData('/nav/devices', [])
+    osc('/nav/devices', [])
     return
   }
   const currIsSupported = isDeviceSupported(currDeviceObj)
@@ -195,7 +194,7 @@ function updateDeviceNav() {
   }
 
   //log('/nav/devices=' + JSON.stringify(ret))
-  sendChunkedData('/nav/devices', ret)
+  osc('/nav/devices', ret)
 }
 
 let trackChangeDebounce: MaxTask = null

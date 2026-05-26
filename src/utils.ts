@@ -379,46 +379,15 @@ export function numArrToJson(arr: number[]): string {
   return '[' + arr.join(',') + ']'
 }
 
-const CHUNK_MAX_BYTES = 1024
-
-function simpleHash(str: string): number {
+// Chunking now lives in the outbound pipeline (k4-oscBatch): callers just
+// osc(addr, array) and large arrays are split transparently. simpleHash is the
+// chunk checksum, exported for that stage (and matched by the app).
+export function simpleHash(str: string): number {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
   }
   return hash
-}
-
-export function sendChunkedData(prefix: string, items: any[]) {
-  const caps = loadSetting('clientCapabilities')
-  const chunked =
-    caps && (' ' + caps.toString() + ' ').indexOf(' cNav ') !== -1
-  if (chunked) {
-    osc(prefix + '/start', items.length)
-    let chunkItems: any[] = []
-    let chunkSize = 2
-    let allParts: string[] = []
-    for (let i = 0; i < items.length; i++) {
-      const itemJson = JSON.stringify(items[i])
-      allParts.push(itemJson)
-      const added = (chunkItems.length > 0 ? 1 : 0) + itemJson.length
-      if (chunkItems.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
-        osc(prefix + '/chunk', chunkItems)
-        chunkItems = []
-        chunkSize = 2
-      }
-      chunkItems.push(items[i])
-      chunkSize += added
-    }
-    if (chunkItems.length > 0) {
-      osc(prefix + '/chunk', chunkItems)
-    }
-    const checksum = simpleHash('[' + allParts.join(',') + ']')
-    osc(prefix + '/end', checksum)
-  }
-  if (!chunked) {
-    osc(prefix, items)
-  }
 }
 
 // Filter an id-observer arg down to its numeric ids, returning them AS

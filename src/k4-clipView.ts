@@ -1,4 +1,4 @@
-import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, sendChunkedData, setOscSink } from './utils'
+import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, setOscSink } from './utils'
 import config from './k4-config'
 import { noFn, TYPE_RETURN, TYPE_MAIN, TYPE_GROUP } from './consts'
 
@@ -866,7 +866,7 @@ function sendSceneInfo() {
     scenes.push(scene)
   }
 
-  sendChunkedData('/clips/scenes', scenes)
+  osc('/clips/scenes', scenes)
 }
 
 // ---------------------------------------------------------------------------

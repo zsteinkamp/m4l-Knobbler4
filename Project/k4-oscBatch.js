@@ -19,9 +19,22 @@ var log = (0, utils_1.logFactory)(k4_config_1.default);
 log('reloaded k4-oscBatch: max.version=' + utils_1.MAX_VERSION_RAW + ' rawbytes=' + utils_1.RAWBYTES_OK);
 var BATCH_FLUSH_MS = 10;
 var BATCH_MAX_BYTES = 1024;
+var CHUNK_MAX_BYTES = 1024;
 var THROTTLE_MS = 15;
 var BYPASS_SUFFIXES = ['/start', '/end', '/chunk', '/meters'];
+// Addresses an OLD (cNav-only) app reassembles into oscDataRef[prefix] directly
+// (no per-address merge logic). The pipeline may chunk these for such apps.
+// `chunkAny` apps can reassemble+dispatch ANY address, so they aren't limited
+// to this list. See checkClientCapabilities / shouldChunk.
+var LEGACY_CHUNK_ADDRS = [
+    '/nav/devices',
+    '/clips/scenes',
+    '/visibleTracks',
+    '/browser/items',
+];
 var batchEnabled = false;
+var cNavEnabled = false;
+var chunkAnyEnabled = false;
 var oscBuffer = {};
 var oscBufferSize = 0;
 var oscBufferBytes = 2; // opening/closing braces: {}
@@ -47,10 +60,12 @@ function shouldBypass(address) {
 }
 function checkClientCapabilities() {
     var caps = (0, utils_1.loadSetting)('clientCapabilities');
+    var s = typeof caps === 'string' ? caps : '';
     // Only batch when the client supports it AND we can ship the /batch JSON as
     // rawbytes — on older Max the envelope would intern a fresh string per flush.
-    batchEnabled =
-        utils_1.RAWBYTES_OK && typeof caps === 'string' && caps.indexOf('batch') !== -1;
+    batchEnabled = utils_1.RAWBYTES_OK && s.indexOf('batch') !== -1;
+    cNavEnabled = s.indexOf('cNav') !== -1;
+    chunkAnyEnabled = s.indexOf('chunkAny') !== -1;
 }
 // rawbytes path: a complete OSC packet (built in JS) shipped to [udpsend] as
 // `rawbytes <byte…>`. 'rawbytes' is a fixed selector (gensym'd once); the rest
@@ -99,6 +114,42 @@ function sendDirect(address, val) {
     else {
         sendNative(address, val);
     }
+}
+// --- Chunking (transport stage; callers never split payloads themselves) ---
+function shouldChunk(address, arr) {
+    // Small arrays fit one packet — no need to chunk.
+    if (JSON.stringify(arr).length <= CHUNK_MAX_BYTES)
+        return false;
+    if (chunkAnyEnabled)
+        return true;
+    return cNavEnabled && LEGACY_CHUNK_ADDRS.indexOf(address) !== -1;
+}
+// Split a large array into the /start//chunk//end protocol the app reassembles.
+// Pieces go via sendDirect (so they bypass batching and don't re-enter chunking).
+// The /end checksum is simpleHash(JSON.stringify(items)) — '[' + per-item JSON
+// joined + ']' is identical to JSON.stringify(array) — which the app re-derives
+// from the reassembled items to verify integrity.
+function sendChunked(address, items) {
+    sendDirect(address + '/start', items.length);
+    var chunkItems = [];
+    var chunkSize = 2;
+    var allParts = [];
+    for (var i = 0; i < items.length; i++) {
+        var itemJson = JSON.stringify(items[i]);
+        allParts.push(itemJson);
+        var added = (chunkItems.length > 0 ? 1 : 0) + itemJson.length;
+        if (chunkItems.length > 0 && chunkSize + added > CHUNK_MAX_BYTES) {
+            sendDirect(address + '/chunk', chunkItems);
+            chunkItems = [];
+            chunkSize = 2;
+        }
+        chunkItems.push(items[i]);
+        chunkSize += added;
+    }
+    if (chunkItems.length > 0) {
+        sendDirect(address + '/chunk', chunkItems);
+    }
+    sendDirect(address + '/end', (0, utils_1.simpleHash)('[' + allParts.join(',') + ']'));
 }
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
 function flushBatchBuffer() {
@@ -202,7 +253,19 @@ function send(address, val) {
     // (strings, JSON-encoded arrays/objects) are emitted immediately as their own
     // OSC packet — the app's /batch parser expects numeric values only, and
     // pre-fold osc() never batched non-numerics either.
-    if (typeof val !== 'number' || shouldBypass(address)) {
+    // Chunk-protocol pieces (/start//chunk//end) and meters go straight out; this
+    // guard also stops the /chunk arrays emitted below from re-entering chunking.
+    if (shouldBypass(address)) {
+        sendDirect(address, val);
+        return;
+    }
+    // Transport-level chunking: a large array is split into /start//chunk//end so
+    // feature code never deals with packet size. Capability-gated (see shouldChunk).
+    if (Array.isArray(val) && shouldChunk(address, val)) {
+        sendChunked(address, val);
+        return;
+    }
+    if (typeof val !== 'number') {
         sendDirect(address, val);
         return;
     }

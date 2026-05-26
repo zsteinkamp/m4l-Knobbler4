@@ -780,7 +780,7 @@ function sendSceneInfo() {
             scene.c = color;
         scenes.push(scene);
     }
-    (0, utils_1.sendChunkedData)('/clips/scenes', scenes);
+    (0, utils_1.osc)('/clips/scenes', scenes);
 }
 // ---------------------------------------------------------------------------
 // Incoming: clipView

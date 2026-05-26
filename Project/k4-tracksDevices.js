@@ -37,7 +37,7 @@ function updateDeviceNav() {
         // if no device is selected, null out the devices list
         (0, utils_1.osc)('/nav/currDeviceId', -1);
         //log('/nav/devices=' + JSON.stringify([]))
-        (0, utils_1.sendChunkedData)('/nav/devices', []);
+        (0, utils_1.osc)('/nav/devices', []);
         return;
     }
     //log('NEW CURR DEVICE ID=' + state.currDeviceId)
@@ -53,7 +53,7 @@ function updateDeviceNav() {
     var currType = currDeviceObj.type;
     if (+currDeviceObj.id === 0 || currType === 'Track' || currType === 'Song') {
         (0, utils_1.osc)('/nav/currDeviceId', -1);
-        (0, utils_1.sendChunkedData)('/nav/devices', []);
+        (0, utils_1.osc)('/nav/devices', []);
         return;
     }
     var currIsSupported = (0, utils_1.isDeviceSupported)(currDeviceObj);
@@ -164,7 +164,7 @@ function updateDeviceNav() {
         }
     }
     //log('/nav/devices=' + JSON.stringify(ret))
-    (0, utils_1.sendChunkedData)('/nav/devices', ret);
+    (0, utils_1.osc)('/nav/devices', ret);
 }
 var trackChangeDebounce = null;
 function onCurrTrackChange(val) {

@@ -173,6 +173,7 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 - Folded in: `utils.osc()` feeds `oscBatch.send` via the `setOscSink(ctx.osc)` hook (not a wire)
 - Batches NUMERIC values into a single `/batch` JSON payload (batch-capable clients), else per-address throttle; non-numeric payloads go straight out as their own packet
 - Flushes every 10ms / >1KB; bypasses chunked + meter messages
+- **Chunking is a pipeline stage here, not a caller concern.** A large array `osc(addr, arr)` is split into `addr/start` + `addr/chunk…` + `addr/end` (checksum = `simpleHash`) automatically — callers never call a chunk helper. Gated by capability: `chunkAny` apps get *any* address chunked (the app reassembles + dispatches generically); `cNav`-only apps get only `LEGACY_CHUNK_ADDRS` chunked (they reassemble those into `oscDataRef[prefix]`); others get the array whole. The app re-dispatches a reassembled chunk through its normal handler, so a chunked and a whole message are equivalent.
 
 **`k4-discovery.ts`** - Network device discovery
 
