@@ -46,6 +46,12 @@ var sceneInfoTask = null;
 var pendingObserverKeys = [];
 var observerBatchTask = null;
 var OBSERVER_BATCH_SIZE = 10;
+// Keep a buffer of this fraction of the viewport (each side) warm around the
+// visible window; observers outside it are evicted. Bounds the resident
+// observer count to ~(1+2*WARM_MARGIN)^2 * viewport regardless of how far you
+// scroll — so multiplayer (N instances on one set) can't climb toward Live's
+// observer ceiling. See the applyWindow comment + 94e86ea.
+var WARM_MARGIN = 0.5;
 // Update batching
 var pendingUpdates = [];
 var updateFlushTask = null;
@@ -654,6 +660,16 @@ function teardownAll() {
 // ---------------------------------------------------------------------------
 // Window Management
 // ---------------------------------------------------------------------------
+// Observers are kept WARM across scrolls — not torn down the instant a cell/
+// track/scene leaves the viewport — so scroll-back is instant with low GC churn
+// (intent of commit 94e86ea, "Accumulate observers instead of recycling on
+// scroll"). To keep the resident count BOUNDED (essential for multiplayer: N
+// device instances accumulate against the SAME Live set and could otherwise
+// approach Live's LiveAPI observer ceiling and freeze change notifications), we
+// keep only a WARM_MARGIN buffer around the viewport and EVICT observers outside
+// it. So the count stays ~(1+2*WARM_MARGIN)^2 × viewport regardless of grid size
+// or scroll distance. (Full teardown still happens on a visible-tracks-list or
+// scene-count change.)
 function applyWindow() {
     if (leftTrack < 0 || topScene < 0)
         return;
@@ -663,6 +679,14 @@ function applyWindow() {
     // non-existent slots, which v8 logs as 'invalid path' / 'no valid object'.
     var visRight = Math.min(rightTrack, trackPaths.length);
     var visBottom = Math.min(bottomScene, totalScenes);
+    // Warm region = viewport expanded by WARM_MARGIN on each side, clamped to the
+    // grid. Observers inside it are kept; everything outside is evicted below.
+    var marginCols = Math.ceil((rightTrack - leftTrack) * WARM_MARGIN);
+    var marginRows = Math.ceil((bottomScene - topScene) * WARM_MARGIN);
+    var warmLeft = Math.max(0, leftTrack - marginCols);
+    var warmRight = Math.min(trackPaths.length, rightTrack + marginCols);
+    var warmTop = Math.max(0, topScene - marginRows);
+    var warmBottom = Math.min(totalScenes, bottomScene + marginRows);
     // --- Track play observers — create BEFORE cell observers so deriveCellState can use them ---
     for (var col = leftTrack; col < visRight; col++) {
         if (!trackPlayObservers[col]) {
@@ -686,6 +710,31 @@ function applyWindow() {
                 cellObservers[key] = readCellState(col, row);
                 pendingObserverKeys.push(key);
             }
+        }
+    }
+    // Evict observers outside the warm region (keeps the resident count bounded).
+    for (var key in cellObservers) {
+        var obs = cellObservers[key];
+        if (obs.trackIdx < warmLeft ||
+            obs.trackIdx >= warmRight ||
+            obs.sceneIdx < warmTop ||
+            obs.sceneIdx >= warmBottom) {
+            teardownCellObservers(obs);
+            delete cellObservers[key];
+        }
+    }
+    for (var k in trackPlayObservers) {
+        var col = +k;
+        if (col < warmLeft || col >= warmRight) {
+            teardownTrackPlayObservers(trackPlayObservers[col]);
+            delete trackPlayObservers[col];
+        }
+    }
+    for (var k in sceneObservers) {
+        var row = +k;
+        if (row < warmTop || row >= warmBottom) {
+            teardownSceneObserver(sceneObservers[row]);
+            delete sceneObservers[row];
         }
     }
     sendFullGrid();

@@ -133,13 +133,13 @@ let trackList: TrackInfo[] = []
 let leftIndex = -1
 let visibleCount = 0
 
-// Observers keyed by track ID — accumulate over session, never torn down on
-// scroll (see commit 94e86ea; reduces GC, makes scroll-back instant). Bounded
-// per instance by the track count.
-// CAVEAT (multiplayer): N instances accumulate against the same Live set, so
-// this + the clip-view accumulation (see k4-clipView applyWindow) can approach
-// Live's LiveAPI observer ceiling and freeze change notifications. If hit, cap
-// with a bounded warm cache rather than tearing down on scroll.
+// Observers keyed by track ID — kept WARM across scrolls (not torn down the
+// instant a strip leaves the viewport), so scroll-back is instant with low GC
+// churn (commit 94e86ea). Bounded to a WARM_MARGIN buffer around the viewport
+// (applyWindow evicts strips outside it) so multiplayer — N instances on one
+// Live set — can't climb toward Live's observer ceiling and freeze change
+// notifications. Mirrors the clip-view bound (see k4-clipView applyWindow).
+const WARM_MARGIN = 0.5 // keep this fraction of the viewport warm on each side
 let observersByTrackId: Record<number, StripObservers> = {}
 
 // Track IDs for which sendStripState has been called in the current visible window.
@@ -588,6 +588,20 @@ function applyWindow() {
     const tid = trackList[i].id
     if (observersByTrackId[tid]) {
       observersByTrackId[tid].stripIndex = i
+    }
+  }
+
+  // Evict strip observers outside the warm region (viewport + WARM_MARGIN each
+  // side) to keep the resident count bounded — see k4-clipView applyWindow.
+  const margin = Math.ceil(visibleCount * WARM_MARGIN)
+  const warmLeft = Math.max(0, leftIndex - margin)
+  const warmRight = Math.min(trackList.length, visRight + margin)
+  const warmIds: Record<number, boolean> = {}
+  for (let i = warmLeft; i < warmRight; i++) warmIds[trackList[i].id] = true
+  for (const tidStr in observersByTrackId) {
+    if (!warmIds[+tidStr]) {
+      teardownStripObservers(observersByTrackId[+tidStr])
+      delete observersByTrackId[+tidStr]
     }
   }
 
