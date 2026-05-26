@@ -109,9 +109,6 @@ let suppressOutLog = false
 function logOut(transport: string, address: string, value: any, byteLen: number) {
   let vs: any = value
   if (typeof vs === 'object' && vs !== null) vs = JSON.stringify(vs)
-  if (typeof vs === 'string' && vs.length > 120) {
-    vs = vs.slice(0, 120) + '…'
-  }
   const sz = byteLen >= 0 ? byteLen : '?'
   log('OSC OUT ' + sz + ' ' + transport + ' ' + address + ' ' + vs)
 }

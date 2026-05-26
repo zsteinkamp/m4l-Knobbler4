@@ -116,9 +116,6 @@ function debug(val: number) {
 function logIn(address: string, value: any) {
   let vs: any = value
   if (typeof vs === 'object' && vs !== null) vs = JSON.stringify(vs)
-  if (typeof vs === 'string' && vs.length > 120) {
-    vs = vs.slice(0, 120) + '…'
-  }
   const bytes = buildOscPacket(address, value).length
   log('OSC IN ' + bytes + ' ' + address + ' ' + vs)
 }
