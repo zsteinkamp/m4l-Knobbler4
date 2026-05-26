@@ -245,6 +245,37 @@ exports.osc = osc;
 var _f32buf = new ArrayBuffer(4);
 var _f32view = new DataView(_f32buf);
 var _f32bytes = new Uint8Array(_f32buf);
+// Append `str` to `out` as UTF-8 bytes. The OSC wire format is bytes, and the
+// app decodes strings as UTF-8 — so a non-ASCII char (e.g. "Ā" U+0100, accents,
+// emoji, CJK) must be encoded to its multi-byte UTF-8 sequence. The old
+// `charCodeAt(i) & 0xff` truncated each UTF-16 unit to one byte, which both
+// corrupted the text AND could emit a stray 0x00 (any U+xx00) that prematurely
+// terminates the null-terminated OSC string — desyncing the whole packet.
+function pushUtf8(out, str) {
+    for (var i = 0; i < str.length; i++) {
+        var c = str.charCodeAt(i);
+        // Combine a UTF-16 surrogate pair into a single code point.
+        if (c >= 0xd800 && c <= 0xdbff && i + 1 < str.length) {
+            var lo = str.charCodeAt(i + 1);
+            if (lo >= 0xdc00 && lo <= 0xdfff) {
+                c = 0x10000 + ((c - 0xd800) << 10) + (lo - 0xdc00);
+                i++;
+            }
+        }
+        if (c < 0x80) {
+            out.push(c);
+        }
+        else if (c < 0x800) {
+            out.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f));
+        }
+        else if (c < 0x10000) {
+            out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+        }
+        else {
+            out.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 0x3f), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+        }
+    }
+}
 function buildOscPacket(addr, value) {
     // No-arg OSC message (value omitted): just the address + an empty type-tag
     // string ",". Used for bare control sends like /page/X and /loop.
@@ -286,8 +317,7 @@ function buildOscPacket(addr, value) {
     }
     var out = [];
     // address, null-terminated, padded to 4-byte boundary
-    for (var i = 0; i < addr.length; i++)
-        out.push(addr.charCodeAt(i) & 0xff);
+    pushUtf8(out, addr);
     out.push(0);
     while (out.length & 0x3)
         out.push(0);
@@ -302,8 +332,7 @@ function buildOscPacket(addr, value) {
         out.push(_f32bytes[0], _f32bytes[1], _f32bytes[2], _f32bytes[3]);
     }
     else {
-        for (var i = 0; i < strVal.length; i++)
-            out.push(strVal.charCodeAt(i) & 0xff);
+        pushUtf8(out, strVal);
         out.push(0);
         while (out.length & 0x3)
             out.push(0);

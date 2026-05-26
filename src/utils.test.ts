@@ -10,6 +10,7 @@ import {
   meterVal,
   numArrToJson,
   cleanArr,
+  buildOscPacket,
 } from './utils'
 
 describe('dequote', () => {
@@ -179,5 +180,26 @@ describe('cleanArr', () => {
 
   it('filters multiple non-numeric prefixes', () => {
     expect(cleanArr(['id', 'count', '10', '20'] as any)).toEqual([10, 20])
+  })
+})
+
+describe('buildOscPacket', () => {
+  // OSC layout for a 2-char address + 's' arg: addr(4) + type-tag(4) + arg,
+  // so the arg bytes start at index 8.
+  it('keeps ASCII string args unchanged', () => {
+    expect(buildOscPacket('/x', 'AB').slice(8)).toEqual([0x41, 0x42, 0, 0])
+  })
+
+  it('UTF-8-encodes a non-ASCII char (regression: U+0100 was truncated to 0x00)', () => {
+    // "Ā" U+0100 -> UTF-8 0xC4 0x80 (old code emitted a single 0x00, which
+    // prematurely terminated the OSC string and desynced the packet).
+    expect(buildOscPacket('/x', 'Ā').slice(8)).toEqual([0xc4, 0x80, 0, 0])
+  })
+
+  it('UTF-8-encodes a surrogate-pair emoji as 4 bytes', () => {
+    // "🔊" U+1F50A -> F0 9F 94 8A
+    expect(buildOscPacket('/x', '🔊').slice(8)).toEqual([
+      0xf0, 0x9f, 0x94, 0x8a, 0, 0, 0, 0,
+    ])
   })
 })
