@@ -87,9 +87,22 @@ function sidebarMeters(val) {
     sidebarMixer.sidebarMeters(val);
 }
 // Debug checkbox in the patcher sends `debug 1` / `debug 0` to the entry; toggle
-// the OSC-outlet debug logging (rawbytes packets are decoded for readability).
+// both inbound (here) and outbound (oscBatch) OSC debug logging.
+var debugIn = false;
 function debug(val) {
+    debugIn = !!val;
     oscBatch.setDebug(!!val);
+}
+// Log an inbound OSC message: `OSC IN <address> <value>` (mirrors OSC OUT;
+// inbound arrives as parsed atoms, so there's no byte count / transport).
+function logIn(address, value) {
+    var vs = value;
+    if (typeof vs === 'object' && vs !== null)
+        vs = JSON.stringify(vs);
+    if (typeof vs === 'string' && vs.length > 120) {
+        vs = vs.slice(0, 120) + '…(' + vs.length + ' chars)';
+    }
+    log('OSC IN ' + address + ' ' + vs);
 }
 // Page changes drive meter flushing in both mixer modules AND switch the
 // device's page UI (---PAGE), the latter formerly the router's pageHandler.
@@ -282,6 +295,9 @@ function dispatch(address, value) {
 }
 function anything(value) {
     var address = messagename;
+    if (debugIn) {
+        logIn(address, value);
+    }
     if (address === '/batch') {
         try {
             var batch = JSON.parse(value);
