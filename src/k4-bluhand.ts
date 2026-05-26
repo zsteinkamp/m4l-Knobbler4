@@ -410,6 +410,7 @@ const TRANSPORT_MAP: [string, string][] = [
   ['re_enable_automation_enabled', '/reEnableAutomationEnabled'],
   ['loop_start', '/loopStart'],
   ['loop_length', '/loopLength'],
+  ['back_to_arranger', '/backToArranger'],
 ]
 function makeTransportCb(prop: string, addr: string) {
   return function (args: IArguments) {
@@ -838,6 +839,11 @@ function btnSessionRecord() {
   const isRecord = parseInt(ctlApi.get('session_record'))
   ctlApi.set('session_record', isRecord ? 0 : 1)
 }
+// "Back to Arrangement" — Live sets back_to_arranger to 1 when session clips
+// override the arrangement; the button only returns to the arrangement (sets 0).
+function btnBackToArranger() {
+  getLiveSetApi().set('back_to_arranger', 0)
+}
 
 function ctlRec() {
   const ctlApi = getLiveSetApi()
@@ -931,6 +937,7 @@ const routes: Route[] = [
   { prefix: '/btnCaptureMidi', parse: 'bare', fn: btnCaptureMidi },
   { prefix: '/btnArrangementOverdub', parse: 'bare', fn: btnArrangementOverdub },
   { prefix: '/btnSessionRecord', parse: 'bare', fn: btnSessionRecord },
+  { prefix: '/btnBackToArranger', parse: 'bare', fn: btnBackToArranger },
   { prefix: '/bCtlRec', parse: 'bare', fn: ctlRec },
   { prefix: '/bCtlPlay', parse: 'bare', fn: ctlPlay },
   { prefix: '/bCtlStop', parse: 'bare', fn: ctlStop },
