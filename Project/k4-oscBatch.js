@@ -35,6 +35,7 @@ var LEGACY_CHUNK_ADDRS = [
 var batchEnabled = false;
 var cNavEnabled = false;
 var chunkAnyEnabled = false;
+var columnarEnabled = false;
 var oscBuffer = {};
 var oscBufferSize = 0;
 var oscBufferBytes = 2; // opening/closing braces: {}
@@ -60,12 +61,16 @@ function shouldBypass(address) {
 }
 function checkClientCapabilities() {
     var caps = (0, utils_1.loadSetting)('clientCapabilities');
-    var s = typeof caps === 'string' ? caps : '';
+    // Treat the space-delimited capability string as an array — exact membership,
+    // no substring false-matches (e.g. 'col' can't match inside another token).
+    var list = (typeof caps === 'string' ? caps : '').split(' ');
+    var has = function (c) { return list.indexOf(c) !== -1; };
     // Only batch when the client supports it AND we can ship the /batch JSON as
     // rawbytes — on older Max the envelope would intern a fresh string per flush.
-    batchEnabled = utils_1.RAWBYTES_OK && s.indexOf('batch') !== -1;
-    cNavEnabled = s.indexOf('cNav') !== -1;
-    chunkAnyEnabled = s.indexOf('chunkAny') !== -1;
+    batchEnabled = utils_1.RAWBYTES_OK && has('batch');
+    cNavEnabled = has('cNav');
+    chunkAnyEnabled = has('chunkAny');
+    columnarEnabled = has('col');
 }
 // rawbytes path: a complete OSC packet (built in JS) shipped to [udpsend] as
 // `rawbytes <byte…>`. 'rawbytes' is a fixed selector (gensym'd once); the rest
@@ -289,6 +294,43 @@ function throttleSend(address, val) {
         entry.task.schedule(delay);
     }
 }
+// --- Columnar encoding (array-of-objects -> { key, columns, data }) ---
+function isArrayOfObjects(v) {
+    // Array of >=2 plain objects. Arrays-of-arrays (e.g. /nav/devices,
+    // /visibleTracks) are already positional, so v[0] being an array excludes them.
+    // <2 records isn't worth the columns overhead.
+    return (Array.isArray(v) &&
+        v.length >= 2 &&
+        typeof v[0] === 'object' &&
+        v[0] !== null &&
+        !Array.isArray(v[0]));
+}
+// Build { key, columns, data }: columns = union of record keys (first-seen
+// order); each data row holds values in column order, with absent fields as
+// null. Lossless — the app omits null fields on decode, so a present 0 stays 0.
+function columnarize(address, arr) {
+    var columns = [];
+    var seen = {};
+    for (var i = 0; i < arr.length; i++) {
+        for (var k in arr[i]) {
+            if (!seen[k]) {
+                seen[k] = true;
+                columns.push(k);
+            }
+        }
+    }
+    var data = [];
+    for (var i = 0; i < arr.length; i++) {
+        var rec = arr[i];
+        var row = [];
+        for (var j = 0; j < columns.length; j++) {
+            var v = rec[columns[j]];
+            row.push(v === undefined ? null : v);
+        }
+        data.push(row);
+    }
+    return { key: address, columns: columns, data: data };
+}
 // --- Entry point ---
 // Registered as utils' osc() sink. Every module's osc(addr, val) lands here.
 function send(address, val) {
@@ -296,6 +338,15 @@ function send(address, val) {
     // (k4-system sends /sendState and /pong via osc()), so re-check on either.
     if (address === '/sendState' || address === '/pong') {
         checkClientCapabilities();
+    }
+    // Columnar transform: an array of plain objects repeats its keys per record.
+    // Rewrite it to a compact { key, columns, data } envelope under /columnar; the
+    // app de-columnarizes and re-dispatches to the original key. Transparent to
+    // callers, capability-gated ('col'). The envelope is an object, so it is not
+    // chunked — fine for current payloads (well under one datagram).
+    if (columnarEnabled && address !== '/columnar' && isArrayOfObjects(val)) {
+        send('/columnar', columnarize(address, val));
+        return;
     }
     // Only NUMERIC values ever go in the /batch envelope. Non-numeric payloads
     // (strings, JSON-encoded arrays/objects) are emitted immediately as their own
