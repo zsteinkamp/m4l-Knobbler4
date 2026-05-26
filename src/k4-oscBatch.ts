@@ -99,6 +99,10 @@ export function setDebug(v: boolean) {
   debugOut = !!v
 }
 
+// Set true while sendChunked emits its /start//chunk//end pieces, so they don't
+// each log an OSC OUT line — chunked sends get one summary line instead.
+let suppressOutLog = false
+
 // transport: 'rawbytes' or 'native'. byteLen < 0 = unknown (native, unencoded).
 function logOut(transport: string, address: string, value: any, byteLen: number) {
   let vs: any = value
@@ -139,10 +143,10 @@ function sendNative(address: string, val: any) {
 function sendDirect(address: string, val: any) {
   if (RAWBYTES_OK) {
     const bytes = buildOscPacket(address, val)
-    if (debugOut) logOut('rawbytes', address, val, bytes.length)
+    if (debugOut && !suppressOutLog) logOut('rawbytes', address, val, bytes.length)
     emitRawbytes(bytes)
   } else {
-    if (debugOut) logOut('native', address, val, -1)
+    if (debugOut && !suppressOutLog) logOut('native', address, val, -1)
     sendNative(address, val)
   }
 }
@@ -162,6 +166,8 @@ function shouldChunk(address: string, arr: any[]): boolean {
 // joined + ']' is identical to JSON.stringify(array) — which the app re-derives
 // from the reassembled items to verify integrity.
 function sendChunked(address: string, items: any[]) {
+  // Suppress per-piece OSC OUT logs; a chunked send gets one summary after /end.
+  suppressOutLog = true
   sendDirect(address + '/start', items.length)
   let chunkItems: any[] = []
   let chunkSize = 2
@@ -186,17 +192,21 @@ function sendChunked(address: string, items: any[]) {
   }
   const totalBytes = allParts.join(',').length + 2 // ~JSON.stringify(items) length
   sendDirect(address + '/end', simpleHash('[' + allParts.join(',') + ']'))
-  log(
-    'chunked ' +
-      address +
-      ': ' +
-      items.length +
-      ' items, ' +
-      totalBytes +
-      ' bytes, ' +
-      chunkCount +
-      ' chunks'
-  )
+  suppressOutLog = false
+
+  if (debugOut) {
+    log(
+      'OSC OUT [chunked] ' +
+        address +
+        ': ' +
+        items.length +
+        ' items, ' +
+        totalBytes +
+        ' bytes, ' +
+        chunkCount +
+        ' chunks'
+    )
+  }
 }
 
 // --- Batch path (coalesce into JSON, flush on timer or size) ---

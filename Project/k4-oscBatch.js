@@ -90,6 +90,9 @@ function setDebug(v) {
     debugOut = !!v;
 }
 exports.setDebug = setDebug;
+// Set true while sendChunked emits its /start//chunk//end pieces, so they don't
+// each log an OSC OUT line — chunked sends get one summary line instead.
+var suppressOutLog = false;
 // transport: 'rawbytes' or 'native'. byteLen < 0 = unknown (native, unencoded).
 function logOut(transport, address, value, byteLen) {
     var vs = value;
@@ -130,12 +133,12 @@ function sendNative(address, val) {
 function sendDirect(address, val) {
     if (utils_1.RAWBYTES_OK) {
         var bytes = (0, utils_1.buildOscPacket)(address, val);
-        if (debugOut)
+        if (debugOut && !suppressOutLog)
             logOut('rawbytes', address, val, bytes.length);
         emitRawbytes(bytes);
     }
     else {
-        if (debugOut)
+        if (debugOut && !suppressOutLog)
             logOut('native', address, val, -1);
         sendNative(address, val);
     }
@@ -155,6 +158,8 @@ function shouldChunk(address, arr) {
 // joined + ']' is identical to JSON.stringify(array) — which the app re-derives
 // from the reassembled items to verify integrity.
 function sendChunked(address, items) {
+    // Suppress per-piece OSC OUT logs; a chunked send gets one summary after /end.
+    suppressOutLog = true;
     sendDirect(address + '/start', items.length);
     var chunkItems = [];
     var chunkSize = 2;
@@ -179,15 +184,18 @@ function sendChunked(address, items) {
     }
     var totalBytes = allParts.join(',').length + 2; // ~JSON.stringify(items) length
     sendDirect(address + '/end', (0, utils_1.simpleHash)('[' + allParts.join(',') + ']'));
-    log('chunked ' +
-        address +
-        ': ' +
-        items.length +
-        ' items, ' +
-        totalBytes +
-        ' bytes, ' +
-        chunkCount +
-        ' chunks');
+    suppressOutLog = false;
+    if (debugOut) {
+        log('OSC OUT [chunked] ' +
+            address +
+            ': ' +
+            items.length +
+            ' items, ' +
+            totalBytes +
+            ' bytes, ' +
+            chunkCount +
+            ' chunks');
+    }
 }
 // --- Batch path (coalesce into JSON, flush on timer or size) ---
 function flushBatchBuffer() {
