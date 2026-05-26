@@ -36,6 +36,8 @@ docker exec m4l-knobbler4-node-1 sh -c "cd /app && yarn test"
 ```
 The container usually runs `npm run dev` (tsc --watch) on startup, so saving a `src/*.ts` edit auto-recompiles into `Project/`.
 
+**Run builds ONE AT A TIME — the devcontainer VM is memory-tight.** Docker Desktop's VM here is ~3.8 GiB and the `tsc --watch` dev chain idles near ~1 GiB, leaving only ~2.8 GiB headroom. A single `tsc` compile of this project (the generated 3000+-line `deviceParams.ts`) runs ~0.5–0.8 GiB, which is fine — but stacking several concurrent `yarn build`/`yarn tsc` invocations exhausts the VM, and the Linux OOM killer reaps `tsc --watch` (stops the container) and can destabilize `dockerd`/the bind-mount sync (symptoms: container exits with `did not receive an exit event`, or a *stale* `/app` mount where the container sees old source). Recovery: `docker restart` (re-syncs the mount); avoid `docker kill`. Prefer just saving the file and letting the watch recompile, or run one `yarn build` and wait for it. Optionally raise Docker Desktop memory to 6–8 GiB for headroom.
+
 ## Development Commands
 
 ### Build & Development
