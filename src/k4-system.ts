@@ -29,6 +29,10 @@ const REPLY_CAPS = ' mxr mkMap swap pos focus'
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null
 let ctx: AppContext = null
+// A /connect can arrive before init(ctx) runs (the app handshakes while the
+// device is still initializing — "Live API is not initialized"). Defer the
+// loop probe to init in that case instead of dereferencing a null ctx.
+let pendingLoopProbe = false
 
 function saveClient(val: string | number) {
   if (!val) {
@@ -73,7 +77,13 @@ function connect(val: string | number) {
   if (parts.length === 2) {
     outlet(OUTLET_CONFIGURE, 'host', parts[0])
     outlet(OUTLET_CONFIGURE, 'port', parseInt(parts[1]))
-    ctx.loopProbe()
+    // ctx may be null if /connect beat init() (device still initializing) —
+    // defer the probe to init() rather than crash.
+    if (ctx) {
+      ctx.loopProbe()
+    } else {
+      pendingLoopProbe = true
+    }
   }
 }
 
@@ -97,6 +107,11 @@ const routes: Route[] = [
 function init(c: AppContext) {
   setOscSink(c.osc)
   ctx = c
+  // Run a loop probe that a pre-init /connect had to defer.
+  if (pendingLoopProbe) {
+    pendingLoopProbe = false
+    ctx.loopProbe()
+  }
 }
 
 log('reloaded k4-system')

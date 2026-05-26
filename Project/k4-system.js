@@ -28,6 +28,10 @@ var REPLY_CAPS = ' mxr mkMap swap pos focus';
 var deviceVersion = '';
 var synRefreshTask = null;
 var ctx = null;
+// A /connect can arrive before init(ctx) runs (the app handshakes while the
+// device is still initializing — "Live API is not initialized"). Defer the
+// loop probe to init in that case instead of dereferencing a null ctx.
+var pendingLoopProbe = false;
 function saveClient(val) {
     if (!val) {
         return;
@@ -68,7 +72,14 @@ function connect(val) {
     if (parts.length === 2) {
         outlet(consts_1.OUTLET_CONFIGURE, 'host', parts[0]);
         outlet(consts_1.OUTLET_CONFIGURE, 'port', parseInt(parts[1]));
-        ctx.loopProbe();
+        // ctx may be null if /connect beat init() (device still initializing) —
+        // defer the probe to init() rather than crash.
+        if (ctx) {
+            ctx.loopProbe();
+        }
+        else {
+            pendingLoopProbe = true;
+        }
     }
 }
 function btnRefresh() {
@@ -90,6 +101,11 @@ exports.routes = routes;
 function init(c) {
     (0, utils_1.setOscSink)(c.osc);
     ctx = c;
+    // Run a loop probe that a pre-init /connect had to defer.
+    if (pendingLoopProbe) {
+        pendingLoopProbe = false;
+        ctx.loopProbe();
+    }
 }
 exports.init = init;
 log('reloaded k4-system');
