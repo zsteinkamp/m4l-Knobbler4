@@ -24,6 +24,7 @@
 - Use the Cue Points button to access your Arrangement View locators.
 - Tap a track name in Mixer or Clips view to select that track.
 - Tap the track name under a parameter on a Knobbler page to switch to that track.
+- Tap the **Follow Sel** (lock) button to unlock a surface from Live's selection — it then keeps its own current track and device, so navigating won't move Live's on-screen selection. Run a Knobbler instance per tablet and each can hold a different track and device at the same time. See [Multiple Tablets / Phones](./multiple-tablets.md).
 
 ### Mixer
 
