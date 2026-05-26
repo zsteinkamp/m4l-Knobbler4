@@ -406,6 +406,12 @@ When enabled, any automation moves made while session clips are playing is recor
 
 Toggle whether the Arrangement view transport loop is enabled.
 
+#### Back to Arrangement
+
+![Back to Arrangement](images/ipad-toolbar-back-to-arrangement.png)
+
+Mirrors Ableton Live's **Back to Arrangement** button. When you launch Session clips while the Arrangement is playing, Live's arrangement playback is overridden — Live lights up its orange Back to Arrangement button to show the override is active. Tap this button to clear the override and return playback to what's written in the Arrangement. It lights up in the same orange whenever an override is in effect, and is otherwise dim. (Requires Knobbler device v65 or newer, and the matching app version.)
+
 #### Previous / Next Locator
 
 ![Prev/Next Locator](images/ipad-toolbar-locators.png)
