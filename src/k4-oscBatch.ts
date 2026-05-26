@@ -340,10 +340,12 @@ function isArrayOfObjects(v: any): boolean {
   )
 }
 
-// Build { key, columns, data }: columns = union of record keys (first-seen
-// order); each data row holds values in column order, with absent fields as
+// Flat array: [ originalKey, columns, ...rows ]. columns = union of record keys
+// (first-seen order); each row holds values in column order, absent fields as
 // null. Lossless — the app omits null fields on decode, so a present 0 stays 0.
-function columnarize(address: string, arr: any[]) {
+// The flat-array shape (vs an object) lets a large /columnar ride the existing
+// array chunker; element 0 is a string, so it's never re-columnarized.
+function columnarize(address: string, arr: any[]): any[] {
   const columns: string[] = []
   const seen: Record<string, boolean> = {}
   for (let i = 0; i < arr.length; i++) {
@@ -354,7 +356,7 @@ function columnarize(address: string, arr: any[]) {
       }
     }
   }
-  const data: any[][] = []
+  const out: any[] = [address, columns]
   for (let i = 0; i < arr.length; i++) {
     const rec = arr[i]
     const row: any[] = []
@@ -362,9 +364,9 @@ function columnarize(address: string, arr: any[]) {
       const v = rec[columns[j]]
       row.push(v === undefined ? null : v)
     }
-    data.push(row)
+    out.push(row)
   }
-  return { key: address, columns: columns, data: data }
+  return out
 }
 
 // --- Entry point ---
@@ -378,10 +380,11 @@ function send(address: string, val: any) {
   }
 
   // Columnar transform: an array of plain objects repeats its keys per record.
-  // Rewrite it to a compact { key, columns, data } envelope under /columnar; the
-  // app de-columnarizes and re-dispatches to the original key. Transparent to
-  // callers, capability-gated ('col'). The envelope is an object, so it is not
-  // chunked — fine for current payloads (well under one datagram).
+  // Rewrite to a compact /columnar flat array [ key, columns, ...rows ]; the app
+  // de-columnarizes and re-dispatches to the original key. Transparent to
+  // callers, capability-gated ('col'). Re-entering send() routes it like any
+  // array — so a large one chunks via the normal path below (and element 0 is a
+  // string, so isArrayOfObjects won't re-columnarize it).
   if (columnarEnabled && address !== '/columnar' && isArrayOfObjects(val)) {
     send('/columnar', columnarize(address, val))
     return
