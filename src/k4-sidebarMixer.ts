@@ -505,13 +505,11 @@ function handleTrackChange(id: number) {
     osc('/mixer/solo', 0)
   }
 
-  // has_audio_output
-  const trackInfo = state.trackLookupObj.info.toString()
-  state.hasOutput =
-    trackInfo.indexOf('has_audio_output') > -1
-      ? !!parseInt(state.trackLookupObj.get('has_audio_output'))
-      : false
-  osc('/mixer/hasOutput', state.hasOutput ? 1 : 0)
+  // Treat every track as having audio output (see k4-multiMixer for rationale):
+  // has_audio_output isn't observable and only flips on device add/remove, so
+  // we keep the mixer controls/meters always live rather than tracking it.
+  state.hasOutput = true
+  osc('/mixer/hasOutput', 1)
 
   // meters — repoint or disable
   if (state.metersEnabled && state.hasOutput) {

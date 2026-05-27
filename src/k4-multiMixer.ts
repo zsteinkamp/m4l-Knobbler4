@@ -385,12 +385,12 @@ function createStripObservers(
     strip.armApi.property = 'arm'
   }
 
-  // Check has_audio_output
-  const trackInfo = strip.trackApi.info.toString()
-  strip.hasOutput =
-    trackInfo.indexOf('has_audio_output') > -1
-      ? !!parseInt(strip.trackApi.get('has_audio_output').toString())
-      : false
+  // Treat every track as having audio output. has_audio_output isn't
+  // observable and only flips when a track gains/loses its first device, so
+  // tracking it accurately means observing the devices list per strip — not
+  // worth the complexity. Always-on keeps the volume/pan/send sliders (and
+  // meters) live; on a track with no real output they simply read ~0.
+  strip.hasOutput = true
 
   // Meter observers are managed separately by applyWindow (visible tracks only)
 
