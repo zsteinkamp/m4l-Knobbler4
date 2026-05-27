@@ -1,6 +1,7 @@
 import {
   cleanArr,
   colorToString,
+  dequote,
   logFactory,
   osc,
   setOscSink,
@@ -33,8 +34,14 @@ let visibleTracksWatcher: LiveAPI = null
 let returnTracksWatcher: LiveAPI = null
 
 let trackList: TrackInfo[] = []
-let colorObservers: LiveAPI[] = []
-let colorDebounceTask: MaxTask = null
+// In Live a track must be SELECTED to rename or recolor it, so a single pair of
+// path-following observers on the selected track catches every user edit — no
+// need for per-track observers (which would also push N instances toward Live's
+// observer ceiling in multiplayer). The visible_tracks / return_tracks watchers
+// cover list membership and folding.
+let selTrackNameApi: LiveAPI = null
+let selTrackColorApi: LiveAPI = null
+let trackUpdateDebounceTask: MaxTask = null
 
 function ensureApis() {
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
@@ -112,41 +119,47 @@ function sendVisibleTracks() {
 }
 
 // ---------------------------------------------------------------------------
-// Color Observers
+// Selected-track name/color observers
 // ---------------------------------------------------------------------------
 
-function teardownColorObservers() {
-  for (let i = 0; i < colorObservers.length; i++) {
-    colorObservers[i].property = ''
-    colorObservers[i].id = 0
-  }
-  colorObservers = []
-}
-
-function createColorObservers() {
-  teardownColorObservers()
+function findTrack(id: number): TrackInfo | null {
   for (let i = 0; i < trackList.length; i++) {
-    const idx = i
-    const obs = new LiveAPI(function (args: any[]) {
-      if (args[0] === 'color') {
-        trackList[idx].color = colorToString(args[1].toString())
-        scheduleColorUpdate()
-      }
-    }, 'live_set')
-    obs.id = trackList[i].id
-    obs.property = 'color'
-    colorObservers.push(obs)
+    if (trackList[i].id === id) return trackList[i]
   }
+  return null
 }
 
-function scheduleColorUpdate() {
-  if (!colorDebounceTask) {
-    colorDebounceTask = new Task(function () {
+// Fires on name edits of the selected track AND on selection changes (the
+// path-following observer re-resolves). The change guard makes a mere selection
+// change a no-op; only a real rename re-sends.
+function onSelTrackNameChange(args: any[]) {
+  if (args[0] !== 'name') return
+  const t = findTrack(+selTrackNameApi.id)
+  if (!t) return
+  const newName = truncate(dequote(args[1].toString()), MAX_NAME_LEN)
+  if (t.name === newName) return
+  t.name = newName
+  scheduleTrackUpdate()
+}
+
+function onSelTrackColorChange(args: any[]) {
+  if (args[0] !== 'color') return
+  const t = findTrack(+selTrackColorApi.id)
+  if (!t) return
+  const newColor = colorToString(args[1].toString())
+  if (t.color === newColor) return
+  t.color = newColor
+  scheduleTrackUpdate()
+}
+
+function scheduleTrackUpdate() {
+  if (!trackUpdateDebounceTask) {
+    trackUpdateDebounceTask = new Task(function () {
       sendVisibleTracks()
     }) as MaxTask
   }
-  colorDebounceTask.cancel()
-  colorDebounceTask.schedule(50)
+  trackUpdateDebounceTask.cancel()
+  trackUpdateDebounceTask.schedule(50)
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +170,6 @@ function onVisibleTracksChange(args: any[]) {
   if (args[0] !== 'visible_tracks') return
   ensureApis()
   trackList = buildTrackList()
-  createColorObservers()
   sendVisibleTracks()
 }
 
@@ -165,7 +177,6 @@ function onReturnTracksChange(args: any[]) {
   if (args[0] !== 'return_tracks') return
   ensureApis()
   trackList = buildTrackList()
-  createColorObservers()
   sendVisibleTracks()
 }
 
@@ -184,7 +195,6 @@ function requestVisibleTracks() {
 function doRefresh() {
   ensureApis()
   trackList = buildTrackList()
-  createColorObservers()
   sendVisibleTracks()
 }
 
@@ -201,9 +211,18 @@ function init(c: AppContext) {
     returnTracksWatcher = new LiveAPI(onReturnTracksChange, 'live_set')
     returnTracksWatcher.property = 'return_tracks'
   }
+  if (!selTrackNameApi) {
+    selTrackNameApi = new LiveAPI(onSelTrackNameChange, 'live_set view selected_track')
+    selTrackNameApi.mode = 1
+    selTrackNameApi.property = 'name'
+  }
+  if (!selTrackColorApi) {
+    selTrackColorApi = new LiveAPI(onSelTrackColorChange, 'live_set view selected_track')
+    selTrackColorApi.mode = 1
+    selTrackColorApi.property = 'color'
+  }
 
   trackList = buildTrackList()
-  createColorObservers()
   sendVisibleTracks()
 }
 

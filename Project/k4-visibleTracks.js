@@ -15,8 +15,14 @@ var scratchApi = null;
 var visibleTracksWatcher = null;
 var returnTracksWatcher = null;
 var trackList = [];
-var colorObservers = [];
-var colorDebounceTask = null;
+// In Live a track must be SELECTED to rename or recolor it, so a single pair of
+// path-following observers on the selected track catches every user edit — no
+// need for per-track observers (which would also push N instances toward Live's
+// observer ceiling in multiplayer). The visible_tracks / return_tracks watchers
+// cover list membership and folding.
+var selTrackNameApi = null;
+var selTrackColorApi = null;
+var trackUpdateDebounceTask = null;
 function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
@@ -86,41 +92,50 @@ function sendVisibleTracks() {
     ctx.notifyVisibleTracks();
 }
 // ---------------------------------------------------------------------------
-// Color Observers
+// Selected-track name/color observers
 // ---------------------------------------------------------------------------
-function teardownColorObservers() {
-    for (var i = 0; i < colorObservers.length; i++) {
-        colorObservers[i].property = '';
-        colorObservers[i].id = 0;
-    }
-    colorObservers = [];
-}
-function createColorObservers() {
-    teardownColorObservers();
-    var _loop_1 = function (i) {
-        var idx = i;
-        var obs = new LiveAPI(function (args) {
-            if (args[0] === 'color') {
-                trackList[idx].color = (0, utils_1.colorToString)(args[1].toString());
-                scheduleColorUpdate();
-            }
-        }, 'live_set');
-        obs.id = trackList[i].id;
-        obs.property = 'color';
-        colorObservers.push(obs);
-    };
+function findTrack(id) {
     for (var i = 0; i < trackList.length; i++) {
-        _loop_1(i);
+        if (trackList[i].id === id)
+            return trackList[i];
     }
+    return null;
 }
-function scheduleColorUpdate() {
-    if (!colorDebounceTask) {
-        colorDebounceTask = new Task(function () {
+// Fires on name edits of the selected track AND on selection changes (the
+// path-following observer re-resolves). The change guard makes a mere selection
+// change a no-op; only a real rename re-sends.
+function onSelTrackNameChange(args) {
+    if (args[0] !== 'name')
+        return;
+    var t = findTrack(+selTrackNameApi.id);
+    if (!t)
+        return;
+    var newName = (0, utils_1.truncate)((0, utils_1.dequote)(args[1].toString()), consts_1.MAX_NAME_LEN);
+    if (t.name === newName)
+        return;
+    t.name = newName;
+    scheduleTrackUpdate();
+}
+function onSelTrackColorChange(args) {
+    if (args[0] !== 'color')
+        return;
+    var t = findTrack(+selTrackColorApi.id);
+    if (!t)
+        return;
+    var newColor = (0, utils_1.colorToString)(args[1].toString());
+    if (t.color === newColor)
+        return;
+    t.color = newColor;
+    scheduleTrackUpdate();
+}
+function scheduleTrackUpdate() {
+    if (!trackUpdateDebounceTask) {
+        trackUpdateDebounceTask = new Task(function () {
             sendVisibleTracks();
         });
     }
-    colorDebounceTask.cancel();
-    colorDebounceTask.schedule(50);
+    trackUpdateDebounceTask.cancel();
+    trackUpdateDebounceTask.schedule(50);
 }
 // ---------------------------------------------------------------------------
 // Watchers
@@ -130,7 +145,6 @@ function onVisibleTracksChange(args) {
         return;
     ensureApis();
     trackList = buildTrackList();
-    createColorObservers();
     sendVisibleTracks();
 }
 function onReturnTracksChange(args) {
@@ -138,7 +152,6 @@ function onReturnTracksChange(args) {
         return;
     ensureApis();
     trackList = buildTrackList();
-    createColorObservers();
     sendVisibleTracks();
 }
 // ---------------------------------------------------------------------------
@@ -154,7 +167,6 @@ function requestVisibleTracks() {
 function doRefresh() {
     ensureApis();
     trackList = buildTrackList();
-    createColorObservers();
     sendVisibleTracks();
 }
 function init(c) {
@@ -169,8 +181,17 @@ function init(c) {
         returnTracksWatcher = new LiveAPI(onReturnTracksChange, 'live_set');
         returnTracksWatcher.property = 'return_tracks';
     }
+    if (!selTrackNameApi) {
+        selTrackNameApi = new LiveAPI(onSelTrackNameChange, 'live_set view selected_track');
+        selTrackNameApi.mode = 1;
+        selTrackNameApi.property = 'name';
+    }
+    if (!selTrackColorApi) {
+        selTrackColorApi = new LiveAPI(onSelTrackColorChange, 'live_set view selected_track');
+        selTrackColorApi.mode = 1;
+        selTrackColorApi.property = 'color';
+    }
     trackList = buildTrackList();
-    createColorObservers();
     sendVisibleTracks();
 }
 exports.init = init;
