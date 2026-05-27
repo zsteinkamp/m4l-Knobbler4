@@ -178,6 +178,13 @@ function onParameterChange() {
 
   state.devicePath = api.unquotedpath
 
+  // Re-point the header track name/color at the new device's OWNING track. This
+  // is the one place that knows the device actually changed (in both lock
+  // modes), so the header follows the device, not Live's selected track.
+  const tp = deviceTrackPath()
+  repoint(trackNameApi, tp, 'name')
+  repoint(trackColorApi, tp, 'color')
+
   if (!canHaveChains) {
     // null send variation stuff
     osc('/blu/variations', '')
@@ -571,7 +578,7 @@ function initNameColorObservers() {
     }
     trackName = dequote(args[1].toString())
     emitCurrDeviceName()
-  }, ctx.focus.trackPath())
+  }, deviceTrackPath())
   trackNameApi.mode = 1
   trackNameApi.property = 'name'
 
@@ -590,9 +597,31 @@ function initNameColorObservers() {
       return
     }
     Slots.setColor(args[1].toString())
-  }, ctx.focus.trackPath())
+  }, deviceTrackPath())
   trackColorApi.mode = 1
   trackColorApi.property = 'color'
+}
+
+// Matches the top-level track prefix of a device's canonical path (mirrors
+// k4-focus's TRACK_PATH_RE). Anchored at the start so a nested-chain device
+// (`live_set tracks 3 devices 0 chains 1 devices 0`) still resolves to its
+// top-level track.
+const TRACK_PATH_RE = /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/
+
+// The track that OWNS the currently displayed device, derived from the device's
+// concrete path (state.devicePath — set from the resolved device's unquotedpath
+// on every device change, so it's concrete in both lock modes, unlike
+// focus.devicePath() which is Live's literal selection path while locked). The
+// bluhand header (track name + color) describes the device being controlled, so
+// it must follow THAT device's track — not Live's current selection, which can
+// move to a deviceless track while the displayed device (and its params) stay
+// put. state.devicePath is never cleared, so it holds the last real device:
+// navigating to a deviceless track leaves the header on that device's track.
+// Empty only before the first device is shown.
+function deviceTrackPath(): string {
+  if (!state.devicePath) return ''
+  const m = state.devicePath.match(TRACK_PATH_RE)
+  return m ? m[1] : ''
 }
 
 // Re-point a mode-1 property observer at a new canonical path. Clearing the
@@ -616,10 +645,11 @@ function repoint(api: LiveAPI, target: string, prop: string) {
 // targets are Live's selection paths (auto-following), so this only fires on
 // unlock-mode navigation and lock transitions — see k4-focus.
 function rebindFocusHandles() {
-  const tp = ctx.focus.trackPath()
   const dp = ctx.focus.devicePath()
-  repoint(trackNameApi, tp, 'name')
-  repoint(trackColorApi, tp, 'color')
+  // Track name/color are NOT repointed here: they follow the displayed device's
+  // owning track, repointed in onParameterChange when the device actually
+  // changes. Repointing paramsWatcher below re-fires that (debouncedParameter
+  // change), and on a deviceless target it stays put — exactly what we want.
   repoint(deviceNameApi, dp, 'name')
   repoint(state.paramsWatcher, dp, 'parameters')
   repoint(state.variationsWatcher, dp, 'variation_count')
