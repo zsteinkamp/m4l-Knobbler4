@@ -20,8 +20,9 @@ function ensureApis() {
 }
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
-// Coalescing window for /mixerView: the app sends only at scroll rest, so this
-// just merges the drag-end + momentum-end pair, not a whole scroll gesture.
+// Small coalescing window for /mixerView. The app already debounces (~100ms
+// after scroll settles), so the device just needs to merge any back-to-back
+// requests rather than ride out a whole scroll gesture.
 var MIXERVIEW_DEBOUNCE_MS = 40;
 // Pre-computed OSC address strings for mixer strips
 var SA_VOL = [];
