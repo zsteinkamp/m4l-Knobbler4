@@ -14,7 +14,10 @@ var CLIP_PLAYING = 2;
 var CLIP_TRIGGERED = 3;
 var CLIP_RECORDING = 4;
 var CLIP_ARMED = 5;
-var VIEW_DEBOUNCE_MS = 250;
+// Small coalescing window for /clipView. The app already debounces (~100ms
+// after scroll settles), so the device just needs to merge any back-to-back
+// requests rather than ride out a whole scroll gesture.
+var VIEW_DEBOUNCE_MS = 40;
 var UPDATE_FLUSH_MS = 50;
 // ---------------------------------------------------------------------------
 // State

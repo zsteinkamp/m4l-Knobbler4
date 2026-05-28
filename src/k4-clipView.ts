@@ -15,7 +15,10 @@ const CLIP_TRIGGERED = 3
 const CLIP_RECORDING = 4
 const CLIP_ARMED = 5
 
-const VIEW_DEBOUNCE_MS = 250
+// Small coalescing window for /clipView. The app already debounces (~100ms
+// after scroll settles), so the device just needs to merge any back-to-back
+// requests rather than ride out a whole scroll gesture.
+const VIEW_DEBOUNCE_MS = 40
 const UPDATE_FLUSH_MS = 50
 // ---------------------------------------------------------------------------
 // Types
