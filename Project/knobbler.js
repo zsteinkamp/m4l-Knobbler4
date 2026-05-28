@@ -172,10 +172,19 @@ function loopDetected() {
     oscBatch.setOutputBlocked(true);
     log('feedback loop: output host:port == input — output blocked until reconnect');
 }
+// App-side diagnostic channel: the app sends /debug/log <string> and it lands
+// in the Max console as `[app] <string>`. Useful for surfacing lifecycle or
+// state-change events from a prod build of the app where dev logs aren't
+// reachable. No app-side caller is wired up by default — add `OscSend(
+// '/debug/log', [...])` from any component when investigating something.
+function debugLog(val) {
+    log('[app] ' + String(val));
+}
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
 var entryRoutes = [
     { prefix: '/page/', parse: 'custom', fn: pageDispatch },
     { prefix: '/loop', parse: 'bare', fn: loopDetected },
+    { prefix: '/debug/log', parse: 'val', fn: debugLog },
 ];
 // knobblerCore (the former [v8 knobbler4]) — OSC routes.
 var knobblerRoutes = [
