@@ -20,6 +20,9 @@ function ensureApis() {
 }
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
+// Coalescing window for /mixerView: the app sends only at scroll rest, so this
+// just merges the drag-end + momentum-end pair, not a whole scroll gesture.
+var MIXERVIEW_DEBOUNCE_MS = 40;
 // Pre-computed OSC address strings for mixer strips
 var SA_VOL = [];
 var SA_VOLSTR = [];
@@ -571,7 +574,7 @@ function mixerView() {
     mixerViewTask = new Task(function () {
         setupWindow(left, count);
     });
-    mixerViewTask.schedule(250);
+    mixerViewTask.schedule(MIXERVIEW_DEBOUNCE_MS);
 }
 function mixerMeters(val) {
     var enabled = !!parseInt(val.toString());

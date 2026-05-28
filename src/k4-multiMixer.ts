@@ -83,6 +83,10 @@ function ensureApis() {
 
 const DEFAULT_VISIBLE_COUNT = 18
 const MAX_STRIP_IDX = 128
+// Small coalescing window for /mixerView. The app already debounces (~100ms
+// after scroll settles), so the device just needs to merge any back-to-back
+// requests rather than ride out a whole scroll gesture.
+const MIXERVIEW_DEBOUNCE_MS = 40
 
 // Pre-computed OSC address strings for mixer strips
 const SA_VOL: string[] = []
@@ -687,7 +691,7 @@ function mixerView() {
   mixerViewTask = new Task(function () {
     setupWindow(left, count)
   }) as MaxTask
-  mixerViewTask.schedule(250)
+  mixerViewTask.schedule(MIXERVIEW_DEBOUNCE_MS)
 }
 
 function mixerMeters(val: number) {
