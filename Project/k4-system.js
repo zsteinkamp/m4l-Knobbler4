@@ -52,6 +52,16 @@ exports.setDeviceVersion = setDeviceVersion;
 function synAck(val) {
     saveClient(val);
     (0, utils_1.osc)('/ack', deviceVersion + REPLY_CAPS);
+    // Push /nav/currTrackId immediately after /ack so the app can pre-compute
+    // its mixer window and skip rendering the wrong strips. Without this it
+    // would arrive at the end of the deferred refresh chain (~seconds later
+    // on big sets) while the app sits gated on it. The full re-push fired
+    // 150ms later will emit it again via the normal tracksDevices path; that
+    // second emit is a no-op for the app (same id).
+    var trackApi = new LiveAPI(consts_1.noFn, 'live_set view selected_track');
+    if (+trackApi.id !== 0) {
+        (0, utils_1.osc)('/nav/currTrackId', +trackApi.id);
+    }
     (0, utils_1.osc)('/sendState', 1);
     if (synRefreshTask) {
         synRefreshTask.cancel();

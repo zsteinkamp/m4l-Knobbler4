@@ -19,7 +19,7 @@
 
 import config from './k4-config'
 import { logFactory, osc, saveSetting, setOscSink } from './utils'
-import { OUTLET_REFRESH, OUTLET_CONFIGURE } from './consts'
+import { noFn, OUTLET_REFRESH, OUTLET_CONFIGURE } from './consts'
 
 const log = logFactory(config)
 
@@ -55,6 +55,16 @@ function setDeviceVersion(ver: string) {
 function synAck(val: string | number) {
   saveClient(val)
   osc('/ack', deviceVersion + REPLY_CAPS)
+  // Push /nav/currTrackId immediately after /ack so the app can pre-compute
+  // its mixer window and skip rendering the wrong strips. Without this it
+  // would arrive at the end of the deferred refresh chain (~seconds later
+  // on big sets) while the app sits gated on it. The full re-push fired
+  // 150ms later will emit it again via the normal tracksDevices path; that
+  // second emit is a no-op for the app (same id).
+  const trackApi = new LiveAPI(noFn, 'live_set view selected_track')
+  if (+trackApi.id !== 0) {
+    osc('/nav/currTrackId', +trackApi.id)
+  }
   osc('/sendState', 1)
   if (synRefreshTask) {
     synRefreshTask.cancel()
