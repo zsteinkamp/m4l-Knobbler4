@@ -347,6 +347,106 @@ The conventions used in this device:
 - **LCD displays** (value readouts) **and the LCD-styled page-tab strip** (`live.tab`): bg `live_lcd_bg`, text `live_lcd_control_fg`, dimmed/inactive text `live_lcd_control_fg_zombie`, selected-tab highlight `live_control_selection`, text-on-selected-tab `live_lcd_bg` (dark for contrast). `live.tab` color attrs: `bgcolor`/`activebgcolor`, `bgoncolor`, `textcolor`, `textoncolor`, `inactivetextoffcolor`, `inactivetextoncolor`, `focusbordercolor`.
 - Do **not** use the generic patcher tokens `theme_textcolor`/`theme_textcolor_inverse` on Live widgets — use the `live_*` family.
 
+## Max symbol-table interning & LiveAPI observer lifecycle (`[v8]` M4L)
+
+> This section doubles as the source notes for a blog post — it keeps the full
+> investigation (symptom → method → measurements → mechanism → fix), not just the
+> rules. Reproduce any claim with the `k4-symbolTest` harness (below).
+
+### Symptom
+
+On medium+ sets (here: **37 tracks × 13 scenes, 432 clip cells**) Knobbler's
+performance degrades over a session. There's a clear correlation with Max's
+**global symbol table** size (`; max size` → "N symbols in memory"). Opening a set
++ connecting sits near ~34–45k symbols; once it climbs past ~100k, performance is
+severely degraded. Symbols are **interned permanently** — `gensym` never frees
+them until Max quits — and in M4L, Max runs *inside* Live's process, so this is
+the table the device shares with Live's LOM. The question: what interns, and what
+grows without bound?
+
+### Method — the `k4-symbolTest` harness
+
+`src/k4-symbolTest.ts` loads in a `[v8]` object whose **outlet 1** is wired to a
+`[; max size]` message; `reportSize()` bangs it after every command so each op
+prints the resulting symbol count. **outlet 0** is the string-interning probe.
+`prep` seeds 200k shared-prefix symbols and `bench` times re-looking-them-up, so a
+post-op `bench` slowdown corroborates that an op interned (the count delta is the
+primary signal). Always run in a **fresh Max launch** — the table is global.
+
+### Measurements (Live 12.4, Max 9.1.4, `[v8]`)
+
+| Path exercised | Result | Verdict |
+|---|---|---|
+| `prep` — outlet 200k distinct **primitive strings** | +200,002 symbols | **outletting a primitive string interns ~1:1** |
+| `stressReadStrSweep` — `LiveAPI.call('str_for_value', v)` over **59,715 distinct** display strings | **+13**, no `bench` slowdown | **string READS do NOT intern** in `[v8]` (returned as `t_string`, not `gensym`'d) |
+| `stressPathSet` — assign 1,000 distinct `api.path = '…'` | +1,014 | **path WRITES intern ~1:1** |
+| `stressObsCreate` — create **+ detach** 2,000 observers on ONE already-interned object | **+12,018 (~6 / observer)**, `bench` 95→144ms | **observer TEARDOWN leaks ~6 permanent symbols each; detach never frees them** |
+| `stressObsReuse` — re-point ONE observer's `.id` 2,000× | **+8 (~0)** | **re-pointing a reused observer is free** |
+| Mixer page *entry* (~234 observers created and **kept alive**) | +4 | **observer CREATE is ~free** (the leak is on teardown) |
+| OSC output (`rawbytes` byte list, Max ≥ 9.1.0) | 0 | addresses + string args are encoded to UTF-8 **bytes**, never atoms |
+
+### Mechanism / rules (what to remember)
+
+- **`.path =` and `new LiveAPI(cb, 'live_set …')` intern** the path string (~1 symbol per distinct path). **`.id = N` is numeric and interns nothing.** `'id ' + n` passed as a path is a *string* → interns; use `.id = n` instead.
+- **LiveAPI string reads don't intern** in `[v8]` (`.get('name')`, `.get('value_items')`, `.call('str_for_value', …)`), even thousands of distinct results. Same family as the `new String(...)` → `t_string` outlet trick. So display-string churn is **not** a symbol source here.
+- **Id-list reads don't intern** (`.get('clip_slots'/'devices'/'sends'/'scenes'/'clip')` return id arrays) — so you can navigate the whole object graph by id for free.
+- **Observer create is ~free; observer teardown leaks ~6 symbols; re-point is free.** This is the big one: **tearing down and recreating observers is an unbounded leak**, and detaching does not give the symbols back.
+- **`rawbytes` OSC output is symbol-clean** (Max ≥ 9.1.0). Numerics never intern; the only legacy interning source is the `< 9.1.0` native `addr value` fallback (strings) — already gated off (`RAWBYTES_OK`).
+
+### Where it bit us (per-page deltas, same set)
+
+- **Mixer page entry:** +800 → **+3** after binding strip observers by `.id` (id-list reads + `obsById`) instead of by path. (`k4-multiMixer`.)
+- **Clips page entry:** +4,054 — id-binding `k4-clipView` made it **markedly faster** (no per-cell path resolution) but did **not** cut the symbols, because the source isn't paths.
+- **Scrolling either grid back-and-forth keeps adding thousands per pass** (clips: +10.7k, +2.5k, +1.3k, … ; mixer: +0.5–1.3k). This is the **45k→100k driver**: the windowing keeps a `WARM_MARGIN` buffer and **evicts (detaches) + recreates** observers as cells/strips scroll in and out — i.e. the exact teardown-churn leak, ~6 symbols × every observer × every pass.
+
+### The fix — bind by id, then POOL observers (re-point, never churn)
+
+Two layers, both validated by the harness:
+
+1. **Bind observers by `.id`, not path.** Resolve an object's id once (it's already
+   known for tracks, or comes from a non-interning id-list read for children:
+   `.get('mixer_device'/'volume'/'panning'/'sends'/'clip_slots'/'clip'/'scenes')`),
+   then `new LiveAPI(cb, ''); api.id = id; api.property = prop` (helper: `obsById`).
+   The `''` ctor path is interned once globally. Kills per-object path interning
+   **and** is ~1.7× faster (no path resolution). Done in `k4-multiMixer` and
+   `k4-clipView`.
+
+2. **Pool observers and re-point on scroll instead of evict+recreate.** Because
+   teardown leaks and re-point is free, the windowing must **reuse** observer
+   objects. In `applyWindow`, compute `toAdd` (newly-warm) and `toRemove`
+   (now-cold), **pair them**, and for each pair *re-point* the existing observer
+   set to the new target (`api.id = newId; api.property = prop`). Park leftover
+   removes in a **free pool**; pull from it for leftover adds; only `new LiveAPI`
+   when the pool is empty (one-time growth). Real teardown happens **only** on a
+   full rebuild (track-list / scene-count change). On steady scrolling the window
+   size is constant, so `|toAdd| == |toRemove|` every step → every scroll is pure
+   re-pointing → **zero teardown, zero leak**, and faster. A fixed pool also
+   **bounds the resident observer count by construction**, which is what the
+   original eviction (commit 94e86ea) was protecting against (Live's LiveAPI
+   observer ceiling — important for multiplayer: N device instances on one set).
+   Edge cases: the **master strip** (no mute/solo/arm) sits at a fixed edge, so its
+   rare in/out transitions can tear-down/recreate just those few observers; **send
+   count** is constant per set (= number of return tracks), so pooled send
+   observers re-point cleanly (a returns-count change triggers a full rebuild
+   anyway).
+
+### Blog-post arc (for the separate writeup)
+
+1. The mystery: a parameter controller that gets slow on big sets, tracked to a
+   monotonically growing Max symbol table (and Max-in-Live shares that table).
+2. Building a measurement harness instead of guessing (`prep`/`bench`/stress ops,
+   `[; max size]` readout, fresh-launch discipline).
+3. Falsifying the obvious suspect: `str_for_value` display strings — 59,715
+   distinct → +13. Reads don't intern in `[v8]`. (Lesson: measure before cutting.)
+4. Finding path writes (~1:1) and fixing the mixer page (+800 → +3) by binding
+   observers by id — but clips wouldn't budge.
+5. The real culprit: **observer teardown leaks (~6 symbols each, never freed);
+   scroll churn is unbounded** — isolated with create+detach vs. re-point probes
+   (+12,018 vs. +8).
+6. The payoff: a **bounded observer pool** that re-points on scroll — flattens the
+   leak, bounds resident observers, and runs faster. One pattern that fixes a
+   correctness-class bug (unbounded memory) and a performance bug at once.
+
 ## Important Notes
 
 - **Remember to commit compiled JavaScript files** from `Project/` directory - they are build artifacts currently tracked in git
