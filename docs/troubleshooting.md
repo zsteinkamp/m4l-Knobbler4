@@ -171,6 +171,23 @@ To turn it back on, click that **OFF** button, or go to the CPU meter dropdown m
 
 The keyboard shortcut is also shown in the menu (on Mac it is **&#x2303;&#x2325;&#x21E7;E**). Once the engine is back on, Knobbler will resume normal operation.
 
+#### When recording automation over WiFi, the data has tiny regular gaps. Over USB it's perfectly smooth. Why?
+
+This is caused by **AirDrop**, not by Knobbler or your network.
+
+To support AirDrop, your iPad runs a second peer-to-peer radio called AWDL. Every so often (a few times per second) it briefly hops the WiFi radio off of your network's channel to listen for nearby devices. Any data in flight during that hop is delayed by a few milliseconds. You normally never notice it, but when you're recording dense, continuous automation it shows up as small, regular gaps in the recorded curve.
+
+![Regular gaps in recorded automation over WiFi](images/wifi-automation-gaps.png)
+
+In the recording above, made over WiFi, the automation points bunch up and then leave short flat stretches at a regular cadence — those flat stretches are the moments the radio was off-channel.
+
+What helps, in order of impact:
+
+- **Turn off AirDrop** on the iPad (Control Center → AirDrop → Receiving Off, or Settings → General → AirDrop → Receiving Off). This removes the gaps.
+- For the smoothest possible result, use a **[USB connection](USB.md)**, which bypasses WiFi entirely and is not affected by this at all.
+
+This is a system-level behavior of iOS that apps cannot turn off, so the options above are the way to avoid it.
+
 #### HALP! Nothing above covers what I'm experiencing!
 
 Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, screenshots (there are never too many screenshots), events from your childhood that relate, etc. zack@steinkamp.us
