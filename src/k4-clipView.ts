@@ -93,6 +93,18 @@ let settingUp = false // guard against watcher callbacks during setupWindow
 let cellObservers: Record<string, CellObservers> = {} // key: "col,row"
 let trackPlayObservers: Record<number, TrackPlayObservers> = {} // key: trackIdx
 let sceneObservers: Record<number, SceneInfo> = {} // key: sceneIndex
+
+// Free pools of PARKED observer structs (all observers unsubscribed). On scroll,
+// observers leaving the warm region are parked here and RE-POINTED onto cells/
+// tracks/scenes entering it instead of being torn down — teardown leaks ~6
+// symbols per observer, re-point is free (see CLAUDE.md). Real teardown happens
+// only on a full rebuild. Caps bound the pools; overflow (rare) is torn down.
+let cellPool: CellObservers[] = []
+let trackPlayPool: TrackPlayObservers[] = []
+let scenePool: SceneInfo[] = []
+const CELL_POOL_CAP = 512
+const TRACK_POOL_CAP = 128
+const SCENE_POOL_CAP = 128
 let sceneCache: { n: string; c: string }[] = [] // cached scene name/color for all scenes
 
 // Debounce
@@ -140,6 +152,30 @@ function obsById(id: number, cb: any, prop?: string): LiveAPI {
   api.id = id
   if (prop) api.property = prop
   return api
+}
+
+// Re-point an existing observer to a new object id + property — free (no path
+// interning, no teardown leak). Basis of the observer pools below.
+function reArm(api: LiveAPI, id: number, prop: string) {
+  api.id = id
+  api.property = prop
+}
+
+// Reuse an observer if present (re-point — free), else create one bound by id.
+// The callback `cb` is used only on first creation; on reuse the existing api's
+// callback (closed over the persistent struct) is kept.
+function ensureObs(api: LiveAPI, id: number, cb: any, prop: string): LiveAPI {
+  if (api) {
+    reArm(api, id, prop)
+    return api
+  }
+  return obsById(id, cb, prop)
+}
+
+// Unsubscribe an observer without tearing it down (property '' — free; teardown
+// leaks ~6 symbols, see CLAUDE.md). Keeps the object alive for re-pointing.
+function disableObs(api: LiveAPI) {
+  if (api) api.property = ''
 }
 
 // Scene ids by row index — refreshed by querySceneCount alongside totalScenes.
@@ -278,10 +314,12 @@ function sendSelectedScene() {
 // Track Play Observers (playing_slot_index + fired_slot_index per track)
 // ---------------------------------------------------------------------------
 
+// Acquire a track-play struct from the pool (parked, observers unsubscribed) or
+// allocate a fresh one; then configure it for trackIdx. Callbacks reference
+// tObs.trackIdx (the mutable field), NOT a captured local, so a pooled struct is
+// safe to re-point to a different track.
 function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
-  const trackId = trackIds[trackIdx]
-
-  const tObs: TrackPlayObservers = {
+  const tObs = trackPlayPool.pop() || {
     trackIdx: trackIdx,
     playingSlotApi: null,
     firedSlotApi: null,
@@ -293,71 +331,69 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     armed: false,
   }
 
+  const trackId = trackIds[trackIdx]
+  tObs.trackIdx = trackIdx
+
   // Read initial values (by id — no path interning)
   cellInitApi.id = trackId
   tObs.playingSlot = parseInt(cellInitApi.get('playing_slot_index').toString())
   tObs.firedSlot = parseInt(cellInitApi.get('fired_slot_index').toString())
   const canBeArmed = !!parseInt(cellInitApi.get('can_be_armed').toString())
-  if (canBeArmed) {
-    tObs.armed = !!parseInt(cellInitApi.get('arm').toString())
-  }
+  tObs.armed = canBeArmed
+    ? !!parseInt(cellInitApi.get('arm').toString())
+    : false
 
-  // Observer: playing_slot_index
-  tObs.playingSlotApi = obsById(trackId, function (args: any[]) {
-    if (!tObs.playingSlotApi) return
-    if (args[0] !== 'playing_slot_index') return
+  tObs.playingSlotApi = ensureObs(tObs.playingSlotApi, trackId, function (args: any[]) {
+    if (!tObs.playingSlotApi || args[0] !== 'playing_slot_index') return
     const newSlot = parseInt(args[1])
     const oldSlot = tObs.playingSlot
     tObs.playingSlot = newSlot
-
-    // Update old slot (was playing, now stopped or empty)
-    if (oldSlot >= 0) updateCellFromTrack(trackIdx, oldSlot)
-    // Update new slot (now playing)
-    if (newSlot >= 0) updateCellFromTrack(trackIdx, newSlot)
+    if (oldSlot >= 0) updateCellFromTrack(tObs.trackIdx, oldSlot)
+    if (newSlot >= 0) updateCellFromTrack(tObs.trackIdx, newSlot)
   }, 'playing_slot_index')
 
-  // Observer: fired_slot_index
-  tObs.firedSlotApi = obsById(trackId, function (args: any[]) {
-    if (!tObs.firedSlotApi) return
-    if (args[0] !== 'fired_slot_index') return
+  tObs.firedSlotApi = ensureObs(tObs.firedSlotApi, trackId, function (args: any[]) {
+    if (!tObs.firedSlotApi || args[0] !== 'fired_slot_index') return
     const newSlot = parseInt(args[1])
     const oldSlot = tObs.firedSlot
     tObs.firedSlot = newSlot
-
-    // Update old triggered slot (no longer triggered)
-    if (oldSlot >= 0) updateCellFromTrack(trackIdx, oldSlot)
-    // Update new triggered slot
-    if (newSlot >= 0) updateCellFromTrack(trackIdx, newSlot)
+    if (oldSlot >= 0) updateCellFromTrack(tObs.trackIdx, oldSlot)
+    if (newSlot >= 0) updateCellFromTrack(tObs.trackIdx, newSlot)
   }, 'fired_slot_index')
 
-  // Observer: arm (only for tracks that can be armed)
+  // arm only for tracks that can be armed; disable (not teardown) otherwise.
   if (canBeArmed) {
-    tObs.armApi = obsById(trackId, function (args: any[]) {
-      if (!tObs.armApi) return
-      if (args[0] !== 'arm') return
+    tObs.armApi = ensureObs(tObs.armApi, trackId, function (args: any[]) {
+      if (!tObs.armApi || args[0] !== 'arm') return
       const newArmed = !!parseInt(args[1])
       if (newArmed === tObs.armed) return
       tObs.armed = newArmed
-      // Update all empty cells on this track (armed state changes their display)
-      updateAllCellsOnTrack(trackIdx)
+      updateAllCellsOnTrack(tObs.trackIdx)
     }, 'arm')
+  } else {
+    disableObs(tObs.armApi)
   }
 
-  // Observer: track name
-  tObs.nameApi = obsById(trackId, function (args: any[]) {
-    if (!tObs.nameApi) return
-    if (args[0] !== 'name') return
+  tObs.nameApi = ensureObs(tObs.nameApi, trackId, function (args: any[]) {
+    if (!tObs.nameApi || args[0] !== 'name') return
     osc('/clips/trackInfo', { t: tObs.trackIdx, n: dequote(args[1]) })
   }, 'name')
 
-  // Observer: track color
-  tObs.colorApi = obsById(trackId, function (args: any[]) {
-    if (!tObs.colorApi) return
-    if (args[0] !== 'color') return
+  tObs.colorApi = ensureObs(tObs.colorApi, trackId, function (args: any[]) {
+    if (!tObs.colorApi || args[0] !== 'color') return
     osc('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) })
   }, 'color')
 
   return tObs
+}
+
+// Park a track-play struct: unsubscribe all observers (keeps objects for reuse).
+function parkTrackPlay(tObs: TrackPlayObservers) {
+  disableObs(tObs.playingSlotApi)
+  disableObs(tObs.firedSlotApi)
+  disableObs(tObs.armApi)
+  disableObs(tObs.nameApi)
+  disableObs(tObs.colorApi)
 }
 
 function teardownTrackPlayObservers(tObs: TrackPlayObservers) {
@@ -418,12 +454,12 @@ function updateCellFromTrack(trackIdx: number, sceneIdx: number) {
 // ---------------------------------------------------------------------------
 
 // Read initial cell state using reused scratchpad — no LiveAPI objects created
+// Acquire a cell struct from the pool (parked, observers unsubscribed) or a fresh
+// one, point it at (col,row), and read its display state. Observers are (re-)armed
+// later by attachCellObservers. All cell callbacks reference obs.* (mutable
+// fields), so a pooled struct is safe to re-point to a different cell.
 function readCellState(col: number, row: number): CellObservers {
-  const sid = slotId(col, row)
-
-  const cell: ClipCell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 }
-
-  const obs: CellObservers = {
+  const obs = cellPool.pop() || {
     trackIdx: col,
     sceneIdx: row,
     hasClip: false,
@@ -434,9 +470,19 @@ function readCellState(col: number, row: number): CellObservers {
     hasStopButtonApi: null,
     playingStatusApi: null,
     controlsOtherClipsApi: null,
-    cell: cell,
+    cell: { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 },
   }
+  obs.trackIdx = col
+  obs.sceneIdx = row
+  const cell = obs.cell
+  cell.state = CLIP_EMPTY
+  cell.name = ''
+  cell.color = ''
+  cell.ps = 0
+  cell.hc = 0
+  cell.hsb = 0
 
+  const sid = slotId(col, row)
   cellInitApi.id = sid
   const hasClip = !!parseInt(cellInitApi.get('has_clip').toString())
   obs.hasClip = hasClip
@@ -461,59 +507,53 @@ function readCellState(col: number, row: number): CellObservers {
   return obs
 }
 
-// Attach LiveAPI observers to a cell (expensive — called lazily in batches)
+// (Re-)arm a cell's observers — called lazily in batches. Re-points a pooled
+// cell's observers or creates fresh ones (ensureObs); enables group/clip
+// observers for this cell or disables (not tears down) the ones it doesn't need.
 function attachCellObservers(obs: CellObservers) {
-  if (obs.hasClipApi) return // already attached
   const sid = slotId(obs.trackIdx, obs.sceneIdx)
 
   // has_stop_button
-  obs.hasStopButtonApi = obsById(sid, function (args: any[]) {
-    if (!obs.hasStopButtonApi) return
-    if (args[0] !== 'has_stop_button') return
+  obs.hasStopButtonApi = ensureObs(obs.hasStopButtonApi, sid, function (args: any[]) {
+    if (!obs.hasStopButtonApi || args[0] !== 'has_stop_button') return
     const newHsb = parseInt(args[1]) ? 1 : 0
     if (newHsb === obs.cell.hsb) return
     obs.cell.hsb = newHsb
-    if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-      queueFullUpdate(obs)
-    }
+    if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
   }, 'has_stop_button')
 
-  // Group track: playing_status and controls_other_clips
+  // Group track: playing_status and controls_other_clips (disabled for others)
   if (trackIsGroup[obs.trackIdx]) {
-    obs.playingStatusApi = obsById(sid, function (args: any[]) {
-      if (!obs.playingStatusApi) return
-      if (args[0] !== 'playing_status') return
+    obs.playingStatusApi = ensureObs(obs.playingStatusApi, sid, function (args: any[]) {
+      if (!obs.playingStatusApi || args[0] !== 'playing_status') return
       const newPs = parseInt(args[1]) || 0
       if (newPs === obs.cell.ps) return
       obs.cell.ps = newPs
-      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-        queueFullUpdate(obs)
-      }
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
     }, 'playing_status')
 
-    obs.controlsOtherClipsApi = obsById(sid, function (args: any[]) {
-      if (!obs.controlsOtherClipsApi) return
-      if (args[0] !== 'controls_other_clips') return
+    obs.controlsOtherClipsApi = ensureObs(obs.controlsOtherClipsApi, sid, function (args: any[]) {
+      if (!obs.controlsOtherClipsApi || args[0] !== 'controls_other_clips') return
       const newHc = parseInt(args[1]) ? 1 : 0
       if (newHc === obs.cell.hc) return
       obs.cell.hc = newHc
-      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-        queueFullUpdate(obs)
-      }
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
     }, 'controls_other_clips')
+  } else {
+    disableObs(obs.playingStatusApi)
+    disableObs(obs.controlsOtherClipsApi)
   }
 
   // has_clip
-  obs.hasClipApi = obsById(sid, function (args: any[]) {
-    if (!obs.hasClipApi) return
-    if (args[0] !== 'has_clip') return
+  obs.hasClipApi = ensureObs(obs.hasClipApi, sid, function (args: any[]) {
+    if (!obs.hasClipApi || args[0] !== 'has_clip') return
     const newHasClip = !!parseInt(args[1])
     if (newHasClip === obs.hasClip) return
     obs.hasClip = newHasClip
     if (newHasClip) {
       setupClipObserver(obs)
     } else {
-      teardownClipObserver(obs)
+      disableClipObservers(obs)
       obs.cell.name = ''
       obs.cell.color = ''
     }
@@ -525,10 +565,26 @@ function attachCellObservers(obs: CellObservers) {
     }
   }, 'has_clip')
 
-  // Clip observers (only if has_clip)
-  if (obs.hasClip) {
-    setupClipObserver(obs)
-  }
+  // Clip sub-observers: arm for this cell's clip, or disable if no clip.
+  if (obs.hasClip) setupClipObserver(obs)
+  else disableClipObservers(obs)
+}
+
+// Unsubscribe the clip sub-observers (keep objects for reuse). Used when a clip
+// is removed and when parking a cell.
+function disableClipObservers(obs: CellObservers) {
+  disableObs(obs.clipApi)
+  disableObs(obs.clipColorApi)
+  disableObs(obs.clipRecordingApi)
+}
+
+// Park a cell: unsubscribe every observer (keeps objects for re-pointing).
+function parkCell(obs: CellObservers) {
+  disableObs(obs.hasClipApi)
+  disableObs(obs.hasStopButtonApi)
+  disableObs(obs.playingStatusApi)
+  disableObs(obs.controlsOtherClipsApi)
+  disableClipObservers(obs)
 }
 
 function teardownCellObservers(obs: CellObservers) {
@@ -689,36 +745,41 @@ function flushUpdates() {
 // Scene Observer Creation / Teardown
 // ---------------------------------------------------------------------------
 
+// Acquire a scene struct from the pool or a fresh one; configure for sceneIdx.
+// Callbacks reference info.* (mutable), so a pooled struct is safe to re-point.
 function createSceneObserver(sceneIdx: number): SceneInfo {
-  const sid = sceneIds[sceneIdx]
-
-  cellInitApi.id = sid
-  const name = dequote(cellInitApi.get('name').toString())
-  const color = colorHex(cellInitApi.get('color'))
-
-  const info: SceneInfo = {
+  const info = scenePool.pop() || {
     sceneIdx: sceneIdx,
     nameApi: null,
     colorApi: null,
-    name: name,
-    color: color,
+    name: '',
+    color: '',
   }
+  const sid = sceneIds[sceneIdx]
+  info.sceneIdx = sceneIdx
+  cellInitApi.id = sid
+  info.name = dequote(cellInitApi.get('name').toString())
+  info.color = colorHex(cellInitApi.get('color'))
 
-  info.nameApi = obsById(sid, function (args: any[]) {
-    if (!info.nameApi) return
-    if (args[0] !== 'name') return
+  info.nameApi = ensureObs(info.nameApi, sid, function (args: any[]) {
+    if (!info.nameApi || args[0] !== 'name') return
     info.name = dequote(args[1])
     scheduleSceneInfo()
   }, 'name')
 
-  info.colorApi = obsById(sid, function (args: any[]) {
-    if (!info.colorApi) return
-    if (args[0] !== 'color') return
+  info.colorApi = ensureObs(info.colorApi, sid, function (args: any[]) {
+    if (!info.colorApi || args[0] !== 'color') return
     info.color = colorHex(args[1])
     scheduleSceneInfo()
   }, 'color')
 
   return info
+}
+
+// Park a scene: unsubscribe its observers (keep objects for re-pointing).
+function parkScene(info: SceneInfo) {
+  disableObs(info.nameApi)
+  disableObs(info.colorApi)
 }
 
 function teardownSceneObserver(info: SceneInfo) {
@@ -756,6 +817,12 @@ function teardownAll() {
   teardownAllCells()
   teardownAllTrackPlay()
   teardownAllScenes()
+  for (let k = 0; k < cellPool.length; k++) teardownCellObservers(cellPool[k])
+  for (let k = 0; k < trackPlayPool.length; k++) teardownTrackPlayObservers(trackPlayPool[k])
+  for (let k = 0; k < scenePool.length; k++) teardownSceneObserver(scenePool[k])
+  cellPool = []
+  trackPlayPool = []
+  scenePool = []
   pendingUpdates = []
   if (updateFlushTask) {
     updateFlushTask.cancel()
@@ -823,7 +890,9 @@ function applyWindow() {
     }
   }
 
-  // Evict observers outside the warm region (keeps the resident count bounded).
+  // Evict observers outside the warm region — PARK (unsubscribe + pool) rather
+  // than tear down (teardown leaks; re-point is free). They are re-pointed back
+  // when they re-enter. Only pool overflow (rare) is actually torn down.
   for (const key in cellObservers) {
     const obs = cellObservers[key]
     if (
@@ -832,21 +901,29 @@ function applyWindow() {
       obs.sceneIdx < warmTop ||
       obs.sceneIdx >= warmBottom
     ) {
-      teardownCellObservers(obs)
+      parkCell(obs)
+      if (cellPool.length < CELL_POOL_CAP) cellPool.push(obs)
+      else teardownCellObservers(obs)
       delete cellObservers[key]
     }
   }
   for (const k in trackPlayObservers) {
     const col = +k
     if (col < warmLeft || col >= warmRight) {
-      teardownTrackPlayObservers(trackPlayObservers[col])
+      const t = trackPlayObservers[col]
+      parkTrackPlay(t)
+      if (trackPlayPool.length < TRACK_POOL_CAP) trackPlayPool.push(t)
+      else teardownTrackPlayObservers(t)
       delete trackPlayObservers[col]
     }
   }
   for (const k in sceneObservers) {
     const row = +k
     if (row < warmTop || row >= warmBottom) {
-      teardownSceneObserver(sceneObservers[row])
+      const info = sceneObservers[row]
+      parkScene(info)
+      if (scenePool.length < SCENE_POOL_CAP) scenePool.push(info)
+      else teardownSceneObserver(info)
       delete sceneObservers[row]
     }
   }
