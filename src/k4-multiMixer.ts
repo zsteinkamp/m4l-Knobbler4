@@ -94,6 +94,15 @@ function obsById(id: number, cb: any, prop?: string): LiveAPI {
   return api
 }
 
+// Re-point an existing observer to a new object id + property. Free — no path
+// interning, no teardown leak. The basis of the strip pool: reuse observer
+// objects across scroll instead of evict+recreate. See CLAUDE.md observer
+// lifecycle.
+function reArm(api: LiveAPI, id: number, prop: string) {
+  api.id = id
+  api.property = prop
+}
+
 const DEFAULT_VISIBLE_COUNT = 18
 const MAX_STRIP_IDX = 128
 // Small coalescing window for /mixerView. The app already debounces (~100ms
@@ -159,6 +168,14 @@ let visibleCount = 0
 const WARM_MARGIN = 0.5 // keep this fraction of the viewport warm on each side
 let observersByTrackId: Record<number, StripObservers> = {}
 
+// Free pool of parked strip-observer objects (stripIndex = -1, meters disabled).
+// On scroll, strips leaving the warm window are parked here and RE-POINTED to
+// newly-warm tracks instead of being torn down — teardown leaks ~6 symbols per
+// observer, re-point is free (see CLAUDE.md). Real teardown happens only on a
+// full rebuild. The cap bounds the pool; overflow (rare) is torn down.
+let stripPool: StripObservers[] = []
+const POOL_CAP = 64
+
 // Track IDs for which sendStripState has been called in the current visible window.
 // Rebuilt each applyWindow so strips leaving the visible range get state re-sent
 // if they scroll back in (observer callbacks don't fire while !isVisible).
@@ -223,40 +240,52 @@ function sendReturnTrackColors() {
 // Meter Observers
 // ---------------------------------------------------------------------------
 
-function createMeterObservers(strip: StripObservers) {
-  // output_meter_* are Track properties — bind by track id (no path interning).
+// Create the 3 meter observers once. output_meter_* are Track properties — bound
+// by track id. Created lazily, re-pointed with the strip, and toggled on/off via
+// setMetersActive rather than torn down (teardown leaks symbols — see the
+// observer-lifecycle section in CLAUDE.md). The stripIndex < 0 guard skips parked
+// strips, whose buffer slot is invalid.
+function ensureMeterApis(strip: StripObservers) {
+  if (strip.meterLeftApi) return
   strip.meterLeftApi = obsById(strip.trackId, function (args: any[]) {
-    if (args[0] === 'output_meter_left') {
-      const v = meterVal(args[1])
-      const off = strip.stripIndex * 3
-      if (v !== meterBuffer[off]) {
-        meterBuffer[off] = v
-        meterDirty = true
-      }
+    if (strip.stripIndex < 0 || args[0] !== 'output_meter_left') return
+    const v = meterVal(args[1])
+    const off = strip.stripIndex * 3
+    if (v !== meterBuffer[off]) {
+      meterBuffer[off] = v
+      meterDirty = true
     }
   }, 'output_meter_left')
 
   strip.meterRightApi = obsById(strip.trackId, function (args: any[]) {
-    if (args[0] === 'output_meter_right') {
-      const v = meterVal(args[1])
-      const off = strip.stripIndex * 3 + 1
-      if (v !== meterBuffer[off]) {
-        meterBuffer[off] = v
-        meterDirty = true
-      }
+    if (strip.stripIndex < 0 || args[0] !== 'output_meter_right') return
+    const v = meterVal(args[1])
+    const off = strip.stripIndex * 3 + 1
+    if (v !== meterBuffer[off]) {
+      meterBuffer[off] = v
+      meterDirty = true
     }
   }, 'output_meter_right')
 
   strip.meterLevelApi = obsById(strip.trackId, function (args: any[]) {
-    if (args[0] === 'output_meter_level') {
-      const v = meterVal(args[1])
-      const off = strip.stripIndex * 3 + 2
-      if (v !== meterBuffer[off]) {
-        meterBuffer[off] = v
-        meterDirty = true
-      }
+    if (strip.stripIndex < 0 || args[0] !== 'output_meter_level') return
+    const v = meterVal(args[1])
+    const off = strip.stripIndex * 3 + 2
+    if (v !== meterBuffer[off]) {
+      meterBuffer[off] = v
+      meterDirty = true
     }
   }, 'output_meter_level')
+}
+
+// Subscribe/unsubscribe the meter observers without tearing them down (property
+// '' unsubscribes — free; teardown leaks). Keeps meters live only for visible
+// strips while the objects stay pooled.
+function setMetersActive(strip: StripObservers, active: boolean) {
+  if (!strip.meterLeftApi) return
+  strip.meterLeftApi.property = active ? 'output_meter_left' : ''
+  strip.meterRightApi.property = active ? 'output_meter_right' : ''
+  strip.meterLevelApi.property = active ? 'output_meter_level' : ''
 }
 
 function teardownMeterObservers(strip: StripObservers) {
@@ -274,7 +303,7 @@ function teardownMeterObservers(strip: StripObservers) {
   }
   // Zero out this strip's slots in the buffer
   const baseOffset = strip.stripIndex * 3
-  if (baseOffset + 2 < meterBuffer.length) {
+  if (baseOffset >= 0 && baseOffset + 2 < meterBuffer.length) {
     meterBuffer[baseOffset] = 0
     meterBuffer[baseOffset + 1] = 0
     meterBuffer[baseOffset + 2] = 0
@@ -469,6 +498,102 @@ function createStripObservers(
   return strip
 }
 
+// Re-point a type-compatible parked/freed strip to a new track. The caller
+// guarantees compatibility (same isMain / canBeArmed / send count), so the
+// observer SET already matches — we only re-point ids + re-arm properties, no
+// create or teardown. Child ids are passed in (resolved once by takeAndRepoint).
+function repointStrip(
+  strip: StripObservers,
+  trackId: number,
+  stripIdx: number,
+  mixerId: number,
+  volId: number,
+  panId: number,
+  sendIds: number[]
+) {
+  strip.initialized = false // suppress emits while re-pointing fires callbacks
+  strip.trackId = trackId
+  strip.stripIndex = stripIdx
+
+  reArm(strip.colorApi, trackId, 'color')
+  strip.trackApi.id = trackId
+  if (strip.muteApi) reArm(strip.muteApi, trackId, 'mute')
+  if (strip.mutedViaSoloApi) reArm(strip.mutedViaSoloApi, trackId, 'muted_via_solo')
+  if (strip.soloApi) reArm(strip.soloApi, trackId, 'solo')
+  if (strip.armApi) reArm(strip.armApi, trackId, 'arm')
+  strip.mixerApi.id = mixerId
+  if (!strip.isMain) strip.mixerApi.property = 'crossfade_assign'
+  reArm(strip.volApi, volId, 'value')
+  reArm(strip.volAutoApi, volId, 'automation_state')
+  reArm(strip.panApi, panId, 'value')
+  for (let i = 0; i < strip.sendApis.length; i++) {
+    reArm(strip.sendApis[i], sendIds[i], 'value')
+  }
+  // Meters travel with the strip (re-point id only; active state set by caller).
+  if (strip.meterLeftApi) {
+    strip.meterLeftApi.id = trackId
+    strip.meterRightApi.id = trackId
+    strip.meterLevelApi.id = trackId
+  }
+
+  strip.initialized = true
+}
+
+// Provide a strip for `trackId` at `stripIdx`: re-point a compatible free strip
+// if one exists (no leak), else create a fresh one (create is free; only
+// teardown leaks). Resolves the track's mixer-child ids once via id-list reads.
+function takeAndRepoint(
+  free: (StripObservers | null)[],
+  trackId: number,
+  stripIdx: number
+): StripObservers {
+  scratchApi.id = trackId
+  const trackPath = scratchApi.unquotedpath
+  const isMain = trackPath.indexOf('master_track') > -1
+  const canBeArmed =
+    !isMain && !!parseInt(scratchApi.get('can_be_armed').toString())
+  const mixerId = cleanArr(scratchApi.get('mixer_device'))[0]
+  scratchApi.id = mixerId
+  const volId = cleanArr(scratchApi.get('volume'))[0]
+  const panId = cleanArr(scratchApi.get('panning'))[0]
+  const sendIds = cleanArr(scratchApi.get('sends'))
+
+  for (let k = 0; k < free.length; k++) {
+    const s = free[k]
+    if (
+      s &&
+      s.isMain === isMain &&
+      s.canBeArmed === canBeArmed &&
+      s.sendApis.length === sendIds.length
+    ) {
+      free[k] = null
+      repointStrip(s, trackId, stripIdx, mixerId, volId, panId, sendIds)
+      return s
+    }
+  }
+  return createStripObservers(trackId, stripIdx)
+}
+
+// Park a strip in the pool: unsubscribe ALL its observers (property '' — free, no
+// teardown leak) so they stop firing while idle and never fire on a since-deleted
+// track (the invalidated-object crash detach() guards against). repointStrip
+// re-subscribes on reuse. trackApi has no observer, so its stale id is harmless.
+function parkStrip(strip: StripObservers) {
+  strip.stripIndex = -1
+  strip.initialized = false
+  if (strip.colorApi) strip.colorApi.property = ''
+  if (strip.muteApi) strip.muteApi.property = ''
+  if (strip.mutedViaSoloApi) strip.mutedViaSoloApi.property = ''
+  if (strip.soloApi) strip.soloApi.property = ''
+  if (strip.armApi) strip.armApi.property = ''
+  if (strip.mixerApi) strip.mixerApi.property = ''
+  if (strip.volApi) strip.volApi.property = ''
+  if (strip.volAutoApi) strip.volAutoApi.property = ''
+  if (strip.panApi) strip.panApi.property = ''
+  for (let i = 0; i < strip.sendApis.length; i++) strip.sendApis[i].property = ''
+  setMetersActive(strip, false)
+}
+
 // Effective mute = mute || muted_via_solo (the user sees both as "muted").
 // Master lacks both properties, so skip it.
 function emitEffectiveMute(strip: StripObservers) {
@@ -505,6 +630,10 @@ function teardownAll() {
   for (const trackIdStr in observersByTrackId) {
     teardownStripObservers(observersByTrackId[trackIdStr])
   }
+  for (let k = 0; k < stripPool.length; k++) {
+    teardownStripObservers(stripPool[k])
+  }
+  stripPool = []
   observersByTrackId = {}
   visibleStateSet = {}
   trackList = []
@@ -584,51 +713,61 @@ function applyWindow() {
     if (wasRunning && metersEnabled) startMeterFlush()
   }
 
-  // Create observers for visible tracks that don't have them yet
-  for (let i = leftIndex; i < visRight; i++) {
-    const tid = trackList[i].id
-    if (!observersByTrackId[tid]) {
-      observersByTrackId[tid] = createStripObservers(tid, i)
-    }
-  }
-
-  // Update strip indices for all visible observers (positions may have shifted)
-  for (let i = leftIndex; i < visRight; i++) {
-    const tid = trackList[i].id
-    if (observersByTrackId[tid]) {
-      observersByTrackId[tid].stripIndex = i
-    }
-  }
-
-  // Evict strip observers outside the warm region (viewport + WARM_MARGIN each
-  // side) to keep the resident count bounded — see k4-clipView applyWindow.
+  // --- Warm-window reconcile (pool + re-point; no teardown on scroll) ---
+  // The warm window is the viewport plus a WARM_MARGIN buffer each side. Strips
+  // leaving it are PARKED (not torn down — teardown leaks) and reused by
+  // re-pointing onto strips entering it. On steady scrolling the window size is
+  // constant, so every step is pure re-pointing: zero teardown, zero leak.
   const margin = Math.ceil(visibleCount * WARM_MARGIN)
   const warmLeft = Math.max(0, leftIndex - margin)
   const warmRight = Math.min(trackList.length, visRight + margin)
-  const warmIds: Record<number, boolean> = {}
-  for (let i = warmLeft; i < warmRight; i++) warmIds[trackList[i].id] = true
+
+  // Target: trackId -> stripIndex for the warm window.
+  const targetIdx: Record<number, number> = {}
+  for (let i = warmLeft; i < warmRight; i++) targetIdx[trackList[i].id] = i
+
+  // Residents still in target keep their observers (refresh stripIndex); the rest
+  // become reuse candidates, joined by the parked pool.
+  const free: (StripObservers | null)[] = []
   for (const tidStr in observersByTrackId) {
-    if (!warmIds[+tidStr]) {
-      teardownStripObservers(observersByTrackId[+tidStr])
-      delete observersByTrackId[+tidStr]
+    const tid = +tidStr
+    if (targetIdx[tid] !== undefined) {
+      observersByTrackId[tid].stripIndex = targetIdx[tid]
+    } else {
+      free.push(observersByTrackId[tid])
+      delete observersByTrackId[tid]
     }
   }
+  for (let k = 0; k < stripPool.length; k++) free.push(stripPool[k])
 
-  // Manage meter observers for visible tracks only
+  // Fill missing targets by re-pointing a compatible free strip, else creating.
+  for (let i = warmLeft; i < warmRight; i++) {
+    const tid = trackList[i].id
+    if (observersByTrackId[tid]) continue
+    observersByTrackId[tid] = takeAndRepoint(free, tid, i)
+  }
+
+  // Leftover free strips: park them (disable meters; stripIndex -1 so they never
+  // emit). Cap the pool; only the overflow (rare) is torn down.
+  stripPool = []
+  for (let k = 0; k < free.length; k++) {
+    const s = free[k]
+    if (!s) continue
+    parkStrip(s)
+    if (stripPool.length < POOL_CAP) stripPool.push(s)
+    else teardownStripObservers(s)
+  }
+
+  // Meters: live only for visible strips, toggled (not torn down) so the objects
+  // stay pooled and re-pointable.
   if (metersEnabled) {
-    // Teardown meters on non-visible tracks that have them
     for (const tidStr in observersByTrackId) {
       const strip = observersByTrackId[tidStr]
-      if (!isVisible(strip) && strip.meterLeftApi) {
-        teardownMeterObservers(strip)
-      }
-    }
-    // Create meters on visible tracks that don't have them
-    for (let i = leftIndex; i < visRight; i++) {
-      const tid = trackList[i].id
-      const strip = observersByTrackId[tid]
-      if (strip && strip.hasOutput && !strip.meterLeftApi) {
-        createMeterObservers(strip)
+      if (isVisible(strip) && strip.hasOutput) {
+        ensureMeterApis(strip)
+        setMetersActive(strip, true)
+      } else {
+        setMetersActive(strip, false)
       }
     }
     if (onMixerPage && !meterFlushTask) startMeterFlush()
@@ -707,20 +846,25 @@ function mixerMeters(val: number) {
   sendMetersState()
 
   if (metersEnabled) {
-    // Only create meter observers for visible tracks, not buffer
+    // Activate meters for visible tracks only (create lazily, then subscribe).
     const visRight = Math.min(leftIndex + visibleCount, trackList.length)
     for (let i = leftIndex; i < visRight; i++) {
       const tid = trackList[i].id
       const strip = observersByTrackId[tid]
-      if (strip && strip.hasOutput && !strip.meterLeftApi) {
-        createMeterObservers(strip)
+      if (strip && strip.hasOutput) {
+        ensureMeterApis(strip)
+        setMetersActive(strip, true)
       }
     }
     if (onMixerPage && visibleCount > 0) startMeterFlush()
   } else {
     stopMeterFlush()
+    // Disable (not teardown — teardown leaks) all meter observers.
     for (const trackIdStr in observersByTrackId) {
-      teardownMeterObservers(observersByTrackId[trackIdStr])
+      setMetersActive(observersByTrackId[trackIdStr], false)
+    }
+    for (let k = 0; k < stripPool.length; k++) {
+      setMetersActive(stripPool[k], false)
     }
   }
 }
