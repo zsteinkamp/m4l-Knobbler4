@@ -285,7 +285,13 @@ function callRoute(route: Route, address: string, value: any) {
 
 // --- Inbound coalescing (leading-edge, ported from router) -----------------
 
-const COALESCE_MS = 15
+// Leading-edge window: first message dispatches instantly; rapid follow-ups to
+// the same address coalesce to one trailing flush per window. Bounds the
+// sustained-motion update rate (~1/window) and thus recorded automation density.
+// 8ms (~125Hz) balances dense automation against inbound .set() churn on large
+// sets. (Periodic ~500ms recording gaps turned out to be tablet WiFi power-save,
+// independent of this window — wire the tablet for gap-free dense automation.)
+const COALESCE_MS = 8
 
 type CoalesceEntry = {
   route: Route
