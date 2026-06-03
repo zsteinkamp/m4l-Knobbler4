@@ -250,6 +250,7 @@ function deriveCellState(
 function visibleTracks() {
   const tracks = getVisibleTracksList()
   if (!tracks || tracks.length === 0) return
+  const oldTrackIds = trackIds // capture before rebuild to diff which cols moved
   trackIds = []
   trackPaths = []
   trackIsGroup = []
@@ -260,12 +261,47 @@ function visibleTracks() {
     trackPaths.push(t.path)
     trackIsGroup.push(t.type === TYPE_GROUP)
   }
-  // trackIdx -> id mapping changed; drop the per-track clip_slot id cache.
-  trackSlotIds = {}
-  if (leftTrack < 0 || settingUp) return
-  teardownAllCells()
-  teardownAllTrackPlay()
+  if (leftTrack < 0 || settingUp) {
+    trackSlotIds = {}
+    return
+  }
+  // Only re-point observers for COLUMNS whose track actually changed (appending a
+  // track leaves earlier columns untouched); keep the rest. applyWindow re-points
+  // the parked ones. Scenes are unaffected by track changes, so untouched.
+  reconcileTrackChange(oldTrackIds)
   applyWindow()
+}
+
+// Park (into the pool) only the cells / track-play observers whose column's track
+// id changed — and invalidate the clip_slot cache for just those columns. Kept
+// columns keep their bindings (same track => same clip_slots), so nothing is
+// re-touched needlessly. This is the win over parking the whole grid.
+function reconcileTrackChange(oldTrackIds: number[]) {
+  const n = trackIds.length
+  for (const key in cellObservers) {
+    const obs = cellObservers[key]
+    const col = obs.trackIdx
+    if (col >= n || oldTrackIds[col] !== trackIds[col]) {
+      parkCell(obs)
+      if (cellPool.length < CELL_POOL_CAP) cellPool.push(obs)
+      else teardownCellObservers(obs)
+      delete cellObservers[key]
+    }
+  }
+  for (const k in trackPlayObservers) {
+    const col = +k
+    if (col >= n || oldTrackIds[col] !== trackIds[col]) {
+      const t = trackPlayObservers[col]
+      parkTrackPlay(t)
+      if (trackPlayPool.length < TRACK_POOL_CAP) trackPlayPool.push(t)
+      else teardownTrackPlayObservers(t)
+      delete trackPlayObservers[col]
+    }
+  }
+  for (const k in trackSlotIds) {
+    const col = +k
+    if (col >= n || oldTrackIds[col] !== trackIds[col]) delete trackSlotIds[col]
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -287,8 +323,8 @@ function onSceneCountChange(args: any[]) {
     totalScenes = newCount
     sceneCache = [] // invalidate cache
     trackSlotIds = {} // clip_slot ids shift when scenes are added/removed
-    teardownAllCells()
-    teardownAllScenes()
+    parkAllCells()
+    parkAllScenes()
     applyWindow()
   }
 }
@@ -419,9 +455,14 @@ function teardownTrackPlayObservers(tObs: TrackPlayObservers) {
   }
 }
 
-function teardownAllTrackPlay() {
+// Release all resident track-play observers for a rebuild: PARK into the pool
+// (re-pointed on the next applyWindow) instead of tearing down — teardown leaks.
+function parkAllTrackPlay() {
   for (const key in trackPlayObservers) {
-    teardownTrackPlayObservers(trackPlayObservers[key])
+    const t = trackPlayObservers[key]
+    parkTrackPlay(t)
+    if (trackPlayPool.length < TRACK_POOL_CAP) trackPlayPool.push(t)
+    else teardownTrackPlayObservers(t)
   }
   trackPlayObservers = {}
 }
@@ -797,16 +838,25 @@ function teardownSceneObserver(info: SceneInfo) {
 // Teardown helpers
 // ---------------------------------------------------------------------------
 
-function teardownAllCells() {
+// Release all resident cells for a rebuild (track-list / scene-count change):
+// PARK into the pool so applyWindow re-points them — no teardown leak. This is
+// why creating a track/scene while on the clips page no longer floods symbols.
+function parkAllCells() {
   for (const key in cellObservers) {
-    teardownCellObservers(cellObservers[key])
+    const obs = cellObservers[key]
+    parkCell(obs)
+    if (cellPool.length < CELL_POOL_CAP) cellPool.push(obs)
+    else teardownCellObservers(obs)
   }
   cellObservers = {}
 }
 
-function teardownAllScenes() {
+function parkAllScenes() {
   for (const key in sceneObservers) {
-    teardownSceneObserver(sceneObservers[parseInt(key)])
+    const info = sceneObservers[parseInt(key)]
+    parkScene(info)
+    if (scenePool.length < SCENE_POOL_CAP) scenePool.push(info)
+    else teardownSceneObserver(info)
   }
   sceneObservers = {}
 }
@@ -814,9 +864,9 @@ function teardownAllScenes() {
 function teardownAll() {
   if (observerBatchTask) observerBatchTask.cancel()
   pendingObserverKeys = []
-  teardownAllCells()
-  teardownAllTrackPlay()
-  teardownAllScenes()
+  parkAllCells()
+  parkAllTrackPlay()
+  parkAllScenes()
   for (let k = 0; k < cellPool.length; k++) teardownCellObservers(cellPool[k])
   for (let k = 0; k < trackPlayPool.length; k++) teardownTrackPlayObservers(trackPlayPool[k])
   for (let k = 0; k < scenePool.length; k++) teardownSceneObserver(scenePool[k])
