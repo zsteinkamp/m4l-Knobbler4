@@ -62,7 +62,7 @@ If Bonjour is running, ensure that the Windows Firewall is configured to allow t
 
 The simplest and most reliable option is to get a cheap WiFi access point and bring it with you. [Here is one for $30 on Amazon.](https://www.amazon.com/TP-Link-AC1200-Router-Archer-A54/dp/B09G5Y1HWZ)
 
-If you have a Mac, check out the [instructions to set up an ad-hoc WiFi network](wifi-adhoc.md) on your computer that your iPad can join.
+If you have a Mac, check out the [instructions to connect over USB or set up an ad-hoc WiFi network](usb-connection.md) that your iPad can join.
 
 If you are on Windows, [these instructions](https://support.structure.io/article/354-how-to-create-an-ad-hoc-connection-with-windows) may help.
 
@@ -184,7 +184,7 @@ In the recording above, made over WiFi, the automation points bunch up and then 
 What helps, in order of impact:
 
 - **Turn off AirDrop** on the iPad (Control Center → AirDrop → Receiving Off, or Settings → General → AirDrop → Receiving Off). This removes the gaps.
-- For the smoothest possible result, use a **[USB connection](USB.md)**, which bypasses WiFi entirely and is not affected by this at all.
+- For the smoothest possible result, use a **[USB connection](usb-connection.md)**, which bypasses WiFi entirely and is not affected by this at all.
 
 This is a system-level behavior of iOS that apps cannot turn off, so the options above are the way to avoid it.
 

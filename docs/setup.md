@@ -33,4 +33,4 @@ Next, check out all of Knobbler's [Features](./features.md).
 
 If you're having trouble, then check out [Troubleshooting](./troubleshooting.md).
 
-If you are somewhere without a WiFi network, here are some instructions to [create a private WiFi network on your Mac](wifi-adhoc.md).
+If you are somewhere without a WiFi network, here are some instructions to [connect over USB or create a private WiFi network on your Mac](usb-connection.md).
