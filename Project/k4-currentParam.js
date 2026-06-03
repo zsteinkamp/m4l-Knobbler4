@@ -23,42 +23,43 @@ function ensureApis() {
     if (!valScratchApi)
         valScratchApi = new LiveAPI(consts_1.noFn, 'live_set');
 }
+var observersBuilt = false;
+// Build the 3 observers once and keep them alive; show/hide toggle their
+// subscription (property '') rather than detach+recreate. Detach leaks ~6 symbols
+// each (see CLAUDE.md observer lifecycle), and re-arming is free.
+function ensureObservers() {
+    ensureApis();
+    if (observersBuilt)
+        return;
+    paramValObj = new LiveAPI(onValueChange, '');
+    trackColorObj = new LiveAPI(onTrackColorChange, '');
+    // paramSelObj follows live_set view selected_parameter (mode=1)
+    paramSelObj = new LiveAPI(onParamSelected, 'live_set view selected_parameter');
+    paramSelObj.mode = 1;
+    observersBuilt = true;
+}
 function show() {
     if (active)
         return;
     active = true;
-    ensureApis();
-    // Tear down and recreate observers fresh each time.
-    // This avoids stale state from detach() leaving objects at id 0.
-    teardownObservers();
-    paramValObj = new LiveAPI(onValueChange, '');
-    trackColorObj = new LiveAPI(onTrackColorChange, '');
-    // paramSelObj follows live_set view selected_parameter (mode=1)
-    // Created last because setting property fires the callback immediately
-    paramSelObj = new LiveAPI(onParamSelected, 'live_set view selected_parameter');
-    paramSelObj.mode = 1;
+    ensureObservers();
+    // Setting paramSelObj.property re-arms it AND fires onParamSelected immediately,
+    // which re-points paramValObj/trackColorObj at the current selection.
     paramSelObj.property = 'id';
 }
 function hide() {
     if (!active)
         return;
     active = false;
-    teardownObservers();
+    // Disable (property='') instead of detach — keeps the objects for reuse and
+    // retains their ids (the stale-id-0 issue the old detach path warned about).
+    if (paramSelObj)
+        paramSelObj.property = '';
+    if (paramValObj)
+        paramValObj.property = '';
+    if (trackColorObj)
+        trackColorObj.property = '';
     currentParamId = 0;
-}
-function teardownObservers() {
-    if (paramSelObj) {
-        (0, utils_1.detach)(paramSelObj);
-        paramSelObj = null;
-    }
-    if (paramValObj) {
-        (0, utils_1.detach)(paramValObj);
-        paramValObj = null;
-    }
-    if (trackColorObj) {
-        (0, utils_1.detach)(trackColorObj);
-        trackColorObj = null;
-    }
 }
 function lock(val) {
     locked = !!val;
