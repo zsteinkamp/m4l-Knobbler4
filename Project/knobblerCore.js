@@ -558,6 +558,37 @@ function checkDevicePresent(slot) {
         setPath(slot, paramObj[slot].unquotedpath);
     }
 }
+// An "id N" reference (or ["id", N]) -> N; a positional path string -> 0. The
+// .path setter REJECTS "id N" (only the constructor accepts it), so targets that
+// come from get('canonical_parent') must be re-pointed by .id, not .path.
+function idFromRef(ref) {
+    var s = (Array.isArray(ref) ? ref.join(' ') : String(ref)).trim();
+    var m = s.match(/^id\s+(\d+)$/);
+    if (m)
+        return parseInt(m[1]);
+    if (/^\d+$/.test(s))
+        return parseInt(s);
+    return 0;
+}
+// Re-point (or lazily create) a per-slot observer instead of dropping the old one
+// and making a new one on every (re)map. Reuse is free; dropping an armed LiveAPI
+// for GC leaks ~6 symbols and can fire its callback mid-finalization (see
+// CLAUDE.md / the cue-point note). property '' unsubscribes before moving target.
+// Targets may be a positional path string (paramPath, matches[0]) or an id ref
+// (canonical_parent); re-point the latter by .id since .path rejects "id N".
+function reArmSlot(api, cb, target, prop) {
+    if (!api)
+        api = new LiveAPI(cb, '');
+    var id = idFromRef(target);
+    api.property = '';
+    if (id)
+        api.id = id;
+    else
+        api.path = target;
+    if (prop)
+        api.property = prop;
+    return api;
+}
 function setPath(slot, paramPath) {
     //log(`SETPATH ${slot}: ${paramPath}`)
     if (!apiReady) {
@@ -570,18 +601,16 @@ function setPath(slot, paramPath) {
         //log(`skipping ${slot}: ${paramPath}`)
         return;
     }
-    var testParamObj = new LiveAPI(function (iargs) { return paramValueCallback(slot, iargs); }, paramPath);
-    // catch bad paths
-    if (+testParamObj.id === 0) {
+    // Re-point (or create) the param value observer, then validate the resolved id.
+    var pv = reArmSlot(paramObj[slot], function (iargs) { return paramValueCallback(slot, iargs); }, paramPath, '');
+    if (+pv.id === 0) {
         log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
         return;
     }
-    testParamObj.property = 'value';
-    paramObj[slot] = testParamObj;
-    paramNameObj[slot] = new LiveAPI(function (iargs) { return paramNameCallback(slot, iargs); }, paramPath);
-    paramNameObj[slot].property = 'name';
-    automationStateObj[slot] = new LiveAPI(function (iargs) { return automationStateCallback(slot, iargs); }, paramPath);
-    automationStateObj[slot].property = 'automation_state';
+    pv.property = 'value';
+    paramObj[slot] = pv;
+    paramNameObj[slot] = reArmSlot(paramNameObj[slot], function (iargs) { return paramNameCallback(slot, iargs); }, paramPath, 'name');
+    automationStateObj[slot] = reArmSlot(automationStateObj[slot], function (iargs) { return automationStateCallback(slot, iargs); }, paramPath, 'automation_state');
     param[slot].id = paramObj[slot].id;
     param[slot].path = paramObj[slot].unquotedpath;
     param[slot].val = parseFloat(paramObj[slot].get('value'));
@@ -596,7 +625,8 @@ function setPath(slot, paramPath) {
         parseInt(paramObj[slot].get('is_quantized')) > 0
             ? paramObj[slot].get('value_items')
             : '';
-    deviceObj[slot] = new LiveAPI(function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'));
+    deviceObj[slot] = reArmSlot(deviceObj[slot], function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'), '' // property set conditionally below
+    );
     var devicePath = deviceObj[slot].unquotedpath;
     // poll to see if the mapped device is still present
     if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
@@ -617,12 +647,10 @@ function setPath(slot, paramPath) {
     }
     var parentId = deviceObj[slot].get('canonical_parent');
     // parent name
-    parentNameObj[slot] = new LiveAPI(function (iargs) { return parentNameCallback(slot, iargs); }, parentId);
-    parentNameObj[slot].property = 'name';
+    parentNameObj[slot] = reArmSlot(parentNameObj[slot], function (iargs) { return parentNameCallback(slot, iargs); }, parentId, 'name');
     param[slot].parentName = parentNameObj[slot].get('name');
     // parent color
-    parentColorObj[slot] = new LiveAPI(function (iargs) { return parentColorCallback(slot, iargs); }, parentId);
-    parentColorObj[slot].property = 'color';
+    parentColorObj[slot] = reArmSlot(parentColorObj[slot], function (iargs) { return parentColorCallback(slot, iargs); }, parentId, 'color');
     param[slot].trackColor =
         (0, utils_1.colorToString)(parentColorObj[slot].get('color')) + 'FF';
     // Try to get the track name
@@ -631,7 +659,8 @@ function setPath(slot, paramPath) {
         devicePath.match(/^live_set master_track/);
     if (matches) {
         //log(matches[0])
-        trackObj[slot] = new LiveAPI(function (iargs) { return trackNameCallback(slot, iargs); }, matches[0]);
+        trackObj[slot] = reArmSlot(trackObj[slot], function (iargs) { return trackNameCallback(slot, iargs); }, matches[0], '' // preserve original behavior (handle was created without a property)
+        );
     }
     //log("PARAM DATA", JSON.stringify(param), "\n");
     sendMsg(slot, ['mapped', true]);

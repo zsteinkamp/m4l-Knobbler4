@@ -586,6 +586,33 @@ function checkDevicePresent(slot: number) {
   }
 }
 
+// An "id N" reference (or ["id", N]) -> N; a positional path string -> 0. The
+// .path setter REJECTS "id N" (only the constructor accepts it), so targets that
+// come from get('canonical_parent') must be re-pointed by .id, not .path.
+function idFromRef(ref: any): number {
+  const s = (Array.isArray(ref) ? ref.join(' ') : String(ref)).trim()
+  const m = s.match(/^id\s+(\d+)$/)
+  if (m) return parseInt(m[1])
+  if (/^\d+$/.test(s)) return parseInt(s)
+  return 0
+}
+
+// Re-point (or lazily create) a per-slot observer instead of dropping the old one
+// and making a new one on every (re)map. Reuse is free; dropping an armed LiveAPI
+// for GC leaks ~6 symbols and can fire its callback mid-finalization (see
+// CLAUDE.md / the cue-point note). property '' unsubscribes before moving target.
+// Targets may be a positional path string (paramPath, matches[0]) or an id ref
+// (canonical_parent); re-point the latter by .id since .path rejects "id N".
+function reArmSlot(api: LiveAPI, cb: any, target: any, prop: string): LiveAPI {
+  if (!api) api = new LiveAPI(cb, '')
+  const id = idFromRef(target)
+  api.property = ''
+  if (id) api.id = id
+  else api.path = target
+  if (prop) api.property = prop
+  return api
+}
+
 function setPath(slot: number, paramPath: string) {
   //log(`SETPATH ${slot}: ${paramPath}`)
   if (!apiReady) {
@@ -598,29 +625,33 @@ function setPath(slot: number, paramPath: string) {
     //log(`skipping ${slot}: ${paramPath}`)
     return
   }
-  const testParamObj = new LiveAPI(
+  // Re-point (or create) the param value observer, then validate the resolved id.
+  const pv = reArmSlot(
+    paramObj[slot],
     (iargs: IArguments) => paramValueCallback(slot, iargs),
-    paramPath
+    paramPath,
+    ''
   )
-  // catch bad paths
-  if (+testParamObj.id === 0) {
+  if (+pv.id === 0) {
     log(`Invalid path for slot ${slot}: ${paramPath}`)
     return
   }
-  testParamObj.property = 'value'
-  paramObj[slot] = testParamObj
+  pv.property = 'value'
+  paramObj[slot] = pv
 
-  paramNameObj[slot] = new LiveAPI(
+  paramNameObj[slot] = reArmSlot(
+    paramNameObj[slot],
     (iargs: IArguments) => paramNameCallback(slot, iargs),
-    paramPath
+    paramPath,
+    'name'
   )
-  paramNameObj[slot].property = 'name'
 
-  automationStateObj[slot] = new LiveAPI(
+  automationStateObj[slot] = reArmSlot(
+    automationStateObj[slot],
     (iargs: IArguments) => automationStateCallback(slot, iargs),
-    paramPath
+    paramPath,
+    'automation_state'
   )
-  automationStateObj[slot].property = 'automation_state'
 
   param[slot].id = paramObj[slot].id
   param[slot].path = paramObj[slot].unquotedpath
@@ -637,9 +668,11 @@ function setPath(slot: number, paramPath: string) {
       ? paramObj[slot].get('value_items')
       : ''
 
-  deviceObj[slot] = new LiveAPI(
+  deviceObj[slot] = reArmSlot(
+    deviceObj[slot],
     (iargs: IArguments) => deviceNameCallback(slot, iargs),
-    paramObj[slot] && paramObj[slot].get('canonical_parent')
+    paramObj[slot] && paramObj[slot].get('canonical_parent'),
+    '' // property set conditionally below
   )
   const devicePath = deviceObj[slot].unquotedpath
 
@@ -664,19 +697,21 @@ function setPath(slot: number, paramPath: string) {
   const parentId = deviceObj[slot].get('canonical_parent')
 
   // parent name
-  parentNameObj[slot] = new LiveAPI(
+  parentNameObj[slot] = reArmSlot(
+    parentNameObj[slot],
     (iargs: IArguments) => parentNameCallback(slot, iargs),
-    parentId
+    parentId,
+    'name'
   )
-  parentNameObj[slot].property = 'name'
   param[slot].parentName = parentNameObj[slot].get('name')
 
   // parent color
-  parentColorObj[slot] = new LiveAPI(
+  parentColorObj[slot] = reArmSlot(
+    parentColorObj[slot],
     (iargs: IArguments) => parentColorCallback(slot, iargs),
-    parentId
+    parentId,
+    'color'
   )
-  parentColorObj[slot].property = 'color'
   param[slot].trackColor =
     colorToString(parentColorObj[slot].get('color')) + 'FF'
 
@@ -688,9 +723,11 @@ function setPath(slot: number, paramPath: string) {
 
   if (matches) {
     //log(matches[0])
-    trackObj[slot] = new LiveAPI(
+    trackObj[slot] = reArmSlot(
+      trackObj[slot],
       (iargs: IArguments) => trackNameCallback(slot, iargs),
-      matches[0]
+      matches[0],
+      '' // preserve original behavior (handle was created without a property)
     )
   }
 
