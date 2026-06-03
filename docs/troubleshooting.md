@@ -181,6 +181,10 @@ To support AirDrop, your iPad runs a second peer-to-peer radio called AWDL. Ever
 
 In the recording above, made over WiFi, the automation points bunch up and then leave short flat stretches at a regular cadence — those flat stretches are the moments the radio was off-channel.
 
+With AirDrop turned off, the same move records as one smooth, evenly-spaced curve:
+
+![Smooth recorded automation with AirDrop off](images/wifi-automation-smooth.png)
+
 What helps, in order of impact:
 
 - **Turn off AirDrop** on the iPad (Control Center → AirDrop → Receiving Off, or Settings → General → AirDrop → Receiving Off). This removes the gaps.
