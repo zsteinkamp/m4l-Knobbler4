@@ -430,6 +430,35 @@ Two layers, both validated by the harness:
    observers re-point cleanly (a returns-count change triggers a full rebuild
    anyway).
 
+3. **Full-rebuild paths must park too, and stay incremental.** `k4-multiMixer`
+   keys strips by **track id** (stable), so adding a track just creates one new
+   strip and leaves the rest untouched — incremental for free. `k4-clipView` keys
+   cells by **position** (col,row), which shifts on insert, so its rebuild on a
+   track/scene change (a) **parks** residents into the pool instead of tearing them
+   down (else adding a track on the clips page flooded ~+4000 from the whole-grid
+   detach), and (b) re-points **only the columns whose track id actually changed**
+   (`reconcileTrackChange`) — appending touches nothing but the new column. Re-point
+   is free, so even insert-at-front adds no symbols; the only delta is first-touch
+   of the genuinely new objects.
+
+### Results (measured — 37 tracks, 13 scenes, 432 clips; `[v8]`, Max 9.1.4)
+
+| Action | Before | After |
+|---|---|---|
+| Mixer page entry | +800 | **+3** |
+| Mixer scroll, per back-and-forth pass | +850–1,260 (unbounded) | **+0** (after one-time strip create) |
+| Clips page entry + first scroll | n/a | ~+7,500 one-time, then flat |
+| Clips scroll, per pass | +1,300–10,700 (unbounded) | **+0** |
+| Add a track — mixer page | — | **+68** (one new strip) |
+| Add a track — clips page | **+4,000** | **+30–270** (one new column) |
+| Session trajectory | climbs past 100k → degraded | **plateaus ~49k and holds** |
+
+Everything left after the fix is **bounded one-time first-touch** — Live interning
+its own clip/track objects the first time we observe them. It saturates once the
+grid has been explored once and never climbs again, which is the whole point: the
+table went from monotonically growing (a correctness-class memory bug) to a flat
+plateau well under the degradation threshold.
+
 ### Blog-post arc (for the separate writeup)
 
 1. The mystery: a parameter controller that gets slow on big sets, tracked to a
