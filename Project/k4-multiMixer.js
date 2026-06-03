@@ -18,6 +18,19 @@ function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
 }
+// Bind a fresh observer to an object by its numeric id instead of by a path
+// string. `new LiveAPI(cb, 'live_set tracks N ...')` interns that path into Max's
+// global symbol table (~1 symbol per distinct path, measured); `.id = N` is
+// numeric and interns nothing. The '' constructor path is interned once
+// globally. Child ids come from id-list reads (.get('mixer_device') etc.), which
+// also don't intern — so a whole strip costs 0 path symbols. See k4-symbolTest.
+function obsById(id, cb, prop) {
+    var api = new LiveAPI(cb, '');
+    api.id = id;
+    if (prop)
+        api.property = prop;
+    return api;
+}
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
 // Small coalescing window for /mixerView. The app already debounces (~100ms
@@ -134,8 +147,9 @@ function sendReturnTrackColors() {
 // ---------------------------------------------------------------------------
 // Meter Observers
 // ---------------------------------------------------------------------------
-function createMeterObservers(strip, trackPath) {
-    strip.meterLeftApi = new LiveAPI(function (args) {
+function createMeterObservers(strip) {
+    // output_meter_* are Track properties — bind by track id (no path interning).
+    strip.meterLeftApi = obsById(strip.trackId, function (args) {
         if (args[0] === 'output_meter_left') {
             var v = (0, utils_1.meterVal)(args[1]);
             var off = strip.stripIndex * 3;
@@ -144,9 +158,8 @@ function createMeterObservers(strip, trackPath) {
                 meterDirty = true;
             }
         }
-    }, trackPath);
-    strip.meterLeftApi.property = 'output_meter_left';
-    strip.meterRightApi = new LiveAPI(function (args) {
+    }, 'output_meter_left');
+    strip.meterRightApi = obsById(strip.trackId, function (args) {
         if (args[0] === 'output_meter_right') {
             var v = (0, utils_1.meterVal)(args[1]);
             var off = strip.stripIndex * 3 + 1;
@@ -155,9 +168,8 @@ function createMeterObservers(strip, trackPath) {
                 meterDirty = true;
             }
         }
-    }, trackPath);
-    strip.meterRightApi.property = 'output_meter_right';
-    strip.meterLevelApi = new LiveAPI(function (args) {
+    }, 'output_meter_right');
+    strip.meterLevelApi = obsById(strip.trackId, function (args) {
         if (args[0] === 'output_meter_level') {
             var v = (0, utils_1.meterVal)(args[1]);
             var off = strip.stripIndex * 3 + 2;
@@ -166,8 +178,7 @@ function createMeterObservers(strip, trackPath) {
                 meterDirty = true;
             }
         }
-    }, trackPath);
-    strip.meterLevelApi.property = 'output_meter_level';
+    }, 'output_meter_level');
 }
 function teardownMeterObservers(strip) {
     if (strip.meterLeftApi) {
@@ -242,13 +253,22 @@ function createStripObservers(trackId, stripIdx) {
         isMain: false,
         initialized: false,
     };
-    // Get the track's path so we can build full paths for children
+    // Resolve the track + its mixer children by id up front (id-list reads don't
+    // intern), then bind every observer by .id instead of by path string — so the
+    // whole strip costs 0 symbols. trackPath is read only for the isMain check
+    // (reads don't intern; we never assign it to a .path). See obsById.
     scratchApi.id = trackId;
     var trackPath = scratchApi.unquotedpath;
-    var mixerPath = trackPath + ' mixer_device';
     strip.isMain = trackPath.indexOf('master_track') > -1;
+    strip.canBeArmed =
+        !strip.isMain && !!parseInt(scratchApi.get('can_be_armed').toString());
+    var mixerId = (0, utils_1.cleanArr)(scratchApi.get('mixer_device'))[0];
+    scratchApi.id = mixerId;
+    var volId = (0, utils_1.cleanArr)(scratchApi.get('volume'))[0];
+    var panId = (0, utils_1.cleanArr)(scratchApi.get('panning'))[0];
+    var sendIds = (0, utils_1.cleanArr)(scratchApi.get('sends'));
     // Color API — separate observer for track color changes
-    strip.colorApi = new LiveAPI(function (args) {
+    strip.colorApi = obsById(trackId, function (args) {
         if (args[0] === 'color') {
             var newColor = (0, utils_1.colorToString)(args[1].toString());
             for (var j = 0; j < trackList.length; j++) {
@@ -258,43 +278,36 @@ function createStripObservers(trackId, stripIdx) {
                 }
             }
         }
-    }, trackPath);
-    strip.colorApi.property = 'color';
+    }, 'color');
     // Track API — used for querying properties (no observer)
-    strip.trackApi = new LiveAPI(consts_1.noFn, trackPath);
+    strip.trackApi = obsById(trackId, consts_1.noFn);
     // Mute, solo, arm — separate observers (master track lacks these)
     if (!strip.isMain) {
-        strip.muteApi = new LiveAPI(function (args) {
+        strip.muteApi = obsById(trackId, function (args) {
             if (args[0] === 'mute' && strip.initialized && isVisible(strip)) {
                 emitEffectiveMute(strip);
             }
-        }, trackPath);
-        strip.muteApi.property = 'mute';
+        }, 'mute');
         // muted_via_solo also lights the mute indicator so the user sees that
         // soloing another track has effectively muted this one.
-        strip.mutedViaSoloApi = new LiveAPI(function (args) {
+        strip.mutedViaSoloApi = obsById(trackId, function (args) {
             if (args[0] === 'muted_via_solo' && strip.initialized && isVisible(strip)) {
                 emitEffectiveMute(strip);
             }
-        }, trackPath);
-        strip.mutedViaSoloApi.property = 'muted_via_solo';
-        strip.soloApi = new LiveAPI(function (args) {
+        }, 'muted_via_solo');
+        strip.soloApi = obsById(trackId, function (args) {
             if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()));
                 sendSoloCount();
             }
-        }, trackPath);
-        strip.soloApi.property = 'solo';
+        }, 'solo');
     }
-    strip.canBeArmed =
-        !strip.isMain && !!parseInt(strip.trackApi.get('can_be_armed').toString());
     if (strip.canBeArmed) {
-        strip.armApi = new LiveAPI(function (args) {
+        strip.armApi = obsById(trackId, function (args) {
             if (args[0] === 'arm' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_ARM[strip.stripIndex], parseInt(args[1].toString()));
             }
-        }, trackPath);
-        strip.armApi.property = 'arm';
+        }, 'arm');
     }
     // Treat every track as having audio output. has_audio_output isn't
     // observable and only flips when a track gains/loses its first device, so
@@ -303,20 +316,19 @@ function createStripObservers(trackId, stripIdx) {
     // meters) live; on a track with no real output they simply read ~0.
     strip.hasOutput = true;
     // Meter observers are managed separately by applyWindow (visible tracks only)
-    // Mixer API — observe crossfade_assign (master track lacks this)
-    strip.mixerApi = new LiveAPI(function (args) {
+    // Mixer device — observe crossfade_assign (master track lacks this)
+    strip.mixerApi = obsById(mixerId, function (args) {
         if (args[0] === 'crossfade_assign' && strip.initialized && isVisible(strip)) {
             var xVal = parseInt(args[1].toString());
             (0, utils_1.osc)(SA_XFADEA[strip.stripIndex], xVal === 0 ? 1 : 0);
             (0, utils_1.osc)(SA_XFADEB[strip.stripIndex], xVal === 2 ? 1 : 0);
         }
-    }, mixerPath);
+    });
     if (!strip.isMain) {
         strip.mixerApi.property = 'crossfade_assign';
     }
     // Volume observer
-    //log('vol observer path: ' + mixerPath + ' volume' + ' isMain=' + strip.isMain)
-    strip.volApi = new LiveAPI(function (args) {
+    strip.volApi = obsById(volId, function (args) {
         if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
             return;
         if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
@@ -325,17 +337,15 @@ function createStripObservers(trackId, stripIdx) {
             var str = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
             (0, utils_1.osc)(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '');
         }
-    }, mixerPath + ' volume');
-    strip.volApi.property = 'value';
+    }, 'value');
     // Volume automation state observer
-    strip.volAutoApi = new LiveAPI(function (args) {
+    strip.volAutoApi = obsById(volId, function (args) {
         if (args[0] === 'automation_state' && strip.initialized && isVisible(strip)) {
             (0, utils_1.osc)(SA_VOLAUTO[strip.stripIndex], parseInt(args[1].toString()));
         }
-    }, mixerPath + ' volume');
-    strip.volAutoApi.property = 'automation_state';
+    }, 'automation_state');
     // Pan observer
-    strip.panApi = new LiveAPI(function (args) {
+    strip.panApi = obsById(panId, function (args) {
         if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
             return;
         if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
@@ -344,22 +354,18 @@ function createStripObservers(trackId, stripIdx) {
             var str = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(fVal));
             (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], str ? str.toString() : '');
         }
-    }, mixerPath + ' panning');
-    strip.panApi.property = 'value';
+    }, 'value');
     // Send observers
-    scratchApi.path = mixerPath;
-    var sendIds = (0, utils_1.cleanArr)(scratchApi.get('sends'));
     var numSends = Math.min(sendIds.length, consts_1.MAX_SENDS);
     var _loop_1 = function (i) {
         var sendIdx = i;
-        var sendApi = new LiveAPI(function (args) {
+        var sendApi = obsById(sendIds[i], function (args) {
             if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
                 return;
             if (!strip.pause['send'] || !strip.pause['send'].paused) {
                 (0, utils_1.osc)(SA_SEND[strip.stripIndex][sendIdx], args[1] || 0);
             }
-        }, 'id ' + sendIds[i]);
-        sendApi.property = 'value';
+        }, 'value');
         strip.sendApis.push(sendApi);
     };
     for (var i = 0; i < numSends; i++) {
@@ -514,7 +520,7 @@ function applyWindow() {
             var tid = trackList[i].id;
             var strip = observersByTrackId[tid];
             if (strip && strip.hasOutput && !strip.meterLeftApi) {
-                createMeterObservers(strip, strip.trackApi.unquotedpath);
+                createMeterObservers(strip);
             }
         }
         if (onMixerPage && !meterFlushTask)
@@ -591,7 +597,7 @@ function mixerMeters(val) {
             var tid = trackList[i].id;
             var strip = observersByTrackId[tid];
             if (strip && strip.hasOutput && !strip.meterLeftApi) {
-                createMeterObservers(strip, strip.trackApi.unquotedpath);
+                createMeterObservers(strip);
             }
         }
         if (onMixerPage && visibleCount > 0)
