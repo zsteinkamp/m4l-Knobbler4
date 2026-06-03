@@ -72,6 +72,40 @@ function ensureApis() {
     if (!viewApi)
         viewApi = new LiveAPI(consts_1.noFn, 'live_set view');
 }
+// Bind a fresh observer by numeric id instead of a path string. A path string
+// (`new LiveAPI(cb, 'tracks N clip_slots M ...')` or `.path = ...`) interns a
+// permanent Max symbol each (measured ~1:1); `.id` is numeric and interns
+// nothing. The '' constructor path is interned once globally. Structural ids come
+// from id-list reads (.get('clip_slots'/'scenes'/'clip')), which also don't
+// intern — so a whole clip grid costs ~0 path symbols. See k4-symbolTest /
+// k4-multiMixer for the pattern + measurements.
+function obsById(id, cb, prop) {
+    var api = new LiveAPI(cb, '');
+    api.id = id;
+    if (prop)
+        api.property = prop;
+    return api;
+}
+// Scene ids by row index — refreshed by querySceneCount alongside totalScenes.
+var sceneIds = [];
+// Per-track clip_slot ids by row, keyed by trackIdx. Lazily filled + cached so
+// cells/observers bind by clip_slot id rather than positional path strings.
+// Cleared on track-list / scene-count changes (which also tear down all cells,
+// so any live cell's track is guaranteed cached). Every track has exactly
+// totalScenes clip_slots (Live invariant), so row indexes the array directly.
+var trackSlotIds = {};
+function ensureTrackSlotIds(trackIdx) {
+    var arr = trackSlotIds[trackIdx];
+    if (arr)
+        return arr;
+    scratchApi.id = trackIds[trackIdx];
+    arr = (0, utils_1.cleanArr)(scratchApi.get('clip_slots'));
+    trackSlotIds[trackIdx] = arr;
+    return arr;
+}
+function slotId(trackIdx, row) {
+    return ensureTrackSlotIds(trackIdx)[row];
+}
 function shouldSelectOnLaunch() {
     scratchApi.path = 'live_set';
     return !!parseInt(scratchApi.get('select_on_launch'));
@@ -122,6 +156,8 @@ function visibleTracks() {
         trackPaths.push(t.path);
         trackIsGroup.push(t.type === consts_1.TYPE_GROUP);
     }
+    // trackIdx -> id mapping changed; drop the per-track clip_slot id cache.
+    trackSlotIds = {};
     if (leftTrack < 0 || settingUp)
         return;
     teardownAllCells();
@@ -134,7 +170,7 @@ exports.visibleTracks = visibleTracks;
 // ---------------------------------------------------------------------------
 function querySceneCount() {
     scratchApi.path = 'live_set';
-    var sceneIds = (0, utils_1.cleanArr)(scratchApi.get('scenes'));
+    sceneIds = (0, utils_1.cleanArr)(scratchApi.get('scenes'));
     return sceneIds.length;
 }
 function onSceneCountChange(args) {
@@ -147,6 +183,7 @@ function onSceneCountChange(args) {
     if (newCount !== totalScenes) {
         totalScenes = newCount;
         sceneCache = []; // invalidate cache
+        trackSlotIds = {}; // clip_slot ids shift when scenes are added/removed
         teardownAllCells();
         teardownAllScenes();
         applyWindow();
@@ -172,7 +209,7 @@ function sendSelectedScene() {
 // Track Play Observers (playing_slot_index + fired_slot_index per track)
 // ---------------------------------------------------------------------------
 function createTrackPlayObservers(trackIdx) {
-    var trackPath = trackPaths[trackIdx];
+    var trackId = trackIds[trackIdx];
     var tObs = {
         trackIdx: trackIdx,
         playingSlotApi: null,
@@ -184,8 +221,8 @@ function createTrackPlayObservers(trackIdx) {
         firedSlot: -2,
         armed: false,
     };
-    // Read initial values
-    cellInitApi.path = trackPath;
+    // Read initial values (by id — no path interning)
+    cellInitApi.id = trackId;
     tObs.playingSlot = parseInt(cellInitApi.get('playing_slot_index').toString());
     tObs.firedSlot = parseInt(cellInitApi.get('fired_slot_index').toString());
     var canBeArmed = !!parseInt(cellInitApi.get('can_be_armed').toString());
@@ -193,7 +230,7 @@ function createTrackPlayObservers(trackIdx) {
         tObs.armed = !!parseInt(cellInitApi.get('arm').toString());
     }
     // Observer: playing_slot_index
-    tObs.playingSlotApi = new LiveAPI(function (args) {
+    tObs.playingSlotApi = obsById(trackId, function (args) {
         if (!tObs.playingSlotApi)
             return;
         if (args[0] !== 'playing_slot_index')
@@ -207,10 +244,9 @@ function createTrackPlayObservers(trackIdx) {
         // Update new slot (now playing)
         if (newSlot >= 0)
             updateCellFromTrack(trackIdx, newSlot);
-    }, trackPath);
-    tObs.playingSlotApi.property = 'playing_slot_index';
+    }, 'playing_slot_index');
     // Observer: fired_slot_index
-    tObs.firedSlotApi = new LiveAPI(function (args) {
+    tObs.firedSlotApi = obsById(trackId, function (args) {
         if (!tObs.firedSlotApi)
             return;
         if (args[0] !== 'fired_slot_index')
@@ -224,11 +260,10 @@ function createTrackPlayObservers(trackIdx) {
         // Update new triggered slot
         if (newSlot >= 0)
             updateCellFromTrack(trackIdx, newSlot);
-    }, trackPath);
-    tObs.firedSlotApi.property = 'fired_slot_index';
+    }, 'fired_slot_index');
     // Observer: arm (only for tracks that can be armed)
     if (canBeArmed) {
-        tObs.armApi = new LiveAPI(function (args) {
+        tObs.armApi = obsById(trackId, function (args) {
             if (!tObs.armApi)
                 return;
             if (args[0] !== 'arm')
@@ -239,27 +274,24 @@ function createTrackPlayObservers(trackIdx) {
             tObs.armed = newArmed;
             // Update all empty cells on this track (armed state changes their display)
             updateAllCellsOnTrack(trackIdx);
-        }, trackPath);
-        tObs.armApi.property = 'arm';
+        }, 'arm');
     }
     // Observer: track name
-    tObs.nameApi = new LiveAPI(function (args) {
+    tObs.nameApi = obsById(trackId, function (args) {
         if (!tObs.nameApi)
             return;
         if (args[0] !== 'name')
             return;
         (0, utils_1.osc)('/clips/trackInfo', { t: tObs.trackIdx, n: (0, utils_1.dequote)(args[1]) });
-    }, trackPath);
-    tObs.nameApi.property = 'name';
+    }, 'name');
     // Observer: track color
-    tObs.colorApi = new LiveAPI(function (args) {
+    tObs.colorApi = obsById(trackId, function (args) {
         if (!tObs.colorApi)
             return;
         if (args[0] !== 'color')
             return;
         (0, utils_1.osc)('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) });
-    }, trackPath);
-    tObs.colorApi.property = 'color';
+    }, 'color');
     return tObs;
 }
 function teardownTrackPlayObservers(tObs) {
@@ -317,7 +349,7 @@ function updateCellFromTrack(trackIdx, sceneIdx) {
 // ---------------------------------------------------------------------------
 // Read initial cell state using reused scratchpad — no LiveAPI objects created
 function readCellState(col, row) {
-    var slotPath = trackPaths[col] + ' clip_slots ' + row;
+    var sid = slotId(col, row);
     var cell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 };
     var obs = {
         trackIdx: col,
@@ -332,13 +364,13 @@ function readCellState(col, row) {
         controlsOtherClipsApi: null,
         cell: cell,
     };
-    cellInitApi.path = slotPath;
+    cellInitApi.id = sid;
     var hasClip = !!parseInt(cellInitApi.get('has_clip').toString());
     obs.hasClip = hasClip;
     cell.state = deriveCellState(hasClip, col, row);
     cell.hsb = parseInt(cellInitApi.get('has_stop_button').toString()) ? 1 : 0;
     if (hasClip) {
-        cellInitApi.path = slotPath + ' clip';
+        cellInitApi.id = (0, utils_1.cleanArr)(cellInitApi.get('clip'))[0];
         cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
         cell.color = colorHex(cellInitApi.get('color'));
         if (parseInt(cellInitApi.get('is_recording').toString())) {
@@ -346,7 +378,7 @@ function readCellState(col, row) {
         }
     }
     if (trackIsGroup[col]) {
-        cellInitApi.path = slotPath;
+        cellInitApi.id = sid;
         cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0;
         cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString()) ? 1 : 0;
     }
@@ -356,9 +388,9 @@ function readCellState(col, row) {
 function attachCellObservers(obs) {
     if (obs.hasClipApi)
         return; // already attached
-    var slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx;
+    var sid = slotId(obs.trackIdx, obs.sceneIdx);
     // has_stop_button
-    obs.hasStopButtonApi = new LiveAPI(function (args) {
+    obs.hasStopButtonApi = obsById(sid, function (args) {
         if (!obs.hasStopButtonApi)
             return;
         if (args[0] !== 'has_stop_button')
@@ -370,11 +402,10 @@ function attachCellObservers(obs) {
         if (isVisible(obs.trackIdx, obs.sceneIdx)) {
             queueFullUpdate(obs);
         }
-    }, slotPath);
-    obs.hasStopButtonApi.property = 'has_stop_button';
+    }, 'has_stop_button');
     // Group track: playing_status and controls_other_clips
     if (trackIsGroup[obs.trackIdx]) {
-        obs.playingStatusApi = new LiveAPI(function (args) {
+        obs.playingStatusApi = obsById(sid, function (args) {
             if (!obs.playingStatusApi)
                 return;
             if (args[0] !== 'playing_status')
@@ -386,9 +417,8 @@ function attachCellObservers(obs) {
             if (isVisible(obs.trackIdx, obs.sceneIdx)) {
                 queueFullUpdate(obs);
             }
-        }, slotPath);
-        obs.playingStatusApi.property = 'playing_status';
-        obs.controlsOtherClipsApi = new LiveAPI(function (args) {
+        }, 'playing_status');
+        obs.controlsOtherClipsApi = obsById(sid, function (args) {
             if (!obs.controlsOtherClipsApi)
                 return;
             if (args[0] !== 'controls_other_clips')
@@ -400,11 +430,10 @@ function attachCellObservers(obs) {
             if (isVisible(obs.trackIdx, obs.sceneIdx)) {
                 queueFullUpdate(obs);
             }
-        }, slotPath);
-        obs.controlsOtherClipsApi.property = 'controls_other_clips';
+        }, 'controls_other_clips');
     }
     // has_clip
-    obs.hasClipApi = new LiveAPI(function (args) {
+    obs.hasClipApi = obsById(sid, function (args) {
         if (!obs.hasClipApi)
             return;
         if (args[0] !== 'has_clip')
@@ -427,8 +456,7 @@ function attachCellObservers(obs) {
         if (newState !== oldState && isVisible(obs.trackIdx, obs.sceneIdx)) {
             queueFullUpdate(obs);
         }
-    }, slotPath);
-    obs.hasClipApi.property = 'has_clip';
+    }, 'has_clip');
     // Clip observers (only if has_clip)
     if (obs.hasClip) {
         setupClipObserver(obs);
@@ -454,17 +482,19 @@ function teardownCellObservers(obs) {
     teardownClipObserver(obs);
 }
 function setupClipObserver(obs) {
-    var slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx;
-    var clipPath = slotPath + ' clip';
-    // Read clip info via cellInitApi (not scratchApi — this can be called from observer callbacks)
-    cellInitApi.path = clipPath;
+    // Resolve the clip's id from its slot (re-read each call — a fresh clip has a
+    // new id). slotId hits the per-track cache; the clip id read goes through
+    // cellInitApi (the observer-safe pad — this can run from a callback).
+    cellInitApi.id = slotId(obs.trackIdx, obs.sceneIdx);
+    var clipId = (0, utils_1.cleanArr)(cellInitApi.get('clip'))[0];
+    cellInitApi.id = clipId;
     obs.cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
     obs.cell.color = colorHex(cellInitApi.get('color'));
     if (parseInt(cellInitApi.get('is_recording').toString())) {
         obs.cell.state = CLIP_RECORDING;
     }
     if (!obs.clipApi) {
-        obs.clipApi = new LiveAPI(function (args) {
+        obs.clipApi = obsById(clipId, function (args) {
             if (!obs.clipApi)
                 return;
             if (args[0] !== 'name')
@@ -473,15 +503,14 @@ function setupClipObserver(obs) {
             if (isVisible(obs.trackIdx, obs.sceneIdx)) {
                 queueFullUpdate(obs);
             }
-        }, clipPath);
-        obs.clipApi.property = 'name';
+        }, 'name');
     }
     else {
-        obs.clipApi.path = clipPath;
+        obs.clipApi.id = clipId;
         obs.clipApi.property = 'name';
     }
     if (!obs.clipRecordingApi) {
-        obs.clipRecordingApi = new LiveAPI(function (args) {
+        obs.clipRecordingApi = obsById(clipId, function (args) {
             if (!obs.clipRecordingApi)
                 return;
             if (args[0] !== 'is_recording')
@@ -496,15 +525,14 @@ function setupClipObserver(obs) {
             if (isVisible(obs.trackIdx, obs.sceneIdx)) {
                 queueFullUpdate(obs);
             }
-        }, clipPath);
-        obs.clipRecordingApi.property = 'is_recording';
+        }, 'is_recording');
     }
     else {
-        obs.clipRecordingApi.path = clipPath;
+        obs.clipRecordingApi.id = clipId;
         obs.clipRecordingApi.property = 'is_recording';
     }
     if (!obs.clipColorApi) {
-        obs.clipColorApi = new LiveAPI(function (args) {
+        obs.clipColorApi = obsById(clipId, function (args) {
             if (!obs.clipColorApi)
                 return;
             if (args[0] !== 'color')
@@ -513,11 +541,10 @@ function setupClipObserver(obs) {
             if (isVisible(obs.trackIdx, obs.sceneIdx)) {
                 queueFullUpdate(obs);
             }
-        }, clipPath);
-        obs.clipColorApi.property = 'color';
+        }, 'color');
     }
     else {
-        obs.clipColorApi.path = clipPath;
+        obs.clipColorApi.id = clipId;
         obs.clipColorApi.property = 'color';
     }
 }
@@ -592,8 +619,8 @@ function flushUpdates() {
 // Scene Observer Creation / Teardown
 // ---------------------------------------------------------------------------
 function createSceneObserver(sceneIdx) {
-    var scenePath = 'live_set scenes ' + sceneIdx;
-    cellInitApi.path = scenePath;
+    var sid = sceneIds[sceneIdx];
+    cellInitApi.id = sid;
     var name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
     var color = colorHex(cellInitApi.get('color'));
     var info = {
@@ -603,24 +630,22 @@ function createSceneObserver(sceneIdx) {
         name: name,
         color: color,
     };
-    info.nameApi = new LiveAPI(function (args) {
+    info.nameApi = obsById(sid, function (args) {
         if (!info.nameApi)
             return;
         if (args[0] !== 'name')
             return;
         info.name = (0, utils_1.dequote)(args[1]);
         scheduleSceneInfo();
-    }, scenePath);
-    info.nameApi.property = 'name';
-    info.colorApi = new LiveAPI(function (args) {
+    }, 'name');
+    info.colorApi = obsById(sid, function (args) {
         if (!info.colorApi)
             return;
         if (args[0] !== 'color')
             return;
         info.color = colorHex(args[1]);
         scheduleSceneInfo();
-    }, scenePath);
-    info.colorApi.property = 'color';
+    }, 'color');
     return info;
 }
 function teardownSceneObserver(info) {
@@ -788,7 +813,7 @@ function sendTrackInfo() {
     var tracks = [];
     for (var col = leftTrack; col < rightTrack; col++) {
         if (col < trackPaths.length) {
-            cellInitApi.path = trackPaths[col];
+            cellInitApi.id = trackIds[col];
             tracks.push({
                 n: (0, utils_1.dequote)(cellInitApi.get('name').toString()),
                 c: colorHex(cellInitApi.get('color')),
@@ -807,7 +832,7 @@ function scheduleSceneInfo() {
 function buildSceneCache() {
     sceneCache = [];
     for (var row = 0; row < totalScenes; row++) {
-        cellInitApi.path = 'live_set scenes ' + row;
+        cellInitApi.id = sceneIds[row];
         sceneCache.push({
             n: (0, utils_1.dequote)(cellInitApi.get('name').toString()),
             c: colorHex(cellInitApi.get('color')),

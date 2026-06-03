@@ -128,6 +128,43 @@ function ensureApis() {
   if (!viewApi) viewApi = new LiveAPI(noFn, 'live_set view')
 }
 
+// Bind a fresh observer by numeric id instead of a path string. A path string
+// (`new LiveAPI(cb, 'tracks N clip_slots M ...')` or `.path = ...`) interns a
+// permanent Max symbol each (measured ~1:1); `.id` is numeric and interns
+// nothing. The '' constructor path is interned once globally. Structural ids come
+// from id-list reads (.get('clip_slots'/'scenes'/'clip')), which also don't
+// intern — so a whole clip grid costs ~0 path symbols. See k4-symbolTest /
+// k4-multiMixer for the pattern + measurements.
+function obsById(id: number, cb: any, prop?: string): LiveAPI {
+  const api = new LiveAPI(cb, '')
+  api.id = id
+  if (prop) api.property = prop
+  return api
+}
+
+// Scene ids by row index — refreshed by querySceneCount alongside totalScenes.
+let sceneIds: number[] = []
+
+// Per-track clip_slot ids by row, keyed by trackIdx. Lazily filled + cached so
+// cells/observers bind by clip_slot id rather than positional path strings.
+// Cleared on track-list / scene-count changes (which also tear down all cells,
+// so any live cell's track is guaranteed cached). Every track has exactly
+// totalScenes clip_slots (Live invariant), so row indexes the array directly.
+let trackSlotIds: Record<number, number[]> = {}
+
+function ensureTrackSlotIds(trackIdx: number): number[] {
+  let arr = trackSlotIds[trackIdx]
+  if (arr) return arr
+  scratchApi.id = trackIds[trackIdx]
+  arr = cleanArr(scratchApi.get('clip_slots'))
+  trackSlotIds[trackIdx] = arr
+  return arr
+}
+
+function slotId(trackIdx: number, row: number): number {
+  return ensureTrackSlotIds(trackIdx)[row]
+}
+
 function shouldSelectOnLaunch(): boolean {
   scratchApi.path = 'live_set'
   return !!parseInt(scratchApi.get('select_on_launch'))
@@ -187,6 +224,8 @@ function visibleTracks() {
     trackPaths.push(t.path)
     trackIsGroup.push(t.type === TYPE_GROUP)
   }
+  // trackIdx -> id mapping changed; drop the per-track clip_slot id cache.
+  trackSlotIds = {}
   if (leftTrack < 0 || settingUp) return
   teardownAllCells()
   teardownAllTrackPlay()
@@ -199,7 +238,7 @@ function visibleTracks() {
 
 function querySceneCount(): number {
   scratchApi.path = 'live_set'
-  const sceneIds = cleanArr(scratchApi.get('scenes'))
+  sceneIds = cleanArr(scratchApi.get('scenes'))
   return sceneIds.length
 }
 
@@ -211,6 +250,7 @@ function onSceneCountChange(args: any[]) {
   if (newCount !== totalScenes) {
     totalScenes = newCount
     sceneCache = [] // invalidate cache
+    trackSlotIds = {} // clip_slot ids shift when scenes are added/removed
     teardownAllCells()
     teardownAllScenes()
     applyWindow()
@@ -239,7 +279,7 @@ function sendSelectedScene() {
 // ---------------------------------------------------------------------------
 
 function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
-  const trackPath = trackPaths[trackIdx]
+  const trackId = trackIds[trackIdx]
 
   const tObs: TrackPlayObservers = {
     trackIdx: trackIdx,
@@ -253,8 +293,8 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     armed: false,
   }
 
-  // Read initial values
-  cellInitApi.path = trackPath
+  // Read initial values (by id — no path interning)
+  cellInitApi.id = trackId
   tObs.playingSlot = parseInt(cellInitApi.get('playing_slot_index').toString())
   tObs.firedSlot = parseInt(cellInitApi.get('fired_slot_index').toString())
   const canBeArmed = !!parseInt(cellInitApi.get('can_be_armed').toString())
@@ -263,7 +303,7 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
   }
 
   // Observer: playing_slot_index
-  tObs.playingSlotApi = new LiveAPI(function (args: any[]) {
+  tObs.playingSlotApi = obsById(trackId, function (args: any[]) {
     if (!tObs.playingSlotApi) return
     if (args[0] !== 'playing_slot_index') return
     const newSlot = parseInt(args[1])
@@ -274,11 +314,10 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     if (oldSlot >= 0) updateCellFromTrack(trackIdx, oldSlot)
     // Update new slot (now playing)
     if (newSlot >= 0) updateCellFromTrack(trackIdx, newSlot)
-  }, trackPath)
-  tObs.playingSlotApi.property = 'playing_slot_index'
+  }, 'playing_slot_index')
 
   // Observer: fired_slot_index
-  tObs.firedSlotApi = new LiveAPI(function (args: any[]) {
+  tObs.firedSlotApi = obsById(trackId, function (args: any[]) {
     if (!tObs.firedSlotApi) return
     if (args[0] !== 'fired_slot_index') return
     const newSlot = parseInt(args[1])
@@ -289,12 +328,11 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     if (oldSlot >= 0) updateCellFromTrack(trackIdx, oldSlot)
     // Update new triggered slot
     if (newSlot >= 0) updateCellFromTrack(trackIdx, newSlot)
-  }, trackPath)
-  tObs.firedSlotApi.property = 'fired_slot_index'
+  }, 'fired_slot_index')
 
   // Observer: arm (only for tracks that can be armed)
   if (canBeArmed) {
-    tObs.armApi = new LiveAPI(function (args: any[]) {
+    tObs.armApi = obsById(trackId, function (args: any[]) {
       if (!tObs.armApi) return
       if (args[0] !== 'arm') return
       const newArmed = !!parseInt(args[1])
@@ -302,25 +340,22 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
       tObs.armed = newArmed
       // Update all empty cells on this track (armed state changes their display)
       updateAllCellsOnTrack(trackIdx)
-    }, trackPath)
-    tObs.armApi.property = 'arm'
+    }, 'arm')
   }
 
   // Observer: track name
-  tObs.nameApi = new LiveAPI(function (args: any[]) {
+  tObs.nameApi = obsById(trackId, function (args: any[]) {
     if (!tObs.nameApi) return
     if (args[0] !== 'name') return
     osc('/clips/trackInfo', { t: tObs.trackIdx, n: dequote(args[1]) })
-  }, trackPath)
-  tObs.nameApi.property = 'name'
+  }, 'name')
 
   // Observer: track color
-  tObs.colorApi = new LiveAPI(function (args: any[]) {
+  tObs.colorApi = obsById(trackId, function (args: any[]) {
     if (!tObs.colorApi) return
     if (args[0] !== 'color') return
     osc('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) })
-  }, trackPath)
-  tObs.colorApi.property = 'color'
+  }, 'color')
 
   return tObs
 }
@@ -384,7 +419,7 @@ function updateCellFromTrack(trackIdx: number, sceneIdx: number) {
 
 // Read initial cell state using reused scratchpad — no LiveAPI objects created
 function readCellState(col: number, row: number): CellObservers {
-  const slotPath = trackPaths[col] + ' clip_slots ' + row
+  const sid = slotId(col, row)
 
   const cell: ClipCell = { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 }
 
@@ -402,14 +437,14 @@ function readCellState(col: number, row: number): CellObservers {
     cell: cell,
   }
 
-  cellInitApi.path = slotPath
+  cellInitApi.id = sid
   const hasClip = !!parseInt(cellInitApi.get('has_clip').toString())
   obs.hasClip = hasClip
   cell.state = deriveCellState(hasClip, col, row)
   cell.hsb = parseInt(cellInitApi.get('has_stop_button').toString()) ? 1 : 0
 
   if (hasClip) {
-    cellInitApi.path = slotPath + ' clip'
+    cellInitApi.id = cleanArr(cellInitApi.get('clip'))[0]
     cell.name = dequote(cellInitApi.get('name').toString())
     cell.color = colorHex(cellInitApi.get('color'))
     if (parseInt(cellInitApi.get('is_recording').toString())) {
@@ -418,7 +453,7 @@ function readCellState(col: number, row: number): CellObservers {
   }
 
   if (trackIsGroup[col]) {
-    cellInitApi.path = slotPath
+    cellInitApi.id = sid
     cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0
     cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString()) ? 1 : 0
   }
@@ -429,10 +464,10 @@ function readCellState(col: number, row: number): CellObservers {
 // Attach LiveAPI observers to a cell (expensive — called lazily in batches)
 function attachCellObservers(obs: CellObservers) {
   if (obs.hasClipApi) return // already attached
-  const slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx
+  const sid = slotId(obs.trackIdx, obs.sceneIdx)
 
   // has_stop_button
-  obs.hasStopButtonApi = new LiveAPI(function (args: any[]) {
+  obs.hasStopButtonApi = obsById(sid, function (args: any[]) {
     if (!obs.hasStopButtonApi) return
     if (args[0] !== 'has_stop_button') return
     const newHsb = parseInt(args[1]) ? 1 : 0
@@ -441,12 +476,11 @@ function attachCellObservers(obs: CellObservers) {
     if (isVisible(obs.trackIdx, obs.sceneIdx)) {
       queueFullUpdate(obs)
     }
-  }, slotPath)
-  obs.hasStopButtonApi.property = 'has_stop_button'
+  }, 'has_stop_button')
 
   // Group track: playing_status and controls_other_clips
   if (trackIsGroup[obs.trackIdx]) {
-    obs.playingStatusApi = new LiveAPI(function (args: any[]) {
+    obs.playingStatusApi = obsById(sid, function (args: any[]) {
       if (!obs.playingStatusApi) return
       if (args[0] !== 'playing_status') return
       const newPs = parseInt(args[1]) || 0
@@ -455,10 +489,9 @@ function attachCellObservers(obs: CellObservers) {
       if (isVisible(obs.trackIdx, obs.sceneIdx)) {
         queueFullUpdate(obs)
       }
-    }, slotPath)
-    obs.playingStatusApi.property = 'playing_status'
+    }, 'playing_status')
 
-    obs.controlsOtherClipsApi = new LiveAPI(function (args: any[]) {
+    obs.controlsOtherClipsApi = obsById(sid, function (args: any[]) {
       if (!obs.controlsOtherClipsApi) return
       if (args[0] !== 'controls_other_clips') return
       const newHc = parseInt(args[1]) ? 1 : 0
@@ -467,12 +500,11 @@ function attachCellObservers(obs: CellObservers) {
       if (isVisible(obs.trackIdx, obs.sceneIdx)) {
         queueFullUpdate(obs)
       }
-    }, slotPath)
-    obs.controlsOtherClipsApi.property = 'controls_other_clips'
+    }, 'controls_other_clips')
   }
 
   // has_clip
-  obs.hasClipApi = new LiveAPI(function (args: any[]) {
+  obs.hasClipApi = obsById(sid, function (args: any[]) {
     if (!obs.hasClipApi) return
     if (args[0] !== 'has_clip') return
     const newHasClip = !!parseInt(args[1])
@@ -491,8 +523,7 @@ function attachCellObservers(obs: CellObservers) {
     if (newState !== oldState && isVisible(obs.trackIdx, obs.sceneIdx)) {
       queueFullUpdate(obs)
     }
-  }, slotPath)
-  obs.hasClipApi.property = 'has_clip'
+  }, 'has_clip')
 
   // Clip observers (only if has_clip)
   if (obs.hasClip) {
@@ -521,11 +552,13 @@ function teardownCellObservers(obs: CellObservers) {
 }
 
 function setupClipObserver(obs: CellObservers) {
-  const slotPath = trackPaths[obs.trackIdx] + ' clip_slots ' + obs.sceneIdx
-  const clipPath = slotPath + ' clip'
+  // Resolve the clip's id from its slot (re-read each call — a fresh clip has a
+  // new id). slotId hits the per-track cache; the clip id read goes through
+  // cellInitApi (the observer-safe pad — this can run from a callback).
+  cellInitApi.id = slotId(obs.trackIdx, obs.sceneIdx)
+  const clipId = cleanArr(cellInitApi.get('clip'))[0]
 
-  // Read clip info via cellInitApi (not scratchApi — this can be called from observer callbacks)
-  cellInitApi.path = clipPath
+  cellInitApi.id = clipId
   obs.cell.name = dequote(cellInitApi.get('name').toString())
   obs.cell.color = colorHex(cellInitApi.get('color'))
   if (parseInt(cellInitApi.get('is_recording').toString())) {
@@ -533,22 +566,21 @@ function setupClipObserver(obs: CellObservers) {
   }
 
   if (!obs.clipApi) {
-    obs.clipApi = new LiveAPI(function (args: any[]) {
+    obs.clipApi = obsById(clipId, function (args: any[]) {
       if (!obs.clipApi) return
       if (args[0] !== 'name') return
       obs.cell.name = dequote(args[1])
       if (isVisible(obs.trackIdx, obs.sceneIdx)) {
         queueFullUpdate(obs)
       }
-    }, clipPath)
-    obs.clipApi.property = 'name'
+    }, 'name')
   } else {
-    obs.clipApi.path = clipPath
+    obs.clipApi.id = clipId
     obs.clipApi.property = 'name'
   }
 
   if (!obs.clipRecordingApi) {
-    obs.clipRecordingApi = new LiveAPI(function (args: any[]) {
+    obs.clipRecordingApi = obsById(clipId, function (args: any[]) {
       if (!obs.clipRecordingApi) return
       if (args[0] !== 'is_recording') return
       const recording = !!parseInt(args[1])
@@ -560,25 +592,23 @@ function setupClipObserver(obs: CellObservers) {
       if (isVisible(obs.trackIdx, obs.sceneIdx)) {
         queueFullUpdate(obs)
       }
-    }, clipPath)
-    obs.clipRecordingApi.property = 'is_recording'
+    }, 'is_recording')
   } else {
-    obs.clipRecordingApi.path = clipPath
+    obs.clipRecordingApi.id = clipId
     obs.clipRecordingApi.property = 'is_recording'
   }
 
   if (!obs.clipColorApi) {
-    obs.clipColorApi = new LiveAPI(function (args: any[]) {
+    obs.clipColorApi = obsById(clipId, function (args: any[]) {
       if (!obs.clipColorApi) return
       if (args[0] !== 'color') return
       obs.cell.color = colorHex(args[1])
       if (isVisible(obs.trackIdx, obs.sceneIdx)) {
         queueFullUpdate(obs)
       }
-    }, clipPath)
-    obs.clipColorApi.property = 'color'
+    }, 'color')
   } else {
-    obs.clipColorApi.path = clipPath
+    obs.clipColorApi.id = clipId
     obs.clipColorApi.property = 'color'
   }
 }
@@ -660,9 +690,9 @@ function flushUpdates() {
 // ---------------------------------------------------------------------------
 
 function createSceneObserver(sceneIdx: number): SceneInfo {
-  const scenePath = 'live_set scenes ' + sceneIdx
+  const sid = sceneIds[sceneIdx]
 
-  cellInitApi.path = scenePath
+  cellInitApi.id = sid
   const name = dequote(cellInitApi.get('name').toString())
   const color = colorHex(cellInitApi.get('color'))
 
@@ -674,21 +704,19 @@ function createSceneObserver(sceneIdx: number): SceneInfo {
     color: color,
   }
 
-  info.nameApi = new LiveAPI(function (args: any[]) {
+  info.nameApi = obsById(sid, function (args: any[]) {
     if (!info.nameApi) return
     if (args[0] !== 'name') return
     info.name = dequote(args[1])
     scheduleSceneInfo()
-  }, scenePath)
-  info.nameApi.property = 'name'
+  }, 'name')
 
-  info.colorApi = new LiveAPI(function (args: any[]) {
+  info.colorApi = obsById(sid, function (args: any[]) {
     if (!info.colorApi) return
     if (args[0] !== 'color') return
     info.color = colorHex(args[1])
     scheduleSceneInfo()
-  }, scenePath)
-  info.colorApi.property = 'color'
+  }, 'color')
 
   return info
 }
@@ -874,7 +902,7 @@ function sendTrackInfo() {
   const tracks: any[] = []
   for (let col = leftTrack; col < rightTrack; col++) {
     if (col < trackPaths.length) {
-      cellInitApi.path = trackPaths[col]
+      cellInitApi.id = trackIds[col]
       tracks.push({
         n: dequote(cellInitApi.get('name').toString()),
         c: colorHex(cellInitApi.get('color')),
@@ -895,7 +923,7 @@ function scheduleSceneInfo() {
 function buildSceneCache() {
   sceneCache = []
   for (let row = 0; row < totalScenes; row++) {
-    cellInitApi.path = 'live_set scenes ' + row
+    cellInitApi.id = sceneIds[row]
     sceneCache.push({
       n: dequote(cellInitApi.get('name').toString()),
       c: colorHex(cellInitApi.get('color')),
