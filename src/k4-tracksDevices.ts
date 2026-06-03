@@ -52,6 +52,18 @@ function onCurrDeviceChange(val: IdObserverArg) {
   deviceChangeDebounce.schedule(40)
 }
 
+// Only Track/Chain objects have a `devices` list — Song/Device do not. Observer
+// timing on device add can transiently resolve a focus path to the Song (e.g.
+// `live_set view selected_track` before Live finishes wiring up `view`, which
+// collapses to its valid prefix `live_set`), so guard every devices read by the
+// resolved object's type rather than trusting the path. The next watcher fire
+// rebuilds with the correct target. Prevents "'Song' object has no attribute
+// 'devices'" on initial load.
+const HAS_DEVICES: Record<string, 1> = { Track: 1, Chain: 1, DrumChain: 1 }
+function devicesOf(api: LiveAPI): any[] {
+  return HAS_DEVICES[api.type as string] ? cleanArr(api.get('devices')) : []
+}
+
 function updateDeviceNav() {
   //log('DEVICE ID=' + state.currDeviceId + ' TRACKID=' + state.currTrackId)
   if (+state.currDeviceId === 0) {
@@ -88,7 +100,7 @@ function updateDeviceNav() {
       : 'id ' + state.currTrackId
   )
   // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
-  const parentChildIds = cleanArr(parentObj.get('devices'))
+  const parentChildIds = devicesOf(parentObj)
 
   // first, self and siblings (with chain children under self)
   for (const childDeviceId of parentChildIds) {
@@ -225,7 +237,7 @@ function onCurrTrackChange(val: IdObserverArg) {
     state.api.path = dp || 'live_set'
     if (!dp || +state.api.id === 0) {
       state.api.id = state.currTrackId
-      const devices = cleanArr(state.api.get('devices'))
+      const devices = devicesOf(state.api)
       if (devices.length > 0) {
         ctx.focus.selectDevice(parseInt(devices[0] as any))
       }

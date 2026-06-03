@@ -31,6 +31,17 @@ function onCurrDeviceChange(val) {
     });
     deviceChangeDebounce.schedule(40);
 }
+// Only Track/Chain objects have a `devices` list — Song/Device do not. Observer
+// timing on device add can transiently resolve a focus path to the Song (e.g.
+// `live_set view selected_track` before Live finishes wiring up `view`, which
+// collapses to its valid prefix `live_set`), so guard every devices read by the
+// resolved object's type rather than trusting the path. The next watcher fire
+// rebuilds with the correct target. Prevents "'Song' object has no attribute
+// 'devices'" on initial load.
+var HAS_DEVICES = { Track: 1, Chain: 1, DrumChain: 1 };
+function devicesOf(api) {
+    return HAS_DEVICES[api.type] ? (0, utils_1.cleanArr)(api.get('devices')) : [];
+}
 function updateDeviceNav() {
     //log('DEVICE ID=' + state.currDeviceId + ' TRACKID=' + state.currTrackId)
     if (+state.currDeviceId === 0) {
@@ -61,7 +72,7 @@ function updateDeviceNav() {
         ? currDeviceObj.get('canonical_parent')
         : 'id ' + state.currTrackId);
     // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
-    var parentChildIds = (0, utils_1.cleanArr)(parentObj.get('devices'));
+    var parentChildIds = devicesOf(parentObj);
     // first, self and siblings (with chain children under self)
     for (var _i = 0, parentChildIds_1 = parentChildIds; _i < parentChildIds_1.length; _i++) {
         var childDeviceId = parentChildIds_1[_i];
@@ -191,7 +202,7 @@ function onCurrTrackChange(val) {
         state.api.path = dp || 'live_set';
         if (!dp || +state.api.id === 0) {
             state.api.id = state.currTrackId;
-            var devices = (0, utils_1.cleanArr)(state.api.get('devices'));
+            var devices = devicesOf(state.api);
             if (devices.length > 0) {
                 ctx.focus.selectDevice(parseInt(devices[0]));
             }
