@@ -285,6 +285,40 @@ function stressPathSet(n) {
     }
     p('stressPathSet:', n, 'distinct .path assignments in', now() - t0, 'ms');
 }
+function masterVolId() {
+    return parseInt(volApi().id.toString());
+}
+// Create + DETACH N observers on ONE fixed, already-interned object (master
+// volume). Mirrors the clip/mixer warm-window evict+recreate cycle. If this grows
+// the symbol table ~N even though the object never changes and was interned long
+// ago, then OBSERVER ATTACH interns per-attach and detach doesn't free it — i.e.
+// scroll churn is the unbounded leak, and pooling/reuse is the fix.
+function stressObsCreate(n) {
+    var id = masterVolId();
+    var t0 = now();
+    for (var i = 0; i < n; i++) {
+        var a = new LiveAPI(noFn, '');
+        a.id = id;
+        a.property = 'value'; // subscribe
+        a.property = ''; // unsubscribe
+        a.id = 0; // detach (matches utils.detach order)
+    }
+    p('stressObsCreate:', n, 'create+detach on one object in', now() - t0, 'ms');
+}
+// Re-point ONE reused observer N times instead of creating fresh ones. If this
+// stays flat while stressObsCreate grows, the fix is to POOL observer objects
+// across scroll and re-point .id rather than evict+recreate.
+function stressObsReuse(n) {
+    var id = masterVolId();
+    var a = new LiveAPI(noFn, '');
+    var t0 = now();
+    for (var i = 0; i < n; i++) {
+        a.id = id;
+        a.property = 'value';
+        a.property = '';
+    }
+    p('stressObsReuse:', n, 're-point one observer in', now() - t0, 'ms');
+}
 // ---------------------------------------------------------------------------
 function anything() {
     var cmd = messagename;
@@ -309,6 +343,10 @@ function anything() {
         stressReadStrSame(parseInt(a[0]) || 100000);
     else if (cmd === 'stressPathSet')
         stressPathSet(parseInt(a[0]) || 10000);
+    else if (cmd === 'stressObsCreate')
+        stressObsCreate(parseInt(a[0]) || 1000);
+    else if (cmd === 'stressObsReuse')
+        stressObsReuse(parseInt(a[0]) || 1000);
     else
         p('unknown cmd:', cmd);
     // Print the resulting symbol-table size (outlet 0 -> [; max size]).
