@@ -308,7 +308,7 @@
 				"box" : 				{
 					"annotation" : "Insert Host Address",
 					"autoscroll" : 0,
-					"bgcolor" : [ 0.141176470588235, 0.141176470588235, 0.141176470588235, 1.0 ],
+					"bgcolor" : [ 0.094117647058824, 0.094117647058824, 0.094117647058824, 1.0 ],
 					"border" : 1.0,
 					"bordercolor" : [ 0.525490196078431, 0.525490196078431, 0.525490196078431, 0.0 ],
 					"fontname" : "Ableton Sans Medium",
@@ -326,7 +326,7 @@
 					"presentation_rect" : [ 6.0, 46.0, 70.0, 15.0 ],
 					"saved_attribute_attributes" : 					{
 						"bgcolor" : 						{
-							"expression" : "themecolor.live_control_text_bg"
+							"expression" : "themecolor.live_lcd_bg"
 						}
 ,
 						"textcolor" : 						{
@@ -484,7 +484,7 @@
 , 			{
 				"box" : 				{
 					"annotation" : "Path to parameter.",
-					"bgcolor" : [ 0.07843137254902, 0.07843137254902, 0.07843137254902, 1.0 ],
+					"bgcolor" : [ 0.094117647058824, 0.094117647058824, 0.094117647058824, 1.0 ],
 					"border" : 1.0,
 					"bordercolor" : [ 0.282353, 0.286275, 0.298039, 0.0 ],
 					"fontname" : "Ableton Sans Medium",
@@ -498,6 +498,14 @@
 					"parameter_enable" : 1,
 					"patching_rect" : [ 866.0, 414.0, 334.0, 21.0 ],
 					"saved_attribute_attributes" : 					{
+						"bgcolor" : 						{
+							"expression" : "themecolor.live_lcd_bg"
+						}
+,
+						"textcolor" : 						{
+							"expression" : "themecolor.live_lcd_control_fg"
+						}
+,
 						"valueof" : 						{
 							"parameter_info" : "Path to parameter.",
 							"parameter_initial" : [ "" ],
@@ -511,7 +519,7 @@
 
 					}
 ,
-					"textcolor" : [ 0.917647, 0.67451, 0.290196, 1.0 ],
+					"textcolor" : [ 1.0, 0.678431372549020, 0.337254901960784, 1.0 ],
 					"varname" : "#1_path"
 				}
 
@@ -799,19 +807,19 @@
 						}
 ,
 						"activeslidercolor" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_lcd_control_fg"
 						}
 ,
 						"activetricolor2" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_lcd_control_fg"
 						}
 ,
 						"focusbordercolor" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_contrast_frame"
 						}
 ,
 						"textcolor" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_lcd_control_fg"
 						}
 ,
 						"valueof" : 						{
@@ -865,19 +873,19 @@
 						}
 ,
 						"activeslidercolor" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_lcd_control_fg"
 						}
 ,
 						"activetricolor2" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_lcd_control_fg"
 						}
 ,
 						"focusbordercolor" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_contrast_frame"
 						}
 ,
 						"textcolor" : 						{
-							"expression" : ""
+							"expression" : "themecolor.live_lcd_control_fg"
 						}
 ,
 						"valueof" : 						{

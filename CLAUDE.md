@@ -316,6 +316,37 @@ unpack→pack is byte-identical, so it's safe to keep in the loop. Adding/alteri
 indices) is fiddly and interlocks — prefer doing parameter changes in the Max
 editor; use this tool for boxes/lines/attributes and inspection.
 
+**Minimal diffs when editing the JSON with Python:** Max's native `.amxd`/`.maxpat`
+JSON is 4-space indent, **insertion-ordered keys** (NOT sorted), scalar arrays
+inline as `[ a, b, c ]`, empty dict as `{<indent-spaces>}`, and **no trailing
+newline**. `json.dump(..., indent=N)` does NOT match this and reformats the whole
+file (20k-line diff for a one-attr change). For surgical edits prefer raw-text
+`str.replace` on the unpacked JSON; if you must round-trip through `json.load`,
+re-serialize with a matching pretty-printer (`json.load` already preserves key
+order) and verify it reproduces the unmodified file byte-for-byte before trusting
+it.
+
+## Theming UI widgets to follow Live's theme (`themecolor.*`)
+
+Non-`live.*` Max objects (`textedit`, `umenu`, `message`, `panel`, `button`,
+`comment`) and several `live.*` color slots use **fixed colors** unless bound to a
+Live theme color. Bind via `saved_attribute_attributes`, keeping the literal RGBA
+as a cache (Max overwrites it from the theme on load):
+
+```jsonc
+"saved_attribute_attributes": { "bgcolor": { "expression": "themecolor.live_control_text_bg" } }
+```
+
+**Pick the token by the widget's ROLE in Live's theme taxonomy — NOT by eyeballing
+the current color.** (Gotcha: `live_value_arc` is *cyan* in the default theme, not
+the orange accent; the orange is `live_control_selection` / `live_lcd_control_fg`.)
+The conventions used in this device:
+
+- **Editable text controls** (`textedit`, `umenu`): bg `live_control_text_bg`, text `live_control_fg`. NOTE `umenu`'s background attribute is **`bgfillcolor`**, not `bgcolor`.
+- **Buttons on the device surface** (`button`): bg `live_surface_bg`, `outlinecolor` `live_control_fg`, `blinkcolor` `live_lcd_control_fg`.
+- **LCD displays** (value readouts) **and the LCD-styled page-tab strip** (`live.tab`): bg `live_lcd_bg`, text `live_lcd_control_fg`, dimmed/inactive text `live_lcd_control_fg_zombie`, selected-tab highlight `live_control_selection`, text-on-selected-tab `live_lcd_bg` (dark for contrast). `live.tab` color attrs: `bgcolor`/`activebgcolor`, `bgoncolor`, `textcolor`, `textoncolor`, `inactivetextoffcolor`, `inactivetextoncolor`, `focusbordercolor`.
+- Do **not** use the generic patcher tokens `theme_textcolor`/`theme_textcolor_inverse` on Live widgets — use the `live_*` family.
+
 ## Important Notes
 
 - **Remember to commit compiled JavaScript files** from `Project/` directory - they are build artifacts currently tracked in git
