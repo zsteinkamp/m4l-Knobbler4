@@ -35,6 +35,7 @@ var state = {
     cuePointsWatcher: null,
     cuePointNames: [],
     cuePointTimes: [],
+    cuePointCount: 0,
 };
 // --- Bank display ----------------------------------------------------------
 function sendBankNames() {
@@ -267,7 +268,7 @@ function sendCuePoints() {
         numerator = 4;
         log('Warning: Could not retrieve time signature. Defaulting to 4/4.');
     }
-    var result = state.cuePointNames.map(function (cuePoint, idx) {
+    var result = state.cuePointNames.slice(0, state.cuePointCount).map(function (cuePoint, idx) {
         var cuePointTime = parseFloat(cuePoint.get('time'));
         var rawBarIndex = Math.floor(cuePointTime / numerator);
         var rawBeatIndex = cuePointTime % numerator;
@@ -307,22 +308,40 @@ function cuePointsChange(args) {
         return;
     }
     var cuePointIds = (0, utils_1.cleanArr)(arrayfromargs(args));
-    // Detach the previous per-cue-point observers before dropping them. An armed
-    // LiveAPI left for GC fires its callback during finalization (jsliveapi_free
-    // inside a V8 weak-callback), which executes JS mid-GC and aborts Live.
-    state.cuePointNames.forEach(utils_1.detach);
-    state.cuePointTimes.forEach(utils_1.detach);
-    state.cuePointNames = [];
-    state.cuePointTimes = [];
-    for (var _i = 0, cuePointIds_1 = cuePointIds; _i < cuePointIds_1.length; _i++) {
-        var cuePointId = cuePointIds_1[_i];
-        var nameApi = new LiveAPI(onCuePointNameChange, 'id ' + cuePointId);
-        nameApi.property = 'name';
-        state.cuePointNames.push(nameApi);
-        var timeApi = new LiveAPI(onCuePointTimeChange, 'id ' + cuePointId);
-        timeApi.property = 'time';
-        state.cuePointTimes.push(timeApi);
+    // Re-point a POOL of cue-point observers instead of detach+recreate. Detaching
+    // leaks ~6 symbols each (see CLAUDE.md), and the old code's reason for
+    // detaching — an armed LiveAPI left for GC fires its callback mid-finalization
+    // and aborts Live — is satisfied better by NEVER dropping the objects: re-point
+    // the ones we need, disable (property='') the surplus, keep them all alive.
+    for (var i = 0; i < cuePointIds.length; i++) {
+        var id = cuePointIds[i];
+        if (state.cuePointNames[i]) {
+            state.cuePointNames[i].id = id;
+            state.cuePointNames[i].property = 'name';
+        }
+        else {
+            var a = new LiveAPI(onCuePointNameChange, '');
+            a.id = id;
+            a.property = 'name';
+            state.cuePointNames[i] = a;
+        }
+        if (state.cuePointTimes[i]) {
+            state.cuePointTimes[i].id = id;
+            state.cuePointTimes[i].property = 'time';
+        }
+        else {
+            var a = new LiveAPI(onCuePointTimeChange, '');
+            a.id = id;
+            a.property = 'time';
+            state.cuePointTimes[i] = a;
+        }
     }
+    for (var i = cuePointIds.length; i < state.cuePointNames.length; i++) {
+        state.cuePointNames[i].property = '';
+        if (state.cuePointTimes[i])
+            state.cuePointTimes[i].property = '';
+    }
+    state.cuePointCount = cuePointIds.length;
     debounceSendCuePoints();
 }
 function playCuePoint(val) {
