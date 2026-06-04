@@ -34,6 +34,17 @@ The Knobbler app and device are constantly being improved. By virtue of being an
 
 When the Knobbler device first communicates with the iPad, it sends a version number. The iPad app has a minimum device version coded into it, and it will prompt you if it is communicating with a device that is too old.
 
+#### The device doesn't load, the Max window shows red errors like "v8: No such object", and the tablet never connects.
+
+This means your version of Ableton Live is too old. Knobbler is built on the `[v8]` JavaScript engine, which is part of **Max 9** — and Max 9 only ships with **Live 12.4 and later**. Older Live 12 releases (12.0–12.3) bundle Max 8, which has no `[v8]` object, so the device's brain never loads and you'll see a stack of red errors in the Max window:
+
+```
+Knobbler4-vNN.amxd • v8 • v8: No such object
+Knobbler4-vNN.amxd • v8 • v8: No such object
+```
+
+**The fix is to update Ableton Live to 12.4 or later.** This is a **free update** for anyone with a Live 12 license — get it from Ableton's website or from **Help ▸ Check for Updates** inside Live. After updating, reload the device and it will work. If you had already added the device to a Set, use the [Hot-Swap button](./updating.md) so your mappings are preserved.
+
 #### I am a Windows user and am not able to discover the app on my phone/tablet from the Knobbler4 device, and see the "Nobody Home :(" error on the Knobbler app.
 
 The Bonjour service required to be running on Windows in order for the network discovery functionality to work.

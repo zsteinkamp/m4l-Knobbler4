@@ -39,7 +39,7 @@ Read more about all of Knobbler's features in the [Features](./features.md) page
 
 ### How It Works
 
-Knobbler is an iOS and Android app that communicates with a Max for Live device in your Live Set. All you need is a compatible phone or tablet and a computer running Live 12 Suite or Standard (with Max for Live), connected over WiFi or ethernet.
+Knobbler is an iOS and Android app that communicates with a Max for Live device in your Live Set. All you need is a compatible phone or tablet and a computer running Live 12.4 or later — Suite, or Standard with the Max for Live add-on — connected over WiFi or ethernet.
 
 ![Big Picture Diagram](images/overview-app-device.png)
 
