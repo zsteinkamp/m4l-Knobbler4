@@ -4,9 +4,43 @@ Sometimes you can't (or don't want to) put your Mac and tablet on the same WiFi
 network — you're at a venue, a practice space, or you simply want the rock-solid
 reliability of a cable. Knobbler works in these situations too.
 
-The easiest modern option is a **direct USB connection** between an iPad/iPhone and
-a Mac. If you specifically want a wireless link with no router, see the
-[Ad-Hoc WiFi](#ad-hoc-wifi-network) section further down.
+There are three approaches, in rough order of convenience:
+
+- A **[phone hotspot](#phone-hotspot)** — tether both the Mac and the tablet to
+  your phone's Personal Hotspot. Zero config, auto-discovery still works, and it
+  travels anywhere.
+- A **direct [USB connection](#usb-connection-recommended)** between an iPad/iPhone
+  and a Mac — rock-solid and wired, but you fill in two IP addresses by hand.
+- An **[ad-hoc WiFi network](#ad-hoc-wifi-network)** created on the Mac — wireless
+  with no router, but the most setup.
+
+## Phone Hotspot
+
+If you have a phone with you, the simplest no-router option is to tether **both**
+your Mac and your tablet to the phone's **Personal Hotspot**. The hotspot puts both
+devices on the same private network and routes traffic between them — including the
+multicast discovery messages Knobbler uses — so this behaves just like a normal
+WiFi network. **Auto-discovery works, and there are no IP addresses to type in.**
+
+1. Turn on **Personal Hotspot** on your phone (on iPhone: **Settings → Personal
+   Hotspot → Allow Others to Join**).
+
+2. Join that hotspot from **both** the Mac (WiFi menu → your phone's name) and the
+   tablet (**Settings → WiFi → your phone's name**).
+
+3. Add Knobbler to your Live Set, open the Knobbler app on the tablet, and go to
+   the **Setup** page. It scans for and finds the device on the Mac automatically —
+   select your Mac under **"Found These Knobblers"** and you're connected.
+
+> **Tip:** this works without any cellular data plan or signal — the phone is just
+> acting as a local router between your two devices, so nothing actually needs to
+> reach the Internet. It's a great fallback at venues with no usable WiFi.
+
+> **If discovery comes up empty:** a few phone-hotspot configurations isolate the
+> connected devices from each other, so the Mac and tablet can't see one another
+> even though both are online. If the scan finds nothing, just fall back to the
+> [manual-IP method](#usb-connection-recommended) — read each device's hotspot IP
+> and type them in by hand, exactly like the USB setup below.
 
 ## USB Connection (recommended)
 
