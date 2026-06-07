@@ -1,4 +1,13 @@
-import { cleanArr, detach, dequote, getVisibleTracksList, logFactory, osc, setOscSink } from './utils'
+import {
+  cleanArr,
+  detach,
+  dequote,
+  getVisibleTracksList,
+  loadSetting,
+  logFactory,
+  osc,
+  setOscSink,
+} from './utils'
 import config from './k4-config'
 import { noFn, TYPE_RETURN, TYPE_MAIN, TYPE_GROUP } from './consts'
 
@@ -57,6 +66,10 @@ type TrackPlayObservers = {
   playingSlot: number // current playing slot index (-2 = none)
   firedSlot: number // current fired/triggered slot index (-2 = none)
   armed: boolean
+  playingClipId: number // id of the clip at playingSlot, -1 if none (drives /clips/progress polling)
+  playCount: number // loop iterations of the playing clip since launch (left of the pie)
+  clipBeats: number // loop length of the playing clip in beats (right of the pie)
+  lastFrac: number // last progress fraction, for loop-wrap detection
 }
 
 type SceneInfo = {
@@ -131,6 +144,22 @@ let sceneCountWatcher: LiveAPI = null
 let selectedSceneApi: LiveAPI = null
 
 // ---------------------------------------------------------------------------
+// Clip progress (the per-track "phase pie" — mimics Live's track-status
+// playing-position indicator next to the clip-stop button)
+// ---------------------------------------------------------------------------
+// Only ONE clip plays per track at a time, so progress is per-track: we poll
+// playing_position on each visible, playing, non-group track's clip and stream a
+// compact /clips/progress [{t,f}] (f = 0..1000). Polling reads are numeric →
+// symbol-free (CLAUDE.md), so this adds NO observers — no churn. The poll only
+// runs while the page has a live window AND the connected app advertised `prog`
+// AND at least one track is playing; it self-stops otherwise.
+const PROGRESS_POLL_MS = 50
+let progressApi: LiveAPI = null // scratchpad for reading clip playing_position
+let progressTask: MaxTask = null
+let progressRunning = false
+let progressPaused = false // true while the clips page is hidden (zero-size window)
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -138,6 +167,7 @@ function ensureApis() {
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
   if (!cellInitApi) cellInitApi = new LiveAPI(noFn, 'live_set')
   if (!viewApi) viewApi = new LiveAPI(noFn, 'live_set view')
+  if (!progressApi) progressApi = new LiveAPI(noFn, 'live_set')
 }
 
 // Bind a fresh observer by numeric id instead of a path string. A path string
@@ -209,7 +239,10 @@ function shouldSelectOnLaunch(): boolean {
 function selectClipSlot(trackIdx: number, sceneIdx: number) {
   ctx.gotoTrack(trackIds[trackIdx].toString()) // shared nav: unfolds enclosing groups
   scratchApi.path = trackPaths[trackIdx] + ' clip_slots ' + sceneIdx
-  viewApi.set('highlighted_clip_slot', ['id', parseInt(scratchApi.id.toString())])
+  viewApi.set('highlighted_clip_slot', [
+    'id',
+    parseInt(scratchApi.id.toString()),
+  ])
 }
 
 function cellKey(col: number, row: number): string {
@@ -241,6 +274,106 @@ function deriveCellState(
     if (tObs.playingSlot === sceneIdx) return CLIP_PLAYING
   }
   return CLIP_STOPPED
+}
+
+// ---------------------------------------------------------------------------
+// Clip progress polling
+// ---------------------------------------------------------------------------
+
+// The connected app advertises `prog` in its handshake capabilities (saved to
+// the shared k4Runtime dict by k4-system). Gate the whole feature on it so we
+// never poll/stream for a client that can't render the pie.
+function appSupportsProgress(): boolean {
+  const caps = loadSetting('clientCapabilities')
+  return !!caps && ('' + caps).indexOf('prog') !== -1
+}
+
+// Resolve (and cache on the struct) the id of the clip currently playing on this
+// track, or -1 when nothing is playing / it's a group track. Read via the
+// observer-safe scratchpad so it's callable from the playing_slot_index callback.
+function setTrackPlayingClip(tObs: TrackPlayObservers, slot: number) {
+  if (slot < 0 || trackIsGroup[tObs.trackIdx]) {
+    tObs.playingClipId = -1
+    return
+  }
+  cellInitApi.id = slotId(tObs.trackIdx, slot)
+  const clip = cleanArr(cellInitApi.get('clip'))
+  const clipId = clip.length && +clip[0] > 0 ? clip[0] : -1
+  tObs.playingClipId = clipId
+  if (clipId < 0) return
+
+  // Cache the loop length in beats and (re)start the play counter — these feed
+  // the numbers flanking the pie (left = play count, right = beats). Clip.length
+  // is already the loop length in beats.
+  cellInitApi.id = clipId
+  tObs.clipBeats = parseFloat(cellInitApi.get('length').toString()) || 0
+  tObs.playCount = 1
+  tObs.lastFrac = 0
+  sendPlayInfo(tObs)
+}
+
+// Low-frequency companion to /clips/progress: the play count (left of the pie)
+// and loop length in beats (right). Sent on launch and on each loop wrap only —
+// NOT every poll — so it never forces the page to re-render on the pie's hot path.
+function sendPlayInfo(tObs: TrackPlayObservers) {
+  if (leftTrack < 0) return
+  osc('/clips/playInfo', {
+    t: tObs.trackIdx,
+    pc: tObs.playCount,
+    b: Math.round(tObs.clipBeats * 100) / 100,
+  })
+}
+
+function ensureProgressRunning() {
+  if (progressRunning || progressPaused) return
+  if (leftTrack < 0) return
+  if (!appSupportsProgress()) return
+  if (!progressTask) progressTask = new Task(progressTick) as MaxTask
+  progressRunning = true
+  progressTask.schedule(PROGRESS_POLL_MS)
+}
+
+// Poll each visible playing track's clip position and stream a compact batch.
+// Self-stops (stops rescheduling) when nothing is playing; restarts via
+// ensureProgressRunning when the next clip launches.
+function progressTick() {
+  progressRunning = false
+  if (progressPaused || leftTrack < 0) return
+
+  const batch: { t: number; f: number }[] = []
+  for (const k in trackPlayObservers) {
+    const tObs = trackPlayObservers[k]
+    if (tObs.playingClipId < 0) continue
+    progressApi.id = tObs.playingClipId
+    const len = parseFloat(progressApi.get('length').toString())
+    if (!(len > 0)) continue
+    const pos = parseFloat(progressApi.get('playing_position').toString())
+    const loopStart = parseFloat(progressApi.get('loop_start').toString())
+    // Fraction within the current loop iteration, wrapped to [0,1).
+    let f = (pos - loopStart) / len
+    f = f - Math.floor(f)
+    // A fraction that jumps back near 0 from near 1 = the loop wrapped → bump
+    // the play counter and push the (low-frequency) playInfo.
+    if (f + 0.5 < tObs.lastFrac) {
+      tObs.playCount++
+      sendPlayInfo(tObs)
+    }
+    tObs.lastFrac = f
+    batch.push({ t: tObs.trackIdx, f: Math.round(f * 1000) })
+  }
+
+  if (batch.length === 0) return // nothing playing → stop until next launch
+  osc('/clips/progress', batch)
+  progressRunning = true
+  progressTask.schedule(PROGRESS_POLL_MS)
+}
+
+// Per-track delta: a quantized clip-stop is pending (sp=1) or cleared (sp=0).
+// The app flashes that track's stop button while pending. Cheap + event-driven
+// (only fires when a stop is armed or lands), so it streams regardless of `prog`.
+function sendStopPending(trackIdx: number, pending: boolean) {
+  if (leftTrack < 0) return
+  osc('/clips/stopPending', { t: trackIdx, sp: pending ? 1 : 0 })
 }
 
 // ---------------------------------------------------------------------------
@@ -365,6 +498,10 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     playingSlot: -2,
     firedSlot: -2,
     armed: false,
+    playingClipId: -1,
+    playCount: 1,
+    clipBeats: 0,
+    lastFrac: 0,
   }
 
   const trackId = trackIds[trackIdx]
@@ -379,46 +516,87 @@ function createTrackPlayObservers(trackIdx: number): TrackPlayObservers {
     ? !!parseInt(cellInitApi.get('arm').toString())
     : false
 
-  tObs.playingSlotApi = ensureObs(tObs.playingSlotApi, trackId, function (args: any[]) {
-    if (!tObs.playingSlotApi || args[0] !== 'playing_slot_index') return
-    const newSlot = parseInt(args[1])
-    const oldSlot = tObs.playingSlot
-    tObs.playingSlot = newSlot
-    if (oldSlot >= 0) updateCellFromTrack(tObs.trackIdx, oldSlot)
-    if (newSlot >= 0) updateCellFromTrack(tObs.trackIdx, newSlot)
-  }, 'playing_slot_index')
+  // Seed progress for an already-playing clip and start the poll if needed.
+  setTrackPlayingClip(tObs, tObs.playingSlot)
+  if (tObs.playingClipId >= 0) ensureProgressRunning()
 
-  tObs.firedSlotApi = ensureObs(tObs.firedSlotApi, trackId, function (args: any[]) {
-    if (!tObs.firedSlotApi || args[0] !== 'fired_slot_index') return
-    const newSlot = parseInt(args[1])
-    const oldSlot = tObs.firedSlot
-    tObs.firedSlot = newSlot
-    if (oldSlot >= 0) updateCellFromTrack(tObs.trackIdx, oldSlot)
-    if (newSlot >= 0) updateCellFromTrack(tObs.trackIdx, newSlot)
-  }, 'fired_slot_index')
+  // Seed a pending quantized stop (e.g. track scrolled into view mid-stop).
+  if (tObs.firedSlot === -2) sendStopPending(trackIdx, true)
+
+  tObs.playingSlotApi = ensureObs(
+    tObs.playingSlotApi,
+    trackId,
+    function (args: any[]) {
+      if (!tObs.playingSlotApi || args[0] !== 'playing_slot_index') return
+      const newSlot = parseInt(args[1])
+      const oldSlot = tObs.playingSlot
+      tObs.playingSlot = newSlot
+      if (oldSlot >= 0) updateCellFromTrack(tObs.trackIdx, oldSlot)
+      if (newSlot >= 0) updateCellFromTrack(tObs.trackIdx, newSlot)
+      // Retarget progress polling at the now-playing clip (or clear it).
+      setTrackPlayingClip(tObs, newSlot)
+      if (tObs.playingClipId >= 0) ensureProgressRunning()
+    },
+    'playing_slot_index'
+  )
+
+  tObs.firedSlotApi = ensureObs(
+    tObs.firedSlotApi,
+    trackId,
+    function (args: any[]) {
+      if (!tObs.firedSlotApi || args[0] !== 'fired_slot_index') return
+      const newSlot = parseInt(args[1])
+      const oldSlot = tObs.firedSlot
+      tObs.firedSlot = newSlot
+      if (oldSlot >= 0) updateCellFromTrack(tObs.trackIdx, oldSlot)
+      if (newSlot >= 0) updateCellFromTrack(tObs.trackIdx, newSlot)
+      // fired_slot_index === -2 means a clip-stop button was fired: the track
+      // has a quantized stop pending (still playing + blinking until it lands).
+      // Tell the app so it can flash the track stop button like a triggered clip.
+      if ((oldSlot === -2) !== (newSlot === -2)) {
+        sendStopPending(tObs.trackIdx, newSlot === -2)
+      }
+    },
+    'fired_slot_index'
+  )
 
   // arm only for tracks that can be armed; disable (not teardown) otherwise.
   if (canBeArmed) {
-    tObs.armApi = ensureObs(tObs.armApi, trackId, function (args: any[]) {
-      if (!tObs.armApi || args[0] !== 'arm') return
-      const newArmed = !!parseInt(args[1])
-      if (newArmed === tObs.armed) return
-      tObs.armed = newArmed
-      updateAllCellsOnTrack(tObs.trackIdx)
-    }, 'arm')
+    tObs.armApi = ensureObs(
+      tObs.armApi,
+      trackId,
+      function (args: any[]) {
+        if (!tObs.armApi || args[0] !== 'arm') return
+        const newArmed = !!parseInt(args[1])
+        if (newArmed === tObs.armed) return
+        tObs.armed = newArmed
+        updateAllCellsOnTrack(tObs.trackIdx)
+      },
+      'arm'
+    )
   } else {
     disableObs(tObs.armApi)
   }
 
-  tObs.nameApi = ensureObs(tObs.nameApi, trackId, function (args: any[]) {
-    if (!tObs.nameApi || args[0] !== 'name') return
-    osc('/clips/trackInfo', { t: tObs.trackIdx, n: dequote(args[1]) })
-  }, 'name')
+  tObs.nameApi = ensureObs(
+    tObs.nameApi,
+    trackId,
+    function (args: any[]) {
+      if (!tObs.nameApi || args[0] !== 'name') return
+      osc('/clips/trackInfo', { t: tObs.trackIdx, n: dequote(args[1]) })
+    },
+    'name'
+  )
 
-  tObs.colorApi = ensureObs(tObs.colorApi, trackId, function (args: any[]) {
-    if (!tObs.colorApi || args[0] !== 'color') return
-    osc('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) })
-  }, 'color')
+  tObs.colorApi = ensureObs(
+    tObs.colorApi,
+    trackId,
+    function (args: any[]) {
+      if (!tObs.colorApi || args[0] !== 'color') return
+      osc('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) })
+    },
+    'color'
+  )
 
   return tObs
 }
@@ -542,7 +720,9 @@ function readCellState(col: number, row: number): CellObservers {
   if (trackIsGroup[col]) {
     cellInitApi.id = sid
     cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0
-    cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString()) ? 1 : 0
+    cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString())
+      ? 1
+      : 0
   }
 
   return obs
@@ -555,56 +735,77 @@ function attachCellObservers(obs: CellObservers) {
   const sid = slotId(obs.trackIdx, obs.sceneIdx)
 
   // has_stop_button
-  obs.hasStopButtonApi = ensureObs(obs.hasStopButtonApi, sid, function (args: any[]) {
-    if (!obs.hasStopButtonApi || args[0] !== 'has_stop_button') return
-    const newHsb = parseInt(args[1]) ? 1 : 0
-    if (newHsb === obs.cell.hsb) return
-    obs.cell.hsb = newHsb
-    if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
-  }, 'has_stop_button')
+  obs.hasStopButtonApi = ensureObs(
+    obs.hasStopButtonApi,
+    sid,
+    function (args: any[]) {
+      if (!obs.hasStopButtonApi || args[0] !== 'has_stop_button') return
+      const newHsb = parseInt(args[1]) ? 1 : 0
+      if (newHsb === obs.cell.hsb) return
+      obs.cell.hsb = newHsb
+      if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
+    },
+    'has_stop_button'
+  )
 
   // Group track: playing_status and controls_other_clips (disabled for others)
   if (trackIsGroup[obs.trackIdx]) {
-    obs.playingStatusApi = ensureObs(obs.playingStatusApi, sid, function (args: any[]) {
-      if (!obs.playingStatusApi || args[0] !== 'playing_status') return
-      const newPs = parseInt(args[1]) || 0
-      if (newPs === obs.cell.ps) return
-      obs.cell.ps = newPs
-      if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
-    }, 'playing_status')
+    obs.playingStatusApi = ensureObs(
+      obs.playingStatusApi,
+      sid,
+      function (args: any[]) {
+        if (!obs.playingStatusApi || args[0] !== 'playing_status') return
+        const newPs = parseInt(args[1]) || 0
+        if (newPs === obs.cell.ps) return
+        obs.cell.ps = newPs
+        if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
+      },
+      'playing_status'
+    )
 
-    obs.controlsOtherClipsApi = ensureObs(obs.controlsOtherClipsApi, sid, function (args: any[]) {
-      if (!obs.controlsOtherClipsApi || args[0] !== 'controls_other_clips') return
-      const newHc = parseInt(args[1]) ? 1 : 0
-      if (newHc === obs.cell.hc) return
-      obs.cell.hc = newHc
-      if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
-    }, 'controls_other_clips')
+    obs.controlsOtherClipsApi = ensureObs(
+      obs.controlsOtherClipsApi,
+      sid,
+      function (args: any[]) {
+        if (!obs.controlsOtherClipsApi || args[0] !== 'controls_other_clips')
+          return
+        const newHc = parseInt(args[1]) ? 1 : 0
+        if (newHc === obs.cell.hc) return
+        obs.cell.hc = newHc
+        if (isVisible(obs.trackIdx, obs.sceneIdx)) queueFullUpdate(obs)
+      },
+      'controls_other_clips'
+    )
   } else {
     disableObs(obs.playingStatusApi)
     disableObs(obs.controlsOtherClipsApi)
   }
 
   // has_clip
-  obs.hasClipApi = ensureObs(obs.hasClipApi, sid, function (args: any[]) {
-    if (!obs.hasClipApi || args[0] !== 'has_clip') return
-    const newHasClip = !!parseInt(args[1])
-    if (newHasClip === obs.hasClip) return
-    obs.hasClip = newHasClip
-    if (newHasClip) {
-      setupClipObserver(obs)
-    } else {
-      disableClipObservers(obs)
-      obs.cell.name = ''
-      obs.cell.color = ''
-    }
-    const newState = deriveCellState(newHasClip, obs.trackIdx, obs.sceneIdx)
-    const oldState = obs.cell.state
-    obs.cell.state = newState
-    if (newState !== oldState && isVisible(obs.trackIdx, obs.sceneIdx)) {
-      queueFullUpdate(obs)
-    }
-  }, 'has_clip')
+  obs.hasClipApi = ensureObs(
+    obs.hasClipApi,
+    sid,
+    function (args: any[]) {
+      if (!obs.hasClipApi || args[0] !== 'has_clip') return
+      const newHasClip = !!parseInt(args[1])
+      if (newHasClip === obs.hasClip) return
+      obs.hasClip = newHasClip
+      if (newHasClip) {
+        setupClipObserver(obs)
+      } else {
+        disableClipObservers(obs)
+        obs.cell.name = ''
+        obs.cell.color = ''
+      }
+      const newState = deriveCellState(newHasClip, obs.trackIdx, obs.sceneIdx)
+      const oldState = obs.cell.state
+      obs.cell.state = newState
+      if (newState !== oldState && isVisible(obs.trackIdx, obs.sceneIdx)) {
+        queueFullUpdate(obs)
+      }
+    },
+    'has_clip'
+  )
 
   // Clip sub-observers: arm for this cell's clip, or disable if no clip.
   if (obs.hasClip) setupClipObserver(obs)
@@ -663,47 +864,63 @@ function setupClipObserver(obs: CellObservers) {
   }
 
   if (!obs.clipApi) {
-    obs.clipApi = obsById(clipId, function (args: any[]) {
-      if (!obs.clipApi) return
-      if (args[0] !== 'name') return
-      obs.cell.name = dequote(args[1])
-      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-        queueFullUpdate(obs)
-      }
-    }, 'name')
+    obs.clipApi = obsById(
+      clipId,
+      function (args: any[]) {
+        if (!obs.clipApi) return
+        if (args[0] !== 'name') return
+        obs.cell.name = dequote(args[1])
+        if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+          queueFullUpdate(obs)
+        }
+      },
+      'name'
+    )
   } else {
     obs.clipApi.id = clipId
     obs.clipApi.property = 'name'
   }
 
   if (!obs.clipRecordingApi) {
-    obs.clipRecordingApi = obsById(clipId, function (args: any[]) {
-      if (!obs.clipRecordingApi) return
-      if (args[0] !== 'is_recording') return
-      const recording = !!parseInt(args[1])
-      if (recording) {
-        obs.cell.state = CLIP_RECORDING
-      } else {
-        obs.cell.state = deriveCellState(obs.hasClip, obs.trackIdx, obs.sceneIdx)
-      }
-      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-        queueFullUpdate(obs)
-      }
-    }, 'is_recording')
+    obs.clipRecordingApi = obsById(
+      clipId,
+      function (args: any[]) {
+        if (!obs.clipRecordingApi) return
+        if (args[0] !== 'is_recording') return
+        const recording = !!parseInt(args[1])
+        if (recording) {
+          obs.cell.state = CLIP_RECORDING
+        } else {
+          obs.cell.state = deriveCellState(
+            obs.hasClip,
+            obs.trackIdx,
+            obs.sceneIdx
+          )
+        }
+        if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+          queueFullUpdate(obs)
+        }
+      },
+      'is_recording'
+    )
   } else {
     obs.clipRecordingApi.id = clipId
     obs.clipRecordingApi.property = 'is_recording'
   }
 
   if (!obs.clipColorApi) {
-    obs.clipColorApi = obsById(clipId, function (args: any[]) {
-      if (!obs.clipColorApi) return
-      if (args[0] !== 'color') return
-      obs.cell.color = colorHex(args[1])
-      if (isVisible(obs.trackIdx, obs.sceneIdx)) {
-        queueFullUpdate(obs)
-      }
-    }, 'color')
+    obs.clipColorApi = obsById(
+      clipId,
+      function (args: any[]) {
+        if (!obs.clipColorApi) return
+        if (args[0] !== 'color') return
+        obs.cell.color = colorHex(args[1])
+        if (isVisible(obs.trackIdx, obs.sceneIdx)) {
+          queueFullUpdate(obs)
+        }
+      },
+      'color'
+    )
   } else {
     obs.clipColorApi.id = clipId
     obs.clipColorApi.property = 'color'
@@ -802,17 +1019,27 @@ function createSceneObserver(sceneIdx: number): SceneInfo {
   info.name = dequote(cellInitApi.get('name').toString())
   info.color = colorHex(cellInitApi.get('color'))
 
-  info.nameApi = ensureObs(info.nameApi, sid, function (args: any[]) {
-    if (!info.nameApi || args[0] !== 'name') return
-    info.name = dequote(args[1])
-    scheduleSceneInfo()
-  }, 'name')
+  info.nameApi = ensureObs(
+    info.nameApi,
+    sid,
+    function (args: any[]) {
+      if (!info.nameApi || args[0] !== 'name') return
+      info.name = dequote(args[1])
+      scheduleSceneInfo()
+    },
+    'name'
+  )
 
-  info.colorApi = ensureObs(info.colorApi, sid, function (args: any[]) {
-    if (!info.colorApi || args[0] !== 'color') return
-    info.color = colorHex(args[1])
-    scheduleSceneInfo()
-  }, 'color')
+  info.colorApi = ensureObs(
+    info.colorApi,
+    sid,
+    function (args: any[]) {
+      if (!info.colorApi || args[0] !== 'color') return
+      info.color = colorHex(args[1])
+      scheduleSceneInfo()
+    },
+    'color'
+  )
 
   return info
 }
@@ -868,7 +1095,8 @@ function teardownAll() {
   parkAllTrackPlay()
   parkAllScenes()
   for (let k = 0; k < cellPool.length; k++) teardownCellObservers(cellPool[k])
-  for (let k = 0; k < trackPlayPool.length; k++) teardownTrackPlayObservers(trackPlayPool[k])
+  for (let k = 0; k < trackPlayPool.length; k++)
+    teardownTrackPlayObservers(trackPlayPool[k])
   for (let k = 0; k < scenePool.length; k++) teardownSceneObserver(scenePool[k])
   cellPool = []
   trackPlayPool = []
@@ -877,6 +1105,8 @@ function teardownAll() {
   if (updateFlushTask) {
     updateFlushTask.cancel()
   }
+  if (progressTask) progressTask.cancel()
+  progressRunning = false
 }
 
 // ---------------------------------------------------------------------------
@@ -1113,6 +1343,10 @@ function setupWindow(left: number, top: number, right: number, bottom: number) {
 
   totalScenes = querySceneCount()
 
+  // Page is (re)active — allow progress polling again. applyWindow →
+  // createTrackPlayObservers will kick it off for any playing tracks.
+  progressPaused = false
+
   applyWindow()
 }
 
@@ -1135,8 +1369,12 @@ function clipView(jsonStr: string) {
   const bottom = parseInt(parsed[3].toString())
 
   if (left === right || top === bottom) {
-    // Zero-size window — don't teardown observers so actions still work
-    // when the user returns to the clips page
+    // Zero-size window — the clips page is hidden. Keep observers alive (so
+    // actions still work on return) but pause progress streaming so we don't
+    // poll/send while off-screen.
+    progressPaused = true
+    if (progressTask) progressTask.cancel()
+    progressRunning = false
     if (viewTask) {
       viewTask.cancel()
       viewTask.freepeer()
