@@ -502,6 +502,24 @@ reach Live's `[udpreceive]`). E.g.
 `/connect`s to redirect replies to itself, sends, decodes the OSC reply). Default
 listen 2347 collides if the real app is running — pick a free `--listen` port.
 
+**`tools/osc.js`** — shared OSC codec (`encodeMessage`/`decodePacket`) + an async
+`OscClient` (timestamped message log + `waitFor(pred)`), the host-side seed of the
+app emulator. **`tools/e2e-test.js`** — phased end-to-end tester that drives the
+LIVE device and scores each cycle for correctness (expected replies arrived) and
+performance (round-trip ms + symbol delta via `/debug/symbolCount`):
+- Phase 1 connect/handshake (`/connect`+`/syn` → `/ack`,`/sendState`,`/nav/currTrackId`,`/visibleTracks`)
+- Phase 2 clips entry (`/page/clips`+`/clipView "[l,t,r,b]"` → `/clips/grid`,`/clips/scenes`,`/clips/trackInfo`)
+- Phase 3 mixer entry (`/page/mixer`+`/mixerView "[l,count]"` → per-strip `/mixer/N/*`,`/mixer/soloCount`)
+
+Run: `node tools/e2e-test.js --listen 9100`. Gotchas baked in: declares NO caps
+(version-only `/syn`) so the device sends plain OSC (no `/batch`/chunk/columnar —
+decoding those is the next emulator layer); `/clipView`/`/mixerView` take a single
+**JSON-string** arg (`JSON.parse`); mixer only re-emits **newly-visible** strips,
+so phase 3 parks the window off-screen (`[9999,1]`) then to `[0,8]` to force a
+genuine entry; `/sendMixerView` is a `/btnRefresh` signal, NOT a page-entry one.
+Observed: clips entry ~+1k symbols (first-touch, bounded), mixer entry ~+2 (pooled
+re-point, no leak) — the tester quantifies the leak-vs-plateau behavior above.
+
 ## Important Notes
 
 - **Remember to commit compiled JavaScript files** from `Project/` directory - they are build artifacts currently tracked in git
