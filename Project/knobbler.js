@@ -23,6 +23,7 @@ var KnobblerCore = require("./knobblerCore");
 var settings = require("./k4-settings");
 var shortcuts = require("./k4-shortcuts");
 var system = require("./k4-system");
+var dbg = require("./k4-debug");
 var oscBatch = require("./k4-oscBatch");
 // The entry's own utils instance routes through the in-process batch buffer.
 // Each feature module wires its own utils the same way in init() via ctx.osc —
@@ -224,7 +225,7 @@ function initAll() {
     KnobblerCore.refresh();
 }
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, focus.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, system.routes, knobblerRoutes, entryRoutes);
+var ROUTES = [].concat(bluhand.routes, focus.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, system.routes, dbg.routes, knobblerRoutes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -343,6 +344,7 @@ function init() {
     visibleTracks.init(ctx);
     tracksDevices.init(ctx);
     shortcuts.init(ctx);
+    dbg.init(ctx);
     KnobblerCore.initAll(ctx); // idempotent slot setup
     KnobblerCore.refresh(); // re-push slot names/values/xy state
 }

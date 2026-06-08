@@ -28,6 +28,7 @@ import * as KnobblerCore from './knobblerCore'
 import * as settings from './k4-settings'
 import * as shortcuts from './k4-shortcuts'
 import * as system from './k4-system'
+import * as dbg from './k4-debug'
 import * as oscBatch from './k4-oscBatch'
 
 // The entry's own utils instance routes through the in-process batch buffer.
@@ -258,6 +259,7 @@ const ROUTES: Route[] = [].concat(
   visibleTracks.routes as any,
   shortcuts.routes as any,
   system.routes as any,
+  dbg.routes as any,
   knobblerRoutes as any,
   entryRoutes as any
 ) as Route[]
@@ -404,6 +406,7 @@ function init() {
   visibleTracks.init(ctx)
   tracksDevices.init(ctx)
   shortcuts.init(ctx)
+  dbg.init(ctx)
   KnobblerCore.initAll(ctx) // idempotent slot setup
   KnobblerCore.refresh() // re-push slot names/values/xy state
 }

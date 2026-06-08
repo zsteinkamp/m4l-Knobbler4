@@ -476,6 +476,32 @@ plateau well under the degradation threshold.
    leak, bounds resident observers, and runs faster. One pattern that fixes a
    correctness-class bug (unbounded memory) and a performance bug at once.
 
+## Reading the live symbol count over OSC (integration-test harness)
+
+The Max global symbol count has **no programmatic API** — `; max size` only
+prints to the Max Console; the `[console]` object has no outlets; no `max`
+message replies to a `[receive]`. The device exposes it over OSC anyway via a
+file round-trip, in `src/k4-debug.ts` (folded into `[v8 knobbler]`):
+
+- **`/debug/symbolCount`** → replies `/debug/symbolCount <n>`. Sequence:
+  `messnamed('k4dbgConsole','clear')` → `messnamed('max','size')` → (Task 80ms)
+  `[console] write /tmp/k4_symcount.txt` → (Task 80ms) `File.readstring` + regex
+  `/([\d,]+)\s+symbols?/i` → `osc(...)`. Needs the patcher pair
+  `[r k4dbgConsole] -> [console]` (added to `Knobbler4.amxd` — obj-905/906;
+  re-add to the P3SA device at release sync). Verified end-to-end June 2026
+  (~190–340ms round-trip).
+- **`/debug/bench`** → replies `/debug/bench <medianMs>`, a *relative* leak
+  signal (re-look-up a seeded cohort). **Seeding interns ~50k symbols ONCE** —
+  do NOT run it against a live working set you care about; use a throwaway set.
+
+**`tools/osc-probe.js`** — host-side OSC send/recv tool (dep-free, the seed of
+the app emulator). Topology: device **receives on 2346**, sends to
+**127.0.0.1:2347** by default. Run on the **HOST**, not the devcontainer (it must
+reach Live's `[udpreceive]`). E.g.
+`node tools/osc-probe.js --listen 9999 /debug/symbolCount` (binds 9999,
+`/connect`s to redirect replies to itself, sends, decodes the OSC reply). Default
+listen 2347 collides if the real app is running — pick a free `--listen` port.
+
 ## Important Notes
 
 - **Remember to commit compiled JavaScript files** from `Project/` directory - they are build artifacts currently tracked in git
