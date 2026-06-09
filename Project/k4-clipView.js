@@ -83,12 +83,16 @@ var selectedSceneApi = null;
 // runs while the page has a live window AND the connected app advertised `prog`
 // AND at least one track is playing; it self-stops otherwise.
 var PROGRESS_POLL_MS = 50;
+// Emit /clips/progress at most this often. The poll stays at PROGRESS_POLL_MS so
+// loop-wrap counting keeps its precision; only the network emit is rate-limited.
+var PROGRESS_SEND_MS = 100;
 var progressApi = null; // scratchpad for reading clip playing_position
 var progressTask = null;
 var progressRunning = false;
 var progressPaused = false; // true while the clips page is hidden (zero-size window)
 var transportApi = null; // observes live_set is_playing (gates progress)
 var transportPlaying = false; // false while the global transport is stopped
+var lastProgressSent = 0; // leading-edge throttle for the /clips/progress emit
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -301,7 +305,15 @@ function progressTick() {
     }
     if (batch.length === 0)
         return; // nothing playing → stop until next launch
-    (0, utils_1.osc)('/clips/progress', batch);
+    // Throttle the SEND, not the poll: wrap detection above ran this tick (so play
+    // counts stay accurate at the 50ms rate), but emit progress at most every
+    // PROGRESS_SEND_MS — halving the packets to the app. Leading-edge: a fresh
+    // launch (lastProgressSent stale) emits immediately.
+    var now = Date.now();
+    if (now - lastProgressSent >= PROGRESS_SEND_MS) {
+        lastProgressSent = now;
+        (0, utils_1.osc)('/clips/progress', batch);
+    }
     progressRunning = true;
     progressTask.schedule(PROGRESS_POLL_MS);
 }
