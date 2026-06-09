@@ -87,6 +87,8 @@ var progressApi = null; // scratchpad for reading clip playing_position
 var progressTask = null;
 var progressRunning = false;
 var progressPaused = false; // true while the clips page is hidden (zero-size window)
+var transportApi = null; // observes live_set is_playing (gates progress)
+var transportPlaying = false; // false while the global transport is stopped
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -236,11 +238,30 @@ function sendPlayInfo(tObs) {
         b: Math.round(tObs.clipBeats * 100) / 100,
     });
 }
+// The global transport started/stopped. Live leaves playing_slot_index pointing
+// at the last-played slot after a stop, so the per-track playingClipId never
+// clears on its own — without this gate the poll streams a frozen position many
+// times/second while stopped. Stop the poll on stop; resume it on play.
+function onTransportChange(args) {
+    if (!transportApi || args[0] !== 'is_playing')
+        return;
+    transportPlaying = !!parseInt(args[1]);
+    if (transportPlaying) {
+        ensureProgressRunning();
+    }
+    else {
+        if (progressTask)
+            progressTask.cancel();
+        progressRunning = false;
+    }
+}
 function ensureProgressRunning() {
     if (progressRunning || progressPaused)
         return;
     if (leftTrack < 0)
         return;
+    if (!transportPlaying)
+        return; // nothing advances while the transport is stopped
     if (!appSupportsProgress())
         return;
     if (!progressTask)
@@ -253,7 +274,7 @@ function ensureProgressRunning() {
 // ensureProgressRunning when the next clip launches.
 function progressTick() {
     progressRunning = false;
-    if (progressPaused || leftTrack < 0)
+    if (progressPaused || leftTrack < 0 || !transportPlaying)
         return;
     var batch = [];
     for (var k in trackPlayObservers) {
@@ -1165,6 +1186,13 @@ function setupWindow(left, top, right, bottom) {
         selectedSceneApi = new LiveAPI(onSelectedSceneChange, 'live_set view selected_scene');
         selectedSceneApi.mode = 1;
         selectedSceneApi.property = 'id';
+    }
+    // Transport observer (created before applyWindow seeds track-play observers, so
+    // transportPlaying is current when ensureProgressRunning is first reached). The
+    // initial subscription fires onTransportChange with the live value.
+    if (!transportApi) {
+        transportApi = new LiveAPI(onTransportChange, 'live_set');
+        transportApi.property = 'is_playing';
     }
     settingUp = false;
     totalScenes = querySceneCount();
