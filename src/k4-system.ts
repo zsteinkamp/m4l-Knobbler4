@@ -24,7 +24,9 @@ import { noFn, OUTLET_REFRESH, OUTLET_CONFIGURE } from './consts'
 const log = logFactory(config)
 
 // Device capabilities advertised back to the app in /ack and /pong replies.
-const REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog'
+// 'sym' = the /debug/symbolCount poll route (app gates its symbol-graph UI on
+// it, so it never polls a build that lacks the route).
+const REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null
