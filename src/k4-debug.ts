@@ -12,15 +12,18 @@
 // no outlets; and no `max` message replies to a [receive]. (Confirmed against
 // the Cycling '74 "Messages to Max" + [console] reference, June 2026.) The one
 // capture path is via a file:
-//   1. clear the [console] mirror
+//   1. create a [console] and clear it  (clear acts on the GLOBAL console)
 //   2. messnamed('max','size')          -> posts "<n> symbols ..." to the console
 //   3. [console] write <file>           -> dumps the console text to disk
-//   4. read the file here, regex the integer, OSC it back
+//   4. read the file here, regex the integer, OSC it back, then remove the [console]
 // Steps 2->3 and 3->4 need a scheduler tick so the post lands / the write flushes.
 //
-// Patcher requirement (Knobbler4.amxd): a [console] object + [r k4dbgConsole]
-// wired to it, so this module can drive clear/write via messnamed. `; max size`
-// needs no patcher object (messnamed('max','size') hits the global `max` receive).
+// NO resident patcher object: the [console] is created on demand via the
+// scripting API (patcher.newdefault) only while a measurement runs, then removed
+// (patcher.remove). A device that never receives this route therefore carries
+// ZERO debug footprint. clear/write act on the GLOBAL Max console (not a buffer
+// the object owns), so a freshly created [console] works immediately. `; max
+// size` hits the global `max` object via messnamed('max','size').
 //
 // --- /debug/bench: relative leak tripwire ------------------------------------
 // Re-looks-up a one-time-seeded cohort of shared-prefix symbols and times it; a
@@ -35,10 +38,6 @@ import config from './k4-config'
 
 const log = logFactory(config)
 
-// [r k4dbgConsole] -> [console] in the patcher. Global name (not ---prefixed):
-// fine for a single-instance debug session; multiple device instances would
-// share it (harmless — `; max size` and the console are process-global anyway).
-const CONSOLE_RECV = 'k4dbgConsole'
 const SYMCOUNT_FILE = '/tmp/k4_symcount.txt'
 const WRITE_DELAY_MS = 80 // let `; max size`'s post reach the console buffer
 const READ_DELAY_MS = 80 // let [console] finish flushing the file to disk
@@ -46,6 +45,9 @@ const READ_DELAY_MS = 80 // let [console] finish flushing the file to disk
 // Reusable Tasks (created once, rescheduled) — never per-call new Task (leak).
 let writeTask: Task = null
 let readTask: Task = null
+// Transient [console], created per measurement and removed after the read so the
+// device keeps zero debug footprint when the route is never called.
+let consoleObj: Maxobj = null
 
 function now(): number {
   return new Date().getTime()
@@ -76,18 +78,31 @@ function readSymCountFile(): number {
   }
 }
 
+function removeConsole() {
+  if (consoleObj) {
+    patcher.remove(consoleObj)
+    consoleObj = null
+  }
+}
+
 function onWriteTick() {
-  messnamed(CONSOLE_RECV, 'write', SYMCOUNT_FILE)
+  if (consoleObj) consoleObj.message('write', SYMCOUNT_FILE)
   if (!readTask) {
     readTask = new Task(function () {
       osc('/debug/symbolCount', readSymCountFile())
+      removeConsole() // tear down the transient [console]
     })
   }
   readTask.schedule(READ_DELAY_MS)
 }
 
 function symbolCount() {
-  messnamed(CONSOLE_RECV, 'clear') // start from an empty console
+  removeConsole() // drop any leftover from an aborted prior measurement
+  // Create a [console] on demand; it controls the GLOBAL console, so a fresh one
+  // works immediately. (newdefault places it in the patching layer, not
+  // presentation, so it's invisible in the Live device view.)
+  consoleObj = patcher.newdefault(0, 0, 'console')
+  consoleObj.message('clear') // start from an empty console
   messnamed('max', 'size') // post "<n> symbols ..." to the console
   if (!writeTask) {
     writeTask = new Task(onWriteTick)
