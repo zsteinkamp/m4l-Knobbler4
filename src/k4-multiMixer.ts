@@ -54,6 +54,7 @@ type StripObservers = {
   mutedViaSoloApi: LiveAPI
   soloApi: LiveAPI
   armApi: LiveAPI
+  devicesApi: LiveAPI
   meterLeftApi: LiveAPI
   meterRightApi: LiveAPI
   meterLevelApi: LiveAPI
@@ -340,6 +341,34 @@ function stopMeterFlush() {
 // Observer Creation / Teardown
 // ---------------------------------------------------------------------------
 
+// Whether the track currently produces audio output (audio track, or a MIDI
+// track with an instrument) and so HAS output_meter_* properties. Master has no
+// has_audio_output property and always outputs audio. has_audio_output isn't
+// observable, but `devices` is — see onDevicesChange.
+function readHasOutput(strip: StripObservers): boolean {
+  if (strip.isMain) return true
+  return !!parseInt(strip.trackApi.get('has_audio_output').toString())
+}
+
+// The track's devices list changed (e.g. an instrument added to / removed from a
+// MIDI track) — its audio output may have appeared or disappeared. Re-read and,
+// if it flipped, update the app's meter flag and (de)activate the meter
+// observers so we never bind output_meter_* on a pure-MIDI track.
+function onDevicesChange(strip: StripObservers) {
+  if (!strip.initialized) return
+  const has = readHasOutput(strip)
+  if (has === strip.hasOutput) return
+  strip.hasOutput = has
+  if (!isVisible(strip)) return
+  osc(SA_HASOUTPUT[strip.stripIndex], has ? 1 : 0)
+  if (metersEnabled && has) {
+    ensureMeterApis(strip)
+    setMetersActive(strip, true)
+  } else {
+    setMetersActive(strip, false)
+  }
+}
+
 function createStripObservers(
   trackId: number,
   stripIdx: number
@@ -352,6 +381,7 @@ function createStripObservers(
     mutedViaSoloApi: null,
     soloApi: null,
     armApi: null,
+    devicesApi: null,
     meterLeftApi: null,
     meterRightApi: null,
     meterLevelApi: null,
@@ -431,12 +461,18 @@ function createStripObservers(
     }, 'arm')
   }
 
-  // Treat every track as having audio output. has_audio_output isn't
-  // observable and only flips when a track gains/loses its first device, so
-  // tracking it accurately means observing the devices list per strip — not
-  // worth the complexity. Always-on keeps the volume/pan/send sliders (and
-  // meters) live; on a track with no real output they simply read ~0.
-  strip.hasOutput = true
+  // Gate meters on REAL audio output: a MIDI-output track has no output_meter_*
+  // property, and binding a meter observer on it logs a [v8] "Tracks with MIDI
+  // output have no 'output_meter_left' property" warning (and makes the app draw
+  // a dead meter). Only meters are gated — vol/pan/send sliders stay live. The
+  // `devices` observer keeps hasOutput live if the track gains/loses an
+  // instrument while visible (has_audio_output itself isn't observable).
+  strip.hasOutput = readHasOutput(strip)
+  if (!strip.isMain) {
+    strip.devicesApi = obsById(trackId, function (args: any[]) {
+      if (args[0] === 'devices') onDevicesChange(strip)
+    }, 'devices')
+  }
 
   // Meter observers are managed separately by applyWindow (visible tracks only)
 
@@ -517,6 +553,8 @@ function repointStrip(
 
   reArm(strip.colorApi, trackId, 'color')
   strip.trackApi.id = trackId
+  strip.hasOutput = readHasOutput(strip) // re-evaluate audio output for the new track
+  if (strip.devicesApi) reArm(strip.devicesApi, trackId, 'devices')
   if (strip.muteApi) reArm(strip.muteApi, trackId, 'mute')
   if (strip.mutedViaSoloApi) reArm(strip.mutedViaSoloApi, trackId, 'muted_via_solo')
   if (strip.soloApi) reArm(strip.soloApi, trackId, 'solo')
@@ -586,6 +624,7 @@ function parkStrip(strip: StripObservers) {
   if (strip.mutedViaSoloApi) strip.mutedViaSoloApi.property = ''
   if (strip.soloApi) strip.soloApi.property = ''
   if (strip.armApi) strip.armApi.property = ''
+  if (strip.devicesApi) strip.devicesApi.property = ''
   if (strip.mixerApi) strip.mixerApi.property = ''
   if (strip.volApi) strip.volApi.property = ''
   if (strip.volAutoApi) strip.volAutoApi.property = ''
@@ -607,6 +646,7 @@ function teardownStripObservers(strip: StripObservers) {
   detach(strip.mutedViaSoloApi)
   detach(strip.soloApi)
   detach(strip.armApi)
+  detach(strip.devicesApi)
   teardownMeterObservers(strip)
   detach(strip.mixerApi)
   detach(strip.volApi)
