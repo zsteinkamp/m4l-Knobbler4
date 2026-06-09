@@ -13,18 +13,21 @@
 // no outlets; and no `max` message replies to a [receive]. (Confirmed against
 // the Cycling '74 "Messages to Max" + [console] reference, June 2026.) The one
 // capture path is via a file:
-//   1. create a [console] and clear it  (clear acts on the GLOBAL console)
+//   1. (first poll only) create a [console]; clear it  (clear hits the GLOBAL console)
 //   2. messnamed('max','size')          -> posts "<n> symbols ..." to the console
 //   3. [console] write <file>           -> dumps the console text to disk
-//   4. read the file here, regex the integer, OSC it back, then remove the [console]
+//   4. read the file here, regex the integer, OSC it back
 // Steps 2->3 and 3->4 need a scheduler tick so the post lands / the write flushes.
 //
-// NO resident patcher object: the [console] is created on demand via the
-// scripting API (patcher.newdefault) only while a measurement runs, then removed
-// (patcher.remove). A device that never receives this route therefore carries
-// ZERO debug footprint. clear/write act on the GLOBAL Max console (not a buffer
-// the object owns), so a freshly created [console] works immediately. `; max
-// size` hits the global `max` object via messnamed('max','size').
+// NO resident patcher object in the shipped device: the [console] is created via
+// the scripting API (patcher.newdefault) LAZILY on the first poll and kept for
+// the session. A device that never receives this route never creates it -> ZERO
+// debug footprint. Reusing ONE [console] across polls (vs create+remove each
+// time) keeps per-poll interning at ~0, so a long monitoring session doesn't bias
+// its own symbol-count curve upward (~7 symbols/poll would compound to thousands
+// over an hour at 5s polling). clear/write act on the GLOBAL Max console (not a
+// buffer the object owns), so it works immediately. `; max size` hits the global
+// `max` object via messnamed('max','size').
 //
 // --- /debug/bench: relative leak tripwire ------------------------------------
 // Re-looks-up a one-time-seeded cohort of shared-prefix symbols and times it; a
@@ -44,8 +47,8 @@ var READ_DELAY_MS = 80; // let [console] finish flushing the file to disk
 // Reusable Tasks (created once, rescheduled) — never per-call new Task (leak).
 var writeTask = null;
 var readTask = null;
-// Transient [console], created per measurement and removed after the read so the
-// device keeps zero debug footprint when the route is never called.
+// The [console], created lazily on the first poll and kept for the session (see
+// header). null until the route is first called, so an unused device has none.
 var consoleObj = null;
 function now() {
     return new Date().getTime();
@@ -74,29 +77,25 @@ function readSymCountFile() {
         return -1;
     }
 }
-function removeConsole() {
-    if (consoleObj) {
-        patcher.remove(consoleObj);
-        consoleObj = null;
+// Create the [console] once, on first use, and keep it. newdefault places it in
+// the patching layer (not presentation), so it's invisible in the Live device
+// view; it persists until the device reloads.
+function ensureConsole() {
+    if (!consoleObj) {
+        consoleObj = patcher.newdefault(0, 0, 'console');
     }
 }
 function onWriteTick() {
-    if (consoleObj)
-        consoleObj.message('write', SYMCOUNT_FILE);
+    consoleObj.message('write', SYMCOUNT_FILE);
     if (!readTask) {
         readTask = new Task(function () {
             (0, utils_1.osc)('/debug/symbolCount', readSymCountFile());
-            removeConsole(); // tear down the transient [console]
         });
     }
     readTask.schedule(READ_DELAY_MS);
 }
 function symbolCount() {
-    removeConsole(); // drop any leftover from an aborted prior measurement
-    // Create a [console] on demand; it controls the GLOBAL console, so a fresh one
-    // works immediately. (newdefault places it in the patching layer, not
-    // presentation, so it's invisible in the Live device view.)
-    consoleObj = patcher.newdefault(0, 0, 'console');
+    ensureConsole();
     consoleObj.message('clear'); // start from an empty console
     messnamed('max', 'size'); // post "<n> symbols ..." to the console
     if (!writeTask) {
