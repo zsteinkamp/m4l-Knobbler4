@@ -14,6 +14,7 @@ var CLIP_PLAYING = 2;
 var CLIP_TRIGGERED = 3;
 var CLIP_RECORDING = 4;
 var CLIP_ARMED = 5;
+var CLIP_RECORD_TRIGGERED = 6; // fired empty slot on an armed track (pending record)
 // Small coalescing window for /clipView. The app already debounces (~100ms
 // after scroll settles), so the device just needs to merge any back-to-back
 // requests rather than ride out a whole scroll gesture.
@@ -191,7 +192,13 @@ function colorHex(raw) {
 function deriveCellState(hasClip, trackIdx, sceneIdx) {
     var tObs = trackPlayObservers[trackIdx];
     if (!hasClip) {
-        return tObs && tObs.armed ? CLIP_ARMED : CLIP_EMPTY;
+        if (tObs && tObs.armed) {
+            // A fired empty slot on an armed track is pending a record — it's waiting
+            // for the launch-quantization point. Surface it distinctly so the app can
+            // pulse its border (like a triggered clip) until recording actually starts.
+            return tObs.firedSlot === sceneIdx ? CLIP_RECORD_TRIGGERED : CLIP_ARMED;
+        }
+        return CLIP_EMPTY;
     }
     if (tObs) {
         if (tObs.firedSlot === sceneIdx)
