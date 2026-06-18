@@ -34,4 +34,16 @@ If you always do this when updating Knobbler, then opening Live Sets will "just 
 
 ![Renamed](images/rename-2.png)
 
+### Version Compatibility: Mix and Match Freely
+
+You do not have to keep the app and the Max for Live device on matching versions. **Any app version works with any device version.** When they connect, the app and device negotiate capabilities — each one advertises what it supports, and they only use the features they have *in common*.
+
+This makes Knobbler forgiving about how you upgrade:
+
+- **Update the app but not the device** (or vice versa) and everything you already use keeps working. Newer features simply stay dormant until *both* sides are recent enough to support them.
+- **Roll back** to an older app or an older device — for example, to reopen an archived Live Set on a machine that has not been updated — and the connection still works. The pair just falls back to the feature set they share.
+- **Run different versions across machines and devices.** A phone on an older app and a tablet on the newest one can both talk to the same Live Set at the same time, each using whatever it and the device mutually support.
+
+There is no hard "you must update everything at once" requirement. The only time the app shows an update prompt is when an app feature genuinely needs a newer device than the one it found — see [Updating the Max for Live Device](troubleshooting.md#i-see-a-warning-in-the-knobbler-ipad-app-about-a-compatible-version-of-the-device-haaalp) in Troubleshooting.
+
 If you have questions, you can always [email me](mailto:zack@steinkamp.us).

@@ -34,6 +34,8 @@ The Knobbler app and device are constantly being improved. By virtue of being an
 
 When the Knobbler device first communicates with the iPad, it sends a version number. The iPad app has a minimum device version coded into it, and it will prompt you if it is communicating with a device that is too old.
 
+Most of the time, though, you don't need to worry about matching versions. The app and the device negotiate capabilities and only use the features they share, so any app version works with any device version — you can update one without the other, or roll back to reopen an older set. The warning above only appears when an app feature genuinely requires a newer device than the one you have. See [Version Compatibility](updating.md#version-compatibility-mix-and-match-freely) for the full picture.
+
 #### The device doesn't load, the Max window shows red errors like "v8: No such object", and the tablet never connects.
 
 This means your version of Ableton Live is too old. Knobbler is built on the `[v8]` JavaScript engine, which is part of **Max 9** — and Max 9 only ships with **Live 12.4 and later**. Older Live 12 releases (12.0–12.3) bundle Max 8, which has no `[v8]` object, so the device's brain never loads and you'll see a stack of red errors in the Max window:

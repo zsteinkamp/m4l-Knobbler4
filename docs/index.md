@@ -43,6 +43,8 @@ Knobbler is an iOS and Android app that communicates with a Max for Live device 
 
 ![Big Picture Diagram](images/overview-app-device.png)
 
+The app and the Max for Live device **negotiate capabilities** when they connect, using only the features they have in common. That means any app version works with any device version — you can update one without the other, roll back to reopen an older set, or run different versions across your phone and tablet, and it all keeps working. See [Updating the Device](updating.md#version-compatibility-mix-and-match-freely) for details.
+
 ### Get Knobbler
 
 **iOS** (iPhone and iPad) -- [Download from the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
