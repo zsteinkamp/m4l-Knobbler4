@@ -86,6 +86,10 @@ var PROGRESS_POLL_MS = 50;
 // Emit /clips/progress at most this often. The poll stays at PROGRESS_POLL_MS so
 // loop-wrap counting keeps its precision; only the network emit is rate-limited.
 var PROGRESS_SEND_MS = 100;
+// Live reports a ~2-year sentinel for clip.length while a clip is still
+// recording and has no established loop yet. A real loop is never anywhere near
+// this, so treat lengths at/above this as "not yet known" and don't surface them.
+var MAX_CLIP_BEATS = 1e6;
 var progressApi = null; // scratchpad for reading clip playing_position
 var progressTask = null;
 var progressRunning = false;
@@ -225,10 +229,33 @@ function setTrackPlayingClip(tObs, slot) {
     // the numbers flanking the pie (left = play count, right = beats). Clip.length
     // is already the loop length in beats.
     cellInitApi.id = clipId;
-    tObs.clipBeats = parseFloat(cellInitApi.get('length').toString()) || 0;
+    // A clip launched into record reports the sentinel length until its loop is
+    // established; suppress it (0 → app shows nothing) and let progressTick refresh
+    // the real length as it grows. progressTick keeps it current thereafter.
+    var launchLen = parseFloat(cellInitApi.get('length').toString()) || 0;
+    tObs.clipBeats = launchLen < MAX_CLIP_BEATS ? launchLen : 0;
     tObs.playCount = 1;
     tObs.lastFrac = 0;
+    tObs.lastRl = null;
     sendPlayInfo(tObs);
+}
+// Format a recording clip's growing length the way Live shows it in the clip
+// slot: bars.beats.16ths, zero-indexed (a 1-bar clip reads "1.0.0"). beat = one
+// quarter note, matching Live's playing_position units.
+function formatRecLength(posBeats) {
+    var sigNum = 4;
+    var sigDenom = 4;
+    if (transportApi) {
+        sigNum = parseFloat(transportApi.get('signature_numerator').toString()) || 4;
+        sigDenom =
+            parseFloat(transportApi.get('signature_denominator').toString()) || 4;
+    }
+    var beatsPerBar = (sigNum * 4) / sigDenom || 4;
+    var total = posBeats > 0 ? posBeats : 0;
+    var bars = Math.floor(total / beatsPerBar);
+    var beats = Math.floor(total % beatsPerBar);
+    var sixteenths = Math.floor((total - Math.floor(total)) * 4);
+    return bars + '.' + beats + '.' + sixteenths;
 }
 // Low-frequency companion to /clips/progress: the play count (left of the pie)
 // and loop length in beats (right). Sent on launch and on each loop wrap only —
@@ -286,9 +313,34 @@ function progressTick() {
         if (tObs.playingClipId < 0)
             continue;
         progressApi.id = tObs.playingClipId;
+        // Recording clip: Live reports a sentinel loop length, so there's no stable
+        // pie or play count. Mirror Live's clip slot instead — stream the growing
+        // recorded length as bars.beats.16ths (sent only when the string changes).
+        if (parseInt(progressApi.get('is_recording').toString()) === 1) {
+            var rl = formatRecLength(parseFloat(progressApi.get('playing_position').toString()));
+            if (rl !== tObs.lastRl) {
+                tObs.lastRl = rl;
+                (0, utils_1.osc)('/clips/playInfo', { t: tObs.trackIdx, rl: rl });
+            }
+            continue; // no pie / play count while recording
+        }
+        // Recording just finished: the loop length is now established. Drop the
+        // recording readout and resend the normal play count + loop length.
+        if (tObs.lastRl != null) {
+            tObs.lastRl = null;
+            var finalLen = parseFloat(progressApi.get('length').toString());
+            tObs.clipBeats = finalLen > 0 && finalLen < MAX_CLIP_BEATS ? finalLen : 0;
+            sendPlayInfo(tObs);
+        }
         var len = parseFloat(progressApi.get('length').toString());
         if (!(len > 0))
             continue;
+        // Pick up a loop length that only became valid a tick after recording
+        // finalized (clipBeats was suppressed to 0 while the clip was recording).
+        if (len < MAX_CLIP_BEATS && Math.floor(len) !== Math.floor(tObs.clipBeats)) {
+            tObs.clipBeats = len;
+            sendPlayInfo(tObs);
+        }
         var pos = parseFloat(progressApi.get('playing_position').toString());
         var loopStart = parseFloat(progressApi.get('loop_start').toString());
         // Fraction within the current loop iteration, wrapped to [0,1).
@@ -453,6 +505,7 @@ function createTrackPlayObservers(trackIdx) {
         playCount: 1,
         clipBeats: 0,
         lastFrac: 0,
+        lastRl: null,
     };
     var trackId = trackIds[trackIdx];
     tObs.trackIdx = trackIdx;
