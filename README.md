@@ -20,7 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
-- 2026-06-18 [v68](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v68/Knobbler4-v68.zip) - Recording clips now report a growing length and a pending-record state.
+- 2026-06-18 [v68](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v68/Knobbler4-v68.zip) - Recording clips now report a growing length and a pending-record state; meters default on.
 - 2026-06-10 [v67](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v67/Knobbler4-v67.zip) - Clip view now streams live playing-clip progress for the phase pie and pending-stop flash (throttled, gated on transport playback). Mixer meters no longer warn on MIDI tracks. Documentation: consolidated USB / link-local connection guide.
 - 2026-06-03 [v66](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v66/Knobbler4-v66.zip) - Major performance and stability fix for medium-to-large sets in long sessions. Theme fixes. Track rename/recolor fix.
 - 2026-05-26 [v65](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v65/Knobbler4-v65.zip) - New Back to Arrangement toolbar button (`b2a`, needs the latest app) mirrors Live's own. Multiplayer fix: clip views keep updating in long sessions (observers bounded to a warm buffer around the viewport). New columnar OSC encoding (`col`) and generic chunking (`chunkAny`) cut bandwidth on busy clip grids and large sets.

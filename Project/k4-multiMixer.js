@@ -111,7 +111,7 @@ var POOL_CAP = 64;
 // Rebuilt each applyWindow so strips leaving the visible range get state re-sent
 // if they scroll back in (observer callbacks don't fire while !isVisible).
 var visibleStateSet = {};
-var metersEnabled = false;
+var metersEnabled = true;
 var onMixerPage = false;
 var meterBuffer = [];
 var meterDirty = false;
@@ -825,7 +825,10 @@ function init(c) {
     (0, utils_1.setOscSink)(c.osc);
     ctx = c;
     ensureApis();
-    metersEnabled = !!ctx.settings.get('metersEnabled');
+    // Default meters ON when this device instance has never saved the setting;
+    // respect an explicit saved value (including 0 = off) otherwise.
+    var storedMeters = ctx.settings.get('metersEnabled');
+    metersEnabled = storedMeters == null ? true : !!storedMeters;
     sendMetersState();
     // Force visible strips to re-send on the /syn re-push. Their state was first
     // pushed at LOAD while output was still gated (node sender not yet ready), so

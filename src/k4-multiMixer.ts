@@ -182,7 +182,7 @@ const POOL_CAP = 64
 // if they scroll back in (observer callbacks don't fire while !isVisible).
 let visibleStateSet: Record<number, boolean> = {}
 
-let metersEnabled = false
+let metersEnabled = true
 let onMixerPage = false
 let meterBuffer: number[] = []
 let meterDirty = false
@@ -933,7 +933,10 @@ function init(c: AppContext) {
   setOscSink(c.osc)
   ctx = c
   ensureApis()
-  metersEnabled = !!ctx.settings.get('metersEnabled')
+  // Default meters ON when this device instance has never saved the setting;
+  // respect an explicit saved value (including 0 = off) otherwise.
+  const storedMeters = ctx.settings.get('metersEnabled')
+  metersEnabled = storedMeters == null ? true : !!storedMeters
   sendMetersState()
   // Force visible strips to re-send on the /syn re-push. Their state was first
   // pushed at LOAD while output was still gated (node sender not yet ready), so
