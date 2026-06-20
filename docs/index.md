@@ -1,9 +1,8 @@
 ## Knobbler4 - The Best Control Surface for Ableton Live on Your iPad, iPhone, or Android
 
-<iframe width="100%" style="border: 20px solid black; aspect-ratio: 16 / 9" src="https://www.youtube.com/embed/PY_IKedjfz8?si=Hk_QRJ88DjPkZhfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="100%" style="border: 20px solid black; aspect-ratio: 16 / 9" src="https://www.youtube.com/embed/zRUngy4AaFM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-- [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
-- [Setup and Feature Walkthrough Video (15 min)](https://www.youtube.com/watch?v=m3h8QtVeWb8)
+- [Knobbler for Ableton Live & P3SA — June 2026](https://www.youtube.com/watch?v=zRUngy4AaFM)
 
 Knobbler keeps you in the creative moment by giving you fingertip access to what matters most in your music. Turn your phone or tablet into a multitouch control surface for Ableton Live -- map parameters, mix tracks, and launch clips without ever leaving the flow.
 

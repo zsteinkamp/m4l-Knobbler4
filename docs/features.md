@@ -4,8 +4,7 @@
 
 Read all about Knobbler's features in detail here. You can use the navigation on the right to jump to different parts of this long document.
 
-- [Setup Video (5 min)](https://www.youtube.com/watch?v=IXMD_2z16_A)
-- [Setup and Feature Walkthrough Video (15 min)](https://www.youtube.com/watch?v=m3h8QtVeWb8)
+- [Knobbler for Ableton Live & P3SA — June 2026](https://www.youtube.com/watch?v=zRUngy4AaFM)
 
 ### Knobbler Knobs
 
