@@ -205,6 +205,16 @@ What helps, in order of impact:
 
 This is a system-level behavior of iOS that apps cannot turn off, so the options above are the way to avoid it.
 
+#### Hot-Swap doesn't work — the device doesn't update, or Live behaves strangely during the swap.
+
+This can be caused by a third-party **clipboard manager** app running on your computer. Ableton's Hot-Swap function writes to the system clipboard internally, and clipboard managers can intercept and modify that data before Live reads it back, breaking the swap.
+
+If you use a clipboard manager (e.g. Pure Paste, Paste, Maccy, CopyClip, etc.), try one of the following:
+
+- **Disable the clipboard manager** temporarily while performing the hot-swap.
+- **Add Ableton Live to the app's exclusion list**, if it has one. Note that this may not work in all cases — some clipboard managers cannot reliably detect writes from Ableton because the hot-swap writes to the clipboard without Ableton becoming the active/focused app.
+- **In Pure Paste specifically**, enabling **"Improve compatibility with apps appending to the clipboard"** in its settings resolves the issue.
+
 #### HALP! Nothing above covers what I'm experiencing!
 
 Send me any info you can cobble together with a clear description of the problem and steps that got you there, things you tried, other things in your environment or configuration that might be relevant, screenshots (there are never too many screenshots), events from your childhood that relate, etc. zack@steinkamp.us

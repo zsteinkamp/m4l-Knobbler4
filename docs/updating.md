@@ -22,6 +22,8 @@ This will swap out the older Knobbler device for the newer one.
 
 Save your Live Set and you are good to go!
 
+> **Note:** If Hot-Swap doesn't seem to work (the device doesn't update, or Live behaves strangely during the swap), a third-party **clipboard manager** app may be interfering. Ableton's Hot-Swap writes to the system clipboard internally, and clipboard managers can modify that data before Live reads it back. If you use a clipboard manager (e.g. Pure Paste, Paste, Maccy, etc.), try disabling it or adding Ableton Live to its exclusion list before hot-swapping. In Pure Paste specifically, enabling **"Improve compatibility with apps appending to the clipboard"** in its settings resolves the issue.
+
 ### Method 2: Copy the versioned file to an unversioned file
 
 This one is a little more involved at download time, but will let you open old sets without having to change anything.
