@@ -47,6 +47,12 @@ Knobbler4-vNN.amxd • v8 • v8: No such object
 
 **The fix is to update Ableton Live to 12.4 or later.** This is a **free update** for anyone with a Live 12 license — get it from Ableton's website or from **Help ▸ Check for Updates** inside Live. After updating, reload the device and it will work. If you had already added the device to a Set, use the [Hot-Swap button](./updating.md) so your mappings are preserved.
 
+#### The device sits there doing nothing — no version number, no connection — and Live has no audio device selected.
+
+Max for Live devices don't run at all until Live has a working audio interface configured. Live only starts its audio engine once an output device is selected, and Max for Live rides on that engine — so with no interface, Knobbler never initializes, never sends its version number, and the app never connects. This most often bites people who are using Live away from their usual setup, or who just installed Live and skipped past the audio setup.
+
+Open **Preferences ▸ Audio** and pick an **Audio Output Device**. On a laptop with nothing plugged in, the built-in speakers/headphone output is a fine choice. Once an output device is selected, reload the Knobbler device (or reopen the Set) and it will come to life.
+
 #### I am a Windows user and am not able to discover the app on my phone/tablet from the Knobbler4 device, and see the "Nobody Home :(" error on the Knobbler app.
 
 The Bonjour service required to be running on Windows in order for the network discovery functionality to work.
