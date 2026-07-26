@@ -417,6 +417,14 @@ Mirrors Ableton Live's **Back to Arrangement** button. When you launch Session c
 
 These buttons allow you to navigate to locators in your Live Set. The beginning of the song and the loop ending point are default locators.
 
+#### Track Width
+
+On the Mixer, Session, and Clips pages the toolbar shows a Track Width button. Long-press it and — without lifting your finger — slide left to narrow the track columns or right to widen them; a small panel appears showing the current width, and you can keep sliding on that panel afterwards. A quick tap opens and closes the same panel.
+
+Double-tap the panel to return to the default 100% width.
+
+The width applies to the Mixer, Session, and Clips pages together (clip columns stay proportionally wider than mixer strips), and is remembered between sessions. Whatever is in the middle of the screen stays there as the columns resize, so you don't lose your place while adjusting.
+
 #### Show / Hide Navigation
 
 ![Toggle Navigation](images/ipad-toolbar-nav.png)
