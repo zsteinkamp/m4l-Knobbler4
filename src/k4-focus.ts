@@ -25,7 +25,28 @@ const log = logFactory(config)
 
 // Live's selection paths — the bind targets while locked.
 const SEL_TRACK = 'live_set view selected_track'
+
+// Live has TWO "current device" pointers, and they DIVERGE inside racks:
+//
+//   live_set view selected_track view selected_device
+//     the track's selected device. Clicking a CHAIN inside a rack leaves this
+//     pointing at the rack, so the surface never follows the user into chains.
+//   live_set appointed_device
+//     the BLUE HAND — "the device used by a control surface unless the control
+//     surface itself chooses which device to use" (LOM). This one DOES follow a
+//     chain click, and it's the pointer the bluhand page is named after.
+//
+// The blue hand is only MAINTAINED when a control surface is configured in
+// Live's Preferences. With zero surfaces, appointed_device still RESOLVES (it
+// holds whatever was last appointed) but Live stops updating it on ordinary
+// device selection — measured: with all Preferences slots set to None, clicking
+// a device left appointed stale on the previous device while selected_device
+// moved; only chain clicks still moved it. Binding to it there freezes the
+// surface, so a "does it resolve?" test is NOT sufficient — we must gate on the
+// control surface itself and fall back to selected_device (the legacy behavior)
+// when there is none.
 const SEL_DEVICE = 'live_set view selected_track view selected_device'
+const APPOINTED_DEVICE = 'live_set appointed_device'
 
 // Canonical track prefix of a device path, e.g.
 // "live_set tracks 3 devices 1" → "live_set tracks 3"
@@ -64,6 +85,74 @@ function isDevice(api: LiveAPI): boolean {
   return +api.id !== 0 && t !== 'Song' && t !== 'Track'
 }
 
+// --- Which of Live's two device pointers we follow ---------------------------
+
+// false = the track's selected_device (no blue hand available), true = the blue
+// hand. Re-evaluated whenever the appointed device changes; a flip re-points
+// every dependent observer via emit().
+let useAppointed = false
+
+// True when Live's Preferences hold at least one control surface — i.e. when the
+// blue hand is actually being maintained. The list has one entry per Preferences
+// slot and reads back like:
+//
+//   "id -1 id 0 id 0 id 0 id 0 id 0 id 0"   (one surface configured, in slot 1)
+//   "id 0 id 0 id 0 id 0 id 0 id 0 id 0"    (none configured)
+//
+// An EMPTY slot is id 0. A CONFIGURED surface is not exposed as a LOM object, so
+// it reads as id -1 rather than a real id — hence `!== 0`, not "is a valid id".
+// The id-list read is a non-interning `get` (CLAUDE.md).
+function controlSurfaceConfigured(): boolean {
+  const s = getScratch()
+  s.path = 'live_app'
+  const cs: any = s.get('control_surfaces')
+  if (!cs || !cs.length) return false
+  for (let i = 0; i < cs.length; i++) {
+    // The list interleaves the literal 'id' symbol with the numbers; parseInt
+    // of 'id' is NaN, which fails the test below.
+    const n = parseInt(cs[i])
+    if (!isNaN(n) && n !== 0) return true
+  }
+  return false
+}
+
+// Does the blue hand currently point at a real device?
+function appointedResolves(): boolean {
+  const s = getScratch()
+  s.path = APPOINTED_DEVICE
+  return isDevice(s)
+}
+
+// The locked-mode device bind path — appointed device or selected device.
+function liveDevicePath(): string {
+  return useAppointed ? APPOINTED_DEVICE : SEL_DEVICE
+}
+
+// Re-decide which pointer to follow. Biased toward never going dead: the blue
+// hand must both be maintained (a control surface exists) AND currently resolve,
+// so a set where nothing is appointed yet keeps working off selected_device and
+// flips over as soon as the blue hand lands somewhere.
+function refreshDeviceSource(): void {
+  const next = controlSurfaceConfigured() && appointedResolves()
+  if (next === useAppointed) return
+  useAppointed = next
+  log('device source -> ' + (useAppointed ? 'appointed_device' : 'selected_device'))
+  emit()
+}
+
+// Watch the blue hand itself, so a set that starts with nothing appointed flips
+// over the moment Live appoints something. This also picks up a control surface
+// added or removed in Preferences mid-session: Live (un)appoints in response,
+// and the callback re-runs the control-surface test.
+let appointedApi: LiveAPI = null
+function initAppointedWatcher(): void {
+  appointedApi = new LiveAPI(function (args: IArguments) {
+    if (args[0] !== 'appointed_device') return
+    refreshDeviceSource()
+  }, 'live_set')
+  appointedApi.property = 'appointed_device'
+}
+
 // Operational handle for writing Live's selection (locked mode).
 let viewApi: LiveAPI = null
 function getViewApi(): LiveAPI {
@@ -77,6 +166,11 @@ export function init(c: AppContext): void {
 
   const savedLocked = c.settings.get(KEY_LOCKED)
   locked = savedLocked === null || savedLocked === undefined ? true : !!+savedLocked
+
+  // Decide appointed-vs-selected BEFORE bluhand.init binds its observers to
+  // devicePath(), so they come up on the right pointer with no re-point.
+  useAppointed = controlSurfaceConfigured() && appointedResolves()
+  initAppointedWatcher()
 
   if (!locked) {
     restorePointer(c.settings.get(KEY_TRACK), c.settings.get(KEY_DEVICE))
@@ -103,7 +197,7 @@ export function trackPath(): string {
 // Live's selection path. Unlocked → the pinned canonical path, or '' when the
 // pinned track has no device (consumers must treat '' as "no device").
 export function devicePath(): string {
-  if (locked) return SEL_DEVICE
+  if (locked) return liveDevicePath()
   return devicePathStr
 }
 
@@ -197,7 +291,7 @@ function captureFromLiveSelection(): void {
   s.path = SEL_TRACK
   trackId = +s.id === 0 ? 0 : parseInt(s.id as any)
   trackPathStr = trackId ? s.unquotedpath : ''
-  s.path = SEL_DEVICE
+  s.path = liveDevicePath()
   if (isDevice(s)) {
     deviceId = parseInt(s.id as any)
     devicePathStr = s.unquotedpath

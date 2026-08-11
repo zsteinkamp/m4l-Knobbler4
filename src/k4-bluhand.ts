@@ -776,7 +776,11 @@ function gotoChain(chainIdStr: string) {
   api.id = chainId
   const devices = cleanArr(api.get('devices'))
   if (devices && devices[0]) {
-    ctx.focus.selectDevice(parseInt(devices[0] as any))
+    // Route through gotoDevice, not focus.selectDevice: Live hands the blue hand
+    // to a device only if its track is already selected ("the device gets the
+    // appointed device (blue hand) only if its track is selected" — LOM
+    // Song.View.select_device), and gotoDevice selects the owning track first.
+    gotoDevice(devices[0].toString())
     return
   }
 }

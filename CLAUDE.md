@@ -38,6 +38,16 @@ The container usually runs `npm run dev` (tsc --watch) on startup, so saving a `
 
 **Run builds ONE AT A TIME — the devcontainer VM is memory-tight.** Docker Desktop's VM here is ~3.8 GiB and the `tsc --watch` dev chain idles near ~1 GiB, leaving only ~2.8 GiB headroom. A single `tsc` compile of this project (the generated 3000+-line `deviceParams.ts`) runs ~0.5–0.8 GiB, which is fine — but stacking several concurrent `yarn build`/`yarn tsc` invocations exhausts the VM, and the Linux OOM killer reaps `tsc --watch` (stops the container) and can destabilize `dockerd`/the bind-mount sync (symptoms: container exits with `did not receive an exit event`, or a *stale* `/app` mount where the container sees old source). Recovery: `docker restart` (re-syncs the mount); avoid `docker kill`. Prefer just saving the file and letting the watch recompile, or run one `yarn build` and wait for it. Optionally raise Docker Desktop memory to 6–8 GiB for headroom.
 
+**A stale mount reports SUCCESS.** When `/app` goes stale, `yarn build` prints its
+normal `Done in 2.1s.` while compiling the *old* source — so `Project/*.js` keeps
+the previous logic and nothing signals a problem. **Always verify the compiled
+output actually changed** (`grep` the new symbol in `Project/<mod>.js`, or
+`git status`) before concluding a build worked; a clean build whose output didn't
+change means the mount is stale, not that the edit was a no-op. Once wedged, the
+container also hangs on any `docker exec` (even `grep`) and `docker restart` fails
+with `did not receive an exit event` — at that point only restarting Docker
+Desktop clears it.
+
 ## Development Commands
 
 ### Build & Development
@@ -125,6 +135,69 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 - **`trackPath()`/`devicePath()` return canonical, APPENDABLE paths** (so consumers append ` mixer_device volume`, ` parameters N`, etc.). Locked → Live's selection paths (auto-follow); unlocked → the pinned canonical path (`devicePath()` may be `''` = no device, treat as cleared).
 - **No module hardcodes `live_set view selected_track[…]` anymore** — every current-track/device observer/read goes through `ctx.focus`, and observer modules re-point on `ctx.focus.onChange`: `k4-bluhand` (+`k4-bluhandSlots` via `setDevicePath`), `k4-tracksDevices` (nav tree), `k4-sidebarMixer` (track strip), `k4-shortcuts` + `knobblerCore` (scratch reads). `k4-currentParam` intentionally still follows Live's `selected_parameter`.
 - App side: gated on the **`focus` capability** (`REPLY_CAPS` in `k4-system.ts` ↔ `CAPABILITY_FOCUS`); the "Follow Sel" toolbar button drives `/focusLock`.
+
+#### The blue hand: `appointed_device` vs `selected_device` (v69)
+
+Live has **TWO** "current device" pointers, and they **diverge inside racks**:
+
+| Path | Follows a click on a rack CHAIN? |
+|---|---|
+| `live_set view selected_track view selected_device` | **NO** — stays on the rack |
+| `live_set appointed_device` (the BLUE HAND) | **yes** — moves to the chain's device |
+
+Measured in Live 12.4 by polling both paths over OSC while clicking a chain row
+in a rack (a temporary `/debug/sel` route, since removed — re-add one like it if
+you need to re-measure):
+
+```
+clicked rack title : selDevice=103 tracks 1 devices 0   appointed=103 tracks 1 devices 0        agree
+clicked chain row  : selDevice=103 tracks 1 devices 0   appointed=401 …devices 0 chains 1 devices 0   DIVERGED
+```
+
+Note the asymmetry: clicking a device *inside* a chain directly DOES move
+`selected_device`, so a point-in-time probe can look perfectly healthy — only the
+chain-row click diverges. That's what made the original bug report ("bluhand
+sticks to whichever device I click first") hard to reproduce.
+
+So `devicePath()` binds to **`live_set appointed_device`** when a control surface
+is configured, and falls back to `selected_device` otherwise. A Song-level
+`appointed_device` observer re-decides on every blue-hand move and `emit()`s on a
+flip, so a set that starts with nothing appointed switches over as soon as Live
+appoints something, and a surface added/removed in Preferences is picked up
+mid-session.
+
+**The control-surface gate is REQUIRED — "does appointed_device resolve?" is not
+a sufficient test.** With zero surfaces configured, `appointed_device` still
+*resolves* (it holds whatever was last appointed) but Live stops *maintaining*
+it: clicking a device leaves it stale while `selected_device` moves. Measured
+with all Preferences slots set to None:
+
+```
+clicked rack title : selDevice=103 (moved)   appointed=547 (STALE — did not move)
+clicked chain row  : selDevice=103 (stuck)   appointed=401 (moved)
+```
+
+Only chain clicks still move it there. Shipping without the gate froze the
+bluhand page for no-control-surface users on everything except chain clicks —
+i.e. "doesn't work at all". Read a timeline carefully before concluding the blue
+hand is live: a pointer that moves on SOME interactions is not a maintained one.
+
+Consequence: users with no control surface still can't follow chain selection
+(there is no pointer that tracks it for them) — they get the legacy
+`selected_device` behavior. A possible future fix is to bind BOTH and take
+whichever changed most recently, since the two are complementary there.
+
+(For reference, since it looks like a bug otherwise: `live_app` →
+`control_surfaces` reads back **`id -1` for a CONFIGURED slot** — a control
+surface is not a LOM object — and `id 0` for an empty one. So any test on that
+list must be `!== 0`, NOT "is a valid id".)
+
+**Write side:** `Song.View.select_device` hands over the blue hand *"only if its
+track is selected"* (LOM). `gotoDevice` selects the owning track first, so this
+works — verified over OSC across 14 devices incl. cross-track, return and master
+tracks. `gotoChain` therefore routes through `gotoDevice` rather than calling
+`focus.selectDevice` directly; calling focus directly would move the selection
+but not the blue hand the surface now follows.
 
 **`k4-system.ts`** - Connection + system passthroughs (former router bits)
 
