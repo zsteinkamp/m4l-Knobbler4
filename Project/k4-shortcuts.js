@@ -7,7 +7,8 @@
 // current whenever the Set is saved so shortcuts restore to the right device).
 //
 // Inbound (router OUTLET_PRESETS): shortcut(slot) [/mapshortcut], unmap(slot)
-// [/unmapshortcut]. Outbound: /shortcutName{N}, /shortcut{N}Color (RRGGBBAA),
+// [/unmapshortcut], swapShortcut(slot, other) [/swapshortcut].
+// Outbound: /shortcutName{N}, /shortcut{N}Color (RRGGBBAA),
 // plus the device-UI label via OUTLET_SHORTCUT_NAME. Recall navigates through
 // ctx.gotoDevice (bluhand).
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -137,6 +138,50 @@ function unmap(slot) {
     resetSlot(slot);
 }
 exports.unmap = unmap;
+// /swapshortcut{N} [m]: exchange the devices mapped to slots N and m (a move
+// when one of them is empty). Driven by the app's map-mode "pick a shortcut,
+// then pick another" gesture. The persisted path IS the mapping, so swapping
+// the two paths and re-applying both is the whole operation.
+function swapShortcut(slot, other) {
+    if (!ctx || slot == null || other == null || slot === other) {
+        return;
+    }
+    if (slot < 1 || slot > NUM_SHORTCUTS || other < 1 || other > NUM_SHORTCUTS) {
+        return;
+    }
+    var a = storedPath(slot);
+    var b = storedPath(other);
+    applyPath(slot, b);
+    applyPath(other, a);
+}
+// The slot's mapping as a path, settings-first with the legacy blob as backfill
+// (same precedence restoreShortcut uses).
+function storedPath(slot) {
+    var p = ctx.settings.get(pathKey(slot));
+    if (typeof p === 'string' && p.length) {
+        return p;
+    }
+    return typeof legacyPaths[slot] === 'string' ? legacyPaths[slot] : '';
+}
+// Point a slot at a path (empty = unmapped) and re-bind it. Clearing legacyPaths
+// matters: a deliberate reassignment must supersede the pre-[v8] carry-forward,
+// or emptying a slot would let its old legacy path resurrect on the next restore.
+function applyPath(slot, path) {
+    legacyPaths[slot] = '';
+    if (path.length) {
+        if (!scratchApi) {
+            scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
+        }
+        scratchApi.path = path;
+        var id = parseInt(scratchApi.id);
+        if (id !== 0) {
+            ctx.settings.set(pathKey(slot), path);
+            bindDevice(slot, id);
+            return;
+        }
+    }
+    unmap(slot); // clears the setting, unbinds the APIs, resets name/color
+}
 // --- path revalidation (one shared poll for all mapped slots) ----------------
 function ensureCheckPath() {
     if (checkPathTask) {
@@ -225,5 +270,6 @@ log('reloaded k4-shortcuts');
 var routes = [
     { prefix: '/mapshortcut', parse: 'slot', fn: shortcut },
     { prefix: '/unmapshortcut', parse: 'slot', fn: unmap },
+    { prefix: '/swapshortcut', parse: 'slotVal', fn: swapShortcut },
 ];
 exports.routes = routes;

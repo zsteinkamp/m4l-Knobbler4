@@ -26,7 +26,10 @@ var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Device capabilities advertised back to the app in /ack and /pong replies.
 // 'sym' = the /debug/symbolCount poll route (app gates its symbol-graph UI on
 // it, so it never polls a build that lacks the route).
-var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym';
+// 'scSwap' = the /swapshortcut{N} [m] route (exchange two device-shortcut
+// slots). Must be advertised: without it the app's address would fall through
+// to the shorter '/swap' prefix and reach the knobbler-slot swap with no slot.
+var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap';
 var deviceVersion = '';
 var synRefreshTask = null;
 var ctx = null;
