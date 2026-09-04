@@ -1,5 +1,11 @@
 ## Troubleshooting
 
+#### My 30-day trial ended. What still works?
+
+The **Knobbler** pages and the **Bluhand** page keep working for free, as do the device shortcuts. You can go on using Knobbler as a mapped-slider and device-control surface for as long as you like, on both iOS and Android.
+
+Purchasing unlocks the multi-track mixer, the clips page, and Session View control. Choose a monthly, annual, or one-time Lifetime option from within the app.
+
 #### I have already purchased Knobbler for iPad and when I go to install it on my phone, it seems I have to pay again. What's up?
 
 You will not have to pay twice. Just make sure you are logged in to the App Store on both devices with the same ID.

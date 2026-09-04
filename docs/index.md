@@ -48,11 +48,11 @@ The app and the Max for Live device **negotiate capabilities** when they connect
 
 **iOS** (iPhone and iPad) -- [Download from the App Store](https://apps.apple.com/us/app/knobbler/id6740183923)
 
-Free download with a 30-day unlimited trial. Then choose monthly ($0.99), annual ($9.99), or one-time Lifetime ($19.99).
-
 **Android** (phones and tablets) -- [Download from Google Play](https://play.google.com/store/apps/details?id=com.anonymous.knobblernative)
 
-One-time purchase, $14.99. Due to a Google Play limitation, a trial period is not available on Android.
+Free download on both platforms, with a 30-day unlimited trial. After that, choose monthly ($0.99), annual ($9.99), or one-time Lifetime ($19.99).
+
+When the trial ends, the **Knobbler** and **Bluhand** pages keep working for free, along with device shortcuts -- so you can go on using Knobbler as a mapped-slider and device-control surface indefinitely. A purchase unlocks the multi-track mixer, the clips page, and Session View control.
 
 **Ableton Live device** -- After getting the app, download the latest Knobbler4 device using the blue download button at the top or bottom of this page.
 
