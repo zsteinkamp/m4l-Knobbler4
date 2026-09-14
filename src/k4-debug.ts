@@ -36,8 +36,9 @@
 // interleave /debug/bench with /debug/symbolCount in a run where you want clean
 // absolute numbers — seed pollutes the very table symbolCount measures.
 
-import { logFactory, osc, setOscSink } from './utils'
+import { getVisibleTracksList, logFactory, osc, setOscSink } from './utils'
 import config from './k4-config'
+import { noFn, TYPE_MAIN, TYPE_RETURN } from './consts'
 
 const log = logFactory(config)
 
@@ -149,6 +150,69 @@ function bench(arg: any) {
   osc('/debug/bench', times[Math.floor(times.length / 2)])
 }
 
+// --- /debug/inputRouting -----------------------------------------------------
+// Diagnostic for the mixer prefetch's most expensive read. A strip's
+// `inputEnabled` comes from getTrackInputStatus (toggleInput.ts), which reads
+// `available_input_routing_types` — a JSON list of every input the track can
+// record from, which includes the other tracks in the set — and assumes its LAST
+// entry is "No Input". Before caching that name across tracks, this checks the
+// assumption on a real set and times the reads. For every armable track it
+// reports: MIDI or audio input, list length, the last entry, and the current
+// input. Totals: ms spent on each read across all armable tracks (Date.now has
+// 1ms resolution, so the per-track numbers only mean something summed).
+//
+// Replies with one JSON STRING, not an array, so it arrives as a single plain
+// OSC message — never columnarized or chunked, even to osc-probe.
+
+let routingApi: LiveAPI = null
+
+function inputRouting() {
+  if (!routingApi) routingApi = new LiveAPI(noFn, '')
+  const tracks = getVisibleTracksList()
+  const rows: any[] = []
+  let availMs = 0
+  let currentMs = 0
+  let armMs = 0
+  for (let i = 0; i < tracks.length; i++) {
+    const t = tracks[i]
+    if (t.type === TYPE_RETURN || t.type === TYPE_MAIN) continue
+    routingApi.id = t.id
+    if (!parseInt(routingApi.get('can_be_armed').toString())) continue
+
+    const t0 = now()
+    const avail = JSON.parse(
+      routingApi.get('available_input_routing_types').toString()
+    ).available_input_routing_types
+    const t1 = now()
+    const current = JSON.parse(
+      routingApi.get('input_routing_type').toString()
+    ).input_routing_type
+    const t2 = now()
+    routingApi.get('arm') // a plain property read, for scale
+    const t3 = now()
+
+    availMs += t1 - t0
+    currentMs += t2 - t1
+    armMs += t3 - t2
+    rows.push({
+      i: i,
+      name: t.name,
+      midi: parseInt(routingApi.get('has_midi_input').toString()),
+      len: avail.length,
+      last: avail.length ? avail[avail.length - 1].display_name : null,
+      current: current ? current.display_name : null,
+    })
+  }
+  osc(
+    '/debug/inputRouting',
+    JSON.stringify({
+      armable: rows.length,
+      totalMs: { available: availMs, current: currentMs, arm: armMs },
+      tracks: rows,
+    })
+  )
+}
+
 // --- lifecycle ---------------------------------------------------------------
 
 function init(c: AppContext) {
@@ -160,6 +224,7 @@ log('reloaded k4-debug')
 const routes: Route[] = [
   { prefix: '/debug/symbolCount', parse: 'bare', fn: symbolCount },
   { prefix: '/debug/bench', parse: 'val', fn: bench },
+  { prefix: '/debug/inputRouting', parse: 'bare', fn: inputRouting },
 ]
 
 export { routes, init }

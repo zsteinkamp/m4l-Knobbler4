@@ -48,6 +48,16 @@ container also hangs on any `docker exec` (even `grep`) and `docker restart` fai
 with `did not receive an exit event` — at that point only restarting Docker
 Desktop clears it.
 
+**Editing ANY module can silently reset the running device.** The watcher
+re-emits `Project/knobbler.js` even when only another module changed (edit
+`k4-debug.ts` and `knobbler.js` gets a fresh mtime too), and `knobbler.ts` sets
+`autowatch = 1`, so Max reloads the entry's JS — WITHOUT calling `init()`. Every
+module is left with no `ctx` and no OSC sink: the device receives messages but
+sends nothing, not even the `/loop` reply to a `/connect`, and a connected app
+freezes. It looks like a broken route or a network problem. A `/btnRefresh`
+(e.g. `node tools/osc-probe.js --no-connect --wait 0 /btnRefresh`) runs the init
+chain and brings it back without touching Live; reloading the device works too.
+
 ## Development Commands
 
 ### Build & Development
@@ -444,14 +454,32 @@ window then corrects. Gated on the app's `pre` capability.
 - **Measure, don't guess: `/debug/prefetch`** returns each module's last pass —
   `lastBusyMs` (time inside Live API reads), `lastWallMs`, units read/sent, idle
   chosen. The constants in `sweep.ts` were set from estimates, not a real large
-  set; check them against this before tuning anything.
+  set; check them against this before tuning anything. **First real numbers
+  (Sept 2026, 18 tracks × 35 scenes, UNFROZEN `Project/Knobbler4.amxd`):**
+  ~3.3ms per clip slot and ~10.5ms per mixer strip — 15–30× the estimate — so a
+  4ms slice overshoots by about one unit and a clip pass held ~21% of Live's
+  main thread. Treat these as an upper bound and re-measure on a FROZEN build
+  before tuning; dev builds are usually slower. **Frozen v70, same set:** ~1.3ms
+  per clip slot (826ms busy over 648 units, 4.7s wall ≈ 17.5% during a pass)
+  and ~5.3ms per mixer strip — roughly 2–2.5× faster than unfrozen. Tune the
+  constants against frozen numbers, never the dev build's. `/debug/inputRouting` showed the
+  input-routing read is NOT the cost (~0.5ms per strip, plain property reads
+  ~0.08ms), and on that set "No Input" was the last routing type on every
+  armable track, audio (23 choices) and MIDI (13) alike.
 - **Only CHANGED units are sent** (`pfSent`: index → track id + record JSON),
   so a repeat pass over a static set is silent on the network. The invariant
   that keeps that honest: **`pfSent` is cleared whenever the app's cache is
   invalid** (module `init` = connect/refresh, a track-list change, a scene-count
-  change), and **an entry is deleted whenever its unit is in the visible
-  window**, because the observers then move the app's copy without the sweep
-  knowing. Miss either and a unit can compare equal and never be re-sent.
+  change), and **whatever else moves the app's copy must keep `pfSent` in
+  step**. The clip grid does it by RECORDING: `/clips/grid` and `/clips/update`
+  send whole cells, so both call `noteCellSent` and the sweep compares against
+  what the app really holds. It used to delete the entry for every cell that
+  had been on screen instead, and `/debug/prefetch` showed the cost — ~300 of
+  630 cells re-sent per pass after an ordinary scroll, with nothing changed in
+  Live. The mixer still DELETES the entry for visible strips: its observers send
+  per-address deltas, not a whole record, and mirroring them would mean reading
+  every strip on each window change. Miss the invariant either way and a unit
+  can compare equal to something the app never received, and never be re-sent.
 - **The observers and the sweep share one reader each** — `readStripState`
   (multiMixer; also backs `sendStripState`), and `readCellInto` + `cellEntry` +
   the pure `clipCellState` (`src/clipState.ts`) for clips. A second copy would

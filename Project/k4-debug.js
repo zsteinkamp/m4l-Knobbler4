@@ -40,6 +40,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var k4_config_1 = require("./k4-config");
+var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
 var SYMCOUNT_FILE = '/tmp/k4_symcount.txt';
 var WRITE_DELAY_MS = 80; // let `; max size`'s post reach the console buffer
@@ -137,6 +138,60 @@ function bench(arg) {
     times.sort(function (a, b) { return a - b; });
     (0, utils_1.osc)('/debug/bench', times[Math.floor(times.length / 2)]);
 }
+// --- /debug/inputRouting -----------------------------------------------------
+// Diagnostic for the mixer prefetch's most expensive read. A strip's
+// `inputEnabled` comes from getTrackInputStatus (toggleInput.ts), which reads
+// `available_input_routing_types` — a JSON list of every input the track can
+// record from, which includes the other tracks in the set — and assumes its LAST
+// entry is "No Input". Before caching that name across tracks, this checks the
+// assumption on a real set and times the reads. For every armable track it
+// reports: MIDI or audio input, list length, the last entry, and the current
+// input. Totals: ms spent on each read across all armable tracks (Date.now has
+// 1ms resolution, so the per-track numbers only mean something summed).
+//
+// Replies with one JSON STRING, not an array, so it arrives as a single plain
+// OSC message — never columnarized or chunked, even to osc-probe.
+var routingApi = null;
+function inputRouting() {
+    if (!routingApi)
+        routingApi = new LiveAPI(consts_1.noFn, '');
+    var tracks = (0, utils_1.getVisibleTracksList)();
+    var rows = [];
+    var availMs = 0;
+    var currentMs = 0;
+    var armMs = 0;
+    for (var i = 0; i < tracks.length; i++) {
+        var t = tracks[i];
+        if (t.type === consts_1.TYPE_RETURN || t.type === consts_1.TYPE_MAIN)
+            continue;
+        routingApi.id = t.id;
+        if (!parseInt(routingApi.get('can_be_armed').toString()))
+            continue;
+        var t0 = now();
+        var avail = JSON.parse(routingApi.get('available_input_routing_types').toString()).available_input_routing_types;
+        var t1 = now();
+        var current = JSON.parse(routingApi.get('input_routing_type').toString()).input_routing_type;
+        var t2 = now();
+        routingApi.get('arm'); // a plain property read, for scale
+        var t3 = now();
+        availMs += t1 - t0;
+        currentMs += t2 - t1;
+        armMs += t3 - t2;
+        rows.push({
+            i: i,
+            name: t.name,
+            midi: parseInt(routingApi.get('has_midi_input').toString()),
+            len: avail.length,
+            last: avail.length ? avail[avail.length - 1].display_name : null,
+            current: current ? current.display_name : null,
+        });
+    }
+    (0, utils_1.osc)('/debug/inputRouting', JSON.stringify({
+        armable: rows.length,
+        totalMs: { available: availMs, current: currentMs, arm: armMs },
+        tracks: rows,
+    }));
+}
 // --- lifecycle ---------------------------------------------------------------
 function init(c) {
     (0, utils_1.setOscSink)(c.osc); // own utils instance -> shared batch buffer (see CLAUDE.md)
@@ -146,5 +201,6 @@ log('reloaded k4-debug');
 var routes = [
     { prefix: '/debug/symbolCount', parse: 'bare', fn: symbolCount },
     { prefix: '/debug/bench', parse: 'val', fn: bench },
+    { prefix: '/debug/inputRouting', parse: 'bare', fn: inputRouting },
 ];
 exports.routes = routes;
