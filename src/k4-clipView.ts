@@ -1118,6 +1118,7 @@ function queueFullUpdate(obs: CellObservers) {
       trackIsGroup[obs.trackIdx]
     )
   )
+  noteCellSent(obs.trackIdx, obs.sceneIdx, obs.cell)
   scheduleFlush()
 }
 
@@ -1352,16 +1353,6 @@ function applyWindow() {
   sendSceneInfo(false)
   sendSelectedScene()
 
-  // The observers own the visible window now, and the app's copy of it will
-  // follow them. Forget what the sweep last sent there, or a cell whose state
-  // moved while on screen and moved BACK after leaving would compare equal and
-  // never be re-sent.
-  for (let col = leftTrack; col < visRight; col++) {
-    for (let row = topScene; row < visBottom; row++) {
-      delete pfSent[cellKey(col, row)]
-    }
-  }
-
   if (pendingObserverKeys.length > 0) {
     scheduleObserverBatch()
   }
@@ -1384,6 +1375,7 @@ function sendFullGrid() {
       const obs = cellObservers[key]
       if (obs) {
         rowData.push(cellEntry({}, obs.cell, trackIsGroup[col]))
+        noteCellSent(col, row, obs.cell)
       } else {
         rowData.push({ s: CLIP_EMPTY })
       }
@@ -1503,10 +1495,30 @@ let pfFired = NO_SLOT
 let pfArmed = false
 let pfBuf: any[] = []
 let pfLastFlush = 0
-// What the sweep last sent per cell ("col,row" -> track id + cell JSON). A cell
-// is only sent when it differs, so a repeat pass over an unchanged set sends
-// nothing. Cleared whenever the app's cache is known to be invalid.
+// What the APP last received for each cell ("col,row" -> cellSig). Every path
+// that sends a whole cell records it here — the sweep, and the observers'
+// /clips/grid and /clips/update — so a repeat pass sends only the cells that
+// really differ from the app's copy. It used to be CLEARED for any cell that
+// had been on screen instead, which after an ordinary scroll around the grid
+// re-sent ~300 unchanged cells per pass (measured with /debug/prefetch).
+// Cleared whenever the app's cache is known to be invalid.
 let pfSent: Record<string, string> = {}
+
+// A cell's content as a comparable string: the column's track id plus every
+// field its wire form carries. Concatenated rather than JSON'd, because the
+// observers record every visible cell on each window change. U+0001 can't
+// appear in a name, so no two different cells can produce the same string.
+function cellSig(trackId: number, cell: ClipCell, isGroup: boolean): string {
+  const sep = '\u0001'
+  let sig =
+    trackId + sep + cell.state + sep + cell.name + sep + cell.color + sep + cell.hsb
+  if (isGroup) sig += sep + cell.ps + sep + cell.hc
+  return sig
+}
+
+function noteCellSent(col: number, row: number, cell: ClipCell) {
+  pfSent[cellKey(col, row)] = cellSig(trackIds[col], cell, trackIsGroup[col])
+}
 const pfCell: ClipCell = {
   state: CLIP_EMPTY,
   name: '',
@@ -1580,11 +1592,7 @@ function prefetchStep(): number {
   }
   const row = pfRows[pfRowPos++]
   if (row >= pfSlots.length) return 0
-  const key = cellKey(col, row)
-  if (isVisible(col, row)) {
-    delete pfSent[key] // the observers own it
-    return 0
-  }
+  if (isVisible(col, row)) return 0 // the observers own it, and record it
   readCellInto(
     pfApi,
     pfCell,
@@ -1595,11 +1603,11 @@ function prefetchStep(): number {
     pfFired,
     pfArmed
   )
-  const entry = cellEntry({ t: col, sc: row }, pfCell, pfIsGroup)
-  const sig = pfTrackId + ':' + JSON.stringify(entry)
+  const key = cellKey(col, row)
+  const sig = cellSig(pfTrackId, pfCell, pfIsGroup)
   if (pfSent[key] !== sig) {
     pfSent[key] = sig
-    pfBuf.push(entry)
+    pfBuf.push(cellEntry({ t: col, sc: row }, pfCell, pfIsGroup))
     prefetch.noteSent()
   }
   return 1

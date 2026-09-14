@@ -824,8 +824,12 @@ function applyWindow() {
                 sendStripState(i, strip);
             }
         }
-        // The observers own this strip now; forget what the sweep last sent for it,
-        // so it's re-sent once it leaves (see the same note in k4-clipView).
+        // The observers own this strip now, and they send per-address deltas rather
+        // than a whole record the sweep could compare against — so forget what the
+        // sweep last sent, and let it re-send the strip once it leaves. The clip
+        // grid records its observers' sends instead (they send whole cells); here
+        // mirroring would mean reading every strip on each window change, which
+        // costs more than re-sending the handful that were on screen.
         delete pfSent[i];
     }
     visibleStateSet = newVisibleSet;
