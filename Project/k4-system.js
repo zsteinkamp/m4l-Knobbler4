@@ -18,7 +18,7 @@
 // transient named dict) because [k4-oscBatch] — a separate object — reads them
 // to decide batching; that cross-object channel is why they aren't in ctx.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.setDeviceVersion = exports.routes = void 0;
+exports.clientAlive = exports.init = exports.setDeviceVersion = exports.routes = void 0;
 var k4_config_1 = require("./k4-config");
 var utils_1 = require("./utils");
 var consts_1 = require("./consts");
@@ -37,7 +37,17 @@ var ctx = null;
 // device is still initializing — "Live API is not initialized"). Defer the
 // loop probe to init in that case instead of dereferencing a null ctx.
 var pendingLoopProbe = false;
+// When the app last spoke to us. The app pings every 5s, so an app that has
+// been silent for CLIENT_TIMEOUT_MS is gone — background work that only exists
+// to serve it (the prefetch sweeps) checks clientAlive() and stops.
+var CLIENT_TIMEOUT_MS = 15000;
+var clientSeenMs = 0;
+function clientAlive() {
+    return Date.now() - clientSeenMs < CLIENT_TIMEOUT_MS;
+}
+exports.clientAlive = clientAlive;
 function saveClient(val) {
+    clientSeenMs = Date.now();
     if (!val) {
         return;
     }

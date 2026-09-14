@@ -1,20 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = exports.visibleTracks = exports.routes = void 0;
+exports.init = exports.prefetchStats = exports.visibleTracks = exports.routes = void 0;
 var utils_1 = require("./utils");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
+var clipState_1 = require("./clipState");
+var sweep_1 = require("./sweep");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-var CLIP_EMPTY = 0;
-var CLIP_STOPPED = 1;
-var CLIP_PLAYING = 2;
-var CLIP_TRIGGERED = 3;
-var CLIP_RECORDING = 4;
-var CLIP_ARMED = 5;
-var CLIP_RECORD_TRIGGERED = 6; // fired empty slot on an armed track (pending record)
 // Small coalescing window for /clipView. The app already debounces (~100ms
 // after scroll settles), so the device just needs to merge any back-to-back
 // requests rather than ride out a whole scroll gesture.
@@ -110,6 +105,8 @@ function ensureApis() {
         viewApi = new LiveAPI(consts_1.noFn, 'live_set view');
     if (!progressApi)
         progressApi = new LiveAPI(consts_1.noFn, 'live_set');
+    if (!pfApi)
+        pfApi = new LiveAPI(consts_1.noFn, 'live_set');
 }
 // Bind a fresh observer by numeric id instead of a path string. A path string
 // (`new LiveAPI(cb, 'tracks N clip_slots M ...')` or `.path = ...`) interns a
@@ -188,25 +185,11 @@ function isVisible(col, row) {
 function colorHex(raw) {
     return ('000000' + parseInt(raw.toString()).toString(16)).slice(-6);
 }
-// Derive cell state from has_clip + track-level playing/fired/arm info
+// Derive cell state from has_clip + the observed track's playing/fired/arm info.
+// A track without observers counts as nothing playing, fired or armed.
 function deriveCellState(hasClip, trackIdx, sceneIdx) {
     var tObs = trackPlayObservers[trackIdx];
-    if (!hasClip) {
-        if (tObs && tObs.armed) {
-            // A fired empty slot on an armed track is pending a record — it's waiting
-            // for the launch-quantization point. Surface it distinctly so the app can
-            // pulse its border (like a triggered clip) until recording actually starts.
-            return tObs.firedSlot === sceneIdx ? CLIP_RECORD_TRIGGERED : CLIP_ARMED;
-        }
-        return CLIP_EMPTY;
-    }
-    if (tObs) {
-        if (tObs.firedSlot === sceneIdx)
-            return CLIP_TRIGGERED;
-        if (tObs.playingSlot === sceneIdx)
-            return CLIP_PLAYING;
-    }
-    return CLIP_STOPPED;
+    return (0, clipState_1.clipCellState)(hasClip, false, sceneIdx, tObs ? tObs.playingSlot : clipState_1.NO_SLOT, tObs ? tObs.firedSlot : clipState_1.NO_SLOT, tObs ? tObs.armed : false);
 }
 // ---------------------------------------------------------------------------
 // Clip progress polling
@@ -403,6 +386,9 @@ function visibleTracks() {
         trackPaths.push(t.path);
         trackIsGroup.push(t.type === consts_1.TYPE_GROUP);
     }
+    // Column indices may have shifted, so everything the app cached off-screen is
+    // suspect — re-send it all.
+    restartPrefetch();
     if (leftTrack < 0 || settingUp) {
         trackSlotIds = {};
         return;
@@ -472,6 +458,7 @@ function onSceneCountChange(args) {
         parkAllCells();
         parkAllScenes();
         applyWindow();
+        restartPrefetch(); // rows shifted
     }
 }
 // ---------------------------------------------------------------------------
@@ -675,39 +662,54 @@ function readCellState(col, row) {
         hasStopButtonApi: null,
         playingStatusApi: null,
         controlsOtherClipsApi: null,
-        cell: { state: CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 },
+        cell: { state: clipState_1.CLIP_EMPTY, name: '', color: '', ps: 0, hc: 0, hsb: 0 },
     };
     obs.trackIdx = col;
     obs.sceneIdx = row;
-    var cell = obs.cell;
-    cell.state = CLIP_EMPTY;
-    cell.name = '';
-    cell.color = '';
+    var tObs = trackPlayObservers[col];
+    obs.hasClip = readCellInto(cellInitApi, obs.cell, slotId(col, row), trackIsGroup[col], row, tObs ? tObs.playingSlot : clipState_1.NO_SLOT, tObs ? tObs.firedSlot : clipState_1.NO_SLOT, tObs ? tObs.armed : false);
+    return obs;
+}
+// Read one clip slot's display state into `cell` through `api` (re-pointed by
+// id). Shared by the windowed observers and the background prefetch, so a cell
+// derives identically whichever path produced it. Returns has_clip.
+function readCellInto(api, cell, sid, isGroup, row, playingSlot, firedSlot, armed) {
+    api.id = sid;
+    var hasClip = !!parseInt(api.get('has_clip').toString());
+    cell.hsb = parseInt(api.get('has_stop_button').toString()) ? 1 : 0;
     cell.ps = 0;
     cell.hc = 0;
-    cell.hsb = 0;
-    var sid = slotId(col, row);
-    cellInitApi.id = sid;
-    var hasClip = !!parseInt(cellInitApi.get('has_clip').toString());
-    obs.hasClip = hasClip;
-    cell.state = deriveCellState(hasClip, col, row);
-    cell.hsb = parseInt(cellInitApi.get('has_stop_button').toString()) ? 1 : 0;
+    if (isGroup) {
+        cell.ps = parseInt(api.get('playing_status').toString()) || 0;
+        cell.hc = parseInt(api.get('controls_other_clips').toString()) ? 1 : 0;
+    }
+    cell.name = '';
+    cell.color = '';
+    var recording = false;
     if (hasClip) {
-        cellInitApi.id = (0, utils_1.cleanArr)(cellInitApi.get('clip'))[0];
-        cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
-        cell.color = colorHex(cellInitApi.get('color'));
-        if (parseInt(cellInitApi.get('is_recording').toString())) {
-            cell.state = CLIP_RECORDING;
-        }
+        api.id = (0, utils_1.cleanArr)(api.get('clip'))[0];
+        cell.name = (0, utils_1.dequote)(api.get('name').toString());
+        cell.color = colorHex(api.get('color'));
+        recording = !!parseInt(api.get('is_recording').toString());
     }
-    if (trackIsGroup[col]) {
-        cellInitApi.id = sid;
-        cell.ps = parseInt(cellInitApi.get('playing_status').toString()) || 0;
-        cell.hc = parseInt(cellInitApi.get('controls_other_clips').toString())
-            ? 1
-            : 0;
+    cell.state = (0, clipState_1.clipCellState)(hasClip, recording, row, playingSlot, firedSlot, armed);
+    return hasClip;
+}
+// The wire form of a cell — the same shape in /clips/grid, /clips/update and
+// /clips/prefetch. Fields are added to `entry` so callers can put their own
+// coordinates first.
+function cellEntry(entry, cell, isGroup) {
+    entry.s = cell.state;
+    if (cell.name)
+        entry.n = cell.name;
+    if (cell.color)
+        entry.c = cell.color;
+    entry.hsb = cell.hsb;
+    if (isGroup) {
+        entry.ps = cell.ps;
+        entry.hc = cell.hc;
     }
-    return obs;
+    return entry;
 }
 // (Re-)arm a cell's observers — called lazily in batches. Re-points a pooled
 // cell's observers or creates fresh ones (ensureObs); enables group/clip
@@ -825,7 +827,7 @@ function setupClipObserver(obs) {
     obs.cell.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
     obs.cell.color = colorHex(cellInitApi.get('color'));
     if (parseInt(cellInitApi.get('is_recording').toString())) {
-        obs.cell.state = CLIP_RECORDING;
+        obs.cell.state = clipState_1.CLIP_RECORDING;
     }
     if (!obs.clipApi) {
         obs.clipApi = obsById(clipId, function (args) {
@@ -851,7 +853,7 @@ function setupClipObserver(obs) {
                 return;
             var recording = !!parseInt(args[1]);
             if (recording) {
-                obs.cell.state = CLIP_RECORDING;
+                obs.cell.state = clipState_1.CLIP_RECORDING;
             }
             else {
                 obs.cell.state = deriveCellState(obs.hasClip, obs.trackIdx, obs.sceneIdx);
@@ -923,17 +925,7 @@ function processObserverBatch() {
 // State update & batching
 // ---------------------------------------------------------------------------
 function queueFullUpdate(obs) {
-    var entry = { t: obs.trackIdx, sc: obs.sceneIdx, s: obs.cell.state };
-    if (obs.cell.name)
-        entry.n = obs.cell.name;
-    if (obs.cell.color)
-        entry.c = obs.cell.color;
-    entry.hsb = obs.cell.hsb;
-    if (trackIsGroup[obs.trackIdx]) {
-        entry.ps = obs.cell.ps;
-        entry.hc = obs.cell.hc;
-    }
-    pendingUpdates.push(entry);
+    pendingUpdates.push(cellEntry({ t: obs.trackIdx, sc: obs.sceneIdx }, obs.cell, trackIsGroup[obs.trackIdx]));
     scheduleFlush();
 }
 function scheduleFlush() {
@@ -967,16 +959,19 @@ function createSceneObserver(sceneIdx) {
     cellInitApi.id = sid;
     info.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
     info.color = colorHex(cellInitApi.get('color'));
+    cacheScene(info);
     info.nameApi = ensureObs(info.nameApi, sid, function (args) {
         if (!info.nameApi || args[0] !== 'name')
             return;
         info.name = (0, utils_1.dequote)(args[1]);
+        cacheScene(info);
         scheduleSceneInfo();
     }, 'name');
     info.colorApi = ensureObs(info.colorApi, sid, function (args) {
         if (!info.colorApi || args[0] !== 'color')
             return;
         info.color = colorHex(args[1]);
+        cacheScene(info);
         scheduleSceneInfo();
     }, 'color');
     return info;
@@ -1146,8 +1141,17 @@ function applyWindow() {
     }
     sendFullGrid();
     sendTrackInfo();
-    sendSceneInfo();
+    sendSceneInfo(false);
     sendSelectedScene();
+    // The observers own the visible window now, and the app's copy of it will
+    // follow them. Forget what the sweep last sent there, or a cell whose state
+    // moved while on screen and moved BACK after leaving would compare equal and
+    // never be re-sent.
+    for (var col = leftTrack; col < visRight; col++) {
+        for (var row = topScene; row < visBottom; row++) {
+            delete pfSent[cellKey(col, row)];
+        }
+    }
     if (pendingObserverKeys.length > 0) {
         scheduleObserverBatch();
     }
@@ -1166,20 +1170,10 @@ function sendFullGrid() {
             var key = cellKey(col, row);
             var obs = cellObservers[key];
             if (obs) {
-                var entry = { s: obs.cell.state };
-                if (obs.cell.name)
-                    entry.n = obs.cell.name;
-                if (obs.cell.color)
-                    entry.c = obs.cell.color;
-                entry.hsb = obs.cell.hsb;
-                if (trackIsGroup[col]) {
-                    entry.ps = obs.cell.ps;
-                    entry.hc = obs.cell.hc;
-                }
-                rowData.push(entry);
+                rowData.push(cellEntry({}, obs.cell, trackIsGroup[col]));
             }
             else {
-                rowData.push({ s: CLIP_EMPTY });
+                rowData.push({ s: clipState_1.CLIP_EMPTY });
             }
         }
         rows.push(rowData);
@@ -1203,7 +1197,9 @@ function sendTrackInfo() {
 }
 function scheduleSceneInfo() {
     if (!sceneInfoTask) {
-        sceneInfoTask = new Task(sendSceneInfo);
+        sceneInfoTask = new Task(function () {
+            sendSceneInfo(false);
+        });
     }
     sceneInfoTask.cancel();
     sceneInfoTask.schedule(UPDATE_FLUSH_MS);
@@ -1218,7 +1214,25 @@ function buildSceneCache() {
         });
     }
 }
-function sendSceneInfo() {
+// Keep the all-scenes cache in step with what the scene observers see. Without
+// this, a scene renamed while on screen reverted to its old cached name as soon
+// as it scrolled out of the window and its observer was parked.
+function cacheScene(info) {
+    var cached = sceneCache[info.sceneIdx];
+    if (!cached)
+        return;
+    cached.n = info.name;
+    cached.c = info.color;
+}
+// The scene list exactly as last sent. applyWindow calls sendSceneInfo on every
+// /clipView change, and the list is the SAME nearly every time — resending it
+// per scroll step was ~1 message a second of pure repetition (chunked on a big
+// set). Only a real difference goes out now. Cleared on refresh so a
+// (re)connected app, which has dropped its copy, always gets it once.
+var lastScenesJson = '';
+// `force` sends even when unchanged — for /requestClipsScenes, which the app
+// uses to recover a transfer that failed its checksum.
+function sendSceneInfo(force) {
     if (totalScenes <= 0)
         return;
     // Build cache if stale
@@ -1236,8 +1250,141 @@ function sendSceneInfo() {
             scene.c = color;
         scenes.push(scene);
     }
+    var json = JSON.stringify(scenes);
+    if (!force && json === lastScenesJson)
+        return;
+    lastScenesJson = json;
     (0, utils_1.osc)('/clips/scenes', scenes);
 }
+// ---------------------------------------------------------------------------
+// Background prefetch (off-screen clip slots)
+// ---------------------------------------------------------------------------
+// Observers only cover the visible window, so a scroll used to show empty or
+// stale cells until the /clipView round trip landed. The sweep reads every
+// clip slot OUTSIDE the window — no observers, so no symbol cost and nothing
+// counting toward Live's observer ceiling — and sends it as /clips/prefetch,
+// so the app's grid is already warm when a cell scrolls into view. Scheduling
+// and the CPU bounds live in sweep.ts.
+//
+// Slot ids are read per column straight from the track, NOT through
+// ensureTrackSlotIds: that cache is only invalidated by the scene-count watcher,
+// which doesn't exist until the clips page has opened, so filling it from here
+// could leave it stale for when it does.
+var pfApi = null;
+var pfCols = [];
+var pfColPos = 0;
+var pfRows = [];
+var pfRowPos = 0;
+var pfSlots = null; // clip_slot ids of the column being read
+var pfTrackId = 0;
+var pfIsGroup = false;
+var pfPlaying = clipState_1.NO_SLOT;
+var pfFired = clipState_1.NO_SLOT;
+var pfArmed = false;
+var pfBuf = [];
+var pfLastFlush = 0;
+// What the sweep last sent per cell ("col,row" -> track id + cell JSON). A cell
+// is only sent when it differs, so a repeat pass over an unchanged set sends
+// nothing. Cleared whenever the app's cache is known to be invalid.
+var pfSent = {};
+var pfCell = {
+    state: clipState_1.CLIP_EMPTY,
+    name: '',
+    color: '',
+    ps: 0,
+    hc: 0,
+    hsb: 0,
+};
+var prefetch = (0, sweep_1.createSweep)({
+    begin: prefetchBegin,
+    step: prefetchStep,
+    flush: prefetchFlush,
+    repeat: function () {
+        return !!ctx && ctx.clientAlive();
+    },
+}, (0, sweep_1.maxScheduler)());
+// The app's cache is known to be invalid (connect, refresh, a structure
+// change): forget what was sent and start a full pass now.
+function restartPrefetch() {
+    pfSent = {};
+    pfBuf = [];
+    prefetch.start();
+}
+function prefetchBegin() {
+    if (!(0, utils_1.clientHasCap)(sweep_1.CAPABILITY_PREFETCH) || trackIds.length === 0)
+        return false;
+    ensureApis();
+    scratchApi.path = 'live_set';
+    var sceneCount = (0, utils_1.cleanArr)(scratchApi.get('scenes')).length;
+    // The true grid size, so the app drops rows and columns it cached for scenes
+    // or tracks that have since been deleted.
+    (0, utils_1.osc)('/clips/dims', { t: trackIds.length, s: sceneCount });
+    // Columns and rows nearest the window first — what a scroll reveals next.
+    pfCols = (0, sweep_1.nearestFirst)(trackIds.length, leftTrack, rightTrack);
+    pfRows = (0, sweep_1.nearestFirst)(sceneCount, topScene, bottomScene);
+    pfColPos = 0;
+    pfSlots = null;
+    return true;
+}
+function prefetchStep() {
+    if (pfColPos >= pfCols.length)
+        return -1;
+    var col = pfCols[pfColPos];
+    if (!pfSlots) {
+        if (col >= trackIds.length) {
+            pfColPos++;
+            return 0;
+        }
+        // Per-column context, read once: which slot is playing/fired, and arm.
+        pfTrackId = trackIds[col];
+        pfIsGroup = trackIsGroup[col];
+        pfApi.id = pfTrackId;
+        pfSlots = (0, utils_1.cleanArr)(pfApi.get('clip_slots'));
+        pfPlaying = parseInt(pfApi.get('playing_slot_index').toString());
+        pfFired = parseInt(pfApi.get('fired_slot_index').toString());
+        pfArmed =
+            !!parseInt(pfApi.get('can_be_armed').toString()) &&
+                !!parseInt(pfApi.get('arm').toString());
+        pfRowPos = 0;
+        return 1;
+    }
+    if (pfRowPos >= pfRows.length) {
+        pfSlots = null;
+        pfColPos++;
+        return 0;
+    }
+    var row = pfRows[pfRowPos++];
+    if (row >= pfSlots.length)
+        return 0;
+    var key = cellKey(col, row);
+    if (isVisible(col, row)) {
+        delete pfSent[key]; // the observers own it
+        return 0;
+    }
+    readCellInto(pfApi, pfCell, pfSlots[row], pfIsGroup, row, pfPlaying, pfFired, pfArmed);
+    var entry = cellEntry({ t: col, sc: row }, pfCell, pfIsGroup);
+    var sig = pfTrackId + ':' + JSON.stringify(entry);
+    if (pfSent[key] !== sig) {
+        pfSent[key] = sig;
+        pfBuf.push(entry);
+        prefetch.noteSent();
+    }
+    return 1;
+}
+function prefetchFlush(done) {
+    if (pfBuf.length === 0)
+        return;
+    var now = Date.now();
+    if (!done && now - pfLastFlush < sweep_1.FLUSH_MS)
+        return;
+    pfLastFlush = now;
+    (0, utils_1.osc)('/clips/prefetch', pfBuf);
+    pfBuf = [];
+}
+function prefetchStats() {
+    return prefetch.stats;
+}
+exports.prefetchStats = prefetchStats;
 // ---------------------------------------------------------------------------
 // Incoming: clipView
 // ---------------------------------------------------------------------------
@@ -1276,13 +1423,17 @@ function setupWindow(left, top, right, bottom) {
 function doRefresh(c) {
     (0, utils_1.setOscSink)(c.osc);
     ctx = c;
+    // A (re)connected app has cleared its cache, so the whole grid and the scene
+    // list go again.
+    lastScenesJson = '';
+    restartPrefetch();
     if (leftTrack < 0)
         return;
     setupWindow(leftTrack, topScene, rightTrack, bottomScene);
 }
 exports.init = doRefresh;
 function requestClipsScenes() {
-    sendSceneInfo();
+    sendSceneInfo(true);
 }
 function clipView(jsonStr) {
     var parsed = JSON.parse(jsonStr.toString());

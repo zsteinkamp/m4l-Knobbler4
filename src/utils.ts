@@ -106,6 +106,14 @@ export function loadSetting(key: string): any {
   return _settingsDict.get(key)
 }
 
+// Whether the connected app advertised `cap` in its /syn or /ping handshake.
+// Exact token match on the space-delimited list, so a short flag can't match
+// inside a longer one.
+export function clientHasCap(cap: string): boolean {
+  const caps = _settingsDict.get('clientCapabilities')
+  return (caps ? caps.toString() : '').split(' ').indexOf(cap) !== -1
+}
+
 export function saveInstanceSetting(key: string, value: any) {
   _settingsDict.set(_instancePrefix + key, value)
 }

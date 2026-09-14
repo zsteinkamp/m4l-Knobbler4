@@ -420,6 +420,57 @@ The conventions used in this device:
 - **LCD displays** (value readouts) **and the LCD-styled page-tab strip** (`live.tab`): bg `live_lcd_bg`, text `live_lcd_control_fg`, dimmed/inactive text `live_lcd_control_fg_zombie`, selected-tab highlight `live_control_selection`, text-on-selected-tab `live_lcd_bg` (dark for contrast). `live.tab` color attrs: `bgcolor`/`activebgcolor`, `bgoncolor`, `textcolor`, `textoncolor`, `inactivetextoffcolor`, `inactivetextoncolor`, `focusbordercolor`.
 - Do **not** use the generic patcher tokens `theme_textcolor`/`theme_textcolor_inverse` on Live widgets — use the `live_*` family.
 
+## Background prefetch (off-screen sweeps)
+
+Observers only cover the visible window (plus a warm margin), so on a set larger
+than the screen a scroll used to reveal strips and clip slots the app knew
+nothing about until the debounced `/mixerView`/`/clipView` round trip landed.
+Now each windowed module also runs a **sweep**: it reads everything OUTSIDE the
+window directly — no observers, so no symbol cost and nothing counting toward
+Live's observer ceiling — and sends it as `/mixer/prefetch` and
+`/clips/prefetch` (+ `/clips/dims`). The app merges those into the caches the
+windowed stream fills, so a scroll paints from last-known values that the
+window then corrects. Gated on the app's `pre` capability.
+
+- **`src/sweep.ts` owns the schedule and the cost bounds; the modules own only
+  what a unit reads.** LiveAPI reads run on Live's main thread (not audio), so
+  the thing protected is Live's UI responsiveness. A pass runs in `SLICE_MS`
+  slices (deadline checked after every strip/slot) separated by `GAP_MS`; a
+  repeat pass waits `IDLE_FACTOR ×` the previous pass's measured busy time
+  (floor `MIN_IDLE_MS`), which caps the long-run average at `1/(1+IDLE_FACTOR)`
+  of one thread **regardless of set size**, and repeats stop when the app stops
+  pinging (`ctx.clientAlive()`). The policy is pure and unit-tested
+  (`src/sweep.test.ts`).
+- **Measure, don't guess: `/debug/prefetch`** returns each module's last pass —
+  `lastBusyMs` (time inside Live API reads), `lastWallMs`, units read/sent, idle
+  chosen. The constants in `sweep.ts` were set from estimates, not a real large
+  set; check them against this before tuning anything.
+- **Only CHANGED units are sent** (`pfSent`: index → track id + record JSON),
+  so a repeat pass over a static set is silent on the network. The invariant
+  that keeps that honest: **`pfSent` is cleared whenever the app's cache is
+  invalid** (module `init` = connect/refresh, a track-list change, a scene-count
+  change), and **an entry is deleted whenever its unit is in the visible
+  window**, because the observers then move the app's copy without the sweep
+  knowing. Miss either and a unit can compare equal and never be re-sent.
+- **The observers and the sweep share one reader each** — `readStripState`
+  (multiMixer; also backs `sendStripState`), and `readCellInto` + `cellEntry` +
+  the pure `clipCellState` (`src/clipState.ts`) for clips. A second copy would
+  drift, and a cell would visibly change when it scrolled into view.
+- **The clip sweep reads `clip_slots` per column itself — do NOT route it
+  through `ensureTrackSlotIds`.** That cache is invalidated only by the
+  scene-count watcher, which isn't created until the clips page opens, so a
+  sweep filling it early could leave stale slot ids for when it does.
+- **Mixer commands work on ANY strip now (cold strips).** `getStrip` used to
+  return null outside the visible window, silently dropping the command. That was
+  masked while the app had no value for such a strip (its MixerStrip refused
+  input until one arrived) — prefetch removes the mask, so a fader grabbed right
+  after a scroll would move on screen while Live ignored it. `bindCold` re-points
+  ONE shared, strip-shaped set of non-observing handles by id, so every command
+  handler works unchanged; the sweep reads through the same handles. Because no
+  observer reports a cold (or warm-but-not-visible) strip, handlers whose result
+  the app wouldn't otherwise hear echo it themselves — gate that on
+  `isObserved(strip)`.
+
 ## Max symbol-table interning & LiveAPI observer lifecycle (`[v8]` M4L)
 
 > This section doubles as the source notes for a blog post — it keeps the full
@@ -574,6 +625,16 @@ reach Live's `[udpreceive]`). E.g.
 `node tools/osc-probe.js --listen 9999 /debug/symbolCount` (binds 9999,
 `/connect`s to redirect replies to itself, sends, decodes the OSC reply). Default
 listen 2347 collides if the real app is running — pick a free `--listen` port.
+
+**`tools/pcap-decode.js`** — decodes a packet capture of app↔device traffic
+(run on the HOST; only the capture needs root):
+`sudo tcpdump -i any -n -s 0 -w /tmp/k4.pcap 'udp port 2346 or udp port 2347'`,
+then `node tools/pcap-decode.js /tmp/k4.pcap`. Prints the handshake with both
+capability lists, window/page requests, prefetch traffic, every chunked
+transfer (with its columnar key and whether it arrived intact), and per-address
+counts. Passive — unlike `osc-probe` it never touches the iPad's connection, so
+reach for it first when "the device isn't sending X". It found the Setup
+screen's `/syn` carrying a stale capability list (no `pre`) in one pass.
 
 **`tools/osc.js`** — shared OSC codec (`encodeMessage`/`decodePacket`) + an async
 `OscClient` (timestamped message log + `waitFor(pred)`), the host-side seed of the

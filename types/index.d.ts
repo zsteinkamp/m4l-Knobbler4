@@ -53,6 +53,7 @@ interface AppContext {
   }
   notifyVisibleTracks(): void
   loopProbe(): void // feedback-loop guard: re-enable output + ping /loop (-> knobbler entry)
+  clientAlive(): boolean // an app has pinged recently (-> k4-system)
   // per-instance persistence (---settingsDict); one Dict ref, no key prefixing.
   // legacyGet reads the pre-[v8] shared [dict settingsDict] (prefixed keys) for
   // one-time migration of old sets.

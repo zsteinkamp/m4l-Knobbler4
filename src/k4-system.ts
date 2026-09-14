@@ -39,7 +39,18 @@ let ctx: AppContext = null
 // loop probe to init in that case instead of dereferencing a null ctx.
 let pendingLoopProbe = false
 
+// When the app last spoke to us. The app pings every 5s, so an app that has
+// been silent for CLIENT_TIMEOUT_MS is gone — background work that only exists
+// to serve it (the prefetch sweeps) checks clientAlive() and stops.
+const CLIENT_TIMEOUT_MS = 15000
+let clientSeenMs = 0
+
+function clientAlive(): boolean {
+  return Date.now() - clientSeenMs < CLIENT_TIMEOUT_MS
+}
+
 function saveClient(val: string | number) {
+  clientSeenMs = Date.now()
   if (!val) {
     return
   }
@@ -131,4 +142,4 @@ function init(c: AppContext) {
 
 log('reloaded k4-system')
 
-export { routes, setDeviceVersion, init }
+export { routes, setDeviceVersion, init, clientAlive }

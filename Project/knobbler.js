@@ -59,6 +59,7 @@ var ctx = {
         multiMixer.visibleTracks();
     },
     loopProbe: sendLoopProbe,
+    clientAlive: system.clientAlive,
     settings: {
         get: settings.get,
         set: settings.set,
@@ -181,11 +182,21 @@ function loopDetected() {
 function debugLog(val) {
     log('[app] ' + String(val));
 }
+// Measured cost of the background prefetch sweeps (see sweep.ts): busy ms, wall
+// ms, units read/sent and the idle chosen, per module. The answer to "what does
+// this cost on a real set?" without guessing.
+function debugPrefetch() {
+    (0, utils_1.osc)('/debug/prefetch', {
+        mixer: multiMixer.prefetchStats(),
+        clips: clipView.prefetchStats(),
+    });
+}
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
 var entryRoutes = [
     { prefix: '/page/', parse: 'custom', fn: pageDispatch },
     { prefix: '/loop', parse: 'bare', fn: loopDetected },
     { prefix: '/debug/log', parse: 'val', fn: debugLog },
+    { prefix: '/debug/prefetch', parse: 'bare', fn: debugPrefetch },
 ];
 // knobblerCore (the former [v8 knobbler4]) — OSC routes.
 var knobblerRoutes = [

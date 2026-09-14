@@ -12,6 +12,7 @@ import config from './k4-config'
 import {
   buildOscPacket,
   logFactory,
+  osc,
   setDictPrefix as utilsSetDictPrefix,
   setOscSink,
 } from './utils'
@@ -68,6 +69,7 @@ const ctx: AppContext = {
     multiMixer.visibleTracks()
   },
   loopProbe: sendLoopProbe,
+  clientAlive: system.clientAlive,
   settings: {
     get: settings.get,
     set: settings.set,
@@ -201,11 +203,22 @@ function debugLog(val: string | number) {
   log('[app] ' + String(val))
 }
 
+// Measured cost of the background prefetch sweeps (see sweep.ts): busy ms, wall
+// ms, units read/sent and the idle chosen, per module. The answer to "what does
+// this cost on a real set?" without guessing.
+function debugPrefetch() {
+  osc('/debug/prefetch', {
+    mixer: multiMixer.prefetchStats(),
+    clips: clipView.prefetchStats(),
+  })
+}
+
 // Routes owned by the entry itself (fan-outs that touch multiple modules).
 const entryRoutes: Route[] = [
   { prefix: '/page/', parse: 'custom', fn: pageDispatch },
   { prefix: '/loop', parse: 'bare', fn: loopDetected },
   { prefix: '/debug/log', parse: 'val', fn: debugLog },
+  { prefix: '/debug/prefetch', parse: 'bare', fn: debugPrefetch },
 ]
 
 // knobblerCore (the former [v8 knobbler4]) — OSC routes.

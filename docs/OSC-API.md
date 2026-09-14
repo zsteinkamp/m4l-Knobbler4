@@ -421,6 +421,8 @@ The multi-track mixer provides a full-screen, horizontally scrollable mixer with
 
 Sets the visible window for the multi-track mixer. The value is a JSON array `[leftIndex, visibleCount]`. The device will set up observers for strips from `leftIndex` to `leftIndex + visibleCount - 1`. Sending `[0, 0]` tears down all observers and deactivates the mixer.
 
+The window only decides which strips the device _streams_. The `/mixer/{N}/…` commands below are accepted for **any** strip in `/visibleTracks`: a strip outside the window is written through a shared set of non-observing handles, and the device echoes the result (mute, solo, arm, crossfade, a reset value) since no observer will.
+
 #### /mixerMeters { 0 | 1 }
 
 Enables or disables output level meter observers for all visible strips. Meters are off by default. Only tracks with audio output will have meter observers.
@@ -546,6 +548,10 @@ Whether crossfader B is assigned for strip N.
 #### /mixer/{N}/send1 - /mixer/{N}/send12 {float}
 
 Send levels for strip N.
+
+#### /mixer/prefetch {JSON array}
+
+Background prefetch of strips **outside** the visible window, sent only to apps that advertise the `pre` capability. An array of records in short keys — `{i, v, vs, va, p, ps, m, so, ra, ie, ho, xa?, xb?, s}` = strip index, vol, volStr, volAuto, pan, panStr, (effective) mute, solo, recordArm, inputEnabled, hasOutput, xFadeA, xFadeB (absent on master), and the send values — each field meaning exactly what the matching `/mixer/{N}/…` address means. Usually arrives columnarized and chunked. Sent in full after connect/refresh and after a track-list change, then only for strips whose values changed. See `src/sweep.ts` for scheduling and cost bounds.
 
 #### /mixer/meters {JSON array}
 
@@ -866,6 +872,10 @@ This is useful when recording automation over existing MIDI clips, since the rec
 
 Sent out as part of the network startup sequence to detect network loops (e.g. the send and receive destination being the same). If the device receives its own `/loop` echo, outbound communication is halted until the `host` or `port` values are changed (a fresh `/connect` re-probes).
 
+#### /debug/prefetch
+
+Replies `/debug/prefetch {mixer, clips}`, each the measured cost of that module's last background prefetch pass: `{passes, lastBusyMs, lastWallMs, lastUnits, lastSent, lastIdleMs}`. `lastBusyMs` is time actually spent reading the Live API on Live's main thread; `lastWallMs` includes the yields between slices.
+
 ## Clip View
 
 The Clip View provides session view clip grid control including clip launching, recording, scene management, and real-time state updates. The device uses a windowed approach — observers are only active for the visible portion of the grid.
@@ -938,9 +948,17 @@ Full grid snapshot: `{ left, top, clips: rows }`. Each cell is `{s, n?, c?, hsb,
 
 Batched cell state updates: `[{t, sc, s, n?, c?, hsb, ps?, hc?}]`. Sent when individual cells change state.
 
+#### /clips/prefetch {JSON array}
+
+Background prefetch of clip slots **outside** the visible window, sent only to apps that advertise the `pre` capability. Whole cells at absolute coordinates, `[{t, sc, s, n?, c?, hsb, ps?, hc?}]` — the same cell shape as `/clips/grid` — which replace the cached cell outright. Usually arrives columnarized and chunked. Sent in full after connect/refresh and after a track-list or scene-count change, then only for cells that changed.
+
+#### /clips/dims {JSON object}
+
+`{t, s}` — the set's real clip-grid size (non-return tracks, scenes), sent at the start of every prefetch pass so the app can drop cached rows and columns for deleted scenes or tracks.
+
 #### /clips/scenes
 
-Sent as chunked data (`/clips/scenes/chunk`). Array of `{n, c?}` objects for all scenes, where `n` is the scene name and `c` is the optional color.
+Sent as chunked data (`/clips/scenes/chunk`). Array of `{n, c?}` objects for all scenes, where `n` is the scene name and `c` is the optional color. Sent when the list changes (a rename, recolor or added/removed scene, or on refresh) — not on every `/clipView`. `/requestClipsScenes` always sends it.
 
 #### /clips/selectedScene {integer}
 

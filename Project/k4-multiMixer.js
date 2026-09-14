@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.page = exports.visibleTracks = exports.init = exports.routes = void 0;
+exports.prefetchStats = exports.page = exports.visibleTracks = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
+var sweep_1 = require("./sweep");
 var mixerUtils_1 = require("./mixerUtils");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Orchestrator context (set in init) — used to reach the sidebar mixer.
@@ -474,8 +475,14 @@ function repointStrip(strip, trackId, stripIdx, mixerId, volId, panId, sendIds) 
     for (var i = 0; i < strip.sendApis.length; i++) {
         reArm(strip.sendApis[i], sendIds[i], 'value');
     }
-    // Meters travel with the strip (re-point id only; active state set by caller).
+    // Meters travel with the strip. UNSUBSCRIBE BEFORE re-pointing: applyWindow
+    // reuses a strip leaving the warm window while its meters are still active
+    // (it parks only the leftovers, after this runs), and setting .id on a still
+    // -subscribed output_meter_* observer whose new track is MIDI-only logs
+    // "Tracks with MIDI output have no 'output_meter_left' property". The caller's
+    // meter pass re-activates afterwards, gated on hasOutput.
     if (strip.meterLeftApi) {
+        setMetersActive(strip, false);
         strip.meterLeftApi.id = trackId;
         strip.meterRightApi.id = trackId;
         strip.meterLevelApi.id = trackId;
@@ -598,34 +605,128 @@ function sendStripState(n, strip) {
     (0, utils_1.osc)(SA_NAME[n], info ? info.name : '');
     (0, utils_1.osc)(SA_COLOR[n], info ? info.color : consts_1.DEFAULT_COLOR);
     (0, utils_1.osc)(SA_TYPE[n], info ? info.type : consts_1.TYPE_TRACK);
+    var st = readStripState(strip);
+    (0, utils_1.osc)(SA_VOL[n], st.v);
+    (0, utils_1.osc)(SA_VOLSTR[n], st.vs);
+    (0, utils_1.osc)(SA_VOLAUTO[n], st.va);
+    (0, utils_1.osc)(SA_PAN[n], st.p);
+    (0, utils_1.osc)(SA_PANSTR[n], st.ps);
+    (0, utils_1.osc)(SA_MUTE[n], st.m);
+    (0, utils_1.osc)(SA_SOLO[n], st.so);
+    (0, utils_1.osc)(SA_ARM[n], st.ra);
+    (0, utils_1.osc)(SA_INPUT[n], st.ie);
+    (0, utils_1.osc)(SA_HASOUTPUT[n], st.ho);
+    if (st.xa !== undefined) {
+        (0, utils_1.osc)(SA_XFADEA[n], st.xa);
+        (0, utils_1.osc)(SA_XFADEB[n], st.xb);
+    }
+    for (var i = 0; i < st.s.length; i++) {
+        (0, utils_1.osc)(SA_SEND[n][i], st.s[i]);
+    }
+}
+function readStripState(strip) {
     var volVal = parseFloat(strip.volApi.get('value').toString()) || 0;
     var volStr = strip.volApi.call('str_for_value', (0, utils_1.fixFloat)(volVal));
-    (0, utils_1.osc)(SA_VOL[n], volVal);
-    (0, utils_1.osc)(SA_VOLSTR[n], volStr ? volStr.toString() : '');
-    (0, utils_1.osc)(SA_VOLAUTO[n], parseInt(strip.volAutoApi.get('automation_state').toString()));
     var panVal = parseFloat(strip.panApi.get('value').toString()) || 0;
     var panStr = strip.panApi.call('str_for_value', (0, utils_1.fixFloat)(panVal));
-    (0, utils_1.osc)(SA_PAN[n], panVal);
-    (0, utils_1.osc)(SA_PANSTR[n], panStr ? panStr.toString() : '');
-    if (strip.isMain) {
-        (0, utils_1.osc)(SA_MUTE[n], 0);
-    }
-    else {
-        emitEffectiveMute(strip);
-    }
-    (0, utils_1.osc)(SA_SOLO[n], !strip.isMain ? parseInt(strip.trackApi.get('solo').toString()) : 0);
-    (0, utils_1.osc)(SA_ARM[n], strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0);
-    var recordStatus = (0, mixerUtils_1.getRecordStatus)(strip.trackApi);
-    (0, utils_1.osc)(SA_INPUT[n], strip.canBeArmed && recordStatus.inputEnabled ? 1 : 0);
-    (0, utils_1.osc)(SA_HASOUTPUT[n], strip.hasOutput ? 1 : 0);
+    var st = {
+        i: strip.stripIndex,
+        v: volVal,
+        vs: volStr ? volStr.toString() : '',
+        va: parseInt(strip.volApi.get('automation_state').toString()),
+        p: panVal,
+        ps: panStr ? panStr.toString() : '',
+        m: strip.isMain ? 0 : (0, mixerUtils_1.effectiveMute)(strip.trackApi),
+        so: strip.isMain ? 0 : parseInt(strip.trackApi.get('solo').toString()),
+        ra: strip.canBeArmed ? parseInt(strip.trackApi.get('arm').toString()) : 0,
+        // Input routing is the priciest read here (two JSON routing lists), and
+        // it's only meaningful on a track that can be armed.
+        ie: strip.canBeArmed && (0, mixerUtils_1.getRecordStatus)(strip.trackApi).inputEnabled ? 1 : 0,
+        ho: strip.hasOutput ? 1 : 0,
+        s: [],
+    };
     if (!strip.isMain) {
         var _a = (0, mixerUtils_1.xfadeAB)(strip.mixerApi), aOn = _a[0], bOn = _a[1];
-        (0, utils_1.osc)(SA_XFADEA[n], aOn);
-        (0, utils_1.osc)(SA_XFADEB[n], bOn);
+        st.xa = aOn;
+        st.xb = bOn;
     }
     for (var i = 0; i < strip.sendApis.length; i++) {
-        (0, utils_1.osc)(SA_SEND[n][i], parseFloat(strip.sendApis[i].get('value').toString()) || 0);
+        st.s.push(parseFloat(strip.sendApis[i].get('value').toString()) || 0);
     }
+    return st;
+}
+// ---------------------------------------------------------------------------
+// Cold strips (tracks with no observers)
+// ---------------------------------------------------------------------------
+// Observers only cover the warm window, so a command for any other strip used
+// to be dropped. That was hidden while the app had no values for such a strip
+// (MixerStrip refuses input until one arrives) — but with prefetch every strip
+// shows real values, and a fader grabbed right after a scroll, before the
+// debounced /mixerView lands, would move on screen while Live ignored it.
+//
+// So a command for an unobserved strip goes through ONE shared set of
+// non-observing handles, re-pointed by id (free: no symbols, no observers),
+// shaped like a strip so every command handler works on it unchanged. The
+// prefetch sweep reads through the same handles.
+var cold = null;
+var coldSendPool = [];
+function plainApi() {
+    return new LiveAPI(consts_1.noFn, '');
+}
+function bindCold(stripIdx) {
+    var info = trackList[stripIdx];
+    if (!info)
+        return null;
+    if (!cold) {
+        cold = {
+            trackId: 0,
+            trackApi: plainApi(),
+            colorApi: null,
+            muteApi: null,
+            mutedViaSoloApi: null,
+            soloApi: null,
+            armApi: null,
+            devicesApi: null,
+            meterLeftApi: null,
+            meterRightApi: null,
+            meterLevelApi: null,
+            mixerApi: plainApi(),
+            volApi: plainApi(),
+            volAutoApi: null,
+            panApi: plainApi(),
+            sendApis: [],
+            pause: {},
+            stripIndex: -1,
+            canBeArmed: false,
+            hasOutput: false,
+            isMain: false,
+            initialized: true,
+        };
+    }
+    cold.trackId = info.id;
+    cold.stripIndex = stripIdx;
+    cold.trackApi.id = info.id;
+    cold.isMain = info.type === consts_1.TYPE_MAIN;
+    cold.canBeArmed =
+        !cold.isMain && !!parseInt(cold.trackApi.get('can_be_armed').toString());
+    cold.hasOutput = readHasOutput(cold);
+    cold.mixerApi.id = (0, utils_1.cleanArr)(cold.trackApi.get('mixer_device'))[0];
+    cold.volApi.id = (0, utils_1.cleanArr)(cold.mixerApi.get('volume'))[0];
+    cold.panApi.id = (0, utils_1.cleanArr)(cold.mixerApi.get('panning'))[0];
+    var sendIds = (0, utils_1.cleanArr)(cold.mixerApi.get('sends'));
+    var numSends = Math.min(sendIds.length, consts_1.MAX_SENDS);
+    while (coldSendPool.length < numSends)
+        coldSendPool.push(plainApi());
+    cold.sendApis = coldSendPool.slice(0, numSends);
+    for (var i = 0; i < numSends; i++)
+        cold.sendApis[i].id = sendIds[i];
+    return cold;
+}
+// Whether this strip's observers will report a change on their own. They only
+// emit for VISIBLE strips, so a command on any other strip has to echo its
+// result itself or the app never hears it.
+function isObserved(strip) {
+    return strip !== cold && isVisible(strip);
 }
 // ---------------------------------------------------------------------------
 // Window Management
@@ -723,10 +824,81 @@ function applyWindow() {
                 sendStripState(i, strip);
             }
         }
+        // The observers own this strip now; forget what the sweep last sent for it,
+        // so it's re-sent once it leaves (see the same note in k4-clipView).
+        delete pfSent[i];
     }
     visibleStateSet = newVisibleSet;
     sendSoloCount();
 }
+// ---------------------------------------------------------------------------
+// Background prefetch (off-screen strips)
+// ---------------------------------------------------------------------------
+// Reads every strip outside the visible window through the cold handles and
+// sends it as /mixer/prefetch, so the app's per-address cache is warm before a
+// strip scrolls into view. Scheduling and the CPU bounds live in sweep.ts.
+var pfQueue = [];
+var pfPos = 0;
+var pfBuf = [];
+var pfLastFlush = 0;
+// What the sweep last sent per strip index (track id + record JSON). A strip is
+// only sent when it differs, so a repeat pass over a static set sends nothing.
+var pfSent = {};
+var prefetch = (0, sweep_1.createSweep)({
+    begin: prefetchBegin,
+    step: prefetchStep,
+    flush: prefetchFlush,
+    repeat: function () {
+        return !!ctx && ctx.clientAlive();
+    },
+}, (0, sweep_1.maxScheduler)());
+// The app's cache is known to be invalid (connect, refresh, a track-list
+// change): forget what was sent and start a full pass now.
+function restartPrefetch() {
+    pfSent = {};
+    pfBuf = [];
+    prefetch.start();
+}
+function prefetchBegin() {
+    if (!(0, utils_1.clientHasCap)(sweep_1.CAPABILITY_PREFETCH) || trackList.length === 0)
+        return false;
+    pfQueue = (0, sweep_1.nearestFirst)(trackList.length, leftIndex, leftIndex + visibleCount);
+    pfPos = 0;
+    return true;
+}
+function prefetchStep() {
+    if (pfPos >= pfQueue.length)
+        return -1;
+    var i = pfQueue[pfPos++];
+    if (i >= trackList.length)
+        return 0;
+    if (i >= leftIndex && i < leftIndex + visibleCount) {
+        delete pfSent[i]; // the observers own it
+        return 0;
+    }
+    var st = readStripState(bindCold(i));
+    var sig = trackList[i].id + ':' + JSON.stringify(st);
+    if (pfSent[i] !== sig) {
+        pfSent[i] = sig;
+        pfBuf.push(st);
+        prefetch.noteSent();
+    }
+    return 1;
+}
+function prefetchFlush(done) {
+    if (pfBuf.length === 0)
+        return;
+    var now = Date.now();
+    if (!done && now - pfLastFlush < sweep_1.FLUSH_MS)
+        return;
+    pfLastFlush = now;
+    (0, utils_1.osc)('/mixer/prefetch', pfBuf);
+    pfBuf = [];
+}
+function prefetchStats() {
+    return prefetch.stats;
+}
+exports.prefetchStats = prefetchStats;
 // ---------------------------------------------------------------------------
 // Refresh — called on /btnRefresh to invalidate stale observers
 // ---------------------------------------------------------------------------
@@ -836,20 +1008,24 @@ function init(c) {
     // and skip them here, leaving the initial strips dead until scrolled away and
     // back. Clearing it makes applyWindow re-emit state for the visible window.
     visibleStateSet = {};
+    // A (re)connected app has cleared its cache, so every strip goes again.
+    restartPrefetch();
     setupWindow(0, DEFAULT_VISIBLE_COUNT);
 }
 exports.init = init;
 // ---------------------------------------------------------------------------
 // Helpers: resolve strip from incoming index
 // ---------------------------------------------------------------------------
+// Any strip in the track list: its observer set if it has one, else the cold
+// handles bound to it (see bindCold). Used to be visible strips only, which
+// silently dropped a command sent before the app's /mixerView caught up.
 function getStrip(stripIdx) {
-    var rel = stripIdx - leftIndex;
-    if (rel < 0 || rel >= visibleCount)
+    if (!(stripIdx >= 0 && stripIdx < trackList.length))
         return null;
-    if (stripIdx >= trackList.length)
-        return null;
-    var tid = trackList[stripIdx].id;
-    return observersByTrackId[tid] || null;
+    var warm = observersByTrackId[trackList[stripIdx].id];
+    if (warm && warm.stripIndex === stripIdx)
+        return warm;
+    return bindCold(stripIdx);
 }
 // ---------------------------------------------------------------------------
 // Incoming Commands (App -> Device)
@@ -885,6 +1061,8 @@ function panDefault(stripIdx) {
     var res = (0, mixerUtils_1.resetParamValue)(strip.panApi);
     if (!res)
         return;
+    if (!isObserved(strip))
+        (0, utils_1.osc)(SA_PAN[strip.stripIndex], res.value);
     (0, utils_1.osc)(SA_PANSTR[strip.stripIndex], res.str);
 }
 // Send handlers — send1 through send12
@@ -907,7 +1085,10 @@ function handleSendDefault(stripIdx, sendNum) {
     var idx = sendNum - 1;
     if (idx < 0 || idx >= strip.sendApis.length)
         return;
-    strip.sendApis[idx].set('value', parseFloat(strip.sendApis[idx].get('default_value').toString()));
+    var def = parseFloat(strip.sendApis[idx].get('default_value').toString());
+    strip.sendApis[idx].set('value', def);
+    if (!isObserved(strip))
+        (0, utils_1.osc)(SA_SEND[strip.stripIndex][idx], def);
 }
 function send1(stripIdx, val) {
     handleSend(stripIdx, 1, val);
@@ -1028,12 +1209,21 @@ function toggleXFadeA(stripIdx) {
     if (!strip)
         return;
     (0, mixerUtils_1.toggleXFade)(strip.mixerApi, 0);
+    emitXFadeIfUnobserved(strip);
 }
 function toggleXFadeB(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
         return;
     (0, mixerUtils_1.toggleXFade)(strip.mixerApi, 2);
+    emitXFadeIfUnobserved(strip);
+}
+function emitXFadeIfUnobserved(strip) {
+    if (strip.isMain || isObserved(strip))
+        return;
+    var _a = (0, mixerUtils_1.xfadeAB)(strip.mixerApi), aOn = _a[0], bOn = _a[1];
+    (0, utils_1.osc)(SA_XFADEA[strip.stripIndex], aOn);
+    (0, utils_1.osc)(SA_XFADEB[strip.stripIndex], bOn);
 }
 // ---------------------------------------------------------------------------
 // anything() dispatcher — receives (subCmd, stripIdx, val) from router
@@ -1125,6 +1315,9 @@ function visibleTracks() {
     trackList = (0, utils_1.getVisibleTracksList)();
     if (!trackList || trackList.length === 0)
         return;
+    // Strip indices may have shifted, so everything the app cached off-screen is
+    // suspect — re-send it all.
+    restartPrefetch();
     // Clamp leftIndex if track list shrank
     if (leftIndex >= trackList.length) {
         leftIndex = Math.max(0, trackList.length - visibleCount);
