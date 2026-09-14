@@ -20,6 +20,7 @@ Swipe out a channel strip to adjust the mixer settings of the currently selected
 
 ## Changelog
 
+- 2026-09-14 [v70](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v70/Knobbler4-v70.zip) - Scrolling the Mixer and Clips pages on a large set now shows real values straight away instead of waiting for the device (requires Knobbler app 2026.9.14). Faders and buttons on a strip you've just scrolled to now control Live immediately. The device panel reads "intentionally blank" on the Clips, Mixer and Session pages.
 - 2026-08-11 [v69](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v69/Knobbler4-v69.zip) - The device page now follows Live's blue hand, so selecting a chain inside a rack switches the controls to that chain's device instead of staying on the rack. Thanks to Jamie for reporting this.
 - 2026-06-21 [v68](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v68/Knobbler4-v68.zip) - Recording clips now report a growing length and a pending-record state; meters default on.
 - 2026-06-10 [v67](https://github.com/zsteinkamp/m4l-Knobbler4/releases/download/v67/Knobbler4-v67.zip) - Clip view now streams live playing-clip progress for the phase pie and pending-stop flash (throttled, gated on transport playback). Mixer meters no longer warn on MIDI tracks. Documentation: consolidated USB / link-local connection guide.
