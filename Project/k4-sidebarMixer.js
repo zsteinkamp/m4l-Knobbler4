@@ -21,6 +21,7 @@ var state = {
     muteObj: null,
     mutedViaSoloObj: null,
     xfadeAssignObj: null,
+    colorObj: null,
     crossfaderObj: null,
     watchers: [],
     onMixerPage: false,
@@ -247,6 +248,14 @@ function emitXfadeAssign() {
     (0, utils_1.osc)('/mixer/xFadeA', aOn);
     (0, utils_1.osc)('/mixer/xFadeB', bOn);
 }
+// Track color observer, re-pointed from handleTrackChange. Fires on re-arm with
+// the current color (the send a track change needs) and on every recolor, from
+// the nav panel or in Live.
+function handleTrackColorChange(args) {
+    if (args[0] !== 'color')
+        return;
+    (0, utils_1.osc)('/mixer/trackColor', parseInt(args[1]));
+}
 function handleXfadeAssignChange(args) {
     if (args[0] === 'crossfade_assign') {
         emitXfadeAssign();
@@ -463,8 +472,11 @@ function handleTrackChange(id) {
         (0, utils_1.osc)('/mixer/xFadeA', 0);
         (0, utils_1.osc)('/mixer/xFadeB', 0);
     }
-    // track color
-    (0, utils_1.osc)('/mixer/trackColor', parseInt(state.trackLookupObj.get('color')));
+    // track color — observed rather than sent once, so a recolor updates the
+    // strip. Re-arming fires handleTrackColorChange with the current color.
+    state.colorObj.property = '';
+    state.colorObj.path = path;
+    state.colorObj.property = 'color';
     // vol/pan str
     var volVal = parseFloat(state.volObj.get('value')) || 0;
     (0, utils_1.osc)('/mixer/vol', volVal);
@@ -563,6 +575,11 @@ function init() {
     if (!state.xfadeAssignObj) {
         state.xfadeAssignObj = new LiveAPI(handleXfadeAssignChange, 'live_set');
     }
+    // Track color observer — path and property managed from handleTrackChange,
+    // like the mute observers above.
+    if (!state.colorObj) {
+        state.colorObj = new LiveAPI(handleTrackColorChange, 'live_set');
+    }
     // Pan obj (follows focus track)
     if (!state.panObj) {
         state.panObj = new LiveAPI(handlePanVal, ctx.focus.trackPath() + ' mixer_device panning');
@@ -606,9 +623,18 @@ function init() {
 var routes = [
     { prefix: '/mixer/volDefault', parse: 'val', fn: handleVolDefault },
     { prefix: '/mixer/panDefault', parse: 'bare', fn: handlePanDefault },
-    { prefix: '/mixer/crossfaderDefault', parse: 'bare', fn: handleCrossfaderDefault },
+    {
+        prefix: '/mixer/crossfaderDefault',
+        parse: 'bare',
+        fn: handleCrossfaderDefault,
+    },
     { prefix: '/mixer/sendDefault', parse: 'slot', fn: handleSendDefault },
-    { prefix: '/mixer/send', parse: 'slotVal', fn: updateSendVal, coalesce: true },
+    {
+        prefix: '/mixer/send',
+        parse: 'slotVal',
+        fn: updateSendVal,
+        coalesce: true,
+    },
     { prefix: '/mixer/toggleXFadeA', parse: 'bare', fn: toggleXFadeA },
     { prefix: '/mixer/toggleXFadeB', parse: 'bare', fn: toggleXFadeB },
     { prefix: '/mixer/disableInput', parse: 'bare', fn: disableInput },
@@ -618,7 +644,12 @@ var routes = [
     { prefix: '/mixer/toggleMute', parse: 'bare', fn: toggleMute },
     { prefix: '/mixer/pan', parse: 'val', fn: handlePan, coalesce: true },
     { prefix: '/mixer/vol', parse: 'val', fn: handleVol, coalesce: true },
-    { prefix: '/mixer/crossfader', parse: 'val', fn: handleCrossfader, coalesce: true },
+    {
+        prefix: '/mixer/crossfader',
+        parse: 'val',
+        fn: handleCrossfader,
+        coalesce: true,
+    },
 ];
 exports.routes = routes;
 log('reloaded k4-sidebarMixer');

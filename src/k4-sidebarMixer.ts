@@ -56,6 +56,7 @@ const state = {
   muteObj: null as LiveAPI,
   mutedViaSoloObj: null as LiveAPI,
   xfadeAssignObj: null as LiveAPI,
+  colorObj: null as LiveAPI,
   crossfaderObj: null as LiveAPI,
   watchers: [] as LiveAPI[],
   onMixerPage: false as boolean,
@@ -293,6 +294,14 @@ function emitXfadeAssign() {
   const [aOn, bOn] = xfadeAB(state.mixerObj)
   osc('/mixer/xFadeA', aOn)
   osc('/mixer/xFadeB', bOn)
+}
+
+// Track color observer, re-pointed from handleTrackChange. Fires on re-arm with
+// the current color (the send a track change needs) and on every recolor, from
+// the nav panel or in Live.
+function handleTrackColorChange(args: IArguments) {
+  if (args[0] !== 'color') return
+  osc('/mixer/trackColor', parseInt(args[1] as any))
 }
 
 function handleXfadeAssignChange(args: IArguments) {
@@ -533,8 +542,11 @@ function handleTrackChange(id: number) {
     osc('/mixer/xFadeB', 0)
   }
 
-  // track color
-  osc('/mixer/trackColor', parseInt(state.trackLookupObj.get('color')))
+  // track color — observed rather than sent once, so a recolor updates the
+  // strip. Re-arming fires handleTrackColorChange with the current color.
+  state.colorObj.property = ''
+  state.colorObj.path = path
+  state.colorObj.property = 'color'
 
   // vol/pan str
   const volVal = parseFloat(state.volObj.get('value')) || 0
@@ -617,10 +629,7 @@ function init() {
 
   // Mixer obj (follows Knobbler's focus track — Live's selection when locked)
   if (!state.mixerObj) {
-    state.mixerObj = new LiveAPI(
-      noFn,
-      ctx.focus.trackPath() + ' mixer_device'
-    )
+    state.mixerObj = new LiveAPI(noFn, ctx.focus.trackPath() + ' mixer_device')
     state.mixerObj.mode = 1
   }
 
@@ -651,6 +660,12 @@ function init() {
   // detach-on-master pattern as the mute observers.
   if (!state.xfadeAssignObj) {
     state.xfadeAssignObj = new LiveAPI(handleXfadeAssignChange, 'live_set')
+  }
+
+  // Track color observer — path and property managed from handleTrackChange,
+  // like the mute observers above.
+  if (!state.colorObj) {
+    state.colorObj = new LiveAPI(handleTrackColorChange, 'live_set')
   }
 
   // Pan obj (follows focus track)
@@ -707,9 +722,18 @@ function init() {
 const routes: Route[] = [
   { prefix: '/mixer/volDefault', parse: 'val', fn: handleVolDefault },
   { prefix: '/mixer/panDefault', parse: 'bare', fn: handlePanDefault },
-  { prefix: '/mixer/crossfaderDefault', parse: 'bare', fn: handleCrossfaderDefault },
+  {
+    prefix: '/mixer/crossfaderDefault',
+    parse: 'bare',
+    fn: handleCrossfaderDefault,
+  },
   { prefix: '/mixer/sendDefault', parse: 'slot', fn: handleSendDefault },
-  { prefix: '/mixer/send', parse: 'slotVal', fn: updateSendVal, coalesce: true },
+  {
+    prefix: '/mixer/send',
+    parse: 'slotVal',
+    fn: updateSendVal,
+    coalesce: true,
+  },
   { prefix: '/mixer/toggleXFadeA', parse: 'bare', fn: toggleXFadeA },
   { prefix: '/mixer/toggleXFadeB', parse: 'bare', fn: toggleXFadeB },
   { prefix: '/mixer/disableInput', parse: 'bare', fn: disableInput },
@@ -719,7 +743,12 @@ const routes: Route[] = [
   { prefix: '/mixer/toggleMute', parse: 'bare', fn: toggleMute },
   { prefix: '/mixer/pan', parse: 'val', fn: handlePan, coalesce: true },
   { prefix: '/mixer/vol', parse: 'val', fn: handleVol, coalesce: true },
-  { prefix: '/mixer/crossfader', parse: 'val', fn: handleCrossfader, coalesce: true },
+  {
+    prefix: '/mixer/crossfader',
+    parse: 'val',
+    fn: handleCrossfader,
+    coalesce: true,
+  },
 ]
 
 log('reloaded k4-sidebarMixer')
