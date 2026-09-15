@@ -29,7 +29,10 @@ var log = (0, utils_1.logFactory)(k4_config_1.default);
 // 'scSwap' = the /swapshortcut{N} [m] route (exchange two device-shortcut
 // slots). Must be advertised: without it the app's address would fall through
 // to the shorter '/swap' prefix and reach the knobbler-slot swap with no slot.
-var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap';
+// 'navEd' = the nav panel edit routes: /nav/renameTrack, /nav/colorTrack
+// (k4-visibleTracks) and /nav/renameDevice, /nav/colorChain, /nav/moveDevice
+// (k4-tracksDevices).
+var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd';
 var deviceVersion = '';
 var synRefreshTask = null;
 var ctx = null;

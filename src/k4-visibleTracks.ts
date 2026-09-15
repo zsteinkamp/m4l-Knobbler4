@@ -4,6 +4,7 @@ import {
   dequote,
   logFactory,
   osc,
+  parseIdValue,
   setOscSink,
   setVisibleTracks,
   truncate,
@@ -198,6 +199,42 @@ function doRefresh() {
   sendVisibleTracks()
 }
 
+// ---------------------------------------------------------------------------
+// Nav panel edits
+// ---------------------------------------------------------------------------
+// The selected-track observers above only follow the SELECTED track, and the
+// nav panel can rename or recolor any row, so these update the cached entry
+// themselves and resend through the same debounce.
+
+function pointAtTrack(id: number): boolean {
+  ensureApis()
+  scratchApi.id = id
+  return +scratchApi.id !== 0 && scratchApi.type === 'Track'
+}
+
+// /nav/renameTrack '[trackId, name]'
+function renameTrack(jsonStr: string) {
+  const edit = parseIdValue(jsonStr)
+  if (!edit || !pointAtTrack(edit.id)) return
+  scratchApi.set('name', edit.value.toString())
+  const t = findTrack(edit.id)
+  if (!t) return
+  t.name = truncate(dequote(scratchApi.get('name').toString()), MAX_NAME_LEN)
+  scheduleTrackUpdate()
+}
+
+// /nav/colorTrack '[trackId, "RRGGBB"]'. Live snaps to the nearest color in its
+// chooser, so the cache takes the color read back, not the one requested.
+function colorTrack(jsonStr: string) {
+  const edit = parseIdValue(jsonStr)
+  if (!edit || !pointAtTrack(edit.id)) return
+  scratchApi.set('color', parseInt(edit.value.toString(), 16))
+  const t = findTrack(edit.id)
+  if (!t) return
+  t.color = colorToString(scratchApi.get('color').toString())
+  scheduleTrackUpdate()
+}
+
 function init(c: AppContext) {
   setOscSink(c.osc)
   ctx = c
@@ -212,12 +249,18 @@ function init(c: AppContext) {
     returnTracksWatcher.property = 'return_tracks'
   }
   if (!selTrackNameApi) {
-    selTrackNameApi = new LiveAPI(onSelTrackNameChange, 'live_set view selected_track')
+    selTrackNameApi = new LiveAPI(
+      onSelTrackNameChange,
+      'live_set view selected_track'
+    )
     selTrackNameApi.mode = 1
     selTrackNameApi.property = 'name'
   }
   if (!selTrackColorApi) {
-    selTrackColorApi = new LiveAPI(onSelTrackColorChange, 'live_set view selected_track')
+    selTrackColorApi = new LiveAPI(
+      onSelTrackColorChange,
+      'live_set view selected_track'
+    )
     selTrackColorApi.mode = 1
     selTrackColorApi.property = 'color'
   }
@@ -228,6 +271,8 @@ function init(c: AppContext) {
 
 const routes: Route[] = [
   { prefix: '/requestVisibleTracks', parse: 'bare', fn: requestVisibleTracks },
+  { prefix: '/nav/renameTrack', parse: 'val', fn: renameTrack },
+  { prefix: '/nav/colorTrack', parse: 'val', fn: colorTrack },
 ]
 
 log('reloaded k4-visibleTracks')

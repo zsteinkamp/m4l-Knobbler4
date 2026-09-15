@@ -222,11 +222,11 @@ Live object ID number for the currently selected device (−1 if none).
 
 #### /nav/devices
 
-JSON-stringified array of device objects. See the source file `src/consts.ts` to see the field ID definitions. e.g.
+JSON-stringified array of device objects. See the source file `src/consts.ts` to see the field ID definitions. Rows for the selected device and its siblings carry an 8th field, Live's `Device.type` (1 instrument, 2 audio effect, 4 MIDI effect, 0 unknown), which the app uses to keep a dragged device among its own kind. e.g.
 
 ```
 [
-  [5,8,"Knobbler4-v26","FFF034",0]
+  [5,8,"Knobbler4-v26","FFF034",0,0,7,2]
 ]
 ```
 
@@ -247,6 +247,26 @@ Navigate to the given track by ID in the Live UI.
 #### /hideChains {deviceID}
 
 If collapsing a rack, this message is sent to Live so that it can hide the chain devices display in that rack. Otherwise every rack will eventually be fully expanded and that gets overwhelming / messy.
+
+#### /nav/colorChain {JSON [chainID, "RRGGBB"]}
+
+Sets a chain's color; Live snaps it to the nearest color in its chooser. Rebuilds `/nav/devices`. Requires capability `navEd`.
+
+#### /nav/colorTrack {JSON [trackID, "RRGGBB"]}
+
+Sets a track's color (nearest chooser color) and resends `/visibleTracks` with the color Live actually applied. Requires capability `navEd`.
+
+#### /nav/moveDevice {JSON [deviceID, index]}
+
+Moves a device so it ends up at `index` within its own chain (the final position, as a drag list reports it) via `Song.move_device`. Live counts `move_device`'s position in the chain as it is BEFORE the device is removed, so moving down one slot means asking for two; the route translates, so clients always send the final index. When that position isn't allowed (e.g. a MIDI effect after an instrument), Live uses the nearest legal one. Rebuilds `/nav/devices`. Requires capability `navEd`.
+
+#### /nav/renameDevice {JSON [id, name]}
+
+Renames a device or a chain. Rebuilds `/nav/devices`. Requires capability `navEd`.
+
+#### /nav/renameTrack {JSON [trackID, name]}
+
+Renames a track and resends `/visibleTracks`. Requires capability `navEd`.
 
 #### /toggleGroup {deviceID}
 
@@ -980,4 +1000,4 @@ Chunked data is never batched (see `/batch`). Whether a payload is chunked depen
 
 ## Not Yet In The Protocol
 
-The source contains a `src/k4-browser.ts` module that emits `/browser/view`, `/browser/items` (chunked), and `/browser/error`, intended for browsing/loading Live's device browser. **It is not currently wired into the entry route registry (`src/knobbler.ts`) and has no inbound routes**, so it is not part of the active protocol. Document it here once it is integrated.
+The source contains a `src/k4-browser.ts` module that emits `/browser/view`, `/browser/items` (chunked), and `/browser/error`, intended for browsing/loading Live's device browser. **It is not wired into the entry route registry (`src/knobbler.ts`) and can never work: Live's Browser is not exposed to Max for Live.** Verified on Live 12.4.5 (Sept 2026) by reading Live's own `info` from inside the device: `live_app` lists only the children `control_surfaces` and `view`, and `live_app browser` resolves to "No object". The Browser (`load_item`, `children`, …) exists only in Live's Python API, i.e. inside a control-surface Remote Script. A `ControlSurface` object as seen from M4L exposes only MIDI/control-element functions, so a device cannot call into a script either — a bridge would need its own socket. No LOM object loads a preset or device file (the only file-path function is `Track.create_audio_clip`), so `[live.drop]` paths can't be pasted into a chain. What M4L CAN do: `Track`/`Chain.insert_device(name, index)` for native devices by display name (Live 12.3+), `RackDevice.insert_chain` (12.3+), and `Song.move_device(device, target, position)`.

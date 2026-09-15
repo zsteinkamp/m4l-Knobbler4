@@ -169,6 +169,42 @@ function doRefresh() {
     trackList = buildTrackList();
     sendVisibleTracks();
 }
+// ---------------------------------------------------------------------------
+// Nav panel edits
+// ---------------------------------------------------------------------------
+// The selected-track observers above only follow the SELECTED track, and the
+// nav panel can rename or recolor any row, so these update the cached entry
+// themselves and resend through the same debounce.
+function pointAtTrack(id) {
+    ensureApis();
+    scratchApi.id = id;
+    return +scratchApi.id !== 0 && scratchApi.type === 'Track';
+}
+// /nav/renameTrack '[trackId, name]'
+function renameTrack(jsonStr) {
+    var edit = (0, utils_1.parseIdValue)(jsonStr);
+    if (!edit || !pointAtTrack(edit.id))
+        return;
+    scratchApi.set('name', edit.value.toString());
+    var t = findTrack(edit.id);
+    if (!t)
+        return;
+    t.name = (0, utils_1.truncate)((0, utils_1.dequote)(scratchApi.get('name').toString()), consts_1.MAX_NAME_LEN);
+    scheduleTrackUpdate();
+}
+// /nav/colorTrack '[trackId, "RRGGBB"]'. Live snaps to the nearest color in its
+// chooser, so the cache takes the color read back, not the one requested.
+function colorTrack(jsonStr) {
+    var edit = (0, utils_1.parseIdValue)(jsonStr);
+    if (!edit || !pointAtTrack(edit.id))
+        return;
+    scratchApi.set('color', parseInt(edit.value.toString(), 16));
+    var t = findTrack(edit.id);
+    if (!t)
+        return;
+    t.color = (0, utils_1.colorToString)(scratchApi.get('color').toString());
+    scheduleTrackUpdate();
+}
 function init(c) {
     (0, utils_1.setOscSink)(c.osc);
     ctx = c;
@@ -197,6 +233,8 @@ function init(c) {
 exports.init = init;
 var routes = [
     { prefix: '/requestVisibleTracks', parse: 'bare', fn: requestVisibleTracks },
+    { prefix: '/nav/renameTrack', parse: 'val', fn: renameTrack },
+    { prefix: '/nav/colorTrack', parse: 'val', fn: colorTrack },
 ];
 exports.routes = routes;
 log('reloaded k4-visibleTracks');

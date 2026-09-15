@@ -191,7 +191,9 @@ function sendLoopProbe() {
 }
 function loopDetected() {
   oscBatch.setOutputBlocked(true)
-  log('feedback loop: output host:port == input — output blocked until reconnect')
+  log(
+    'feedback loop: output host:port == input — output blocked until reconnect'
+  )
 }
 
 // App-side diagnostic channel: the app sends /debug/log <string> and it lands
@@ -270,6 +272,7 @@ const ROUTES: Route[] = [].concat(
   sidebarMixer.routes as any,
   clipView.routes as any,
   visibleTracks.routes as any,
+  tracksDevices.routes as any,
   shortcuts.routes as any,
   system.routes as any,
   dbg.routes as any,

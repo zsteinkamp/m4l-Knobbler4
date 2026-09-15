@@ -80,8 +80,17 @@ type Route = {
   coalesce?: boolean
 }
 
-//                   type,   id,     name    color, indent, use indent, parent
-type MaxObjRecord = [number, number, string, string, number, number, number]
+//                   type,   id,     name    color, indent, use indent, parent, device type (siblings only)
+type MaxObjRecord = [
+  number,
+  number,
+  string,
+  string,
+  number,
+  number,
+  number,
+  number?,
+]
 
 type IdObserverArg = [
   'id' | 'devices' | 'tracks' | 'return_tracks' | 'value',

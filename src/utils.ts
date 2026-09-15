@@ -38,6 +38,20 @@ export function dequote(str: string) {
   return str.toString().replace(/^"|"$/g, '')
 }
 
+// Parse the '[id, value]' JSON-string argument the app sends for edits addressed
+// by LOM id (nav panel rename/color/move). Null on anything malformed, so a
+// route can simply bail.
+export function parseIdValue(jsonStr: any): { id: number; value: any } | null {
+  try {
+    const parsed = JSON.parse(jsonStr.toString())
+    if (!Array.isArray(parsed) || parsed.length < 2) return null
+    const id = parseInt(parsed[0].toString())
+    return isNaN(id) || id === 0 ? null : { id: id, value: parsed[1] }
+  } catch (e) {
+    return null
+  }
+}
+
 export function isValidPath(path: string) {
   return typeof path === 'string' && path.match(/^live_set /)
 }
@@ -168,7 +182,6 @@ export function getVisibleTracksList(): TrackInfo[] {
   _visibleTracksCacheVersion = version
   return _visibleTracksCache
 }
-
 
 export function meterVal(raw: any): number {
   return Math.round((parseFloat(raw) || 0) * 100) / 100

@@ -3,6 +3,7 @@ import {
   colorToString,
   isDeviceSupported,
   logFactory,
+  parseIdValue,
   setOscSink,
   osc,
   saveSetting,
@@ -101,6 +102,8 @@ function updateDeviceNav() {
   )
   // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
   const parentChildIds = devicesOf(parentObj)
+  // Device rows are drawn in this parent's color; rebuild when it changes.
+  watchParentColor(+parentObj.id)
 
   // first, self and siblings (with chain children under self)
   for (const childDeviceId of parentChildIds) {
@@ -118,6 +121,9 @@ function updateDeviceNav() {
       /* INDENT */ 0, // temporary indent
       /* USE INDENT */ 0, // temporary indent
       /* PARENT */ parentObj.id,
+      // Live's Device.type: 1 instrument, 2 audio effect, 4 MIDI effect (0 when
+      // unknown). The app keeps a dragged device among its own kind.
+      /* DEVICE TYPE */ objIsSupported ? parseInt(utilObj.get('type')) : 0,
     ])
     if (childDeviceId === state.currDeviceId) {
       // add child chains below the current item
@@ -269,6 +275,122 @@ function rebindNavHandles() {
   repoint(state.currDeviceWatcher, ctx.focus.devicePath())
 }
 
+// ---------------------------------------------------------------------------
+// Nav panel edits
+// ---------------------------------------------------------------------------
+// None of these changes the selected device's id, the only thing the nav
+// watchers observe, so each rebuilds the nav tree itself once Live settles.
+
+let navRefreshTask: MaxTask = null
+
+function scheduleNavRefresh() {
+  if (!navRefreshTask) {
+    navRefreshTask = new Task(function () {
+      updateDeviceNav()
+    }) as MaxTask
+  }
+  navRefreshTask.cancel()
+  navRefreshTask.schedule(40)
+}
+
+// Device rows are drawn in their parent's color (the track, or the chain they
+// sit in), and nothing else rebuilds the tree when that color changes, whether
+// from /nav/colorTrack or in Live. One pooled observer follows the current
+// parent: re-pointed by id on each rebuild, never recreated (observer churn
+// leaks; see CLAUDE.md). Re-arming fires the callback with the current value,
+// which is not a change, so that callback is ignored.
+let parentColorApi: LiveAPI = null
+let parentColorId = 0
+let parentColorRearming = false
+
+function onParentColor(args: any[]) {
+  if (parentColorRearming || args[0] !== 'color') return
+  scheduleNavRefresh()
+}
+
+function watchParentColor(id: number) {
+  if (!id || id === parentColorId) return
+  parentColorId = id
+  parentColorRearming = true
+  if (!parentColorApi) {
+    parentColorApi = new LiveAPI(onParentColor, 'live_set')
+  }
+  parentColorApi.property = ''
+  parentColorApi.id = id
+  parentColorApi.property = 'color'
+  parentColorRearming = false
+}
+
+const CHAIN_TYPES: Record<string, 1> = { Chain: 1, DrumChain: 1 }
+
+// Point state.api at a LOM id; false if the object no longer exists.
+function pointAt(id: number): boolean {
+  state.api.id = id
+  return +state.api.id !== 0
+}
+
+// /nav/renameDevice '[id, name]' — a device or a chain; both have a settable name.
+function renameDevice(jsonStr: string) {
+  const edit = parseIdValue(jsonStr)
+  if (!edit || !pointAt(edit.id)) return
+  const type = state.api.type as string
+  if (
+    !CHAIN_TYPES[type] &&
+    (HAS_DEVICES[type] || !isDeviceSupported(state.api))
+  ) {
+    return
+  }
+  state.api.set('name', edit.value.toString())
+  scheduleNavRefresh()
+}
+
+// /nav/colorChain '[chainId, "RRGGBB"]' — Live snaps to its nearest chooser color.
+function colorChain(jsonStr: string) {
+  const edit = parseIdValue(jsonStr)
+  if (!edit || !pointAt(edit.id) || !CHAIN_TYPES[state.api.type as string]) {
+    return
+  }
+  state.api.set('color', parseInt(edit.value.toString(), 16))
+  scheduleNavRefresh()
+}
+
+// /nav/moveDevice '[deviceId, index]' — reorder within the device's own chain
+// (the nav panel only offers siblings). `index` is where the device should END
+// UP. Song.move_device counts its position in the chain as it is BEFORE the
+// device is removed, so a move down has to ask for one slot further: in
+// 0 1 2 3 4, putting 2 after 4 (final index 4) takes position 5 — asking for 4
+// lands it before 4. Moves up are the same either way. Live also takes the
+// nearest legal position when the requested one isn't allowed, e.g. a MIDI
+// effect after an instrument; the refresh shows where it really landed.
+function moveDevice(jsonStr: string) {
+  const edit = parseIdValue(jsonStr)
+  if (!edit || !pointAt(edit.id) || !isDeviceSupported(state.api)) return
+  const parentId = cleanArr(state.api.get('canonical_parent'))[0]
+  const index = parseInt(edit.value.toString())
+  if (!parentId || isNaN(index) || index < 0) return
+
+  state.api.id = parentId
+  const siblingIds = devicesOf(state.api)
+  let current = -1
+  for (let i = 0; i < siblingIds.length; i++) {
+    if (parseInt(siblingIds[i] as any) === edit.id) {
+      current = i
+      break
+    }
+  }
+  const position = current > -1 && index > current ? index + 1 : index
+
+  state.api.path = 'live_set'
+  ;(state.api as any).call('move_device', [
+    'id',
+    edit.id,
+    'id',
+    parentId,
+    position,
+  ])
+  scheduleNavRefresh()
+}
+
 function init(c: AppContext) {
   setOscSink(c.osc)
   ctx = c
@@ -297,5 +419,10 @@ function init(c: AppContext) {
 
 log('reloaded k4-tracksDevices')
 
-// Observer-driven (no inbound routes); the entry just needs init().
-export { init }
+const routes: Route[] = [
+  { prefix: '/nav/renameDevice', parse: 'val', fn: renameDevice },
+  { prefix: '/nav/colorChain', parse: 'val', fn: colorChain },
+  { prefix: '/nav/moveDevice', parse: 'val', fn: moveDevice },
+]
+
+export { routes, init }

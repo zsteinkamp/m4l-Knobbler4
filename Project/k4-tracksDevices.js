@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.init = void 0;
+exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
@@ -73,6 +73,8 @@ function updateDeviceNav() {
         : 'id ' + state.currTrackId);
     // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
     var parentChildIds = devicesOf(parentObj);
+    // Device rows are drawn in this parent's color; rebuild when it changes.
+    watchParentColor(+parentObj.id);
     // first, self and siblings (with chain children under self)
     for (var _i = 0, parentChildIds_1 = parentChildIds; _i < parentChildIds_1.length; _i++) {
         var childDeviceId = parentChildIds_1[_i];
@@ -90,6 +92,9 @@ function updateDeviceNav() {
             /* INDENT */ 0,
             /* USE INDENT */ 0,
             /* PARENT */ parentObj.id,
+            // Live's Device.type: 1 instrument, 2 audio effect, 4 MIDI effect (0 when
+            // unknown). The app keeps a dragged device among its own kind.
+            /* DEVICE TYPE */ objIsSupported ? parseInt(utilObj.get('type')) : 0,
         ]);
         if (childDeviceId === state.currDeviceId) {
             // add child chains below the current item
@@ -233,6 +238,112 @@ function rebindNavHandles() {
     repoint(state.currTrackWatcher, ctx.focus.trackPath());
     repoint(state.currDeviceWatcher, ctx.focus.devicePath());
 }
+// ---------------------------------------------------------------------------
+// Nav panel edits
+// ---------------------------------------------------------------------------
+// None of these changes the selected device's id, the only thing the nav
+// watchers observe, so each rebuilds the nav tree itself once Live settles.
+var navRefreshTask = null;
+function scheduleNavRefresh() {
+    if (!navRefreshTask) {
+        navRefreshTask = new Task(function () {
+            updateDeviceNav();
+        });
+    }
+    navRefreshTask.cancel();
+    navRefreshTask.schedule(40);
+}
+// Device rows are drawn in their parent's color (the track, or the chain they
+// sit in), and nothing else rebuilds the tree when that color changes, whether
+// from /nav/colorTrack or in Live. One pooled observer follows the current
+// parent: re-pointed by id on each rebuild, never recreated (observer churn
+// leaks; see CLAUDE.md). Re-arming fires the callback with the current value,
+// which is not a change, so that callback is ignored.
+var parentColorApi = null;
+var parentColorId = 0;
+var parentColorRearming = false;
+function onParentColor(args) {
+    if (parentColorRearming || args[0] !== 'color')
+        return;
+    scheduleNavRefresh();
+}
+function watchParentColor(id) {
+    if (!id || id === parentColorId)
+        return;
+    parentColorId = id;
+    parentColorRearming = true;
+    if (!parentColorApi) {
+        parentColorApi = new LiveAPI(onParentColor, 'live_set');
+    }
+    parentColorApi.property = '';
+    parentColorApi.id = id;
+    parentColorApi.property = 'color';
+    parentColorRearming = false;
+}
+var CHAIN_TYPES = { Chain: 1, DrumChain: 1 };
+// Point state.api at a LOM id; false if the object no longer exists.
+function pointAt(id) {
+    state.api.id = id;
+    return +state.api.id !== 0;
+}
+// /nav/renameDevice '[id, name]' — a device or a chain; both have a settable name.
+function renameDevice(jsonStr) {
+    var edit = (0, utils_1.parseIdValue)(jsonStr);
+    if (!edit || !pointAt(edit.id))
+        return;
+    var type = state.api.type;
+    if (!CHAIN_TYPES[type] &&
+        (HAS_DEVICES[type] || !(0, utils_1.isDeviceSupported)(state.api))) {
+        return;
+    }
+    state.api.set('name', edit.value.toString());
+    scheduleNavRefresh();
+}
+// /nav/colorChain '[chainId, "RRGGBB"]' — Live snaps to its nearest chooser color.
+function colorChain(jsonStr) {
+    var edit = (0, utils_1.parseIdValue)(jsonStr);
+    if (!edit || !pointAt(edit.id) || !CHAIN_TYPES[state.api.type]) {
+        return;
+    }
+    state.api.set('color', parseInt(edit.value.toString(), 16));
+    scheduleNavRefresh();
+}
+// /nav/moveDevice '[deviceId, index]' — reorder within the device's own chain
+// (the nav panel only offers siblings). `index` is where the device should END
+// UP. Song.move_device counts its position in the chain as it is BEFORE the
+// device is removed, so a move down has to ask for one slot further: in
+// 0 1 2 3 4, putting 2 after 4 (final index 4) takes position 5 — asking for 4
+// lands it before 4. Moves up are the same either way. Live also takes the
+// nearest legal position when the requested one isn't allowed, e.g. a MIDI
+// effect after an instrument; the refresh shows where it really landed.
+function moveDevice(jsonStr) {
+    var edit = (0, utils_1.parseIdValue)(jsonStr);
+    if (!edit || !pointAt(edit.id) || !(0, utils_1.isDeviceSupported)(state.api))
+        return;
+    var parentId = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
+    var index = parseInt(edit.value.toString());
+    if (!parentId || isNaN(index) || index < 0)
+        return;
+    state.api.id = parentId;
+    var siblingIds = devicesOf(state.api);
+    var current = -1;
+    for (var i = 0; i < siblingIds.length; i++) {
+        if (parseInt(siblingIds[i]) === edit.id) {
+            current = i;
+            break;
+        }
+    }
+    var position = current > -1 && index > current ? index + 1 : index;
+    state.api.path = 'live_set';
+    state.api.call('move_device', [
+        'id',
+        edit.id,
+        'id',
+        parentId,
+        position,
+    ]);
+    scheduleNavRefresh();
+}
 function init(c) {
     (0, utils_1.setOscSink)(c.osc);
     ctx = c;
@@ -258,3 +369,9 @@ function init(c) {
 }
 exports.init = init;
 log('reloaded k4-tracksDevices');
+var routes = [
+    { prefix: '/nav/renameDevice', parse: 'val', fn: renameDevice },
+    { prefix: '/nav/colorChain', parse: 'val', fn: colorChain },
+    { prefix: '/nav/moveDevice', parse: 'val', fn: moveDevice },
+];
+exports.routes = routes;

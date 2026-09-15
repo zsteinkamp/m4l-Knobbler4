@@ -236,7 +236,7 @@ function initAll() {
     KnobblerCore.refresh();
 }
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, focus.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, shortcuts.routes, system.routes, dbg.routes, knobblerRoutes, entryRoutes);
+var ROUTES = [].concat(bluhand.routes, focus.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, tracksDevices.routes, shortcuts.routes, system.routes, dbg.routes, knobblerRoutes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);

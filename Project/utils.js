@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.columnarize = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.clientHasCap = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.columnarize = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.clientHasCap = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.parseIdValue = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
 var consts_1 = require("./consts");
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects
@@ -42,6 +42,22 @@ function dequote(str) {
     return str.toString().replace(/^"|"$/g, '');
 }
 exports.dequote = dequote;
+// Parse the '[id, value]' JSON-string argument the app sends for edits addressed
+// by LOM id (nav panel rename/color/move). Null on anything malformed, so a
+// route can simply bail.
+function parseIdValue(jsonStr) {
+    try {
+        var parsed = JSON.parse(jsonStr.toString());
+        if (!Array.isArray(parsed) || parsed.length < 2)
+            return null;
+        var id = parseInt(parsed[0].toString());
+        return isNaN(id) || id === 0 ? null : { id: id, value: parsed[1] };
+    }
+    catch (e) {
+        return null;
+    }
+}
+exports.parseIdValue = parseIdValue;
 function isValidPath(path) {
     return typeof path === 'string' && path.match(/^live_set /);
 }

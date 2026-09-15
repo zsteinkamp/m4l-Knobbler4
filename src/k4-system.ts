@@ -29,7 +29,10 @@ const log = logFactory(config)
 // 'scSwap' = the /swapshortcut{N} [m] route (exchange two device-shortcut
 // slots). Must be advertised: without it the app's address would fall through
 // to the shorter '/swap' prefix and reach the knobbler-slot swap with no slot.
-const REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap'
+// 'navEd' = the nav panel edit routes: /nav/renameTrack, /nav/colorTrack
+// (k4-visibleTracks) and /nav/renameDevice, /nav/colorChain, /nav/moveDevice
+// (k4-tracksDevices).
+const REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null
