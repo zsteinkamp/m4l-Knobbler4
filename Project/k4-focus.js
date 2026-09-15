@@ -156,7 +156,10 @@ function init(c) {
     // Decide appointed-vs-selected BEFORE bluhand.init binds its observers to
     // devicePath(), so they come up on the right pointer with no re-point.
     useAppointed = controlSurfaceConfigured() && appointedResolves();
-    initAppointedWatcher();
+    // init() re-runs on every refresh (each app connect sends /syn), so create the
+    // watcher once; a fresh one per refresh would stack up observers.
+    if (!appointedApi)
+        initAppointedWatcher();
     if (!locked) {
         restorePointer(c.settings.get(KEY_TRACK), c.settings.get(KEY_DEVICE));
     }
