@@ -10,6 +10,7 @@ import {
   truncate,
   TrackInfo,
 } from './utils'
+import { apiId, apiValid } from './liveApi'
 import config from './k4-config'
 import {
   noFn,
@@ -135,7 +136,7 @@ function findTrack(id: number): TrackInfo | null {
 // change a no-op; only a real rename re-sends.
 function onSelTrackNameChange(args: any[]) {
   if (args[0] !== 'name') return
-  const t = findTrack(+selTrackNameApi.id)
+  const t = findTrack(apiId(selTrackNameApi))
   if (!t) return
   const newName = truncate(dequote(args[1].toString()), MAX_NAME_LEN)
   if (t.name === newName) return
@@ -145,7 +146,7 @@ function onSelTrackNameChange(args: any[]) {
 
 function onSelTrackColorChange(args: any[]) {
   if (args[0] !== 'color') return
-  const t = findTrack(+selTrackColorApi.id)
+  const t = findTrack(apiId(selTrackColorApi))
   if (!t) return
   const newColor = colorToString(args[1].toString())
   if (t.color === newColor) return
@@ -193,12 +194,6 @@ function requestVisibleTracks() {
   sendVisibleTracks()
 }
 
-function doRefresh() {
-  ensureApis()
-  trackList = buildTrackList()
-  sendVisibleTracks()
-}
-
 // ---------------------------------------------------------------------------
 // Nav panel edits
 // ---------------------------------------------------------------------------
@@ -209,7 +204,7 @@ function doRefresh() {
 function pointAtTrack(id: number): boolean {
   ensureApis()
   scratchApi.id = id
-  return +scratchApi.id !== 0 && scratchApi.type === 'Track'
+  return apiValid(scratchApi) && scratchApi.type === 'Track'
 }
 
 // /nav/renameTrack '[trackId, name]'

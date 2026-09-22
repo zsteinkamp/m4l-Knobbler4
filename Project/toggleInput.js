@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toggleTrackInput = exports.enableTrackInput = exports.disableTrackInput = exports.getTrackInputStatus = void 0;
+exports.enableTrackInput = exports.disableTrackInput = exports.getTrackInputStatus = void 0;
 var utils_1 = require("./utils");
 var k4_config_1 = require("./k4-config");
 var origInputs = {};
 var log = (0, utils_1.logFactory)(k4_config_1.default);
 function getTrackInputStatus(currTrack) {
-    var airt = null;
     var currentInput = null;
     var noInput = null;
     var allInputs = null;
@@ -14,8 +13,8 @@ function getTrackInputStatus(currTrack) {
     //log(
     //  'GET INPUT STATUS ' + currTrack.type + ' ' + currTrack.get('can_be_armed')
     //)
-    if (currTrack.get('is_foldable') == '0' &&
-        currTrack.get('can_be_armed') == '1') {
+    if (!parseInt(currTrack.get('is_foldable').toString()) &&
+        parseInt(currTrack.get('can_be_armed').toString())) {
         var airt = JSON.parse(currTrack.get('available_input_routing_types').toString()).available_input_routing_types;
         currentInput = JSON.parse(currTrack.get('input_routing_type').toString()).input_routing_type;
         allInputs = airt[0];
@@ -73,8 +72,4 @@ function enableTrackInput(trackObj) {
     changeInternal(trackObj, Intent.Enable);
 }
 exports.enableTrackInput = enableTrackInput;
-function toggleTrackInput(trackObj) {
-    changeInternal(trackObj, Intent.Toggle);
-}
-exports.toggleTrackInput = toggleTrackInput;
 log('reloaded toggleInput');

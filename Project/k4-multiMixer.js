@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.prefetchStats = exports.page = exports.visibleTracks = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var sweep_1 = require("./sweep");
@@ -18,27 +19,6 @@ var scratchApi = null;
 function ensureApis() {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
-}
-// Bind a fresh observer to an object by its numeric id instead of by a path
-// string. `new LiveAPI(cb, 'live_set tracks N ...')` interns that path into Max's
-// global symbol table (~1 symbol per distinct path, measured); `.id = N` is
-// numeric and interns nothing. The '' constructor path is interned once
-// globally. Child ids come from id-list reads (.get('mixer_device') etc.), which
-// also don't intern — so a whole strip costs 0 path symbols. See k4-symbolTest.
-function obsById(id, cb, prop) {
-    var api = new LiveAPI(cb, '');
-    api.id = id;
-    if (prop)
-        api.property = prop;
-    return api;
-}
-// Re-point an existing observer to a new object id + property. Free — no path
-// interning, no teardown leak. The basis of the strip pool: reuse observer
-// objects across scroll instead of evict+recreate. See CLAUDE.md observer
-// lifecycle.
-function reArm(api, id, prop) {
-    api.id = id;
-    api.property = prop;
 }
 var DEFAULT_VISIBLE_COUNT = 18;
 var MAX_STRIP_IDX = 128;
@@ -122,7 +102,7 @@ var mixerViewTask = null;
 // Helpers
 // ---------------------------------------------------------------------------
 function isVisible(strip) {
-    return strip.stripIndex >= leftIndex && strip.stripIndex < leftIndex + visibleCount;
+    return (strip.stripIndex >= leftIndex && strip.stripIndex < leftIndex + visibleCount);
 }
 function stripPause(strip, key) {
     if (!strip.pause[key]) {
@@ -171,7 +151,7 @@ function sendReturnTrackColors() {
 function ensureMeterApis(strip) {
     if (strip.meterLeftApi)
         return;
-    strip.meterLeftApi = obsById(strip.trackId, function (args) {
+    strip.meterLeftApi = (0, liveApi_1.obsById)(strip.trackId, function (args) {
         if (strip.stripIndex < 0 || args[0] !== 'output_meter_left')
             return;
         var v = (0, utils_1.meterVal)(args[1]);
@@ -181,7 +161,7 @@ function ensureMeterApis(strip) {
             meterDirty = true;
         }
     }, 'output_meter_left');
-    strip.meterRightApi = obsById(strip.trackId, function (args) {
+    strip.meterRightApi = (0, liveApi_1.obsById)(strip.trackId, function (args) {
         if (strip.stripIndex < 0 || args[0] !== 'output_meter_right')
             return;
         var v = (0, utils_1.meterVal)(args[1]);
@@ -191,7 +171,7 @@ function ensureMeterApis(strip) {
             meterDirty = true;
         }
     }, 'output_meter_right');
-    strip.meterLevelApi = obsById(strip.trackId, function (args) {
+    strip.meterLevelApi = (0, liveApi_1.obsById)(strip.trackId, function (args) {
         if (strip.stripIndex < 0 || args[0] !== 'output_meter_level')
             return;
         var v = (0, utils_1.meterVal)(args[1]);
@@ -214,15 +194,15 @@ function setMetersActive(strip, active) {
 }
 function teardownMeterObservers(strip) {
     if (strip.meterLeftApi) {
-        (0, utils_1.detach)(strip.meterLeftApi);
+        (0, liveApi_1.detach)(strip.meterLeftApi);
         strip.meterLeftApi = null;
     }
     if (strip.meterRightApi) {
-        (0, utils_1.detach)(strip.meterRightApi);
+        (0, liveApi_1.detach)(strip.meterRightApi);
         strip.meterRightApi = null;
     }
     if (strip.meterLevelApi) {
-        (0, utils_1.detach)(strip.meterLevelApi);
+        (0, liveApi_1.detach)(strip.meterLevelApi);
         strip.meterLevelApi = null;
     }
     // Zero out this strip's slots in the buffer
@@ -332,7 +312,7 @@ function createStripObservers(trackId, stripIdx) {
     var panId = (0, utils_1.cleanArr)(scratchApi.get('panning'))[0];
     var sendIds = (0, utils_1.cleanArr)(scratchApi.get('sends'));
     // Color API — separate observer for track color changes
-    strip.colorApi = obsById(trackId, function (args) {
+    strip.colorApi = (0, liveApi_1.obsById)(trackId, function (args) {
         if (args[0] === 'color') {
             var newColor = (0, utils_1.colorToString)(args[1].toString());
             for (var j = 0; j < trackList.length; j++) {
@@ -344,22 +324,24 @@ function createStripObservers(trackId, stripIdx) {
         }
     }, 'color');
     // Track API — used for querying properties (no observer)
-    strip.trackApi = obsById(trackId, consts_1.noFn);
+    strip.trackApi = (0, liveApi_1.obsById)(trackId, consts_1.noFn);
     // Mute, solo, arm — separate observers (master track lacks these)
     if (!strip.isMain) {
-        strip.muteApi = obsById(trackId, function (args) {
+        strip.muteApi = (0, liveApi_1.obsById)(trackId, function (args) {
             if (args[0] === 'mute' && strip.initialized && isVisible(strip)) {
                 emitEffectiveMute(strip);
             }
         }, 'mute');
         // muted_via_solo also lights the mute indicator so the user sees that
         // soloing another track has effectively muted this one.
-        strip.mutedViaSoloApi = obsById(trackId, function (args) {
-            if (args[0] === 'muted_via_solo' && strip.initialized && isVisible(strip)) {
+        strip.mutedViaSoloApi = (0, liveApi_1.obsById)(trackId, function (args) {
+            if (args[0] === 'muted_via_solo' &&
+                strip.initialized &&
+                isVisible(strip)) {
                 emitEffectiveMute(strip);
             }
         }, 'muted_via_solo');
-        strip.soloApi = obsById(trackId, function (args) {
+        strip.soloApi = (0, liveApi_1.obsById)(trackId, function (args) {
             if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()));
                 sendSoloCount();
@@ -367,7 +349,7 @@ function createStripObservers(trackId, stripIdx) {
         }, 'solo');
     }
     if (strip.canBeArmed) {
-        strip.armApi = obsById(trackId, function (args) {
+        strip.armApi = (0, liveApi_1.obsById)(trackId, function (args) {
             if (args[0] === 'arm' && strip.initialized && isVisible(strip)) {
                 (0, utils_1.osc)(SA_ARM[strip.stripIndex], parseInt(args[1].toString()));
             }
@@ -381,15 +363,17 @@ function createStripObservers(trackId, stripIdx) {
     // instrument while visible (has_audio_output itself isn't observable).
     strip.hasOutput = readHasOutput(strip);
     if (!strip.isMain) {
-        strip.devicesApi = obsById(trackId, function (args) {
+        strip.devicesApi = (0, liveApi_1.obsById)(trackId, function (args) {
             if (args[0] === 'devices')
                 onDevicesChange(strip);
         }, 'devices');
     }
     // Meter observers are managed separately by applyWindow (visible tracks only)
     // Mixer device — observe crossfade_assign (master track lacks this)
-    strip.mixerApi = obsById(mixerId, function (args) {
-        if (args[0] === 'crossfade_assign' && strip.initialized && isVisible(strip)) {
+    strip.mixerApi = (0, liveApi_1.obsById)(mixerId, function (args) {
+        if (args[0] === 'crossfade_assign' &&
+            strip.initialized &&
+            isVisible(strip)) {
             var xVal = parseInt(args[1].toString());
             (0, utils_1.osc)(SA_XFADEA[strip.stripIndex], xVal === 0 ? 1 : 0);
             (0, utils_1.osc)(SA_XFADEB[strip.stripIndex], xVal === 2 ? 1 : 0);
@@ -399,7 +383,7 @@ function createStripObservers(trackId, stripIdx) {
         strip.mixerApi.property = 'crossfade_assign';
     }
     // Volume observer
-    strip.volApi = obsById(volId, function (args) {
+    strip.volApi = (0, liveApi_1.obsById)(volId, function (args) {
         if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
             return;
         if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
@@ -410,13 +394,15 @@ function createStripObservers(trackId, stripIdx) {
         }
     }, 'value');
     // Volume automation state observer
-    strip.volAutoApi = obsById(volId, function (args) {
-        if (args[0] === 'automation_state' && strip.initialized && isVisible(strip)) {
+    strip.volAutoApi = (0, liveApi_1.obsById)(volId, function (args) {
+        if (args[0] === 'automation_state' &&
+            strip.initialized &&
+            isVisible(strip)) {
             (0, utils_1.osc)(SA_VOLAUTO[strip.stripIndex], parseInt(args[1].toString()));
         }
     }, 'automation_state');
     // Pan observer
-    strip.panApi = obsById(panId, function (args) {
+    strip.panApi = (0, liveApi_1.obsById)(panId, function (args) {
         if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
             return;
         if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
@@ -430,7 +416,7 @@ function createStripObservers(trackId, stripIdx) {
     var numSends = Math.min(sendIds.length, consts_1.MAX_SENDS);
     var _loop_1 = function (i) {
         var sendIdx = i;
-        var sendApi = obsById(sendIds[i], function (args) {
+        var sendApi = (0, liveApi_1.obsById)(sendIds[i], function (args) {
             if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
                 return;
             if (!strip.pause['send'] || !strip.pause['send'].paused) {
@@ -453,27 +439,27 @@ function repointStrip(strip, trackId, stripIdx, mixerId, volId, panId, sendIds) 
     strip.initialized = false; // suppress emits while re-pointing fires callbacks
     strip.trackId = trackId;
     strip.stripIndex = stripIdx;
-    reArm(strip.colorApi, trackId, 'color');
+    (0, liveApi_1.reArm)(strip.colorApi, trackId, 'color');
     strip.trackApi.id = trackId;
     strip.hasOutput = readHasOutput(strip); // re-evaluate audio output for the new track
     if (strip.devicesApi)
-        reArm(strip.devicesApi, trackId, 'devices');
+        (0, liveApi_1.reArm)(strip.devicesApi, trackId, 'devices');
     if (strip.muteApi)
-        reArm(strip.muteApi, trackId, 'mute');
+        (0, liveApi_1.reArm)(strip.muteApi, trackId, 'mute');
     if (strip.mutedViaSoloApi)
-        reArm(strip.mutedViaSoloApi, trackId, 'muted_via_solo');
+        (0, liveApi_1.reArm)(strip.mutedViaSoloApi, trackId, 'muted_via_solo');
     if (strip.soloApi)
-        reArm(strip.soloApi, trackId, 'solo');
+        (0, liveApi_1.reArm)(strip.soloApi, trackId, 'solo');
     if (strip.armApi)
-        reArm(strip.armApi, trackId, 'arm');
+        (0, liveApi_1.reArm)(strip.armApi, trackId, 'arm');
     strip.mixerApi.id = mixerId;
     if (!strip.isMain)
         strip.mixerApi.property = 'crossfade_assign';
-    reArm(strip.volApi, volId, 'value');
-    reArm(strip.volAutoApi, volId, 'automation_state');
-    reArm(strip.panApi, panId, 'value');
+    (0, liveApi_1.reArm)(strip.volApi, volId, 'value');
+    (0, liveApi_1.reArm)(strip.volAutoApi, volId, 'automation_state');
+    (0, liveApi_1.reArm)(strip.panApi, panId, 'value');
     for (var i = 0; i < strip.sendApis.length; i++) {
-        reArm(strip.sendApis[i], sendIds[i], 'value');
+        (0, liveApi_1.reArm)(strip.sendApis[i], sendIds[i], 'value');
     }
     // Meters travel with the strip. UNSUBSCRIBE BEFORE re-pointing: applyWindow
     // reuses a strip leaving the warm window while its meters are still active
@@ -554,21 +540,21 @@ function emitEffectiveMute(strip) {
     (0, utils_1.osc)(SA_MUTE[strip.stripIndex], (0, mixerUtils_1.effectiveMute)(strip.trackApi));
 }
 function teardownStripObservers(strip) {
-    (0, utils_1.detach)(strip.colorApi);
-    (0, utils_1.detach)(strip.muteApi);
-    (0, utils_1.detach)(strip.mutedViaSoloApi);
-    (0, utils_1.detach)(strip.soloApi);
-    (0, utils_1.detach)(strip.armApi);
-    (0, utils_1.detach)(strip.devicesApi);
+    (0, liveApi_1.detach)(strip.colorApi);
+    (0, liveApi_1.detach)(strip.muteApi);
+    (0, liveApi_1.detach)(strip.mutedViaSoloApi);
+    (0, liveApi_1.detach)(strip.soloApi);
+    (0, liveApi_1.detach)(strip.armApi);
+    (0, liveApi_1.detach)(strip.devicesApi);
     teardownMeterObservers(strip);
-    (0, utils_1.detach)(strip.mixerApi);
-    (0, utils_1.detach)(strip.volApi);
-    (0, utils_1.detach)(strip.volAutoApi);
-    (0, utils_1.detach)(strip.panApi);
+    (0, liveApi_1.detach)(strip.mixerApi);
+    (0, liveApi_1.detach)(strip.volApi);
+    (0, liveApi_1.detach)(strip.volAutoApi);
+    (0, liveApi_1.detach)(strip.panApi);
     for (var i = 0; i < strip.sendApis.length; i++) {
-        (0, utils_1.detach)(strip.sendApis[i]);
+        (0, liveApi_1.detach)(strip.sendApis[i]);
     }
-    (0, utils_1.detach)(strip.trackApi);
+    (0, liveApi_1.detach)(strip.trackApi);
     // Cancel all pause tasks
     for (var key in strip.pause) {
         if (strip.pause[key].task) {
@@ -1094,78 +1080,6 @@ function handleSendDefault(stripIdx, sendNum) {
     if (!isObserved(strip))
         (0, utils_1.osc)(SA_SEND[strip.stripIndex][idx], def);
 }
-function send1(stripIdx, val) {
-    handleSend(stripIdx, 1, val);
-}
-function send2(stripIdx, val) {
-    handleSend(stripIdx, 2, val);
-}
-function send3(stripIdx, val) {
-    handleSend(stripIdx, 3, val);
-}
-function send4(stripIdx, val) {
-    handleSend(stripIdx, 4, val);
-}
-function send5(stripIdx, val) {
-    handleSend(stripIdx, 5, val);
-}
-function send6(stripIdx, val) {
-    handleSend(stripIdx, 6, val);
-}
-function send7(stripIdx, val) {
-    handleSend(stripIdx, 7, val);
-}
-function send8(stripIdx, val) {
-    handleSend(stripIdx, 8, val);
-}
-function send9(stripIdx, val) {
-    handleSend(stripIdx, 9, val);
-}
-function send10(stripIdx, val) {
-    handleSend(stripIdx, 10, val);
-}
-function send11(stripIdx, val) {
-    handleSend(stripIdx, 11, val);
-}
-function send12(stripIdx, val) {
-    handleSend(stripIdx, 12, val);
-}
-function sendDefault1(stripIdx) {
-    handleSendDefault(stripIdx, 1);
-}
-function sendDefault2(stripIdx) {
-    handleSendDefault(stripIdx, 2);
-}
-function sendDefault3(stripIdx) {
-    handleSendDefault(stripIdx, 3);
-}
-function sendDefault4(stripIdx) {
-    handleSendDefault(stripIdx, 4);
-}
-function sendDefault5(stripIdx) {
-    handleSendDefault(stripIdx, 5);
-}
-function sendDefault6(stripIdx) {
-    handleSendDefault(stripIdx, 6);
-}
-function sendDefault7(stripIdx) {
-    handleSendDefault(stripIdx, 7);
-}
-function sendDefault8(stripIdx) {
-    handleSendDefault(stripIdx, 8);
-}
-function sendDefault9(stripIdx) {
-    handleSendDefault(stripIdx, 9);
-}
-function sendDefault10(stripIdx) {
-    handleSendDefault(stripIdx, 10);
-}
-function sendDefault11(stripIdx) {
-    handleSendDefault(stripIdx, 11);
-}
-function sendDefault12(stripIdx) {
-    handleSendDefault(stripIdx, 12);
-}
 function toggleMute(stripIdx) {
     var strip = getStrip(stripIdx);
     if (!strip)
@@ -1243,78 +1157,40 @@ function mixerCmd(address, val) {
         return;
     dispatchMixerSub(parts[3], stripIdx, val);
 }
+// /mixer/{strip}/{subCmd}. The sendN / sendDefaultN families carry the send
+// number in the address, so they are parsed rather than enumerated (this used to
+// be 24 one-line wrappers feeding a 34-branch if-chain).
+var SEND_RE = /^send(Default)?(\d+)$/;
 function dispatchMixerSub(subCmd, stripIdx, val) {
-    if (subCmd === 'vol')
-        vol(stripIdx, val);
-    else if (subCmd === 'pan')
-        pan(stripIdx, val);
-    else if (subCmd === 'volDefault')
-        volDefault(stripIdx);
-    else if (subCmd === 'panDefault')
-        panDefault(stripIdx);
-    else if (subCmd === 'toggleMute')
-        toggleMute(stripIdx);
-    else if (subCmd === 'toggleSolo')
-        toggleSolo(stripIdx);
-    else if (subCmd === 'enableRecord')
-        enableRecord(stripIdx);
-    else if (subCmd === 'disableRecord')
-        disableRecord(stripIdx);
-    else if (subCmd === 'disableInput')
-        disableInput(stripIdx);
-    else if (subCmd === 'toggleXFadeA')
-        toggleXFadeA(stripIdx);
-    else if (subCmd === 'toggleXFadeB')
-        toggleXFadeB(stripIdx);
-    else if (subCmd === 'send1')
-        send1(stripIdx, val);
-    else if (subCmd === 'send2')
-        send2(stripIdx, val);
-    else if (subCmd === 'send3')
-        send3(stripIdx, val);
-    else if (subCmd === 'send4')
-        send4(stripIdx, val);
-    else if (subCmd === 'send5')
-        send5(stripIdx, val);
-    else if (subCmd === 'send6')
-        send6(stripIdx, val);
-    else if (subCmd === 'send7')
-        send7(stripIdx, val);
-    else if (subCmd === 'send8')
-        send8(stripIdx, val);
-    else if (subCmd === 'send9')
-        send9(stripIdx, val);
-    else if (subCmd === 'send10')
-        send10(stripIdx, val);
-    else if (subCmd === 'send11')
-        send11(stripIdx, val);
-    else if (subCmd === 'send12')
-        send12(stripIdx, val);
-    else if (subCmd === 'sendDefault1')
-        sendDefault1(stripIdx);
-    else if (subCmd === 'sendDefault2')
-        sendDefault2(stripIdx);
-    else if (subCmd === 'sendDefault3')
-        sendDefault3(stripIdx);
-    else if (subCmd === 'sendDefault4')
-        sendDefault4(stripIdx);
-    else if (subCmd === 'sendDefault5')
-        sendDefault5(stripIdx);
-    else if (subCmd === 'sendDefault6')
-        sendDefault6(stripIdx);
-    else if (subCmd === 'sendDefault7')
-        sendDefault7(stripIdx);
-    else if (subCmd === 'sendDefault8')
-        sendDefault8(stripIdx);
-    else if (subCmd === 'sendDefault9')
-        sendDefault9(stripIdx);
-    else if (subCmd === 'sendDefault10')
-        sendDefault10(stripIdx);
-    else if (subCmd === 'sendDefault11')
-        sendDefault11(stripIdx);
-    else if (subCmd === 'sendDefault12')
-        sendDefault12(stripIdx);
+    var m = SEND_RE.exec(subCmd);
+    if (m) {
+        var sendNum = parseInt(m[2]);
+        if (m[1])
+            handleSendDefault(stripIdx, sendNum);
+        else
+            handleSend(stripIdx, sendNum, val);
+        return;
+    }
+    // hasOwnProperty, not a bare lookup: subCmd comes off the wire, and a plain
+    // object would happily hand back Object.prototype members for 'toString' etc.
+    if (!Object.prototype.hasOwnProperty.call(MIXER_SUBS, subCmd))
+        return;
+    MIXER_SUBS[subCmd](stripIdx, val);
 }
+// Simple per-strip commands. `val` is ignored by the ones that don't take one.
+var MIXER_SUBS = {
+    vol: vol,
+    pan: pan,
+    volDefault: volDefault,
+    panDefault: panDefault,
+    toggleMute: toggleMute,
+    toggleSolo: toggleSolo,
+    enableRecord: enableRecord,
+    disableRecord: disableRecord,
+    disableInput: disableInput,
+    toggleXFadeA: toggleXFadeA,
+    toggleXFadeB: toggleXFadeB,
+};
 function visibleTracks() {
     trackList = (0, utils_1.getVisibleTracksList)();
     if (!trackList || trackList.length === 0)

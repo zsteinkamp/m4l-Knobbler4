@@ -1,13 +1,11 @@
 import { logFactory } from './utils'
 import config from './k4-config'
-import { noFn } from './consts'
 
 const origInputs = {} as Record<string, any>
 
 const log = logFactory(config)
 
 export function getTrackInputStatus(currTrack: LiveAPI) {
-  var airt = null
   let currentInput = null
   let noInput = null
   let allInputs = null
@@ -16,10 +14,10 @@ export function getTrackInputStatus(currTrack: LiveAPI) {
   //  'GET INPUT STATUS ' + currTrack.type + ' ' + currTrack.get('can_be_armed')
   //)
   if (
-    currTrack.get('is_foldable') == '0' &&
-    currTrack.get('can_be_armed') == '1'
+    !parseInt(currTrack.get('is_foldable').toString()) &&
+    parseInt(currTrack.get('can_be_armed').toString())
   ) {
-    var airt = JSON.parse(
+    const airt = JSON.parse(
       currTrack.get('available_input_routing_types').toString()
     ).available_input_routing_types
     currentInput = JSON.parse(
@@ -82,9 +80,6 @@ export function disableTrackInput(trackObj: LiveAPI) {
 }
 export function enableTrackInput(trackObj: LiveAPI) {
   changeInternal(trackObj, Intent.Enable)
-}
-export function toggleTrackInput(trackObj: LiveAPI) {
-  changeInternal(trackObj, Intent.Toggle)
 }
 
 log('reloaded toggleInput')

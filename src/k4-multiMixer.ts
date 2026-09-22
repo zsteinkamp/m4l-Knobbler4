@@ -2,7 +2,6 @@ import {
   cleanArr,
   clientHasCap,
   colorToString,
-  detach,
   fixFloat,
   getVisibleTracksList,
   logFactory,
@@ -13,6 +12,7 @@ import {
   PauseState,
   TrackInfo,
 } from './utils'
+import { detach, obsById, reArm } from './liveApi'
 import config from './k4-config'
 import {
   noFn,
@@ -89,28 +89,6 @@ type StripObservers = {
 let scratchApi: LiveAPI = null
 function ensureApis() {
   if (!scratchApi) scratchApi = new LiveAPI(noFn, 'live_set')
-}
-
-// Bind a fresh observer to an object by its numeric id instead of by a path
-// string. `new LiveAPI(cb, 'live_set tracks N ...')` interns that path into Max's
-// global symbol table (~1 symbol per distinct path, measured); `.id = N` is
-// numeric and interns nothing. The '' constructor path is interned once
-// globally. Child ids come from id-list reads (.get('mixer_device') etc.), which
-// also don't intern — so a whole strip costs 0 path symbols. See k4-symbolTest.
-function obsById(id: number, cb: any, prop?: string): LiveAPI {
-  const api = new LiveAPI(cb, '')
-  api.id = id
-  if (prop) api.property = prop
-  return api
-}
-
-// Re-point an existing observer to a new object id + property. Free — no path
-// interning, no teardown leak. The basis of the strip pool: reuse observer
-// objects across scroll instead of evict+recreate. See CLAUDE.md observer
-// lifecycle.
-function reArm(api: LiveAPI, id: number, prop: string) {
-  api.id = id
-  api.property = prop
 }
 
 const DEFAULT_VISIBLE_COUNT = 18
@@ -203,9 +181,10 @@ let mixerViewTask: MaxTask = null
 // ---------------------------------------------------------------------------
 
 function isVisible(strip: StripObservers): boolean {
-  return strip.stripIndex >= leftIndex && strip.stripIndex < leftIndex + visibleCount
+  return (
+    strip.stripIndex >= leftIndex && strip.stripIndex < leftIndex + visibleCount
+  )
 }
-
 
 function stripPause(strip: StripObservers, key: string) {
   if (!strip.pause[key]) {
@@ -213,7 +192,6 @@ function stripPause(strip: StripObservers, key: string) {
   }
   pauseUnpause(strip.pause[key], PAUSE_MS)
 }
-
 
 function sendSoloCount() {
   ensureApis()
@@ -257,35 +235,47 @@ function sendReturnTrackColors() {
 // strips, whose buffer slot is invalid.
 function ensureMeterApis(strip: StripObservers) {
   if (strip.meterLeftApi) return
-  strip.meterLeftApi = obsById(strip.trackId, function (args: any[]) {
-    if (strip.stripIndex < 0 || args[0] !== 'output_meter_left') return
-    const v = meterVal(args[1])
-    const off = strip.stripIndex * 3
-    if (v !== meterBuffer[off]) {
-      meterBuffer[off] = v
-      meterDirty = true
-    }
-  }, 'output_meter_left')
+  strip.meterLeftApi = obsById(
+    strip.trackId,
+    function (args: any[]) {
+      if (strip.stripIndex < 0 || args[0] !== 'output_meter_left') return
+      const v = meterVal(args[1])
+      const off = strip.stripIndex * 3
+      if (v !== meterBuffer[off]) {
+        meterBuffer[off] = v
+        meterDirty = true
+      }
+    },
+    'output_meter_left'
+  )
 
-  strip.meterRightApi = obsById(strip.trackId, function (args: any[]) {
-    if (strip.stripIndex < 0 || args[0] !== 'output_meter_right') return
-    const v = meterVal(args[1])
-    const off = strip.stripIndex * 3 + 1
-    if (v !== meterBuffer[off]) {
-      meterBuffer[off] = v
-      meterDirty = true
-    }
-  }, 'output_meter_right')
+  strip.meterRightApi = obsById(
+    strip.trackId,
+    function (args: any[]) {
+      if (strip.stripIndex < 0 || args[0] !== 'output_meter_right') return
+      const v = meterVal(args[1])
+      const off = strip.stripIndex * 3 + 1
+      if (v !== meterBuffer[off]) {
+        meterBuffer[off] = v
+        meterDirty = true
+      }
+    },
+    'output_meter_right'
+  )
 
-  strip.meterLevelApi = obsById(strip.trackId, function (args: any[]) {
-    if (strip.stripIndex < 0 || args[0] !== 'output_meter_level') return
-    const v = meterVal(args[1])
-    const off = strip.stripIndex * 3 + 2
-    if (v !== meterBuffer[off]) {
-      meterBuffer[off] = v
-      meterDirty = true
-    }
-  }, 'output_meter_level')
+  strip.meterLevelApi = obsById(
+    strip.trackId,
+    function (args: any[]) {
+      if (strip.stripIndex < 0 || args[0] !== 'output_meter_level') return
+      const v = meterVal(args[1])
+      const off = strip.stripIndex * 3 + 2
+      if (v !== meterBuffer[off]) {
+        meterBuffer[off] = v
+        meterDirty = true
+      }
+    },
+    'output_meter_level'
+  )
 }
 
 // Subscribe/unsubscribe the meter observers without tearing them down (property
@@ -423,51 +413,75 @@ function createStripObservers(
   const sendIds = cleanArr(scratchApi.get('sends'))
 
   // Color API — separate observer for track color changes
-  strip.colorApi = obsById(trackId, function (args: any[]) {
-    if (args[0] === 'color') {
-      const newColor = colorToString(args[1].toString())
-      for (let j = 0; j < trackList.length; j++) {
-        if (trackList[j].id === strip.trackId) {
-          trackList[j].color = newColor
-          break
+  strip.colorApi = obsById(
+    trackId,
+    function (args: any[]) {
+      if (args[0] === 'color') {
+        const newColor = colorToString(args[1].toString())
+        for (let j = 0; j < trackList.length; j++) {
+          if (trackList[j].id === strip.trackId) {
+            trackList[j].color = newColor
+            break
+          }
         }
       }
-    }
-  }, 'color')
+    },
+    'color'
+  )
 
   // Track API — used for querying properties (no observer)
   strip.trackApi = obsById(trackId, noFn)
 
   // Mute, solo, arm — separate observers (master track lacks these)
   if (!strip.isMain) {
-    strip.muteApi = obsById(trackId, function (args: any[]) {
-      if (args[0] === 'mute' && strip.initialized && isVisible(strip)) {
-        emitEffectiveMute(strip)
-      }
-    }, 'mute')
+    strip.muteApi = obsById(
+      trackId,
+      function (args: any[]) {
+        if (args[0] === 'mute' && strip.initialized && isVisible(strip)) {
+          emitEffectiveMute(strip)
+        }
+      },
+      'mute'
+    )
 
     // muted_via_solo also lights the mute indicator so the user sees that
     // soloing another track has effectively muted this one.
-    strip.mutedViaSoloApi = obsById(trackId, function (args: any[]) {
-      if (args[0] === 'muted_via_solo' && strip.initialized && isVisible(strip)) {
-        emitEffectiveMute(strip)
-      }
-    }, 'muted_via_solo')
+    strip.mutedViaSoloApi = obsById(
+      trackId,
+      function (args: any[]) {
+        if (
+          args[0] === 'muted_via_solo' &&
+          strip.initialized &&
+          isVisible(strip)
+        ) {
+          emitEffectiveMute(strip)
+        }
+      },
+      'muted_via_solo'
+    )
 
-    strip.soloApi = obsById(trackId, function (args: any[]) {
-      if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
-        osc(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()))
-        sendSoloCount()
-      }
-    }, 'solo')
+    strip.soloApi = obsById(
+      trackId,
+      function (args: any[]) {
+        if (args[0] === 'solo' && strip.initialized && isVisible(strip)) {
+          osc(SA_SOLO[strip.stripIndex], parseInt(args[1].toString()))
+          sendSoloCount()
+        }
+      },
+      'solo'
+    )
   }
 
   if (strip.canBeArmed) {
-    strip.armApi = obsById(trackId, function (args: any[]) {
-      if (args[0] === 'arm' && strip.initialized && isVisible(strip)) {
-        osc(SA_ARM[strip.stripIndex], parseInt(args[1].toString()))
-      }
-    }, 'arm')
+    strip.armApi = obsById(
+      trackId,
+      function (args: any[]) {
+        if (args[0] === 'arm' && strip.initialized && isVisible(strip)) {
+          osc(SA_ARM[strip.stripIndex], parseInt(args[1].toString()))
+        }
+      },
+      'arm'
+    )
   }
 
   // Gate meters on REAL audio output: a MIDI-output track has no output_meter_*
@@ -478,16 +492,24 @@ function createStripObservers(
   // instrument while visible (has_audio_output itself isn't observable).
   strip.hasOutput = readHasOutput(strip)
   if (!strip.isMain) {
-    strip.devicesApi = obsById(trackId, function (args: any[]) {
-      if (args[0] === 'devices') onDevicesChange(strip)
-    }, 'devices')
+    strip.devicesApi = obsById(
+      trackId,
+      function (args: any[]) {
+        if (args[0] === 'devices') onDevicesChange(strip)
+      },
+      'devices'
+    )
   }
 
   // Meter observers are managed separately by applyWindow (visible tracks only)
 
   // Mixer device — observe crossfade_assign (master track lacks this)
   strip.mixerApi = obsById(mixerId, function (args: any[]) {
-    if (args[0] === 'crossfade_assign' && strip.initialized && isVisible(strip)) {
+    if (
+      args[0] === 'crossfade_assign' &&
+      strip.initialized &&
+      isVisible(strip)
+    ) {
       const xVal = parseInt(args[1].toString())
       osc(SA_XFADEA[strip.stripIndex], xVal === 0 ? 1 : 0)
       osc(SA_XFADEB[strip.stripIndex], xVal === 2 ? 1 : 0)
@@ -498,44 +520,65 @@ function createStripObservers(
   }
 
   // Volume observer
-  strip.volApi = obsById(volId, function (args: any[]) {
-    if (args[0] !== 'value' || !strip.initialized || !isVisible(strip)) return
-    if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
-      const fVal = parseFloat(args[1]) || 0
-      osc(SA_VOL[strip.stripIndex], fVal)
-      const str = strip.volApi.call('str_for_value', fixFloat(fVal)) as any
-      osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
-    }
-  }, 'value')
+  strip.volApi = obsById(
+    volId,
+    function (args: any[]) {
+      if (args[0] !== 'value' || !strip.initialized || !isVisible(strip)) return
+      if (!strip.pause['vol'] || !strip.pause['vol'].paused) {
+        const fVal = parseFloat(args[1]) || 0
+        osc(SA_VOL[strip.stripIndex], fVal)
+        const str = strip.volApi.call('str_for_value', fixFloat(fVal)) as any
+        osc(SA_VOLSTR[strip.stripIndex], str ? str.toString() : '')
+      }
+    },
+    'value'
+  )
 
   // Volume automation state observer
-  strip.volAutoApi = obsById(volId, function (args: any[]) {
-    if (args[0] === 'automation_state' && strip.initialized && isVisible(strip)) {
-      osc(SA_VOLAUTO[strip.stripIndex], parseInt(args[1].toString()))
-    }
-  }, 'automation_state')
+  strip.volAutoApi = obsById(
+    volId,
+    function (args: any[]) {
+      if (
+        args[0] === 'automation_state' &&
+        strip.initialized &&
+        isVisible(strip)
+      ) {
+        osc(SA_VOLAUTO[strip.stripIndex], parseInt(args[1].toString()))
+      }
+    },
+    'automation_state'
+  )
 
   // Pan observer
-  strip.panApi = obsById(panId, function (args: any[]) {
-    if (args[0] !== 'value' || !strip.initialized || !isVisible(strip)) return
-    if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
-      const fVal = parseFloat(args[1]) || 0
-      osc(SA_PAN[strip.stripIndex], fVal)
-      const str = strip.panApi.call('str_for_value', fixFloat(fVal)) as any
-      osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
-    }
-  }, 'value')
+  strip.panApi = obsById(
+    panId,
+    function (args: any[]) {
+      if (args[0] !== 'value' || !strip.initialized || !isVisible(strip)) return
+      if (!strip.pause['pan'] || !strip.pause['pan'].paused) {
+        const fVal = parseFloat(args[1]) || 0
+        osc(SA_PAN[strip.stripIndex], fVal)
+        const str = strip.panApi.call('str_for_value', fixFloat(fVal)) as any
+        osc(SA_PANSTR[strip.stripIndex], str ? str.toString() : '')
+      }
+    },
+    'value'
+  )
 
   // Send observers
   const numSends = Math.min(sendIds.length, MAX_SENDS)
   for (let i = 0; i < numSends; i++) {
     const sendIdx = i
-    const sendApi = obsById(sendIds[i], function (args: IdObserverArg) {
-      if (args[0] !== 'value' || !strip.initialized || !isVisible(strip)) return
-      if (!strip.pause['send'] || !strip.pause['send'].paused) {
-        osc(SA_SEND[strip.stripIndex][sendIdx], args[1] || 0)
-      }
-    }, 'value')
+    const sendApi = obsById(
+      sendIds[i],
+      function (args: IdObserverArg) {
+        if (args[0] !== 'value' || !strip.initialized || !isVisible(strip))
+          return
+        if (!strip.pause['send'] || !strip.pause['send'].paused) {
+          osc(SA_SEND[strip.stripIndex][sendIdx], args[1] || 0)
+        }
+      },
+      'value'
+    )
     strip.sendApis.push(sendApi)
   }
 
@@ -565,7 +608,8 @@ function repointStrip(
   strip.hasOutput = readHasOutput(strip) // re-evaluate audio output for the new track
   if (strip.devicesApi) reArm(strip.devicesApi, trackId, 'devices')
   if (strip.muteApi) reArm(strip.muteApi, trackId, 'mute')
-  if (strip.mutedViaSoloApi) reArm(strip.mutedViaSoloApi, trackId, 'muted_via_solo')
+  if (strip.mutedViaSoloApi)
+    reArm(strip.mutedViaSoloApi, trackId, 'muted_via_solo')
   if (strip.soloApi) reArm(strip.soloApi, trackId, 'solo')
   if (strip.armApi) reArm(strip.armApi, trackId, 'arm')
   strip.mixerApi.id = mixerId
@@ -644,7 +688,8 @@ function parkStrip(strip: StripObservers) {
   if (strip.volApi) strip.volApi.property = ''
   if (strip.volAutoApi) strip.volAutoApi.property = ''
   if (strip.panApi) strip.panApi.property = ''
-  for (let i = 0; i < strip.sendApis.length; i++) strip.sendApis[i].property = ''
+  for (let i = 0; i < strip.sendApis.length; i++)
+    strip.sendApis[i].property = ''
   setMetersActive(strip, false)
 }
 
@@ -801,7 +846,7 @@ function readStripState(strip: StripObservers): StripState {
 // prefetch sweep reads through the same handles.
 
 let cold: StripObservers = null
-let coldSendPool: LiveAPI[] = []
+const coldSendPool: LiveAPI[] = []
 
 function plainApi(): LiveAPI {
   return new LiveAPI(noFn, '')
@@ -1121,7 +1166,7 @@ function mixerMeters(val: number) {
 
 function sendMetersState() {
   osc('/mixerMeters', metersEnabled ? 1 : 0)
-  var chk = patcher.getnamed('chkMeters')
+  const chk = patcher.getnamed('chkMeters')
   if (chk) chk.message('set', metersEnabled ? 1 : 0)
   // Direct call now that sidebarMixer is folded into the same [v8].
   ctx.sidebar.sidebarMeters(metersEnabled ? 1 : 0)
@@ -1230,80 +1275,6 @@ function handleSendDefault(stripIdx: number, sendNum: number) {
   if (!isObserved(strip)) osc(SA_SEND[strip.stripIndex][idx], def)
 }
 
-function send1(stripIdx: number, val: number) {
-  handleSend(stripIdx, 1, val)
-}
-function send2(stripIdx: number, val: number) {
-  handleSend(stripIdx, 2, val)
-}
-function send3(stripIdx: number, val: number) {
-  handleSend(stripIdx, 3, val)
-}
-function send4(stripIdx: number, val: number) {
-  handleSend(stripIdx, 4, val)
-}
-function send5(stripIdx: number, val: number) {
-  handleSend(stripIdx, 5, val)
-}
-function send6(stripIdx: number, val: number) {
-  handleSend(stripIdx, 6, val)
-}
-function send7(stripIdx: number, val: number) {
-  handleSend(stripIdx, 7, val)
-}
-function send8(stripIdx: number, val: number) {
-  handleSend(stripIdx, 8, val)
-}
-function send9(stripIdx: number, val: number) {
-  handleSend(stripIdx, 9, val)
-}
-function send10(stripIdx: number, val: number) {
-  handleSend(stripIdx, 10, val)
-}
-function send11(stripIdx: number, val: number) {
-  handleSend(stripIdx, 11, val)
-}
-function send12(stripIdx: number, val: number) {
-  handleSend(stripIdx, 12, val)
-}
-
-function sendDefault1(stripIdx: number) {
-  handleSendDefault(stripIdx, 1)
-}
-function sendDefault2(stripIdx: number) {
-  handleSendDefault(stripIdx, 2)
-}
-function sendDefault3(stripIdx: number) {
-  handleSendDefault(stripIdx, 3)
-}
-function sendDefault4(stripIdx: number) {
-  handleSendDefault(stripIdx, 4)
-}
-function sendDefault5(stripIdx: number) {
-  handleSendDefault(stripIdx, 5)
-}
-function sendDefault6(stripIdx: number) {
-  handleSendDefault(stripIdx, 6)
-}
-function sendDefault7(stripIdx: number) {
-  handleSendDefault(stripIdx, 7)
-}
-function sendDefault8(stripIdx: number) {
-  handleSendDefault(stripIdx, 8)
-}
-function sendDefault9(stripIdx: number) {
-  handleSendDefault(stripIdx, 9)
-}
-function sendDefault10(stripIdx: number) {
-  handleSendDefault(stripIdx, 10)
-}
-function sendDefault11(stripIdx: number) {
-  handleSendDefault(stripIdx, 11)
-}
-function sendDefault12(stripIdx: number) {
-  handleSendDefault(stripIdx, 12)
-}
-
 function toggleMute(stripIdx: number) {
   const strip = getStrip(stripIdx)
   if (!strip) return
@@ -1383,42 +1354,38 @@ function mixerCmd(address: string, val: any) {
   dispatchMixerSub(parts[3], stripIdx, val)
 }
 
+// /mixer/{strip}/{subCmd}. The sendN / sendDefaultN families carry the send
+// number in the address, so they are parsed rather than enumerated (this used to
+// be 24 one-line wrappers feeding a 34-branch if-chain).
+const SEND_RE = /^send(Default)?(\d+)$/
+
 function dispatchMixerSub(subCmd: string, stripIdx: number, val: any) {
-  if (subCmd === 'vol') vol(stripIdx, val)
-  else if (subCmd === 'pan') pan(stripIdx, val)
-  else if (subCmd === 'volDefault') volDefault(stripIdx)
-  else if (subCmd === 'panDefault') panDefault(stripIdx)
-  else if (subCmd === 'toggleMute') toggleMute(stripIdx)
-  else if (subCmd === 'toggleSolo') toggleSolo(stripIdx)
-  else if (subCmd === 'enableRecord') enableRecord(stripIdx)
-  else if (subCmd === 'disableRecord') disableRecord(stripIdx)
-  else if (subCmd === 'disableInput') disableInput(stripIdx)
-  else if (subCmd === 'toggleXFadeA') toggleXFadeA(stripIdx)
-  else if (subCmd === 'toggleXFadeB') toggleXFadeB(stripIdx)
-  else if (subCmd === 'send1') send1(stripIdx, val)
-  else if (subCmd === 'send2') send2(stripIdx, val)
-  else if (subCmd === 'send3') send3(stripIdx, val)
-  else if (subCmd === 'send4') send4(stripIdx, val)
-  else if (subCmd === 'send5') send5(stripIdx, val)
-  else if (subCmd === 'send6') send6(stripIdx, val)
-  else if (subCmd === 'send7') send7(stripIdx, val)
-  else if (subCmd === 'send8') send8(stripIdx, val)
-  else if (subCmd === 'send9') send9(stripIdx, val)
-  else if (subCmd === 'send10') send10(stripIdx, val)
-  else if (subCmd === 'send11') send11(stripIdx, val)
-  else if (subCmd === 'send12') send12(stripIdx, val)
-  else if (subCmd === 'sendDefault1') sendDefault1(stripIdx)
-  else if (subCmd === 'sendDefault2') sendDefault2(stripIdx)
-  else if (subCmd === 'sendDefault3') sendDefault3(stripIdx)
-  else if (subCmd === 'sendDefault4') sendDefault4(stripIdx)
-  else if (subCmd === 'sendDefault5') sendDefault5(stripIdx)
-  else if (subCmd === 'sendDefault6') sendDefault6(stripIdx)
-  else if (subCmd === 'sendDefault7') sendDefault7(stripIdx)
-  else if (subCmd === 'sendDefault8') sendDefault8(stripIdx)
-  else if (subCmd === 'sendDefault9') sendDefault9(stripIdx)
-  else if (subCmd === 'sendDefault10') sendDefault10(stripIdx)
-  else if (subCmd === 'sendDefault11') sendDefault11(stripIdx)
-  else if (subCmd === 'sendDefault12') sendDefault12(stripIdx)
+  const m = SEND_RE.exec(subCmd)
+  if (m) {
+    const sendNum = parseInt(m[2])
+    if (m[1]) handleSendDefault(stripIdx, sendNum)
+    else handleSend(stripIdx, sendNum, val)
+    return
+  }
+  // hasOwnProperty, not a bare lookup: subCmd comes off the wire, and a plain
+  // object would happily hand back Object.prototype members for 'toString' etc.
+  if (!Object.prototype.hasOwnProperty.call(MIXER_SUBS, subCmd)) return
+  MIXER_SUBS[subCmd](stripIdx, val)
+}
+
+// Simple per-strip commands. `val` is ignored by the ones that don't take one.
+const MIXER_SUBS: Record<string, (stripIdx: number, val: any) => void> = {
+  vol: vol,
+  pan: pan,
+  volDefault: volDefault,
+  panDefault: panDefault,
+  toggleMute: toggleMute,
+  toggleSolo: toggleSolo,
+  enableRecord: enableRecord,
+  disableRecord: disableRecord,
+  disableInput: disableInput,
+  toggleXFadeA: toggleXFadeA,
+  toggleXFadeB: toggleXFadeB,
 }
 
 function visibleTracks() {

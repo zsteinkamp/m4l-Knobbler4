@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
@@ -107,7 +108,7 @@ function findTrack(id) {
 function onSelTrackNameChange(args) {
     if (args[0] !== 'name')
         return;
-    var t = findTrack(+selTrackNameApi.id);
+    var t = findTrack((0, liveApi_1.apiId)(selTrackNameApi));
     if (!t)
         return;
     var newName = (0, utils_1.truncate)((0, utils_1.dequote)(args[1].toString()), consts_1.MAX_NAME_LEN);
@@ -119,7 +120,7 @@ function onSelTrackNameChange(args) {
 function onSelTrackColorChange(args) {
     if (args[0] !== 'color')
         return;
-    var t = findTrack(+selTrackColorApi.id);
+    var t = findTrack((0, liveApi_1.apiId)(selTrackColorApi));
     if (!t)
         return;
     var newColor = (0, utils_1.colorToString)(args[1].toString());
@@ -164,11 +165,6 @@ function requestVisibleTracks() {
     }
     sendVisibleTracks();
 }
-function doRefresh() {
-    ensureApis();
-    trackList = buildTrackList();
-    sendVisibleTracks();
-}
 // ---------------------------------------------------------------------------
 // Nav panel edits
 // ---------------------------------------------------------------------------
@@ -178,7 +174,7 @@ function doRefresh() {
 function pointAtTrack(id) {
     ensureApis();
     scratchApi.id = id;
-    return +scratchApi.id !== 0 && scratchApi.type === 'Track';
+    return (0, liveApi_1.apiValid)(scratchApi) && scratchApi.type === 'Track';
 }
 // /nav/renameTrack '[trackId, name]'
 function renameTrack(jsonStr) {

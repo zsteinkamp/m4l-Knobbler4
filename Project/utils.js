@@ -1,17 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.columnarize = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.clientHasCap = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.parseIdValue = exports.dequote = exports.fixFloat = exports.logFactory = exports.detach = void 0;
+exports.cleanArr = exports.columnarize = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.clientHasCap = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.parseIdValue = exports.dequote = exports.fixFloat = exports.logFactory = void 0;
 var consts_1 = require("./consts");
-// Safely tear down a LiveAPI observer: unsubscribe from property notifications
-// before detaching, to prevent callbacks firing on invalidated objects
-// (which can crash SpiderMonkey via JS_EncodeString null pointer).
-function detach(api) {
-    if (!api)
-        return;
-    api.property = '';
-    api.id = 0;
-}
-exports.detach = detach;
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
     function log() {
@@ -305,8 +295,7 @@ function buildOscPacket(addr, value) {
     // string ",". Used for bare control sends like /page/X and /loop.
     if (value === undefined) {
         var noArg = [];
-        for (var i = 0; i < addr.length; i++)
-            noArg.push(addr.charCodeAt(i) & 0xff);
+        pushUtf8(noArg, addr); // same writer as the arg path; addresses are ASCII
         noArg.push(0);
         while (noArg.length & 0x3)
             noArg.push(0);

@@ -10,7 +10,6 @@ type ParamType = {
   customName?: string
   name?: string
   deviceName?: string
-  trackName?: string
   trackColor?: string
   allowParamValueUpdates?: boolean
 }
@@ -107,3 +106,9 @@ type MaxTask = Task & { freepeer: () => void }
 interface LiveAPI {
   call(func: string, args?: any): void
 }
+
+// CAUTION: @types/maxmsp declares `LiveAPI.id` as `number`, but it reads back
+// as a STRING at runtime — "0" when the object doesn't resolve. Interface
+// merging can't give a class field different get/set types, so the declaration
+// stays as-is and every READ goes through liveApi.apiId() / apiValid().
+// Never write `if (api.id)` ("0" is truthy) or `api.id === 0` ("0" !== 0).

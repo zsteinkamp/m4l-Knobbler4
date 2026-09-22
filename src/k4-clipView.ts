@@ -1,7 +1,6 @@
 import {
   cleanArr,
   clientHasCap,
-  detach,
   dequote,
   getVisibleTracksList,
   loadSetting,
@@ -9,14 +8,10 @@ import {
   osc,
   setOscSink,
 } from './utils'
+import { detach, disableObs, ensureObs, obsById, reArm } from './liveApi'
 import config from './k4-config'
 import { noFn, TYPE_RETURN, TYPE_MAIN, TYPE_GROUP } from './consts'
-import {
-  CLIP_EMPTY,
-  CLIP_RECORDING,
-  NO_SLOT,
-  clipCellState,
-} from './clipState'
+import { CLIP_EMPTY, CLIP_RECORDING, NO_SLOT, clipCellState } from './clipState'
 import {
   CAPABILITY_PREFETCH,
   FLUSH_MS,
@@ -187,44 +182,6 @@ function ensureApis() {
   if (!viewApi) viewApi = new LiveAPI(noFn, 'live_set view')
   if (!progressApi) progressApi = new LiveAPI(noFn, 'live_set')
   if (!pfApi) pfApi = new LiveAPI(noFn, 'live_set')
-}
-
-// Bind a fresh observer by numeric id instead of a path string. A path string
-// (`new LiveAPI(cb, 'tracks N clip_slots M ...')` or `.path = ...`) interns a
-// permanent Max symbol each (measured ~1:1); `.id` is numeric and interns
-// nothing. The '' constructor path is interned once globally. Structural ids come
-// from id-list reads (.get('clip_slots'/'scenes'/'clip')), which also don't
-// intern — so a whole clip grid costs ~0 path symbols. See k4-symbolTest /
-// k4-multiMixer for the pattern + measurements.
-function obsById(id: number, cb: any, prop?: string): LiveAPI {
-  const api = new LiveAPI(cb, '')
-  api.id = id
-  if (prop) api.property = prop
-  return api
-}
-
-// Re-point an existing observer to a new object id + property — free (no path
-// interning, no teardown leak). Basis of the observer pools below.
-function reArm(api: LiveAPI, id: number, prop: string) {
-  api.id = id
-  api.property = prop
-}
-
-// Reuse an observer if present (re-point — free), else create one bound by id.
-// The callback `cb` is used only on first creation; on reuse the existing api's
-// callback (closed over the persistent struct) is kept.
-function ensureObs(api: LiveAPI, id: number, cb: any, prop: string): LiveAPI {
-  if (api) {
-    reArm(api, id, prop)
-    return api
-  }
-  return obsById(id, cb, prop)
-}
-
-// Unsubscribe an observer without tearing it down (property '' — free; teardown
-// leaks ~6 symbols, see CLAUDE.md). Keeps the object alive for re-pointing.
-function disableObs(api: LiveAPI) {
-  if (api) api.property = ''
 }
 
 // Scene ids by row index — refreshed by querySceneCount alongside totalScenes.
@@ -430,7 +387,10 @@ function progressTick() {
     if (!(len > 0)) continue
     // Pick up a loop length that only became valid a tick after recording
     // finalized (clipBeats was suppressed to 0 while the clip was recording).
-    if (len < MAX_CLIP_BEATS && Math.floor(len) !== Math.floor(tObs.clipBeats)) {
+    if (
+      len < MAX_CLIP_BEATS &&
+      Math.floor(len) !== Math.floor(tObs.clipBeats)
+    ) {
       tObs.clipBeats = len
       sendPlayInfo(tObs)
     }
@@ -1511,7 +1471,15 @@ let pfSent: Record<string, string> = {}
 function cellSig(trackId: number, cell: ClipCell, isGroup: boolean): string {
   const sep = '\u0001'
   let sig =
-    trackId + sep + cell.state + sep + cell.name + sep + cell.color + sep + cell.hsb
+    trackId +
+    sep +
+    cell.state +
+    sep +
+    cell.name +
+    sep +
+    cell.color +
+    sep +
+    cell.hsb
   if (isGroup) sig += sep + cell.ps + sep + cell.hc
   return sig
 }

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.prefetchStats = exports.visibleTracks = exports.routes = void 0;
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var clipState_1 = require("./clipState");
@@ -107,42 +108,6 @@ function ensureApis() {
         progressApi = new LiveAPI(consts_1.noFn, 'live_set');
     if (!pfApi)
         pfApi = new LiveAPI(consts_1.noFn, 'live_set');
-}
-// Bind a fresh observer by numeric id instead of a path string. A path string
-// (`new LiveAPI(cb, 'tracks N clip_slots M ...')` or `.path = ...`) interns a
-// permanent Max symbol each (measured ~1:1); `.id` is numeric and interns
-// nothing. The '' constructor path is interned once globally. Structural ids come
-// from id-list reads (.get('clip_slots'/'scenes'/'clip')), which also don't
-// intern — so a whole clip grid costs ~0 path symbols. See k4-symbolTest /
-// k4-multiMixer for the pattern + measurements.
-function obsById(id, cb, prop) {
-    var api = new LiveAPI(cb, '');
-    api.id = id;
-    if (prop)
-        api.property = prop;
-    return api;
-}
-// Re-point an existing observer to a new object id + property — free (no path
-// interning, no teardown leak). Basis of the observer pools below.
-function reArm(api, id, prop) {
-    api.id = id;
-    api.property = prop;
-}
-// Reuse an observer if present (re-point — free), else create one bound by id.
-// The callback `cb` is used only on first creation; on reuse the existing api's
-// callback (closed over the persistent struct) is kept.
-function ensureObs(api, id, cb, prop) {
-    if (api) {
-        reArm(api, id, prop);
-        return api;
-    }
-    return obsById(id, cb, prop);
-}
-// Unsubscribe an observer without tearing it down (property '' — free; teardown
-// leaks ~6 symbols, see CLAUDE.md). Keeps the object alive for re-pointing.
-function disableObs(api) {
-    if (api)
-        api.property = '';
 }
 // Scene ids by row index — refreshed by querySceneCount alongside totalScenes.
 var sceneIds = [];
@@ -327,7 +292,8 @@ function progressTick() {
             continue;
         // Pick up a loop length that only became valid a tick after recording
         // finalized (clipBeats was suppressed to 0 while the clip was recording).
-        if (len < MAX_CLIP_BEATS && Math.floor(len) !== Math.floor(tObs.clipBeats)) {
+        if (len < MAX_CLIP_BEATS &&
+            Math.floor(len) !== Math.floor(tObs.clipBeats)) {
             tObs.clipBeats = len;
             sendPlayInfo(tObs);
         }
@@ -518,7 +484,7 @@ function createTrackPlayObservers(trackIdx) {
     // Seed a pending quantized stop (e.g. track scrolled into view mid-stop).
     if (tObs.firedSlot === -2)
         sendStopPending(trackIdx, true);
-    tObs.playingSlotApi = ensureObs(tObs.playingSlotApi, trackId, function (args) {
+    tObs.playingSlotApi = (0, liveApi_1.ensureObs)(tObs.playingSlotApi, trackId, function (args) {
         if (!tObs.playingSlotApi || args[0] !== 'playing_slot_index')
             return;
         var newSlot = parseInt(args[1]);
@@ -533,7 +499,7 @@ function createTrackPlayObservers(trackIdx) {
         if (tObs.playingClipId >= 0)
             ensureProgressRunning();
     }, 'playing_slot_index');
-    tObs.firedSlotApi = ensureObs(tObs.firedSlotApi, trackId, function (args) {
+    tObs.firedSlotApi = (0, liveApi_1.ensureObs)(tObs.firedSlotApi, trackId, function (args) {
         if (!tObs.firedSlotApi || args[0] !== 'fired_slot_index')
             return;
         var newSlot = parseInt(args[1]);
@@ -552,7 +518,7 @@ function createTrackPlayObservers(trackIdx) {
     }, 'fired_slot_index');
     // arm only for tracks that can be armed; disable (not teardown) otherwise.
     if (canBeArmed) {
-        tObs.armApi = ensureObs(tObs.armApi, trackId, function (args) {
+        tObs.armApi = (0, liveApi_1.ensureObs)(tObs.armApi, trackId, function (args) {
             if (!tObs.armApi || args[0] !== 'arm')
                 return;
             var newArmed = !!parseInt(args[1]);
@@ -563,14 +529,14 @@ function createTrackPlayObservers(trackIdx) {
         }, 'arm');
     }
     else {
-        disableObs(tObs.armApi);
+        (0, liveApi_1.disableObs)(tObs.armApi);
     }
-    tObs.nameApi = ensureObs(tObs.nameApi, trackId, function (args) {
+    tObs.nameApi = (0, liveApi_1.ensureObs)(tObs.nameApi, trackId, function (args) {
         if (!tObs.nameApi || args[0] !== 'name')
             return;
         (0, utils_1.osc)('/clips/trackInfo', { t: tObs.trackIdx, n: (0, utils_1.dequote)(args[1]) });
     }, 'name');
-    tObs.colorApi = ensureObs(tObs.colorApi, trackId, function (args) {
+    tObs.colorApi = (0, liveApi_1.ensureObs)(tObs.colorApi, trackId, function (args) {
         if (!tObs.colorApi || args[0] !== 'color')
             return;
         (0, utils_1.osc)('/clips/trackInfo', { t: tObs.trackIdx, c: colorHex(args[1]) });
@@ -579,31 +545,31 @@ function createTrackPlayObservers(trackIdx) {
 }
 // Park a track-play struct: unsubscribe all observers (keeps objects for reuse).
 function parkTrackPlay(tObs) {
-    disableObs(tObs.playingSlotApi);
-    disableObs(tObs.firedSlotApi);
-    disableObs(tObs.armApi);
-    disableObs(tObs.nameApi);
-    disableObs(tObs.colorApi);
+    (0, liveApi_1.disableObs)(tObs.playingSlotApi);
+    (0, liveApi_1.disableObs)(tObs.firedSlotApi);
+    (0, liveApi_1.disableObs)(tObs.armApi);
+    (0, liveApi_1.disableObs)(tObs.nameApi);
+    (0, liveApi_1.disableObs)(tObs.colorApi);
 }
 function teardownTrackPlayObservers(tObs) {
     if (tObs.playingSlotApi) {
-        (0, utils_1.detach)(tObs.playingSlotApi);
+        (0, liveApi_1.detach)(tObs.playingSlotApi);
         tObs.playingSlotApi = null;
     }
     if (tObs.firedSlotApi) {
-        (0, utils_1.detach)(tObs.firedSlotApi);
+        (0, liveApi_1.detach)(tObs.firedSlotApi);
         tObs.firedSlotApi = null;
     }
     if (tObs.armApi) {
-        (0, utils_1.detach)(tObs.armApi);
+        (0, liveApi_1.detach)(tObs.armApi);
         tObs.armApi = null;
     }
     if (tObs.nameApi) {
-        (0, utils_1.detach)(tObs.nameApi);
+        (0, liveApi_1.detach)(tObs.nameApi);
         tObs.nameApi = null;
     }
     if (tObs.colorApi) {
-        (0, utils_1.detach)(tObs.colorApi);
+        (0, liveApi_1.detach)(tObs.colorApi);
         tObs.colorApi = null;
     }
 }
@@ -717,7 +683,7 @@ function cellEntry(entry, cell, isGroup) {
 function attachCellObservers(obs) {
     var sid = slotId(obs.trackIdx, obs.sceneIdx);
     // has_stop_button
-    obs.hasStopButtonApi = ensureObs(obs.hasStopButtonApi, sid, function (args) {
+    obs.hasStopButtonApi = (0, liveApi_1.ensureObs)(obs.hasStopButtonApi, sid, function (args) {
         if (!obs.hasStopButtonApi || args[0] !== 'has_stop_button')
             return;
         var newHsb = parseInt(args[1]) ? 1 : 0;
@@ -729,7 +695,7 @@ function attachCellObservers(obs) {
     }, 'has_stop_button');
     // Group track: playing_status and controls_other_clips (disabled for others)
     if (trackIsGroup[obs.trackIdx]) {
-        obs.playingStatusApi = ensureObs(obs.playingStatusApi, sid, function (args) {
+        obs.playingStatusApi = (0, liveApi_1.ensureObs)(obs.playingStatusApi, sid, function (args) {
             if (!obs.playingStatusApi || args[0] !== 'playing_status')
                 return;
             var newPs = parseInt(args[1]) || 0;
@@ -739,7 +705,7 @@ function attachCellObservers(obs) {
             if (isVisible(obs.trackIdx, obs.sceneIdx))
                 queueFullUpdate(obs);
         }, 'playing_status');
-        obs.controlsOtherClipsApi = ensureObs(obs.controlsOtherClipsApi, sid, function (args) {
+        obs.controlsOtherClipsApi = (0, liveApi_1.ensureObs)(obs.controlsOtherClipsApi, sid, function (args) {
             if (!obs.controlsOtherClipsApi || args[0] !== 'controls_other_clips')
                 return;
             var newHc = parseInt(args[1]) ? 1 : 0;
@@ -751,11 +717,11 @@ function attachCellObservers(obs) {
         }, 'controls_other_clips');
     }
     else {
-        disableObs(obs.playingStatusApi);
-        disableObs(obs.controlsOtherClipsApi);
+        (0, liveApi_1.disableObs)(obs.playingStatusApi);
+        (0, liveApi_1.disableObs)(obs.controlsOtherClipsApi);
     }
     // has_clip
-    obs.hasClipApi = ensureObs(obs.hasClipApi, sid, function (args) {
+    obs.hasClipApi = (0, liveApi_1.ensureObs)(obs.hasClipApi, sid, function (args) {
         if (!obs.hasClipApi || args[0] !== 'has_clip')
             return;
         var newHasClip = !!parseInt(args[1]);
@@ -786,33 +752,33 @@ function attachCellObservers(obs) {
 // Unsubscribe the clip sub-observers (keep objects for reuse). Used when a clip
 // is removed and when parking a cell.
 function disableClipObservers(obs) {
-    disableObs(obs.clipApi);
-    disableObs(obs.clipColorApi);
-    disableObs(obs.clipRecordingApi);
+    (0, liveApi_1.disableObs)(obs.clipApi);
+    (0, liveApi_1.disableObs)(obs.clipColorApi);
+    (0, liveApi_1.disableObs)(obs.clipRecordingApi);
 }
 // Park a cell: unsubscribe every observer (keeps objects for re-pointing).
 function parkCell(obs) {
-    disableObs(obs.hasClipApi);
-    disableObs(obs.hasStopButtonApi);
-    disableObs(obs.playingStatusApi);
-    disableObs(obs.controlsOtherClipsApi);
+    (0, liveApi_1.disableObs)(obs.hasClipApi);
+    (0, liveApi_1.disableObs)(obs.hasStopButtonApi);
+    (0, liveApi_1.disableObs)(obs.playingStatusApi);
+    (0, liveApi_1.disableObs)(obs.controlsOtherClipsApi);
     disableClipObservers(obs);
 }
 function teardownCellObservers(obs) {
     if (obs.hasClipApi) {
-        (0, utils_1.detach)(obs.hasClipApi);
+        (0, liveApi_1.detach)(obs.hasClipApi);
         obs.hasClipApi = null;
     }
     if (obs.hasStopButtonApi) {
-        (0, utils_1.detach)(obs.hasStopButtonApi);
+        (0, liveApi_1.detach)(obs.hasStopButtonApi);
         obs.hasStopButtonApi = null;
     }
     if (obs.playingStatusApi) {
-        (0, utils_1.detach)(obs.playingStatusApi);
+        (0, liveApi_1.detach)(obs.playingStatusApi);
         obs.playingStatusApi = null;
     }
     if (obs.controlsOtherClipsApi) {
-        (0, utils_1.detach)(obs.controlsOtherClipsApi);
+        (0, liveApi_1.detach)(obs.controlsOtherClipsApi);
         obs.controlsOtherClipsApi = null;
     }
     teardownClipObserver(obs);
@@ -830,7 +796,7 @@ function setupClipObserver(obs) {
         obs.cell.state = clipState_1.CLIP_RECORDING;
     }
     if (!obs.clipApi) {
-        obs.clipApi = obsById(clipId, function (args) {
+        obs.clipApi = (0, liveApi_1.obsById)(clipId, function (args) {
             if (!obs.clipApi)
                 return;
             if (args[0] !== 'name')
@@ -846,7 +812,7 @@ function setupClipObserver(obs) {
         obs.clipApi.property = 'name';
     }
     if (!obs.clipRecordingApi) {
-        obs.clipRecordingApi = obsById(clipId, function (args) {
+        obs.clipRecordingApi = (0, liveApi_1.obsById)(clipId, function (args) {
             if (!obs.clipRecordingApi)
                 return;
             if (args[0] !== 'is_recording')
@@ -868,7 +834,7 @@ function setupClipObserver(obs) {
         obs.clipRecordingApi.property = 'is_recording';
     }
     if (!obs.clipColorApi) {
-        obs.clipColorApi = obsById(clipId, function (args) {
+        obs.clipColorApi = (0, liveApi_1.obsById)(clipId, function (args) {
             if (!obs.clipColorApi)
                 return;
             if (args[0] !== 'color')
@@ -886,15 +852,15 @@ function setupClipObserver(obs) {
 }
 function teardownClipObserver(obs) {
     if (obs.clipApi) {
-        (0, utils_1.detach)(obs.clipApi);
+        (0, liveApi_1.detach)(obs.clipApi);
         obs.clipApi = null;
     }
     if (obs.clipColorApi) {
-        (0, utils_1.detach)(obs.clipColorApi);
+        (0, liveApi_1.detach)(obs.clipColorApi);
         obs.clipColorApi = null;
     }
     if (obs.clipRecordingApi) {
-        (0, utils_1.detach)(obs.clipRecordingApi);
+        (0, liveApi_1.detach)(obs.clipRecordingApi);
         obs.clipRecordingApi = null;
     }
 }
@@ -961,14 +927,14 @@ function createSceneObserver(sceneIdx) {
     info.name = (0, utils_1.dequote)(cellInitApi.get('name').toString());
     info.color = colorHex(cellInitApi.get('color'));
     cacheScene(info);
-    info.nameApi = ensureObs(info.nameApi, sid, function (args) {
+    info.nameApi = (0, liveApi_1.ensureObs)(info.nameApi, sid, function (args) {
         if (!info.nameApi || args[0] !== 'name')
             return;
         info.name = (0, utils_1.dequote)(args[1]);
         cacheScene(info);
         scheduleSceneInfo();
     }, 'name');
-    info.colorApi = ensureObs(info.colorApi, sid, function (args) {
+    info.colorApi = (0, liveApi_1.ensureObs)(info.colorApi, sid, function (args) {
         if (!info.colorApi || args[0] !== 'color')
             return;
         info.color = colorHex(args[1]);
@@ -979,16 +945,16 @@ function createSceneObserver(sceneIdx) {
 }
 // Park a scene: unsubscribe its observers (keep objects for re-pointing).
 function parkScene(info) {
-    disableObs(info.nameApi);
-    disableObs(info.colorApi);
+    (0, liveApi_1.disableObs)(info.nameApi);
+    (0, liveApi_1.disableObs)(info.colorApi);
 }
 function teardownSceneObserver(info) {
     if (info.nameApi) {
-        (0, utils_1.detach)(info.nameApi);
+        (0, liveApi_1.detach)(info.nameApi);
         info.nameApi = null;
     }
     if (info.colorApi) {
-        (0, utils_1.detach)(info.colorApi);
+        (0, liveApi_1.detach)(info.colorApi);
         info.colorApi = null;
     }
 }
@@ -1290,7 +1256,15 @@ var pfSent = {};
 // appear in a name, so no two different cells can produce the same string.
 function cellSig(trackId, cell, isGroup) {
     var sep = '\u0001';
-    var sig = trackId + sep + cell.state + sep + cell.name + sep + cell.color + sep + cell.hsb;
+    var sig = trackId +
+        sep +
+        cell.state +
+        sep +
+        cell.name +
+        sep +
+        cell.color +
+        sep +
+        cell.hsb;
     if (isGroup)
         sig += sep + cell.ps + sep + cell.hc;
     return sig;

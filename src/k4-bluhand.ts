@@ -12,6 +12,7 @@ import {
   setOscSink,
   osc,
 } from './utils'
+import { apiId, apiValid, obsById, repointPath } from './liveApi'
 import config from './k4-config'
 import { noFn } from './consts'
 import { getBankParamArr } from './k4-bluhandBanks'
@@ -130,9 +131,9 @@ function onParameterChange() {
   // feature swap editor windows. Reported even for id 0 (focus landed on
   // something with no device) so the last window still closes.
   if (ctx) {
-    ctx.pluginWindow.deviceChanged(+api.id)
+    ctx.pluginWindow.deviceChanged(apiId(api))
   }
-  if (+api.id === 0) {
+  if (!apiValid(api)) {
     return
   }
   const isSupported = isDeviceSupported(api)
@@ -144,8 +145,7 @@ function onParameterChange() {
   } else {
     const onOffParamId = paramIds.shift() // remove device on/off
     if (!state.onOffWatcher) {
-      state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId)
-      state.onOffWatcher.property = 'value'
+      state.onOffWatcher = obsById(onOffParamId, updateDeviceOnOff, 'value')
     } else {
       state.onOffWatcher.id = onOffParamId
     }
@@ -188,8 +188,8 @@ function onParameterChange() {
   // is the one place that knows the device actually changed (in both lock
   // modes), so the header follows the device, not Live's selected track.
   const tp = deviceTrackPath()
-  repoint(trackNameApi, tp, 'name')
-  repoint(trackColorApi, tp, 'color')
+  repointPath(trackNameApi, tp, 'name')
+  repointPath(trackColorApi, tp, 'color')
 
   if (!canHaveChains) {
     // null send variation stuff
@@ -232,7 +232,7 @@ function updateDeviceOnOff(iargs: IArguments) {
 
 function onVariationChange() {
   const api = getSelectedDeviceApi()
-  if (+api.id === 0) {
+  if (!apiValid(api)) {
     return
   }
   if (!+api.get('can_have_chains')) {
@@ -246,7 +246,7 @@ function onVariationChange() {
 
 function variationNew() {
   const api = getSelectedDeviceApi()
-  if (+api.id === 0) {
+  if (!apiValid(api)) {
     return
   }
   if (!+api.get('can_have_chains')) {
@@ -259,7 +259,7 @@ function variationNew() {
 }
 function variationDelete(idx: number) {
   const api = getSelectedDeviceApi()
-  if (+api.id === 0) {
+  if (!apiValid(api)) {
     return
   }
   if (!+api.get('can_have_chains')) {
@@ -270,7 +270,7 @@ function variationDelete(idx: number) {
 }
 function variationRecall(idx: number) {
   const api = getSelectedDeviceApi()
-  if (+api.id === 0) {
+  if (!apiValid(api)) {
     return
   }
   if (!+api.get('can_have_chains')) {
@@ -282,7 +282,7 @@ function variationRecall(idx: number) {
 }
 function randomMacros() {
   const api = getSelectedDeviceApi()
-  if (+api.id === 0) {
+  if (!apiValid(api)) {
     return
   }
   if (!+api.get('can_have_chains')) {
@@ -302,23 +302,25 @@ function sendCuePoints() {
     log('Warning: Could not retrieve time signature. Defaulting to 4/4.')
   }
 
-  const result = state.cuePointNames.slice(0, state.cuePointCount).map((cuePoint, idx) => {
-    const cuePointTime = parseFloat(cuePoint.get('time'))
-    const rawBarIndex = Math.floor(cuePointTime / numerator)
-    const rawBeatIndex = cuePointTime % numerator
-    const displayBar = rawBarIndex + 1
-    let displayBeat = rawBeatIndex + 1
-    displayBeat = Math.floor(displayBeat)
-    const displaySixteenths = Math.floor((cuePointTime % 1.0) * 4) + 1
-    const disp = displayBar + '.' + displayBeat + '.' + displaySixteenths
+  const result = state.cuePointNames
+    .slice(0, state.cuePointCount)
+    .map((cuePoint, idx) => {
+      const cuePointTime = parseFloat(cuePoint.get('time'))
+      const rawBarIndex = Math.floor(cuePointTime / numerator)
+      const rawBeatIndex = cuePointTime % numerator
+      const displayBar = rawBarIndex + 1
+      let displayBeat = rawBeatIndex + 1
+      displayBeat = Math.floor(displayBeat)
+      const displaySixteenths = Math.floor((cuePointTime % 1.0) * 4) + 1
+      const disp = displayBar + '.' + displayBeat + '.' + displaySixteenths
 
-    return {
-      idx,
-      name: cuePoint.get('name').toString(),
-      time: cuePointTime,
-      disp,
-    }
-  })
+      return {
+        idx,
+        name: cuePoint.get('name').toString(),
+        time: cuePointTime,
+        disp,
+      }
+    })
   osc('/cuePoints', result)
 }
 
@@ -627,7 +629,8 @@ function initNameColorObservers() {
 // k4-focus's TRACK_PATH_RE). Anchored at the start so a nested-chain device
 // (`live_set tracks 3 devices 0 chains 1 devices 0`) still resolves to its
 // top-level track.
-const TRACK_PATH_RE = /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/
+const TRACK_PATH_RE =
+  /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/
 
 // The track that OWNS the currently displayed device, derived from the device's
 // concrete path (state.devicePath — set from the resolved device's unquotedpath
@@ -645,22 +648,6 @@ function deviceTrackPath(): string {
   return m ? m[1] : ''
 }
 
-// Re-point a mode-1 property observer at a new canonical path. Clearing the
-// property first, then re-setting it, re-fires the callback with the new
-// target's current value — so the surface re-syncs on retarget. An empty target
-// (unlocked track with no device) detaches the observer (id 0 → reads nothing).
-function repoint(api: LiveAPI, target: string, prop: string) {
-  if (!api) return
-  api.property = ''
-  if (target) {
-    api.path = target
-    api.mode = 1
-    api.property = prop
-  } else {
-    api.id = 0
-  }
-}
-
 // Focus changed (unlocked nav, or a lock/unlock transition): re-point every
 // "current track/device" observer at Knobbler's new target. In locked mode the
 // targets are Live's selection paths (auto-following), so this only fires on
@@ -671,9 +658,9 @@ function rebindFocusHandles() {
   // owning track, repointed in onParameterChange when the device actually
   // changes. Repointing paramsWatcher below re-fires that (debouncedParameter
   // change), and on a deviceless target it stays put — exactly what we want.
-  repoint(deviceNameApi, dp, 'name')
-  repoint(state.paramsWatcher, dp, 'parameters')
-  repoint(state.variationsWatcher, dp, 'variation_count')
+  repointPath(deviceNameApi, dp, 'name')
+  repointPath(state.paramsWatcher, dp, 'parameters')
+  repointPath(state.variationsWatcher, dp, 'variation_count')
   if (selectedDeviceApi) {
     if (dp) {
       selectedDeviceApi.path = dp
@@ -714,7 +701,7 @@ function pushState() {
 function unfoldParentTracks(objId: number) {
   const util = getUtilApi()
   util.id = objId
-  if (+util.id === 0) {
+  if (!apiValid(util)) {
     return
   }
   let counter = 0
@@ -736,13 +723,14 @@ function unfoldParentTracks(objId: number) {
 }
 
 function getParentTrackForDevice(deviceId: number) {
-  const util = new LiveAPI(noFn, 'id ' + deviceId)
+  const util = getUtilApi()
+  util.id = deviceId
   if (isDeviceSupported(util)) {
     let counter = 0
     while (counter < 20) {
       util.id = parseInt(util.get('canonical_parent')[1] as any)
       if (util.type === 'Track') {
-        return +util.id
+        return apiId(util)
       }
       counter++
     }
@@ -765,8 +753,9 @@ function gotoDevice(deviceIdStr: string) {
 }
 
 function hideChains(deviceId: string) {
-  const obj = new LiveAPI(noFn, 'id ' + deviceId)
-  if (+obj.id === 0) {
+  const obj = getUtilApi()
+  obj.id = parseInt(deviceId as any)
+  if (!apiValid(obj)) {
     return
   }
   if (isDeviceSupported(obj) && +obj.get('can_have_chains')) {
@@ -794,7 +783,7 @@ function gotoChain(chainIdStr: string) {
 function toggleGroup(groupId: number) {
   const util = getUtilApi()
   util.id = groupId
-  if (+util.id === 0) {
+  if (!apiValid(util)) {
     log('ERROR: Invalid id ' + groupId)
     return
   }
@@ -810,13 +799,13 @@ function gotoTrack(trackIdStr: string) {
   const trackId = parseInt(trackIdStr)
   const util = getUtilApi()
   util.id = trackId
-  if (+util.id !== 0) {
+  if (apiValid(util)) {
     let counter = 0
     while (counter < 20) {
       const groupIds = cleanArr(util.get('group_track'))
       if (!groupIds.length) break
       util.id = groupIds[0]
-      if (+util.id === 0) break
+      if (!apiValid(util)) break
       const foldState = parseInt(util.get('fold_state').toString())
       if (foldState === 1) {
         util.set('fold_state', 0)
@@ -987,10 +976,18 @@ const routes: Route[] = [
   { prefix: '/deleteCuePoint', parse: 'val', fn: deleteCuePoint },
   { prefix: '/btnSkipPrev', parse: 'bare', fn: btnSkipPrev },
   { prefix: '/btnSkipNext', parse: 'bare', fn: btnSkipNext },
-  { prefix: '/btnReEnableAutomation', parse: 'bare', fn: btnReEnableAutomation },
+  {
+    prefix: '/btnReEnableAutomation',
+    parse: 'bare',
+    fn: btnReEnableAutomation,
+  },
   { prefix: '/btnLoop', parse: 'bare', fn: btnLoop },
   { prefix: '/btnCaptureMidi', parse: 'bare', fn: btnCaptureMidi },
-  { prefix: '/btnArrangementOverdub', parse: 'bare', fn: btnArrangementOverdub },
+  {
+    prefix: '/btnArrangementOverdub',
+    parse: 'bare',
+    fn: btnArrangementOverdub,
+  },
   { prefix: '/btnSessionRecord', parse: 'bare', fn: btnSessionRecord },
   { prefix: '/btnBackToArranger', parse: 'bare', fn: btnBackToArranger },
   { prefix: '/bCtlRec', parse: 'bare', fn: ctlRec },

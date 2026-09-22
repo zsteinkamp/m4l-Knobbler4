@@ -10,6 +10,7 @@ import {
   PauseState,
   SEND_ADDR,
 } from './utils'
+import { apiValid } from './liveApi'
 import config from './k4-config'
 import {
   noFn,
@@ -206,7 +207,7 @@ const setSendWatcherIds = (sendIds: number[]) => {
 }
 
 function updateSendsFromMixer() {
-  if (!state.mixerObj || +state.mixerObj.id === 0) return
+  if (!apiValid(state.mixerObj)) return
   const sendIds = cleanArr(state.mixerObj.get('sends') as any)
   setSendWatcherIds(sendIds)
 }
@@ -256,19 +257,19 @@ function disableInput() {
 }
 
 function enableRecord() {
-  if (!state.trackObj || +state.trackObj.id === 0) return
+  if (!apiValid(state.trackObj)) return
   enableArm(state.trackObj, state.trackLookupObj)
   sendRecordStatus(state.trackObj)
 }
 
 function disableRecord() {
-  if (!state.trackObj || +state.trackObj.id === 0) return
+  if (!apiValid(state.trackObj)) return
   disableArm(state.trackObj)
   sendRecordStatus(state.trackObj)
 }
 
 function toggleMute() {
-  if (!state.trackObj || +state.trackObj.id === 0) {
+  if (!apiValid(state.trackObj)) {
     return
   }
   toggleMuteShared(state.trackObj)
@@ -279,7 +280,7 @@ function toggleMute() {
 // Reads via trackLookupObj since it always points at the currently-displayed
 // track; toggleMute writes via trackObj but the result is the same row.
 function emitEffectiveMute() {
-  if (!state.trackLookupObj || +state.trackLookupObj.id === 0) return
+  if (!apiValid(state.trackLookupObj)) return
   osc('/mixer/mute', effectiveMute(state.trackLookupObj))
 }
 
@@ -290,7 +291,7 @@ function handleMuteChange(args: IArguments) {
 }
 
 function emitXfadeAssign() {
-  if (!state.mixerObj || +state.mixerObj.id === 0) return
+  if (!apiValid(state.mixerObj)) return
   const [aOn, bOn] = xfadeAB(state.mixerObj)
   osc('/mixer/xFadeA', aOn)
   osc('/mixer/xFadeB', bOn)
@@ -311,7 +312,7 @@ function handleXfadeAssignChange(args: IArguments) {
 }
 
 function toggleSolo() {
-  if (!state.trackObj || +state.trackObj.id === 0) {
+  if (!apiValid(state.trackObj)) {
     return
   }
   const newState = toggleSoloShared(state.trackObj, state.trackLookupObj)
@@ -319,7 +320,7 @@ function toggleSolo() {
 }
 
 function handleCrossfader(val: string) {
-  if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
+  if (!apiValid(state.crossfaderObj)) {
     return
   }
   pauseUnpause(state.pause['crossfader'], PAUSE_MS)
@@ -327,7 +328,7 @@ function handleCrossfader(val: string) {
 }
 
 function handleCrossfaderDefault() {
-  if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
+  if (!apiValid(state.crossfaderObj)) {
     return
   }
   state.crossfaderObj.set(
@@ -337,7 +338,7 @@ function handleCrossfaderDefault() {
 }
 
 function handlePan(val: string) {
-  if (!state.panObj || +state.panObj.id === 0) {
+  if (!apiValid(state.panObj)) {
     return
   }
   pauseUnpause(state.pause['pan'], PAUSE_MS)
@@ -352,7 +353,7 @@ function handlePanDefault() {
 }
 
 function handleVol(val: string) {
-  if (!state.volObj || +state.volObj.id === 0) {
+  if (!apiValid(state.volObj)) {
     return
   }
   pauseUnpause(state.pause['vol'], PAUSE_MS)
@@ -466,12 +467,13 @@ const onTrackChange = (args: IdObserverArg) => {
   }
   state.lastTrackId = id
 
-  if (trackChangeDebounce) {
-    trackChangeDebounce.cancel()
+  if (!trackChangeDebounce) {
+    // One reusable Task — a fresh one per change never freed the old peer.
+    trackChangeDebounce = new Task(function () {
+      handleTrackChange(state.lastTrackId)
+    }) as MaxTask
   }
-  trackChangeDebounce = new Task(function () {
-    handleTrackChange(id)
-  }) as MaxTask
+  trackChangeDebounce.cancel()
   trackChangeDebounce.schedule(40)
 }
 

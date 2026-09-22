@@ -1,13 +1,15 @@
 import config from './k4-config'
 import {
+  colorToString,
   dequote,
-  fixFloat,
   logFactory,
   setOscSink,
   osc,
   pauseUnpause,
   PauseState,
 } from './utils'
+import { apiId } from './liveApi'
+import { propToValue, valueString, valueToProp } from './deviceParam'
 import { PAUSE_MS, noFn } from './consts'
 
 const log = logFactory(config)
@@ -76,52 +78,69 @@ function lock(val: number) {
   }
 }
 
+// One reusable debounce Task — allocating one per selection never freed the
+// previous peer.
 let paramSelectDebounce: MaxTask = null
 
 function onParamSelected() {
   if (!active || locked || !paramSelObj) return
-  const paramId = parseInt(paramSelObj.id as any)
-  if (!paramId || paramId === 0) {
+  const paramId = apiId(paramSelObj)
+  if (paramId === 0) {
     currentParamId = 0
     return
   }
   currentParamId = paramId
 
-  if (paramSelectDebounce) {
-    paramSelectDebounce.cancel()
+  if (!paramSelectDebounce) {
+    paramSelectDebounce = new Task(function () {
+      sendAllParamInfo(currentParamId)
+    }) as MaxTask
   }
-  paramSelectDebounce = new Task(function () {
-    sendAllParamInfo(currentParamId)
-  }) as MaxTask
+  paramSelectDebounce.cancel()
   paramSelectDebounce.schedule(40)
+}
+
+// Point `api` at a parameter and read the three things every handler here
+// needs. Null when the id isn't a DeviceParameter (deleted device, stale id).
+// The scaling and str_for_value formatting come from deviceParam.ts, the same
+// helpers knobblerCore and k4-bluhandSlots use — this module used to reimplement
+// both in four places.
+type ParamRead = { value: number; prop: number; str: string }
+function readParam(api: LiveAPI, paramId: number): ParamRead | null {
+  api.id = paramId
+  if (api.type !== 'DeviceParameter') return null
+  return describe(api, parseFloat(api.get('value').toString()))
+}
+
+// The scaled proportion + display string for `value` on an already-pointed api.
+function describe(api: LiveAPI, value: number): ParamRead {
+  const min = parseFloat(api.get('min').toString())
+  const max = parseFloat(api.get('max').toString())
+  return {
+    value: value,
+    prop: valueToProp(value, min, max),
+    str: dequote(valueString(api, value)),
+  }
+}
+
+// #rrggbb for the app, from Live's packed integer color. Lower-cased to keep
+// the wire format byte-identical to what this module emitted before it shared
+// utils' colorToString (which upper-cases).
+function colorHash(raw: any): string {
+  return '#' + colorToString(raw ? raw.toString() : '').toLowerCase()
 }
 
 function sendAllParamInfo(paramId: number) {
   ensureApis()
 
-  // Point scratchApi at the parameter
-  scratchApi.id = paramId
-  if (scratchApi.type !== 'DeviceParameter') return
+  const read = readParam(scratchApi, paramId)
+  if (!read) return
 
   const paramName = dequote(scratchApi.get('name').toString())
   const paramMin = parseFloat(scratchApi.get('min').toString())
   const paramMax = parseFloat(scratchApi.get('max').toString())
-  const paramVal = parseFloat(scratchApi.get('value').toString())
-
-  // Get the min/max display strings
-  const minStr = dequote(
-    (scratchApi.call('str_for_value', fixFloat(paramMin)) as any).toString()
-  )
-  const maxStr = dequote(
-    (scratchApi.call('str_for_value', fixFloat(paramMax)) as any).toString()
-  )
-  const valStr = dequote(
-    (scratchApi.call('str_for_value', fixFloat(paramVal)) as any).toString()
-  )
-
-  // Scale value to 0-1
-  const scaledVal =
-    paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0
+  const minStr = dequote(valueString(scratchApi, paramMin))
+  const maxStr = dequote(valueString(scratchApi, paramMax))
 
   // Navigate to the parent device
   const paramPath = scratchApi.unquotedpath
@@ -141,7 +160,7 @@ function sendAllParamInfo(paramId: number) {
   if (trackMatch) {
     scratchApi.path = trackMatch[1]
     trackName = dequote(scratchApi.get('name').toString())
-    trackColor = '#' + ('000000' + parseInt(scratchApi.get('color').toString()).toString(16)).slice(-6)
+    trackColor = colorHash(scratchApi.get('color'))
 
     // Set up track color observer
     if (trackColorObj) {
@@ -165,35 +184,24 @@ function sendAllParamInfo(paramId: number) {
   osc('/currentParam/trackColor', trackColor)
   osc('/currentParam/minStr', minStr)
   osc('/currentParam/maxStr', maxStr)
-  osc('/currentParam/valStr', valStr)
-  osc('/currentParam/val', scaledVal)
+  osc('/currentParam/valStr', read.str)
+  osc('/currentParam/val', read.prop)
 }
 
 function onValueChange() {
   if (!active || !currentParamId || pause.paused) return
 
   // Use separate scratchpad to avoid re-entrancy with scratchApi
-  valScratchApi.id = currentParamId
-  if (valScratchApi.type !== 'DeviceParameter') return
+  const read = readParam(valScratchApi, currentParamId)
+  if (!read) return
 
-  const paramVal = parseFloat(valScratchApi.get('value').toString())
-  const paramMin = parseFloat(valScratchApi.get('min').toString())
-  const paramMax = parseFloat(valScratchApi.get('max').toString())
-  const valStr = dequote(
-    (valScratchApi.call('str_for_value', fixFloat(paramVal)) as any).toString()
-  )
-
-  const scaledVal =
-    paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0
-
-  osc('/currentParam/val', scaledVal)
-  osc('/currentParam/valStr', valStr)
+  osc('/currentParam/val', read.prop)
+  osc('/currentParam/valStr', read.str)
 }
 
 function onTrackColorChange() {
   if (!active || !currentParamId || !trackColorObj) return
-  const color = '#' + ('000000' + parseInt(trackColorObj.get('color').toString()).toString(16)).slice(-6)
-  osc('/currentParam/trackColor', color)
+  osc('/currentParam/trackColor', colorHash(trackColorObj.get('color')))
 }
 
 // Called from router when user moves the current param slider
@@ -208,14 +216,11 @@ function currentParamVal(val: number) {
   const paramMax = parseFloat(scratchApi.get('max').toString())
 
   // Scale from 0-1 to param range
-  const rawVal = paramMin + val * (paramMax - paramMin)
+  const rawVal = propToValue(val, paramMin, paramMax)
   pauseUnpause(pause, PAUSE_MS)
   scratchApi.set('value', rawVal)
 
-  const valStr = dequote(
-    (scratchApi.call('str_for_value', fixFloat(rawVal)) as any).toString()
-  )
-  osc('/currentParam/valStr', valStr)
+  osc('/currentParam/valStr', dequote(valueString(scratchApi, rawVal)))
 }
 
 // Called from router when user taps "default" button
@@ -227,19 +232,12 @@ function currentParamDefault() {
   if (scratchApi.type !== 'DeviceParameter') return
 
   const defaultVal = parseFloat(scratchApi.get('default_value').toString())
-  const paramMin = parseFloat(scratchApi.get('min').toString())
-  const paramMax = parseFloat(scratchApi.get('max').toString())
-
   pauseUnpause(pause, PAUSE_MS)
   scratchApi.set('value', defaultVal)
 
-  const scaledVal =
-    paramMax > paramMin ? (defaultVal - paramMin) / (paramMax - paramMin) : 0
-  const valStr = dequote(
-    (scratchApi.call('str_for_value', fixFloat(defaultVal)) as any).toString()
-  )
-  osc('/currentParam/val', scaledVal)
-  osc('/currentParam/valStr', valStr)
+  const read = describe(scratchApi, defaultVal)
+  osc('/currentParam/val', read.prop)
+  osc('/currentParam/valStr', read.str)
 }
 
 function doRefresh(c: AppContext) {
@@ -250,7 +248,12 @@ function doRefresh(c: AppContext) {
 
 // --- Route table (dispatched by the [v8 knobbler] entry) -------------------
 const routes: Route[] = [
-  { prefix: '/currentParam/val', parse: 'val', fn: currentParamVal, coalesce: true },
+  {
+    prefix: '/currentParam/val',
+    parse: 'val',
+    fn: currentParamVal,
+    coalesce: true,
+  },
   { prefix: '/currentParam/default', parse: 'bare', fn: currentParamDefault },
   { prefix: '/currentParam/lock', parse: 'val', fn: lock },
   { prefix: '/currentParam/show', parse: 'bare', fn: show },

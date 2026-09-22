@@ -19,6 +19,7 @@
 
 import config from './k4-config'
 import { logFactory, osc, saveSetting, setOscSink } from './utils'
+import { apiId } from './liveApi'
 import { noFn, OUTLET_REFRESH, OUTLET_CONFIGURE } from './consts'
 
 const log = logFactory(config)
@@ -80,18 +81,39 @@ function synAck(val: string | number) {
   // on big sets) while the app sits gated on it. The full re-push fired
   // 150ms later will emit it again via the normal tracksDevices path; that
   // second emit is a no-op for the app (same id).
-  const trackApi = new LiveAPI(noFn, 'live_set view selected_track')
-  if (+trackApi.id !== 0) {
-    osc('/nav/currTrackId', +trackApi.id)
+  const trackId = currTrackId()
+  if (trackId !== 0) {
+    osc('/nav/currTrackId', trackId)
   }
   osc('/sendState', 1)
-  if (synRefreshTask) {
-    synRefreshTask.cancel()
+  if (!synRefreshTask) {
+    // One reusable Task, cancelled + rescheduled — a fresh one per /syn never
+    // freed the peer it replaced.
+    synRefreshTask = new Task(btnRefresh) as MaxTask
   }
-  synRefreshTask = new Task(function () {
-    outlet(OUTLET_REFRESH, 'refresh')
-  }) as MaxTask
+  synRefreshTask.cancel()
   synRefreshTask.schedule(150)
+}
+
+// Knobbler's current track id, 0 if it can't be resolved. Goes through
+// ctx.focus like every other current-track read (a hardcoded
+// 'live_set view selected_track' would report Live's selection even when focus
+// is unlocked and pointing elsewhere), and reuses one handle rather than
+// building a LiveAPI per /syn.
+let trackApi: LiveAPI = null
+function currTrackId(): number {
+  if (!ctx) {
+    return 0
+  }
+  if (!trackApi) {
+    trackApi = new LiveAPI(noFn, 'live_set')
+  }
+  const tp = ctx.focus.trackPath()
+  if (!tp) {
+    return 0
+  }
+  trackApi.path = tp
+  return apiId(trackApi)
 }
 
 function ping(val: string | number) {

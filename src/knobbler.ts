@@ -272,22 +272,22 @@ function initAll() {
 
 // --- Route table (merged from every migrated module) -----------------------
 
-const ROUTES: Route[] = [].concat(
-  bluhand.routes as any,
-  focus.routes as any,
-  pluginWindow.routes as any,
-  currentParam.routes as any,
-  multiMixer.routes as any,
-  sidebarMixer.routes as any,
-  clipView.routes as any,
-  visibleTracks.routes as any,
-  tracksDevices.routes as any,
-  shortcuts.routes as any,
-  system.routes as any,
-  dbg.routes as any,
-  knobblerRoutes as any,
-  entryRoutes as any
-) as Route[]
+const ROUTES: Route[] = ([] as Route[]).concat(
+  bluhand.routes,
+  focus.routes,
+  pluginWindow.routes,
+  currentParam.routes,
+  multiMixer.routes,
+  sidebarMixer.routes,
+  clipView.routes,
+  visibleTracks.routes,
+  tracksDevices.routes,
+  shortcuts.routes,
+  system.routes,
+  dbg.routes,
+  knobblerRoutes,
+  entryRoutes
+)
 ROUTES.sort((a, b) => (a.prefix.length > b.prefix.length ? -1 : 1))
 
 function getSlotNum(prefix: string, address: string): number {

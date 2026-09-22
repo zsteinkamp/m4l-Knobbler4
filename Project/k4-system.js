@@ -21,6 +21,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.clientAlive = exports.init = exports.setDeviceVersion = exports.routes = void 0;
 var k4_config_1 = require("./k4-config");
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Device capabilities advertised back to the app in /ack and /pong replies.
@@ -76,18 +77,38 @@ function synAck(val) {
     // on big sets) while the app sits gated on it. The full re-push fired
     // 150ms later will emit it again via the normal tracksDevices path; that
     // second emit is a no-op for the app (same id).
-    var trackApi = new LiveAPI(consts_1.noFn, 'live_set view selected_track');
-    if (+trackApi.id !== 0) {
-        (0, utils_1.osc)('/nav/currTrackId', +trackApi.id);
+    var trackId = currTrackId();
+    if (trackId !== 0) {
+        (0, utils_1.osc)('/nav/currTrackId', trackId);
     }
     (0, utils_1.osc)('/sendState', 1);
-    if (synRefreshTask) {
-        synRefreshTask.cancel();
+    if (!synRefreshTask) {
+        // One reusable Task, cancelled + rescheduled — a fresh one per /syn never
+        // freed the peer it replaced.
+        synRefreshTask = new Task(btnRefresh);
     }
-    synRefreshTask = new Task(function () {
-        outlet(consts_1.OUTLET_REFRESH, 'refresh');
-    });
+    synRefreshTask.cancel();
     synRefreshTask.schedule(150);
+}
+// Knobbler's current track id, 0 if it can't be resolved. Goes through
+// ctx.focus like every other current-track read (a hardcoded
+// 'live_set view selected_track' would report Live's selection even when focus
+// is unlocked and pointing elsewhere), and reuses one handle rather than
+// building a LiveAPI per /syn.
+var trackApi = null;
+function currTrackId() {
+    if (!ctx) {
+        return 0;
+    }
+    if (!trackApi) {
+        trackApi = new LiveAPI(consts_1.noFn, 'live_set');
+    }
+    var tp = ctx.focus.trackPath();
+    if (!tp) {
+        return 0;
+    }
+    trackApi.path = tp;
+    return (0, liveApi_1.apiId)(trackApi);
 }
 function ping(val) {
     saveClient(val);

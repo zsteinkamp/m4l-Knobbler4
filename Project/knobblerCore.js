@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.xySplit = exports.xyJoin = exports.val = exports.unmap = exports.swap = exports.setPath = exports.setMin = exports.setMax = exports.setDictPrefix = exports.setDefault = exports.setCustomName = exports.refresh = exports.initAll = exports.gotoTrackFor = exports.clearPath = exports.clearCustomName = exports.mkMap = exports.bkMap = void 0;
 var utils_1 = require("./utils");
 Object.defineProperty(exports, "setDictPrefix", { enumerable: true, get: function () { return utils_1.setDictPrefix; } });
+var liveApi_1 = require("./liveApi");
 var consts_1 = require("./consts");
 var deviceParam_1 = require("./deviceParam");
 var k4_config_1 = require("./k4-config");
@@ -230,7 +231,9 @@ function applySnapshot(slot, snap) {
 }
 function swap(slotA, slotB) {
     if (!apiReady) {
-        pendingCalls.push(function () { swap(slotA, slotB); });
+        pendingCalls.push(function () {
+            swap(slotA, slotB);
+        });
         return;
     }
     if (slotA === slotB)
@@ -288,7 +291,9 @@ exports.bkMap = bkMap;
 // "/mixer/vol") to a Live API parameter path and bind it to the given slot.
 function mkMap(slot, mixerPath) {
     if (!apiReady) {
-        pendingCalls.push(function () { mkMap(slot, mixerPath); });
+        pendingCalls.push(function () {
+            mkMap(slot, mixerPath);
+        });
         return;
     }
     if (!mixerPath)
@@ -375,8 +380,8 @@ function initAll(c) {
     if (!scratchApi)
         scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
     apiReady = true;
-    for (var i_1 = 1; i_1 <= consts_1.MAX_SLOTS; i_1++) {
-        initSlotIfNecessary(i_1);
+    for (var i = 1; i <= consts_1.MAX_SLOTS; i++) {
+        initSlotIfNecessary(i);
     }
     // Replay calls that arrived before the API was ready
     var queued = pendingCalls;
@@ -393,12 +398,14 @@ function initSlotIfNecessary(slot) {
 }
 function init(slot) {
     if (!apiReady) {
-        pendingCalls.push(function () { init(slot); });
+        pendingCalls.push(function () {
+            init(slot);
+        });
         return;
     }
     //log(`INIT ${slot}`)
     if (paramObj[slot]) {
-        (0, utils_1.detach)(paramObj[slot]);
+        (0, liveApi_1.detach)(paramObj[slot]);
         (0, utils_1.osc)(ADDR_VALSTR[slot], consts_1.nullString);
     }
     paramObj[slot] = null;
@@ -417,12 +424,12 @@ function init(slot) {
         deviceCheckerTask[slot].freepeer();
         deviceCheckerTask[slot] = null;
     }
-    (0, utils_1.detach)(paramNameObj[slot]);
-    (0, utils_1.detach)(automationStateObj[slot]);
-    (0, utils_1.detach)(deviceObj[slot]);
-    (0, utils_1.detach)(parentNameObj[slot]);
-    (0, utils_1.detach)(parentColorObj[slot]);
-    (0, utils_1.detach)(trackObj[slot]);
+    (0, liveApi_1.detach)(paramNameObj[slot]);
+    (0, liveApi_1.detach)(automationStateObj[slot]);
+    (0, liveApi_1.detach)(deviceObj[slot]);
+    (0, liveApi_1.detach)(parentNameObj[slot]);
+    (0, liveApi_1.detach)(parentColorObj[slot]);
+    (0, liveApi_1.detach)(trackObj[slot]);
     sendMsg(slot, ['mapped', false]);
     sendMsg(slot, ['path', '']);
 }
@@ -467,7 +474,7 @@ function gotoTrackFor(slot) {
     if (!trackObj[slot]) {
         return;
     }
-    ctx.gotoTrack(trackObj[slot].id.toString()); // shared nav: unfolds enclosing groups
+    ctx.gotoTrack((0, liveApi_1.apiId)(trackObj[slot]).toString()); // shared nav: unfolds groups
 }
 exports.gotoTrackFor = gotoTrackFor;
 function setDefault(slot) {
@@ -522,14 +529,6 @@ function deviceNameCallback(slot, iargs) {
 function parentNameCallback(slot, iargs) {
     if (iargs[0] === 'name') {
         param[slot].parentName = iargs[1];
-        sendTrackName(slot);
-    }
-}
-function trackNameCallback(slot, iargs) {
-    if (!param[slot])
-        return;
-    if (iargs[0] === 'name') {
-        param[slot].trackName = iargs[1];
         sendTrackName(slot);
     }
 }
@@ -592,7 +591,9 @@ function reArmSlot(api, cb, target, prop) {
 function setPath(slot, paramPath) {
     //log(`SETPATH ${slot}: ${paramPath}`)
     if (!apiReady) {
-        pendingCalls.push(function () { setPath(slot, paramPath); });
+        pendingCalls.push(function () {
+            setPath(slot, paramPath);
+        });
         return;
     }
     initSlotIfNecessary(slot);
@@ -603,7 +604,7 @@ function setPath(slot, paramPath) {
     }
     // Re-point (or create) the param value observer, then validate the resolved id.
     var pv = reArmSlot(paramObj[slot], function (iargs) { return paramValueCallback(slot, iargs); }, paramPath, '');
-    if (+pv.id === 0) {
+    if (!(0, liveApi_1.apiValid)(pv)) {
         log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
         return;
     }
@@ -611,20 +612,17 @@ function setPath(slot, paramPath) {
     paramObj[slot] = pv;
     paramNameObj[slot] = reArmSlot(paramNameObj[slot], function (iargs) { return paramNameCallback(slot, iargs); }, paramPath, 'name');
     automationStateObj[slot] = reArmSlot(automationStateObj[slot], function (iargs) { return automationStateCallback(slot, iargs); }, paramPath, 'automation_state');
-    param[slot].id = paramObj[slot].id;
+    param[slot].id = (0, liveApi_1.apiId)(paramObj[slot]);
     param[slot].path = paramObj[slot].unquotedpath;
     param[slot].val = parseFloat(paramObj[slot].get('value'));
     param[slot].min = parseFloat(paramObj[slot].get('min')) || 0;
     param[slot].max = parseFloat(paramObj[slot].get('max')) || 1;
     param[slot].name = paramObj[slot].get('name')[0];
-    param[slot].quant =
-        parseInt(paramObj[slot].get('is_quantized')) > 0
-            ? paramObj[slot].get('value_items').length
-            : 0;
-    param[slot].quantItems =
-        parseInt(paramObj[slot].get('is_quantized')) > 0
-            ? paramObj[slot].get('value_items')
-            : '';
+    var isQuantized = parseInt(paramObj[slot].get('is_quantized')) > 0;
+    param[slot].quantItems = isQuantized
+        ? paramObj[slot].get('value_items')
+        : [];
+    param[slot].quant = param[slot].quantItems.length;
     deviceObj[slot] = reArmSlot(deviceObj[slot], function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'), '' // property set conditionally below
     );
     var devicePath = deviceObj[slot].unquotedpath;
@@ -658,9 +656,11 @@ function setPath(slot, paramPath) {
         devicePath.match(/^live_set return_tracks \d+/) ||
         devicePath.match(/^live_set master_track/);
     if (matches) {
-        //log(matches[0])
-        trackObj[slot] = reArmSlot(trackObj[slot], function (iargs) { return trackNameCallback(slot, iargs); }, matches[0], '' // preserve original behavior (handle was created without a property)
-        );
+        // NOT an observer — a plain handle so gotoTrackFor(slot) can resolve the
+        // owning track. (It used to be armed with a trackNameCallback and an empty
+        // property, so the callback could never fire; the strip's track label comes
+        // from parentNameObj.)
+        trackObj[slot] = reArmSlot(trackObj[slot], consts_1.noFn, matches[0], '');
     }
     //log("PARAM DATA", JSON.stringify(param), "\n");
     sendMsg(slot, ['mapped', true]);
@@ -679,7 +679,9 @@ exports.setPath = setPath;
 function refresh() {
     //log('IN REFRESH')
     if (!apiReady) {
-        pendingCalls.push(function () { refresh(); });
+        pendingCalls.push(function () {
+            refresh();
+        });
         return;
     }
     loadXYPairs();
@@ -706,12 +708,9 @@ function sendNames(slot) {
 function sendQuant(slot) {
     initSlotIfNecessary(slot);
     (0, utils_1.osc)(ADDR_QUANT[slot], param[slot].quant);
-    if (param[slot] && param[slot].quant > 2) {
-        (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], param[slot].quantItems);
-    }
-    else {
-        (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], '[]');
-    }
+    // Always an array — the app decodes the payload the same way either way.
+    // (The empty case used to ship the literal STRING '[]'.)
+    (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], param[slot].quant > 2 ? param[slot].quantItems : []);
 }
 function sendParamName(slot) {
     //log(`SEND PARAM NAME ${slot}`)
@@ -770,8 +769,7 @@ function sendVal(slot) {
         return;
     }
     initSlotIfNecessary(slot);
-    if (!paramObj[slot] ||
-        +paramObj[slot].id === 0 ||
+    if (!(0, liveApi_1.apiValid)(paramObj[slot]) ||
         param[slot].val === undefined ||
         param[slot].max === undefined ||
         param[slot].min === undefined ||
@@ -843,4 +841,3 @@ function val(slot, val) {
     }
 }
 exports.val = val;
-var module = {};

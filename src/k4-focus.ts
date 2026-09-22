@@ -19,6 +19,7 @@
 
 import config from './k4-config'
 import { logFactory, setOscSink, osc } from './utils'
+import { apiId, apiValid } from './liveApi'
 import { noFn } from './consts'
 
 const log = logFactory(config)
@@ -50,7 +51,8 @@ const APPOINTED_DEVICE = 'live_set appointed_device'
 
 // Canonical track prefix of a device path, e.g.
 // "live_set tracks 3 devices 1" → "live_set tracks 3"
-const TRACK_PATH_RE = /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/
+const TRACK_PATH_RE =
+  /^(live_set (?:tracks \d+|return_tracks \d+|master_track))/
 
 const KEY_LOCKED = 'focusLocked'
 const KEY_TRACK = 'focusTrackPath'
@@ -59,10 +61,11 @@ const KEY_DEVICE = 'focusDevicePath'
 let ctx: AppContext = null
 let locked = true
 
-// Unlocked pointer: canonical PATHS (persisted) + resolved ids (live binding).
-// trackId === 0 means "no pinned track" → fall back to Live's selection path.
+// Unlocked pointer: canonical PATHS (persisted), plus the resolved track id —
+// the only id this module needs, as a "did anything pin?" flag. (There was a
+// matching deviceId, but nothing ever read it; devicePathStr is the device
+// pointer, and '' means "no device".)
 let trackId = 0
-let deviceId = 0
 let trackPathStr = ''
 let devicePathStr = ''
 
@@ -82,7 +85,7 @@ function getScratch(): LiveAPI {
 // listing 'Device' (rack/instrument subtypes vary).
 function isDevice(api: LiveAPI): boolean {
   const t = api.type as string
-  return +api.id !== 0 && t !== 'Song' && t !== 'Track'
+  return apiValid(api) && t !== 'Song' && t !== 'Track'
 }
 
 // --- Which of Live's two device pointers we follow ---------------------------
@@ -136,7 +139,10 @@ function refreshDeviceSource(): void {
   const next = controlSurfaceConfigured() && appointedResolves()
   if (next === useAppointed) return
   useAppointed = next
-  log('device source -> ' + (useAppointed ? 'appointed_device' : 'selected_device'))
+  log(
+    'device source -> ' +
+      (useAppointed ? 'appointed_device' : 'selected_device')
+  )
   emit()
 }
 
@@ -165,7 +171,8 @@ export function init(c: AppContext): void {
   setOscSink(c.osc)
 
   const savedLocked = c.settings.get(KEY_LOCKED)
-  locked = savedLocked === null || savedLocked === undefined ? true : !!+savedLocked
+  locked =
+    savedLocked === null || savedLocked === undefined ? true : !!+savedLocked
 
   // Decide appointed-vs-selected BEFORE bluhand.init binds its observers to
   // devicePath(), so they come up on the right pointer with no re-point.
@@ -213,7 +220,7 @@ export function selectTrack(id: number): void {
   }
   const s = getScratch()
   s.id = id
-  if (+s.id === 0) return
+  if (!apiValid(s)) return
   trackId = id
   trackPathStr = s.unquotedpath
   // Adopt the track's own remembered device (Live keeps this per-track even
@@ -221,13 +228,7 @@ export function selectTrack(id: number): void {
   // deviceless track's `view selected_device` can resolve to a non-device
   // (Track/Song) — never adopt that, or the device surface points at junk.
   s.path = trackPathStr + ' view selected_device'
-  if (isDevice(s)) {
-    deviceId = parseInt(s.id as any)
-    devicePathStr = s.unquotedpath
-  } else {
-    deviceId = 0
-    devicePathStr = ''
-  }
+  devicePathStr = isDevice(s) ? s.unquotedpath : ''
   persist()
   emit()
 }
@@ -242,13 +243,12 @@ export function selectDevice(id: number): void {
   const s = getScratch()
   s.id = id
   if (!isDevice(s)) return
-  deviceId = id
   devicePathStr = s.unquotedpath
   const m = devicePathStr.match(TRACK_PATH_RE)
   if (m) {
     s.path = m[1]
-    if (+s.id !== 0) {
-      trackId = parseInt(s.id as any)
+    if (apiValid(s)) {
+      trackId = apiId(s)
       trackPathStr = m[1]
     }
   }
@@ -268,7 +268,6 @@ export function lock(val: number): void {
   locked = next
   if (locked) {
     trackId = 0
-    deviceId = 0
     trackPathStr = ''
     devicePathStr = ''
   } else {
@@ -291,16 +290,10 @@ function emit(): void {
 function captureFromLiveSelection(): void {
   const s = getScratch()
   s.path = SEL_TRACK
-  trackId = +s.id === 0 ? 0 : parseInt(s.id as any)
+  trackId = apiId(s)
   trackPathStr = trackId ? s.unquotedpath : ''
   s.path = liveDevicePath()
-  if (isDevice(s)) {
-    deviceId = parseInt(s.id as any)
-    devicePathStr = s.unquotedpath
-  } else {
-    deviceId = 0
-    devicePathStr = ''
-  }
+  devicePathStr = isDevice(s) ? s.unquotedpath : ''
 }
 
 // Resolve persisted paths back to ids. Positional paths can go stale across set
@@ -309,15 +302,14 @@ function restorePointer(tp: any, dp: any): void {
   const s = getScratch()
   if (tp) {
     s.path = String(tp)
-    if (+s.id !== 0) {
-      trackId = parseInt(s.id as any)
+    if (apiValid(s)) {
+      trackId = apiId(s)
       trackPathStr = String(tp)
     }
   }
   if (dp) {
     s.path = String(dp)
-    if (+s.id !== 0) {
-      deviceId = parseInt(s.id as any)
+    if (apiValid(s)) {
       devicePathStr = String(dp)
     }
   }

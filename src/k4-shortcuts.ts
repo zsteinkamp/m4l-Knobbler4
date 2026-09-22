@@ -12,6 +12,7 @@
 // ctx.gotoDevice (bluhand).
 
 import { colorToString, dequote, logFactory, osc, setOscSink } from './utils'
+import { apiId, apiValid, ensureObs } from './liveApi'
 import config from './k4-config'
 import { noFn, OUTLET_SHORTCUT_NAME } from './consts'
 
@@ -85,25 +86,26 @@ function makeCb(slot: number, prop: string, fn: (slot: number) => void) {
   }
 }
 
+// Bind by numeric id, never by an 'id N' path string — the latter is a STRING
+// and interns a permanent Max symbol per distinct device (CLAUDE.md).
 function bindDevice(slot: number, deviceId: number) {
   const s = slots[slot - 1]
-  if (!s.deviceApi) {
-    s.deviceApi = new LiveAPI(noFn, 'id ' + deviceId)
-  } else {
-    s.deviceApi.id = deviceId
-  }
+  s.deviceApi = ensureObs(s.deviceApi, deviceId, noFn, '')
   // Devices have no 'color' — the shortcut color comes from the device's
   // canonical_parent (the track, or chain for rack devices).
   const parentId = parseInt(s.deviceApi.get('canonical_parent')[1] as any)
-  if (!s.nameApi) {
-    s.nameApi = new LiveAPI(makeCb(slot, 'name', onName), 'id ' + deviceId)
-    s.nameApi.property = 'name'
-    s.colorApi = new LiveAPI(makeCb(slot, 'color', onColor), 'id ' + parentId)
-    s.colorApi.property = 'color'
-  } else {
-    s.nameApi.id = deviceId
-    s.colorApi.id = parentId
-  }
+  s.nameApi = ensureObs(
+    s.nameApi,
+    deviceId,
+    makeCb(slot, 'name', onName),
+    'name'
+  )
+  s.colorApi = ensureObs(
+    s.colorApi,
+    parentId,
+    makeCb(slot, 'color', onColor),
+    'color'
+  )
   s.mapped = true
   onName(slot)
   onColor(slot)
@@ -117,6 +119,13 @@ function resetSlot(slot: number) {
 
 // --- inbound -----------------------------------------------------------------
 
+function getScratch(): LiveAPI {
+  if (!scratchApi) {
+    scratchApi = new LiveAPI(noFn, 'live_set')
+  }
+  return scratchApi
+}
+
 // /mapshortcut{N}: map the selected device when empty, else recall it.
 function shortcut(slot: number) {
   const s = slots[slot - 1]
@@ -124,28 +133,26 @@ function shortcut(slot: number) {
     recall(slot)
     return
   }
-  if (!scratchApi) {
-    scratchApi = new LiveAPI(noFn, 'live_set')
-  }
   const dp = ctx.focus.devicePath() // current device (focus); Live's sel when locked
   if (!dp) {
     return // no current device
   }
-  scratchApi.path = dp
-  const id = parseInt(scratchApi.id as any)
+  const scratch = getScratch()
+  scratch.path = dp
+  const id = apiId(scratch)
   if (id === 0) {
     return // nothing selected
   }
-  ctx.settings.set(pathKey(slot), scratchApi.unquotedpath)
+  ctx.settings.set(pathKey(slot), scratch.unquotedpath)
   bindDevice(slot, id)
 }
 
 function recall(slot: number) {
   const s = slots[slot - 1]
-  if (!s.mapped || !s.deviceApi || +s.deviceApi.id === 0) {
+  if (!s.mapped || !apiValid(s.deviceApi)) {
     return
   }
-  ctx.gotoDevice(s.deviceApi.id.toString())
+  ctx.gotoDevice(apiId(s.deviceApi).toString())
 }
 
 // /unmapshortcut{N}
@@ -193,19 +200,23 @@ function storedPath(slot: number): string {
 // or emptying a slot would let its old legacy path resurrect on the next restore.
 function applyPath(slot: number, path: string) {
   legacyPaths[slot] = ''
-  if (path.length) {
-    if (!scratchApi) {
-      scratchApi = new LiveAPI(noFn, 'live_set')
-    }
-    scratchApi.path = path
-    const id = parseInt(scratchApi.id as any)
-    if (id !== 0) {
-      ctx.settings.set(pathKey(slot), path)
-      bindDevice(slot, id)
-      return
-    }
+  const id = resolvePath(path)
+  if (id !== 0) {
+    ctx.settings.set(pathKey(slot), path)
+    bindDevice(slot, id)
+    return
   }
   unmap(slot) // clears the setting, unbinds the APIs, resets name/color
+}
+
+// A stored path -> the id it currently resolves to, 0 if it no longer exists.
+function resolvePath(path: string): number {
+  if (!path || !path.length) {
+    return 0
+  }
+  const scratch = getScratch()
+  scratch.path = path
+  return apiId(scratch)
 }
 
 // --- path revalidation (one shared poll for all mapped slots) ----------------
@@ -217,7 +228,7 @@ function ensureCheckPath() {
   checkPathTask = new Task(function () {
     for (let i = 1; i <= NUM_SHORTCUTS; i++) {
       const s = slots[i - 1]
-      if (s.mapped && s.deviceApi && +s.deviceApi.id !== 0) {
+      if (s.mapped && apiValid(s.deviceApi)) {
         ctx.settings.set(pathKey(i), s.deviceApi.unquotedpath)
       }
     }
@@ -228,17 +239,6 @@ function ensureCheckPath() {
 
 // --- lifecycle ---------------------------------------------------------------
 
-function refresh() {
-  for (let i = 1; i <= NUM_SHORTCUTS; i++) {
-    if (slots[i - 1].mapped) {
-      onName(i)
-      onColor(i)
-    } else {
-      resetSlot(i)
-    }
-  }
-}
-
 // Resolve one slot: ctx.settings wins; else backfill from the legacy blob param
 // (carry-forward from pre-[v8] sets); else leave it unmapped. Idempotent — safe
 // on every refresh()/reconnect (a value already applied re-binds to the same id).
@@ -246,18 +246,14 @@ function restoreShortcut(slot: number) {
   if (!ctx || !slots.length) {
     return
   }
-  let p = ctx.settings.get(pathKey(slot))
-  if (!(typeof p === 'string' && p.length) && legacyPaths[slot]) {
-    p = legacyPaths[slot]
+  const p = storedPath(slot)
+  if (p && p !== ctx.settings.get(pathKey(slot))) {
     ctx.settings.set(pathKey(slot), p) // migrate the old mapping into settings
   }
-  if (typeof p === 'string' && p.length) {
-    scratchApi.path = p
-    const id = parseInt(scratchApi.id as any)
-    if (id !== 0) {
-      bindDevice(slot, id)
-      return
-    }
+  const id = resolvePath(p)
+  if (id !== 0) {
+    bindDevice(slot, id)
+    return
   }
   slots[slot - 1].mapped = false
   resetSlot(slot)

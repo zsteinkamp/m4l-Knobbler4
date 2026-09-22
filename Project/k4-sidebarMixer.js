@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.sidebarMeters = exports.page = exports.routes = void 0;
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var mixerUtils_1 = require("./mixerUtils");
@@ -168,7 +169,7 @@ var setSendWatcherIds = function (sendIds) {
     (0, utils_1.osc)('/mixer/numSends', sendIds.length);
 };
 function updateSendsFromMixer() {
-    if (!state.mixerObj || +state.mixerObj.id === 0)
+    if (!(0, liveApi_1.apiValid)(state.mixerObj))
         return;
     var sendIds = (0, utils_1.cleanArr)(state.mixerObj.get('sends'));
     setSendWatcherIds(sendIds);
@@ -210,19 +211,19 @@ function disableInput() {
     sendRecordStatus(state.trackObj);
 }
 function enableRecord() {
-    if (!state.trackObj || +state.trackObj.id === 0)
+    if (!(0, liveApi_1.apiValid)(state.trackObj))
         return;
     (0, mixerUtils_1.enableArm)(state.trackObj, state.trackLookupObj);
     sendRecordStatus(state.trackObj);
 }
 function disableRecord() {
-    if (!state.trackObj || +state.trackObj.id === 0)
+    if (!(0, liveApi_1.apiValid)(state.trackObj))
         return;
     (0, mixerUtils_1.disableArm)(state.trackObj);
     sendRecordStatus(state.trackObj);
 }
 function toggleMute() {
-    if (!state.trackObj || +state.trackObj.id === 0) {
+    if (!(0, liveApi_1.apiValid)(state.trackObj)) {
         return;
     }
     (0, mixerUtils_1.toggleMute)(state.trackObj);
@@ -232,7 +233,7 @@ function toggleMute() {
 // Reads via trackLookupObj since it always points at the currently-displayed
 // track; toggleMute writes via trackObj but the result is the same row.
 function emitEffectiveMute() {
-    if (!state.trackLookupObj || +state.trackLookupObj.id === 0)
+    if (!(0, liveApi_1.apiValid)(state.trackLookupObj))
         return;
     (0, utils_1.osc)('/mixer/mute', (0, mixerUtils_1.effectiveMute)(state.trackLookupObj));
 }
@@ -242,7 +243,7 @@ function handleMuteChange(args) {
     }
 }
 function emitXfadeAssign() {
-    if (!state.mixerObj || +state.mixerObj.id === 0)
+    if (!(0, liveApi_1.apiValid)(state.mixerObj))
         return;
     var _a = (0, mixerUtils_1.xfadeAB)(state.mixerObj), aOn = _a[0], bOn = _a[1];
     (0, utils_1.osc)('/mixer/xFadeA', aOn);
@@ -262,27 +263,27 @@ function handleXfadeAssignChange(args) {
     }
 }
 function toggleSolo() {
-    if (!state.trackObj || +state.trackObj.id === 0) {
+    if (!(0, liveApi_1.apiValid)(state.trackObj)) {
         return;
     }
     var newState = (0, mixerUtils_1.toggleSolo)(state.trackObj, state.trackLookupObj);
     (0, utils_1.osc)('/mixer/solo', newState);
 }
 function handleCrossfader(val) {
-    if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
+    if (!(0, liveApi_1.apiValid)(state.crossfaderObj)) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['crossfader'], consts_1.PAUSE_MS);
     state.crossfaderObj.set('value', parseFloat(val));
 }
 function handleCrossfaderDefault() {
-    if (!state.crossfaderObj || +state.crossfaderObj.id === 0) {
+    if (!(0, liveApi_1.apiValid)(state.crossfaderObj)) {
         return;
     }
     state.crossfaderObj.set('value', parseFloat(state.crossfaderObj.get('default_value')));
 }
 function handlePan(val) {
-    if (!state.panObj || +state.panObj.id === 0) {
+    if (!(0, liveApi_1.apiValid)(state.panObj)) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['pan'], consts_1.PAUSE_MS);
@@ -296,7 +297,7 @@ function handlePanDefault() {
     (0, utils_1.osc)('/mixer/panStr', res.str);
 }
 function handleVol(val) {
-    if (!state.volObj || +state.volObj.id === 0) {
+    if (!(0, liveApi_1.apiValid)(state.volObj)) {
         return;
     }
     (0, utils_1.pauseUnpause)(state.pause['vol'], consts_1.PAUSE_MS);
@@ -398,12 +399,13 @@ var onTrackChange = function (args) {
         return;
     }
     state.lastTrackId = id;
-    if (trackChangeDebounce) {
-        trackChangeDebounce.cancel();
+    if (!trackChangeDebounce) {
+        // One reusable Task — a fresh one per change never freed the old peer.
+        trackChangeDebounce = new Task(function () {
+            handleTrackChange(state.lastTrackId);
+        });
     }
-    trackChangeDebounce = new Task(function () {
-        handleTrackChange(id);
-    });
+    trackChangeDebounce.cancel();
     trackChangeDebounce.schedule(40);
 };
 function handleTrackChange(id) {

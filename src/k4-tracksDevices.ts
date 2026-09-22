@@ -9,6 +9,7 @@ import {
   saveSetting,
   truncate,
 } from './utils'
+import { apiId, apiValid, repointPath } from './liveApi'
 import config from './k4-config'
 import {
   FIELD_INDENT,
@@ -26,12 +27,19 @@ let ctx: AppContext = null
 
 const state = {
   api: null as LiveAPI,
-  currDeviceId: null as number,
+  currDeviceId: 0 as number,
   currDeviceWatcher: null as LiveAPI,
-  currTrackId: null as number,
+  currTrackId: 0 as number,
   currTrackWatcher: null as LiveAPI,
+  // Non-observing handles reused by every nav rebuild. They used to be
+  // `new LiveAPI(noFn, 'id ' + id)` per call — a fresh object AND a permanent
+  // interned symbol per distinct device, on every device change.
+  currDeviceApi: null as LiveAPI,
+  parentApi: null as LiveAPI,
 }
 
+// One reusable Task per debounce, cancelled and rescheduled. Allocating a Task
+// per event (the old shape) never freepeer()s the one it replaces.
 let deviceChangeDebounce: MaxTask = null
 
 function onCurrDeviceChange(val: IdObserverArg) {
@@ -44,12 +52,10 @@ function onCurrDeviceChange(val: IdObserverArg) {
   }
   state.currDeviceId = newId
 
-  if (deviceChangeDebounce) {
-    deviceChangeDebounce.cancel()
+  if (!deviceChangeDebounce) {
+    deviceChangeDebounce = new Task(updateDeviceNav) as MaxTask
   }
-  deviceChangeDebounce = new Task(function () {
-    updateDeviceNav()
-  }) as MaxTask
+  deviceChangeDebounce.cancel()
   deviceChangeDebounce.schedule(40)
 }
 
@@ -81,29 +87,29 @@ function updateDeviceNav() {
   const ret: MaxObjRecord[] = []
   const utilObj = state.api
   utilObj.path = 'live_set'
-  const currDeviceObj = new LiveAPI(noFn, 'id ' + state.currDeviceId)
+  const currDeviceObj = state.currDeviceApi
+  currDeviceObj.id = state.currDeviceId
   // Guard: the track/device watchers are independently debounced, so state can
   // be transiently inconsistent during a focus retarget. If the id resolved to
   // a Track/Song instead of a device, skip this pass — the next watcher fire
   // builds the correct tree. Prevents walking parents up to the Song.
   const currType = currDeviceObj.type as string
-  if (+currDeviceObj.id === 0 || currType === 'Track' || currType === 'Song') {
+  if (!apiValid(currDeviceObj) || currType === 'Track' || currType === 'Song') {
     osc('/nav/currDeviceId', -1)
     osc('/nav/devices', [])
     return
   }
   const currIsSupported = isDeviceSupported(currDeviceObj)
 
-  const parentObj = new LiveAPI(
-    noFn,
-    currIsSupported
-      ? currDeviceObj.get('canonical_parent')
-      : 'id ' + state.currTrackId
-  )
+  const parentObj = state.parentApi
+  parentObj.id = currIsSupported
+    ? cleanArr(currDeviceObj.get('canonical_parent'))[0] || 0
+    : state.currTrackId
   // handle cases where the device has an incomplete jsliveapi implementation, e.g. CC Control
   const parentChildIds = devicesOf(parentObj)
+  const parentId = apiId(parentObj)
   // Device rows are drawn in this parent's color; rebuild when it changes.
-  watchParentColor(+parentObj.id)
+  watchParentColor(parentId)
 
   // first, self and siblings (with chain children under self)
   for (const childDeviceId of parentChildIds) {
@@ -120,7 +126,7 @@ function updateDeviceNav() {
       /* COLOR  */ colorToString(parentObj.get('color').toString()),
       /* INDENT */ 0, // temporary indent
       /* USE INDENT */ 0, // temporary indent
-      /* PARENT */ parentObj.id,
+      /* PARENT */ parentId,
       // Live's Device.type: 1 instrument, 2 audio effect, 4 MIDI effect (0 when
       // unknown). The app keeps a dragged device among its own kind.
       /* DEVICE TYPE */ objIsSupported ? parseInt(utilObj.get('type')) : 0,
@@ -138,7 +144,7 @@ function updateDeviceNav() {
             /* COLOR  */ colorToString(utilObj.get('color').toString()),
             /* INDENT */ 1, // temporary indent
             /* USE INDENT */ 1, // temporary indent
-            /* PARENT */ parentObj.id,
+            /* PARENT */ parentId,
           ])
         }
 
@@ -157,7 +163,7 @@ function updateDeviceNav() {
               /* COLOR  */ colorToString(utilObj.get('color').toString()),
               /* INDENT */ 1, // temporary indent
               /* USE INDENT */ 1, // temporary indent
-              /* PARENT */ parentObj.id,
+              /* PARENT */ parentId,
             ])
           }
         }
@@ -171,7 +177,7 @@ function updateDeviceNav() {
   while (parentObj.type !== 'Track' && watchdog < 20) {
     // Stop if the chain ran off the end (invalid object / no canonical_parent)
     // rather than dereferencing undefined and crashing.
-    if (+parentObj.id === 0) break
+    if (!apiValid(parentObj)) break
     const parentObjParentRaw = cleanArr(parentObj.get('canonical_parent'))[0]
     if (parentObjParentRaw === undefined) break
     const isChain = parentObj.type === 'Chain' || parentObj.type === 'DrumChain'
@@ -188,7 +194,7 @@ function updateDeviceNav() {
 
     ret.unshift([
       /* TYPE   */ isChain ? TYPE_CHAIN : TYPE_RACK,
-      /* ID     */ parentObj.id,
+      /* ID     */ apiId(parentObj),
       /* NAME   */ truncate(parentObj.get('name').toString(), MAX_NAME_LEN),
       /* COLOR  */ color,
       /* INDENT */ --indent, // temporary indent
@@ -230,40 +236,27 @@ function onCurrTrackChange(val: IdObserverArg) {
   }
   state.currTrackId = newId
 
-  if (trackChangeDebounce) {
-    trackChangeDebounce.cancel()
+  if (!trackChangeDebounce) {
+    trackChangeDebounce = new Task(pushCurrTrack) as MaxTask
   }
-  trackChangeDebounce = new Task(function () {
-    osc('/nav/currTrackId', state.currTrackId)
-
-    // Ensure the current (focus) device exists; if the focus track has none yet,
-    // adopt its first device. Routed through focus, so it writes Live's
-    // selection only when locked — unlocked it just retargets Knobbler.
-    const dp = ctx.focus.devicePath()
-    state.api.path = dp || 'live_set'
-    if (!dp || +state.api.id === 0) {
-      state.api.id = state.currTrackId
-      const devices = devicesOf(state.api)
-      if (devices.length > 0) {
-        ctx.focus.selectDevice(parseInt(devices[0] as any))
-      }
-    }
-  }) as MaxTask
+  trackChangeDebounce.cancel()
   trackChangeDebounce.schedule(40)
 }
 
-// Re-point a mode-1 'id' observer at a new canonical path; an empty target
-// (focus track with no device) detaches it. Re-setting property re-fires the
-// callback, pushing fresh nav state.
-function repoint(api: LiveAPI, target: string) {
-  if (!api) return
-  api.property = ''
-  if (target) {
-    api.path = target
-    api.mode = 1
-    api.property = 'id'
-  } else {
-    api.id = 0
+function pushCurrTrack() {
+  osc('/nav/currTrackId', state.currTrackId)
+
+  // Ensure the current (focus) device exists; if the focus track has none yet,
+  // adopt its first device. Routed through focus, so it writes Live's
+  // selection only when locked — unlocked it just retargets Knobbler.
+  const dp = ctx.focus.devicePath()
+  state.api.path = dp || 'live_set'
+  if (!dp || !apiValid(state.api)) {
+    state.api.id = state.currTrackId
+    const devices = devicesOf(state.api)
+    if (devices.length > 0) {
+      ctx.focus.selectDevice(parseInt(devices[0] as any))
+    }
   }
 }
 
@@ -271,8 +264,8 @@ function repoint(api: LiveAPI, target: string) {
 // track/device so the navigation panel shows the right devices/chains. Dormant
 // in locked mode (focus doesn't emit) — the watchers path-follow Live there.
 function rebindNavHandles() {
-  repoint(state.currTrackWatcher, ctx.focus.trackPath())
-  repoint(state.currDeviceWatcher, ctx.focus.devicePath())
+  repointPath(state.currTrackWatcher, ctx.focus.trackPath(), 'id')
+  repointPath(state.currDeviceWatcher, ctx.focus.devicePath(), 'id')
 }
 
 // ---------------------------------------------------------------------------
@@ -285,9 +278,7 @@ let navRefreshTask: MaxTask = null
 
 function scheduleNavRefresh() {
   if (!navRefreshTask) {
-    navRefreshTask = new Task(function () {
-      updateDeviceNav()
-    }) as MaxTask
+    navRefreshTask = new Task(updateDeviceNav) as MaxTask
   }
   navRefreshTask.cancel()
   navRefreshTask.schedule(40)
@@ -326,7 +317,7 @@ const CHAIN_TYPES: Record<string, 1> = { Chain: 1, DrumChain: 1 }
 // Point state.api at a LOM id; false if the object no longer exists.
 function pointAt(id: number): boolean {
   state.api.id = id
-  return +state.api.id !== 0
+  return apiValid(state.api)
 }
 
 // /nav/renameDevice '[id, name]' — a device or a chain; both have a settable name.
@@ -399,6 +390,8 @@ function init(c: AppContext) {
     saveSetting('clientVersion', '')
     saveSetting('clientCapabilities', '')
     state.api = new LiveAPI(noFn, 'live_set')
+    state.currDeviceApi = new LiveAPI(noFn, 'live_set')
+    state.parentApi = new LiveAPI(noFn, 'live_set')
     state.currTrackWatcher = new LiveAPI(onCurrTrackChange, 'live_set')
     state.currDeviceWatcher = new LiveAPI(onCurrDeviceChange, 'live_set')
 

@@ -14,6 +14,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.unmap = exports.legacyShortcutPath = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
@@ -65,27 +66,16 @@ function makeCb(slot, prop, fn) {
         fn(slot);
     };
 }
+// Bind by numeric id, never by an 'id N' path string — the latter is a STRING
+// and interns a permanent Max symbol per distinct device (CLAUDE.md).
 function bindDevice(slot, deviceId) {
     var s = slots[slot - 1];
-    if (!s.deviceApi) {
-        s.deviceApi = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
-    }
-    else {
-        s.deviceApi.id = deviceId;
-    }
+    s.deviceApi = (0, liveApi_1.ensureObs)(s.deviceApi, deviceId, consts_1.noFn, '');
     // Devices have no 'color' — the shortcut color comes from the device's
     // canonical_parent (the track, or chain for rack devices).
     var parentId = parseInt(s.deviceApi.get('canonical_parent')[1]);
-    if (!s.nameApi) {
-        s.nameApi = new LiveAPI(makeCb(slot, 'name', onName), 'id ' + deviceId);
-        s.nameApi.property = 'name';
-        s.colorApi = new LiveAPI(makeCb(slot, 'color', onColor), 'id ' + parentId);
-        s.colorApi.property = 'color';
-    }
-    else {
-        s.nameApi.id = deviceId;
-        s.colorApi.id = parentId;
-    }
+    s.nameApi = (0, liveApi_1.ensureObs)(s.nameApi, deviceId, makeCb(slot, 'name', onName), 'name');
+    s.colorApi = (0, liveApi_1.ensureObs)(s.colorApi, parentId, makeCb(slot, 'color', onColor), 'color');
     s.mapped = true;
     onName(slot);
     onColor(slot);
@@ -96,6 +86,12 @@ function resetSlot(slot) {
     emitColor(slot, RESET_COLOR);
 }
 // --- inbound -----------------------------------------------------------------
+function getScratch() {
+    if (!scratchApi) {
+        scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
+    }
+    return scratchApi;
+}
 // /mapshortcut{N}: map the selected device when empty, else recall it.
 function shortcut(slot) {
     var s = slots[slot - 1];
@@ -103,27 +99,25 @@ function shortcut(slot) {
         recall(slot);
         return;
     }
-    if (!scratchApi) {
-        scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
-    }
     var dp = ctx.focus.devicePath(); // current device (focus); Live's sel when locked
     if (!dp) {
         return; // no current device
     }
-    scratchApi.path = dp;
-    var id = parseInt(scratchApi.id);
+    var scratch = getScratch();
+    scratch.path = dp;
+    var id = (0, liveApi_1.apiId)(scratch);
     if (id === 0) {
         return; // nothing selected
     }
-    ctx.settings.set(pathKey(slot), scratchApi.unquotedpath);
+    ctx.settings.set(pathKey(slot), scratch.unquotedpath);
     bindDevice(slot, id);
 }
 function recall(slot) {
     var s = slots[slot - 1];
-    if (!s.mapped || !s.deviceApi || +s.deviceApi.id === 0) {
+    if (!s.mapped || !(0, liveApi_1.apiValid)(s.deviceApi)) {
         return;
     }
-    ctx.gotoDevice(s.deviceApi.id.toString());
+    ctx.gotoDevice((0, liveApi_1.apiId)(s.deviceApi).toString());
 }
 // /unmapshortcut{N}
 function unmap(slot) {
@@ -168,19 +162,22 @@ function storedPath(slot) {
 // or emptying a slot would let its old legacy path resurrect on the next restore.
 function applyPath(slot, path) {
     legacyPaths[slot] = '';
-    if (path.length) {
-        if (!scratchApi) {
-            scratchApi = new LiveAPI(consts_1.noFn, 'live_set');
-        }
-        scratchApi.path = path;
-        var id = parseInt(scratchApi.id);
-        if (id !== 0) {
-            ctx.settings.set(pathKey(slot), path);
-            bindDevice(slot, id);
-            return;
-        }
+    var id = resolvePath(path);
+    if (id !== 0) {
+        ctx.settings.set(pathKey(slot), path);
+        bindDevice(slot, id);
+        return;
     }
     unmap(slot); // clears the setting, unbinds the APIs, resets name/color
+}
+// A stored path -> the id it currently resolves to, 0 if it no longer exists.
+function resolvePath(path) {
+    if (!path || !path.length) {
+        return 0;
+    }
+    var scratch = getScratch();
+    scratch.path = path;
+    return (0, liveApi_1.apiId)(scratch);
 }
 // --- path revalidation (one shared poll for all mapped slots) ----------------
 function ensureCheckPath() {
@@ -190,7 +187,7 @@ function ensureCheckPath() {
     checkPathTask = new Task(function () {
         for (var i = 1; i <= NUM_SHORTCUTS; i++) {
             var s = slots[i - 1];
-            if (s.mapped && s.deviceApi && +s.deviceApi.id !== 0) {
+            if (s.mapped && (0, liveApi_1.apiValid)(s.deviceApi)) {
                 ctx.settings.set(pathKey(i), s.deviceApi.unquotedpath);
             }
         }
@@ -199,17 +196,6 @@ function ensureCheckPath() {
     checkPathTask.schedule(CHECK_PATH_MS);
 }
 // --- lifecycle ---------------------------------------------------------------
-function refresh() {
-    for (var i = 1; i <= NUM_SHORTCUTS; i++) {
-        if (slots[i - 1].mapped) {
-            onName(i);
-            onColor(i);
-        }
-        else {
-            resetSlot(i);
-        }
-    }
-}
 // Resolve one slot: ctx.settings wins; else backfill from the legacy blob param
 // (carry-forward from pre-[v8] sets); else leave it unmapped. Idempotent — safe
 // on every refresh()/reconnect (a value already applied re-binds to the same id).
@@ -217,18 +203,14 @@ function restoreShortcut(slot) {
     if (!ctx || !slots.length) {
         return;
     }
-    var p = ctx.settings.get(pathKey(slot));
-    if (!(typeof p === 'string' && p.length) && legacyPaths[slot]) {
-        p = legacyPaths[slot];
+    var p = storedPath(slot);
+    if (p && p !== ctx.settings.get(pathKey(slot))) {
         ctx.settings.set(pathKey(slot), p); // migrate the old mapping into settings
     }
-    if (typeof p === 'string' && p.length) {
-        scratchApi.path = p;
-        var id = parseInt(scratchApi.id);
-        if (id !== 0) {
-            bindDevice(slot, id);
-            return;
-        }
+    var id = resolvePath(p);
+    if (id !== 0) {
+        bindDevice(slot, id);
+        return;
     }
     slots[slot - 1].mapped = false;
     resetSlot(slot);

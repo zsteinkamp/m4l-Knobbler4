@@ -1,13 +1,7 @@
 import { DEFAULT_COLOR, MAX_SENDS, OUTLET_OSC } from './consts'
 
-// Safely tear down a LiveAPI observer: unsubscribe from property notifications
-// before detaching, to prevent callbacks firing on invalidated objects
-// (which can crash SpiderMonkey via JS_EncodeString null pointer).
-export function detach(api: LiveAPI) {
-  if (!api) return
-  api.property = ''
-  api.id = 0
-}
+// NOTE: LiveAPI helpers (detach/apiId/apiValid/obsById/reArm/...) live in
+// ./liveApi — they are stateless, unlike this module's oscSink/dict state.
 
 export type logFn = (...args: any[]) => void
 export function logFactory({ outputLogs = true }) {
@@ -151,7 +145,7 @@ export type TrackInfo = {
 // payload keeps consumers in sync with the producer without re-parsing on
 // every call.
 let _visibleTracksCache: TrackInfo[] = null
-let _visibleTracksCacheVersion: number = -1
+let _visibleTracksCacheVersion = -1
 
 const VISIBLE_TRACKS_VERSION_MOD = 1048576
 export function setVisibleTracks(value: TrackInfo[]) {
@@ -316,7 +310,7 @@ export function buildOscPacket(addr: string, value: any): number[] {
   // string ",". Used for bare control sends like /page/X and /loop.
   if (value === undefined) {
     const noArg: number[] = []
-    for (let i = 0; i < addr.length; i++) noArg.push(addr.charCodeAt(i) & 0xff)
+    pushUtf8(noArg, addr) // same writer as the arg path; addresses are ASCII
     noArg.push(0)
     while (noArg.length & 0x3) noArg.push(0)
     noArg.push(0x2c, 0, 0, 0) // "," null + pad, no arg bytes

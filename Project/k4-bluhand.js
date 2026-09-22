@@ -16,6 +16,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.gotoTrack = exports.gotoDevice = exports.init = exports.routes = void 0;
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var k4_bluhandBanks_1 = require("./k4-bluhandBanks");
@@ -121,9 +122,9 @@ function onParameterChange() {
     // feature swap editor windows. Reported even for id 0 (focus landed on
     // something with no device) so the last window still closes.
     if (ctx) {
-        ctx.pluginWindow.deviceChanged(+api.id);
+        ctx.pluginWindow.deviceChanged((0, liveApi_1.apiId)(api));
     }
-    if (+api.id === 0) {
+    if (!(0, liveApi_1.apiValid)(api)) {
         return;
     }
     var isSupported = (0, utils_1.isDeviceSupported)(api);
@@ -135,8 +136,7 @@ function onParameterChange() {
     else {
         var onOffParamId = paramIds.shift(); // remove device on/off
         if (!state.onOffWatcher) {
-            state.onOffWatcher = new LiveAPI(updateDeviceOnOff, 'id ' + onOffParamId);
-            state.onOffWatcher.property = 'value';
+            state.onOffWatcher = (0, liveApi_1.obsById)(onOffParamId, updateDeviceOnOff, 'value');
         }
         else {
             state.onOffWatcher.id = onOffParamId;
@@ -170,8 +170,8 @@ function onParameterChange() {
     // is the one place that knows the device actually changed (in both lock
     // modes), so the header follows the device, not Live's selected track.
     var tp = deviceTrackPath();
-    repoint(trackNameApi, tp, 'name');
-    repoint(trackColorApi, tp, 'color');
+    (0, liveApi_1.repointPath)(trackNameApi, tp, 'name');
+    (0, liveApi_1.repointPath)(trackColorApi, tp, 'color');
     if (!canHaveChains) {
         // null send variation stuff
         (0, utils_1.osc)('/blu/variations', '');
@@ -208,7 +208,7 @@ function updateDeviceOnOff(iargs) {
 // --- Variations ------------------------------------------------------------
 function onVariationChange() {
     var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
+    if (!(0, liveApi_1.apiValid)(api)) {
         return;
     }
     if (!+api.get('can_have_chains')) {
@@ -221,7 +221,7 @@ function onVariationChange() {
 }
 function variationNew() {
     var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
+    if (!(0, liveApi_1.apiValid)(api)) {
         return;
     }
     if (!+api.get('can_have_chains')) {
@@ -234,7 +234,7 @@ function variationNew() {
 }
 function variationDelete(idx) {
     var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
+    if (!(0, liveApi_1.apiValid)(api)) {
         return;
     }
     if (!+api.get('can_have_chains')) {
@@ -245,7 +245,7 @@ function variationDelete(idx) {
 }
 function variationRecall(idx) {
     var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
+    if (!(0, liveApi_1.apiValid)(api)) {
         return;
     }
     if (!+api.get('can_have_chains')) {
@@ -257,7 +257,7 @@ function variationRecall(idx) {
 }
 function randomMacros() {
     var api = getSelectedDeviceApi();
-    if (+api.id === 0) {
+    if (!(0, liveApi_1.apiValid)(api)) {
         return;
     }
     if (!+api.get('can_have_chains')) {
@@ -274,7 +274,9 @@ function sendCuePoints() {
         numerator = 4;
         log('Warning: Could not retrieve time signature. Defaulting to 4/4.');
     }
-    var result = state.cuePointNames.slice(0, state.cuePointCount).map(function (cuePoint, idx) {
+    var result = state.cuePointNames
+        .slice(0, state.cuePointCount)
+        .map(function (cuePoint, idx) {
         var cuePointTime = parseFloat(cuePoint.get('time'));
         var rawBarIndex = Math.floor(cuePointTime / numerator);
         var rawBeatIndex = cuePointTime % numerator;
@@ -592,23 +594,6 @@ function deviceTrackPath() {
     var m = state.devicePath.match(TRACK_PATH_RE);
     return m ? m[1] : '';
 }
-// Re-point a mode-1 property observer at a new canonical path. Clearing the
-// property first, then re-setting it, re-fires the callback with the new
-// target's current value — so the surface re-syncs on retarget. An empty target
-// (unlocked track with no device) detaches the observer (id 0 → reads nothing).
-function repoint(api, target, prop) {
-    if (!api)
-        return;
-    api.property = '';
-    if (target) {
-        api.path = target;
-        api.mode = 1;
-        api.property = prop;
-    }
-    else {
-        api.id = 0;
-    }
-}
 // Focus changed (unlocked nav, or a lock/unlock transition): re-point every
 // "current track/device" observer at Knobbler's new target. In locked mode the
 // targets are Live's selection paths (auto-following), so this only fires on
@@ -619,9 +604,9 @@ function rebindFocusHandles() {
     // owning track, repointed in onParameterChange when the device actually
     // changes. Repointing paramsWatcher below re-fires that (debouncedParameter
     // change), and on a deviceless target it stays put — exactly what we want.
-    repoint(deviceNameApi, dp, 'name');
-    repoint(state.paramsWatcher, dp, 'parameters');
-    repoint(state.variationsWatcher, dp, 'variation_count');
+    (0, liveApi_1.repointPath)(deviceNameApi, dp, 'name');
+    (0, liveApi_1.repointPath)(state.paramsWatcher, dp, 'parameters');
+    (0, liveApi_1.repointPath)(state.variationsWatcher, dp, 'variation_count');
     if (selectedDeviceApi) {
         if (dp) {
             selectedDeviceApi.path = dp;
@@ -661,7 +646,7 @@ function pushState() {
 function unfoldParentTracks(objId) {
     var util = getUtilApi();
     util.id = objId;
-    if (+util.id === 0) {
+    if (!(0, liveApi_1.apiValid)(util)) {
         return;
     }
     var counter = 0;
@@ -681,13 +666,14 @@ function unfoldParentTracks(objId) {
     }
 }
 function getParentTrackForDevice(deviceId) {
-    var util = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
+    var util = getUtilApi();
+    util.id = deviceId;
     if ((0, utils_1.isDeviceSupported)(util)) {
         var counter = 0;
         while (counter < 20) {
             util.id = parseInt(util.get('canonical_parent')[1]);
             if (util.type === 'Track') {
-                return +util.id;
+                return (0, liveApi_1.apiId)(util);
             }
             counter++;
         }
@@ -710,8 +696,9 @@ function gotoDevice(deviceIdStr) {
 }
 exports.gotoDevice = gotoDevice;
 function hideChains(deviceId) {
-    var obj = new LiveAPI(consts_1.noFn, 'id ' + deviceId);
-    if (+obj.id === 0) {
+    var obj = getUtilApi();
+    obj.id = parseInt(deviceId);
+    if (!(0, liveApi_1.apiValid)(obj)) {
         return;
     }
     if ((0, utils_1.isDeviceSupported)(obj) && +obj.get('can_have_chains')) {
@@ -737,7 +724,7 @@ function gotoChain(chainIdStr) {
 function toggleGroup(groupId) {
     var util = getUtilApi();
     util.id = groupId;
-    if (+util.id === 0) {
+    if (!(0, liveApi_1.apiValid)(util)) {
         log('ERROR: Invalid id ' + groupId);
         return;
     }
@@ -752,14 +739,14 @@ function gotoTrack(trackIdStr) {
     var trackId = parseInt(trackIdStr);
     var util = getUtilApi();
     util.id = trackId;
-    if (+util.id !== 0) {
+    if ((0, liveApi_1.apiValid)(util)) {
         var counter = 0;
         while (counter < 20) {
             var groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
             if (!groupIds.length)
                 break;
             util.id = groupIds[0];
-            if (+util.id === 0)
+            if (!(0, liveApi_1.apiValid)(util))
                 break;
             var foldState = parseInt(util.get('fold_state').toString());
             if (foldState === 1) {
@@ -915,10 +902,18 @@ var routes = [
     { prefix: '/deleteCuePoint', parse: 'val', fn: deleteCuePoint },
     { prefix: '/btnSkipPrev', parse: 'bare', fn: btnSkipPrev },
     { prefix: '/btnSkipNext', parse: 'bare', fn: btnSkipNext },
-    { prefix: '/btnReEnableAutomation', parse: 'bare', fn: btnReEnableAutomation },
+    {
+        prefix: '/btnReEnableAutomation',
+        parse: 'bare',
+        fn: btnReEnableAutomation,
+    },
     { prefix: '/btnLoop', parse: 'bare', fn: btnLoop },
     { prefix: '/btnCaptureMidi', parse: 'bare', fn: btnCaptureMidi },
-    { prefix: '/btnArrangementOverdub', parse: 'bare', fn: btnArrangementOverdub },
+    {
+        prefix: '/btnArrangementOverdub',
+        parse: 'bare',
+        fn: btnArrangementOverdub,
+    },
     { prefix: '/btnSessionRecord', parse: 'bare', fn: btnSessionRecord },
     { prefix: '/btnBackToArranger', parse: 'bare', fn: btnBackToArranger },
     { prefix: '/bCtlRec', parse: 'bare', fn: ctlRec },

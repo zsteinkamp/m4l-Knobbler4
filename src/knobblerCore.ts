@@ -2,7 +2,6 @@ import {
   colorToString,
   debouncedTask,
   dequote,
-  detach,
   getVisibleTracksList,
   isValidPath,
   loadSetting,
@@ -12,6 +11,7 @@ import {
   osc,
   saveSetting,
 } from './utils'
+import { apiId, apiValid, detach } from './liveApi'
 import {
   DEFAULT_COLOR_FF,
   MAX_SLOTS,
@@ -208,7 +208,6 @@ function xySplit(leftIdx: number) {
   sendXYPairs()
 }
 
-
 function unmap(slot: number) {
   //log(`UNMAP ${slot}`)
   // if slot is part of a pair, remove that pair
@@ -262,7 +261,9 @@ function applySnapshot(slot: number, snap: SlotSnapshot) {
 
 function swap(slotA: number, slotB: number) {
   if (!apiReady) {
-    pendingCalls.push(function () { swap(slotA, slotB) })
+    pendingCalls.push(function () {
+      swap(slotA, slotB)
+    })
     return
   }
   if (slotA === slotB) return
@@ -320,7 +321,9 @@ function bkMap(slot: number, id: number) {
 // "/mixer/vol") to a Live API parameter path and bind it to the given slot.
 function mkMap(slot: number, mixerPath: string) {
   if (!apiReady) {
-    pendingCalls.push(function () { mkMap(slot, mixerPath) })
+    pendingCalls.push(function () {
+      mkMap(slot, mixerPath)
+    })
     return
   }
   if (!mixerPath) return
@@ -379,7 +382,9 @@ function mkMap(slot: number, mixerPath: string) {
     // NOTE: crossfade_assign is an int property on mixer_device (0=A, 1=off,
     // 2=B), NOT a DeviceParameter — setPath can't bind it. Same situation as
     // Track.solo. Will need the property-binding code path to support this.
-    log('mkMap: crossfade_assign binding not yet supported (not a DeviceParameter)')
+    log(
+      'mkMap: crossfade_assign binding not yet supported (not a DeviceParameter)'
+    )
     return
   } else if (ctrl.indexOf('send') === 0) {
     const sendNum = parseInt(ctrl.substring(4))
@@ -404,9 +409,9 @@ function initAll(c: AppContext) {
     initSlotIfNecessary(i)
   }
   // Replay calls that arrived before the API was ready
-  var queued = pendingCalls
+  const queued = pendingCalls
   pendingCalls = []
-  for (var i = 0; i < queued.length; i++) {
+  for (let i = 0; i < queued.length; i++) {
     queued[i]()
   }
 }
@@ -419,7 +424,9 @@ function initSlotIfNecessary(slot: number) {
 
 function init(slot: number) {
   if (!apiReady) {
-    pendingCalls.push(function () { init(slot) })
+    pendingCalls.push(function () {
+      init(slot)
+    })
     return
   }
   //log(`INIT ${slot}`)
@@ -491,7 +498,7 @@ function gotoTrackFor(slot: number) {
   if (!trackObj[slot]) {
     return
   }
-  ctx.gotoTrack(trackObj[slot].id.toString()) // shared nav: unfolds enclosing groups
+  ctx.gotoTrack(apiId(trackObj[slot]).toString()) // shared nav: unfolds groups
 }
 
 function setDefault(slot: number) {
@@ -552,14 +559,6 @@ function parentNameCallback(slot: number, iargs: IArguments) {
   }
 }
 
-function trackNameCallback(slot: number, iargs: IArguments) {
-  if (!param[slot]) return
-  if (iargs[0] === 'name') {
-    param[slot].trackName = iargs[1]
-    sendTrackName(slot)
-  }
-}
-
 function parentColorCallback(slot: number, iargs: IArguments) {
   if (!param[slot]) return
   if (iargs[0] === 'color') {
@@ -616,7 +615,9 @@ function reArmSlot(api: LiveAPI, cb: any, target: any, prop: string): LiveAPI {
 function setPath(slot: number, paramPath: string) {
   //log(`SETPATH ${slot}: ${paramPath}`)
   if (!apiReady) {
-    pendingCalls.push(function () { setPath(slot, paramPath) })
+    pendingCalls.push(function () {
+      setPath(slot, paramPath)
+    })
     return
   }
   initSlotIfNecessary(slot)
@@ -632,7 +633,7 @@ function setPath(slot: number, paramPath: string) {
     paramPath,
     ''
   )
-  if (+pv.id === 0) {
+  if (!apiValid(pv)) {
     log(`Invalid path for slot ${slot}: ${paramPath}`)
     return
   }
@@ -653,20 +654,17 @@ function setPath(slot: number, paramPath: string) {
     'automation_state'
   )
 
-  param[slot].id = paramObj[slot].id
+  param[slot].id = apiId(paramObj[slot])
   param[slot].path = paramObj[slot].unquotedpath
   param[slot].val = parseFloat(paramObj[slot].get('value'))
   param[slot].min = parseFloat(paramObj[slot].get('min')) || 0
   param[slot].max = parseFloat(paramObj[slot].get('max')) || 1
   param[slot].name = paramObj[slot].get('name')[0]
-  param[slot].quant =
-    parseInt(paramObj[slot].get('is_quantized')) > 0
-      ? paramObj[slot].get('value_items').length
-      : 0
-  param[slot].quantItems =
-    parseInt(paramObj[slot].get('is_quantized')) > 0
-      ? paramObj[slot].get('value_items')
-      : ''
+  const isQuantized = parseInt(paramObj[slot].get('is_quantized')) > 0
+  param[slot].quantItems = isQuantized
+    ? (paramObj[slot].get('value_items') as unknown as string[])
+    : []
+  param[slot].quant = param[slot].quantItems.length
 
   deviceObj[slot] = reArmSlot(
     deviceObj[slot],
@@ -722,13 +720,11 @@ function setPath(slot: number, paramPath: string) {
     devicePath.match(/^live_set master_track/)
 
   if (matches) {
-    //log(matches[0])
-    trackObj[slot] = reArmSlot(
-      trackObj[slot],
-      (iargs: IArguments) => trackNameCallback(slot, iargs),
-      matches[0],
-      '' // preserve original behavior (handle was created without a property)
-    )
+    // NOT an observer — a plain handle so gotoTrackFor(slot) can resolve the
+    // owning track. (It used to be armed with a trackNameCallback and an empty
+    // property, so the callback could never fire; the strip's track label comes
+    // from parentNameObj.)
+    trackObj[slot] = reArmSlot(trackObj[slot], noFn, matches[0], '')
   }
 
   //log("PARAM DATA", JSON.stringify(param), "\n");
@@ -749,7 +745,9 @@ function setPath(slot: number, paramPath: string) {
 function refresh() {
   //log('IN REFRESH')
   if (!apiReady) {
-    pendingCalls.push(function () { refresh() })
+    pendingCalls.push(function () {
+      refresh()
+    })
     return
   }
   loadXYPairs()
@@ -778,11 +776,12 @@ function sendNames(slot: number) {
 function sendQuant(slot: number) {
   initSlotIfNecessary(slot)
   osc(ADDR_QUANT[slot], param[slot].quant)
-  if (param[slot] && param[slot].quant > 2) {
-    osc(ADDR_QUANT_ITEMS[slot], param[slot].quantItems)
-  } else {
-    osc(ADDR_QUANT_ITEMS[slot], '[]')
-  }
+  // Always an array — the app decodes the payload the same way either way.
+  // (The empty case used to ship the literal STRING '[]'.)
+  osc(
+    ADDR_QUANT_ITEMS[slot],
+    param[slot].quant > 2 ? param[slot].quantItems : []
+  )
 }
 
 function sendParamName(slot: number) {
@@ -856,8 +855,7 @@ function sendVal(slot: number) {
   initSlotIfNecessary(slot)
 
   if (
-    !paramObj[slot] ||
-    +paramObj[slot].id === 0 ||
+    !apiValid(paramObj[slot]) ||
     param[slot].val === undefined ||
     param[slot].max === undefined ||
     param[slot].min === undefined ||
@@ -953,8 +951,6 @@ function val(slot: number, val: number) {
     }
   }
 }
-
-const module = {}
 
 export {
   bkMap,

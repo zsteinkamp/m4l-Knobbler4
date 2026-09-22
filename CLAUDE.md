@@ -317,6 +317,40 @@ own `[udpreceive]`, the ping echoes back as inbound `/loop` and
 set teardown crashes Max **9.0.x** (fixed in 9.1.0). It's deferred `[delay 5000]`
 so a quick set switch cancels it on unload before it fires.
 
+### `src/liveApi.ts` — the LiveAPI helper module
+
+Stateless helpers shared by every module (pure functions, so a direct import is
+safe despite `require()` not caching — there is no per-instance state to
+diverge, unlike `utils`' `oscSink`/Dict or the singletons on `ctx`):
+
+| helper | use |
+|---|---|
+| `apiId(api)` / `apiValid(api)` | read `.id` safely — see the `.id`-is-a-string note below |
+| `obsById(id, cb, prop?)` | create an observer bound BY ID (no path interning) |
+| `reArm(api, id, prop)` | re-point an existing observer — free |
+| `ensureObs(api, id, cb, prop)` | re-point if it exists, else create |
+| `disableObs(api)` | park (`property = ''`) without tearing down |
+| `repointPath(api, target, prop)` | re-point a mode-1 observer at a PATH (for the focus-following handles, which must path-follow Live's selection) |
+| `detach(api)` | real teardown — **leaks ~6 permanent symbols**, so only in full rebuilds |
+
+**Never build an `'id ' + n` path string.** It is a STRING, so it interns a
+permanent symbol per distinct object, and `.path` rejects it anyway on
+re-point — use `.id = n` (numeric, interns nothing). Same for
+`'<devicePath> parameters N'`: resolve the index against a non-interning
+`.get('parameters')` id list and bind by id (what `k4-bluhandSlots` does).
+
+**Per-event `new Task(...)` is a leak.** `cancel()` does not free the peer, so a
+debounce that allocates a Task per event abandons the previous one. Create ONE
+Task per debounce and `cancel()` + `schedule()` it (see
+`k4-tracksDevices.scheduleNavRefresh`), or route through `utils.debouncedTask`,
+which cancels AND `freepeer()`s.
+
+**A module's `init(ctx)` re-runs on EVERY app connect** (`/syn` → `---REFRESH` →
+`[init(` → the entry), not just on load. So `init` must be idempotent: create
+observers once and re-push state explicitly (`pushState()`), never null the
+handles and rebuild. Rebuilding drops still-ARMED LiveAPI objects for GC, which
+both leaks symbols and can fire a callback mid-finalization.
+
 ### Key Architectural Patterns
 
 1. **Route-registry dispatch**: each module exports a `routes: Route[]` table; the entry merges them and calls `fn(...)` directly (replaces the old outlet fan-out)
@@ -733,7 +767,13 @@ re-point, no leak) — the tester quantifies the leak-vs-plateau behavior above.
 - **OSC Testing**: Use OSC debugging tools or the actual tablet app to test message handling
 - **Debouncing**: When adding new parameter observers, always implement debouncing to prevent feedback loops
 - **Max Console**: Check Max's console window for JavaScript errors and log output during development
-- **LiveAPI `.id` returns a string**: Always use `+obj.id === 0` (unary plus), never `obj.id === 0` (strict equality `"0" === 0` is `false`). Same for `!== 0` checks. When passing `.id` to another LiveAPI's `.id` setter, use `parseInt()`.
+- **LiveAPI `.id` returns a string** (even though `@types/maxmsp` declares it
+  `number`): `"0"` for an object that doesn't resolve. So `if (api.id)` is TRUE
+  for an invalid object and `api.id === 0` is FALSE for a real 0 — both silent.
+  **Read it through `apiId(api)` / `apiValid(api)` from `src/liveApi.ts`**, never
+  by hand. (The older `+obj.id === 0` idiom is correct but is being replaced by
+  `apiValid`.) When passing an id to another LiveAPI's `.id` setter, it must be
+  an integer — `apiId()` already returns one.
 - **Max `require()` does NOT cache modules**: Each `require('./utils')` in a different file creates a separate module instance with its own state — even within the single `[v8 knobbler]`. If `knobbler.js` and `knobblerCore.js` both require `utils.js`, they get independent copies (independent `oscSink`, `_instancePrefix`, etc.). So: reach siblings/services through the `ctx` the entry injects (never import another feature module directly — you'd get a dead instance), and each module calls `setOscSink(ctx.osc)` in `init` to point its own `utils` at the shared batch buffer. See the "Single-`[v8 knobbler]` architecture" section.
 - **`new Dict(name)` resets parameter-enabled dicts**: Creating a new `Dict` reference to a parameter-enabled `[dict]` can reset its contents. Cache `Dict` references as singletons instead of creating new ones on each access.
 - **Dict persistence**: One shared `settingsDict` with `parameter_enable` stores all settings. Per-instance keys (xyPairs, metersEnabled) are prefixed with the device's `---` value via `saveInstanceSetting`/`loadInstanceSetting`. Shared keys (clientVersion, clientCapabilities, visibleTracks) use `saveSetting`/`loadSetting` without prefix. The `---` prefix is sent to [js] objects via `setDictPrefix` from the `live.thisdevice` init chain.

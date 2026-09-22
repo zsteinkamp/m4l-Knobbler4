@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.init = exports.routes = void 0;
 var k4_config_1 = require("./k4-config");
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
+var deviceParam_1 = require("./deviceParam");
 var consts_1 = require("./consts");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Extract track path from a device canonical path
@@ -67,40 +69,58 @@ function lock(val) {
         onParamSelected();
     }
 }
+// One reusable debounce Task — allocating one per selection never freed the
+// previous peer.
 var paramSelectDebounce = null;
 function onParamSelected() {
     if (!active || locked || !paramSelObj)
         return;
-    var paramId = parseInt(paramSelObj.id);
-    if (!paramId || paramId === 0) {
+    var paramId = (0, liveApi_1.apiId)(paramSelObj);
+    if (paramId === 0) {
         currentParamId = 0;
         return;
     }
     currentParamId = paramId;
-    if (paramSelectDebounce) {
-        paramSelectDebounce.cancel();
+    if (!paramSelectDebounce) {
+        paramSelectDebounce = new Task(function () {
+            sendAllParamInfo(currentParamId);
+        });
     }
-    paramSelectDebounce = new Task(function () {
-        sendAllParamInfo(currentParamId);
-    });
+    paramSelectDebounce.cancel();
     paramSelectDebounce.schedule(40);
+}
+function readParam(api, paramId) {
+    api.id = paramId;
+    if (api.type !== 'DeviceParameter')
+        return null;
+    return describe(api, parseFloat(api.get('value').toString()));
+}
+// The scaled proportion + display string for `value` on an already-pointed api.
+function describe(api, value) {
+    var min = parseFloat(api.get('min').toString());
+    var max = parseFloat(api.get('max').toString());
+    return {
+        value: value,
+        prop: (0, deviceParam_1.valueToProp)(value, min, max),
+        str: (0, utils_1.dequote)((0, deviceParam_1.valueString)(api, value)),
+    };
+}
+// #rrggbb for the app, from Live's packed integer color. Lower-cased to keep
+// the wire format byte-identical to what this module emitted before it shared
+// utils' colorToString (which upper-cases).
+function colorHash(raw) {
+    return '#' + (0, utils_1.colorToString)(raw ? raw.toString() : '').toLowerCase();
 }
 function sendAllParamInfo(paramId) {
     ensureApis();
-    // Point scratchApi at the parameter
-    scratchApi.id = paramId;
-    if (scratchApi.type !== 'DeviceParameter')
+    var read = readParam(scratchApi, paramId);
+    if (!read)
         return;
     var paramName = (0, utils_1.dequote)(scratchApi.get('name').toString());
     var paramMin = parseFloat(scratchApi.get('min').toString());
     var paramMax = parseFloat(scratchApi.get('max').toString());
-    var paramVal = parseFloat(scratchApi.get('value').toString());
-    // Get the min/max display strings
-    var minStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramMin)).toString());
-    var maxStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramMax)).toString());
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramVal)).toString());
-    // Scale value to 0-1
-    var scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
+    var minStr = (0, utils_1.dequote)((0, deviceParam_1.valueString)(scratchApi, paramMin));
+    var maxStr = (0, utils_1.dequote)((0, deviceParam_1.valueString)(scratchApi, paramMax));
     // Navigate to the parent device
     var paramPath = scratchApi.unquotedpath;
     var devicePath = paramPath.replace(/ parameters \d+$/, '');
@@ -119,7 +139,7 @@ function sendAllParamInfo(paramId) {
     if (trackMatch) {
         scratchApi.path = trackMatch[1];
         trackName = (0, utils_1.dequote)(scratchApi.get('name').toString());
-        trackColor = '#' + ('000000' + parseInt(scratchApi.get('color').toString()).toString(16)).slice(-6);
+        trackColor = colorHash(scratchApi.get('color'));
         // Set up track color observer
         if (trackColorObj) {
             trackColorObj.property = '';
@@ -140,29 +160,23 @@ function sendAllParamInfo(paramId) {
     (0, utils_1.osc)('/currentParam/trackColor', trackColor);
     (0, utils_1.osc)('/currentParam/minStr', minStr);
     (0, utils_1.osc)('/currentParam/maxStr', maxStr);
-    (0, utils_1.osc)('/currentParam/valStr', valStr);
-    (0, utils_1.osc)('/currentParam/val', scaledVal);
+    (0, utils_1.osc)('/currentParam/valStr', read.str);
+    (0, utils_1.osc)('/currentParam/val', read.prop);
 }
 function onValueChange() {
     if (!active || !currentParamId || pause.paused)
         return;
     // Use separate scratchpad to avoid re-entrancy with scratchApi
-    valScratchApi.id = currentParamId;
-    if (valScratchApi.type !== 'DeviceParameter')
+    var read = readParam(valScratchApi, currentParamId);
+    if (!read)
         return;
-    var paramVal = parseFloat(valScratchApi.get('value').toString());
-    var paramMin = parseFloat(valScratchApi.get('min').toString());
-    var paramMax = parseFloat(valScratchApi.get('max').toString());
-    var valStr = (0, utils_1.dequote)(valScratchApi.call('str_for_value', (0, utils_1.fixFloat)(paramVal)).toString());
-    var scaledVal = paramMax > paramMin ? (paramVal - paramMin) / (paramMax - paramMin) : 0;
-    (0, utils_1.osc)('/currentParam/val', scaledVal);
-    (0, utils_1.osc)('/currentParam/valStr', valStr);
+    (0, utils_1.osc)('/currentParam/val', read.prop);
+    (0, utils_1.osc)('/currentParam/valStr', read.str);
 }
 function onTrackColorChange() {
     if (!active || !currentParamId || !trackColorObj)
         return;
-    var color = '#' + ('000000' + parseInt(trackColorObj.get('color').toString()).toString(16)).slice(-6);
-    (0, utils_1.osc)('/currentParam/trackColor', color);
+    (0, utils_1.osc)('/currentParam/trackColor', colorHash(trackColorObj.get('color')));
 }
 // Called from router when user moves the current param slider
 function currentParamVal(val) {
@@ -175,11 +189,10 @@ function currentParamVal(val) {
     var paramMin = parseFloat(scratchApi.get('min').toString());
     var paramMax = parseFloat(scratchApi.get('max').toString());
     // Scale from 0-1 to param range
-    var rawVal = paramMin + val * (paramMax - paramMin);
+    var rawVal = (0, deviceParam_1.propToValue)(val, paramMin, paramMax);
     (0, utils_1.pauseUnpause)(pause, consts_1.PAUSE_MS);
     scratchApi.set('value', rawVal);
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(rawVal)).toString());
-    (0, utils_1.osc)('/currentParam/valStr', valStr);
+    (0, utils_1.osc)('/currentParam/valStr', (0, utils_1.dequote)((0, deviceParam_1.valueString)(scratchApi, rawVal)));
 }
 // Called from router when user taps "default" button
 function currentParamDefault() {
@@ -190,14 +203,11 @@ function currentParamDefault() {
     if (scratchApi.type !== 'DeviceParameter')
         return;
     var defaultVal = parseFloat(scratchApi.get('default_value').toString());
-    var paramMin = parseFloat(scratchApi.get('min').toString());
-    var paramMax = parseFloat(scratchApi.get('max').toString());
     (0, utils_1.pauseUnpause)(pause, consts_1.PAUSE_MS);
     scratchApi.set('value', defaultVal);
-    var scaledVal = paramMax > paramMin ? (defaultVal - paramMin) / (paramMax - paramMin) : 0;
-    var valStr = (0, utils_1.dequote)(scratchApi.call('str_for_value', (0, utils_1.fixFloat)(defaultVal)).toString());
-    (0, utils_1.osc)('/currentParam/val', scaledVal);
-    (0, utils_1.osc)('/currentParam/valStr', valStr);
+    var read = describe(scratchApi, defaultVal);
+    (0, utils_1.osc)('/currentParam/val', read.prop);
+    (0, utils_1.osc)('/currentParam/valStr', read.str);
 }
 function doRefresh(c) {
     (0, utils_1.setOscSink)(c.osc);
@@ -208,7 +218,12 @@ function doRefresh(c) {
 exports.init = doRefresh;
 // --- Route table (dispatched by the [v8 knobbler] entry) -------------------
 var routes = [
-    { prefix: '/currentParam/val', parse: 'val', fn: currentParamVal, coalesce: true },
+    {
+        prefix: '/currentParam/val',
+        parse: 'val',
+        fn: currentParamVal,
+        coalesce: true,
+    },
     { prefix: '/currentParam/default', parse: 'bare', fn: currentParamDefault },
     { prefix: '/currentParam/lock', parse: 'val', fn: lock },
     { prefix: '/currentParam/show', parse: 'bare', fn: show },
