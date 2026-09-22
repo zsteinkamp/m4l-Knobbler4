@@ -5,8 +5,9 @@
 // state out over OSC, mirroring knobblerCore's scaling and feedback-suppression
 // approach. Driven by k4-bluhand (the [v8] entry) which owns the patcher I/O.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.setDevicePath = exports.bindOsc = exports.NUM_BLU_SLOTS = void 0;
+exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.setDeviceParams = exports.bindOsc = exports.NUM_BLU_SLOTS = void 0;
 var utils_1 = require("./utils");
+var liveApi_1 = require("./liveApi");
 var deviceParam_1 = require("./deviceParam");
 exports.NUM_BLU_SLOTS = 16;
 var OSC_SUPPRESS_MS = 300;
@@ -63,15 +64,22 @@ function bindOsc(fn) {
     (0, utils_1.setOscSink)(fn);
 }
 exports.bindOsc = bindOsc;
-// Canonical path of the device whose parameters the slots currently bind to.
-// Set by k4-bluhand from ctx.focus.devicePath() before (re)binding the bank, so
-// the slots follow Knobbler's focus (Live's selection when locked). '' = no
-// device → slots clear.
-var devicePath = '';
-function setDevicePath(path) {
-    devicePath = path;
+// Parameter IDs of the device the slots currently bind to, indexed exactly as
+// `<device> parameters N` is (element 0 is the device on/off). Set by k4-bluhand
+// from the id-list read it already does in onParameterChange; empty = no device
+// → slots clear.
+//
+// Binding by id rather than by a `<devicePath> parameters N` path string is what
+// keeps this off Max's symbol table: each distinct path interns a permanent
+// symbol, and bluhand rebuilds all 16 slots on every device AND bank change, so
+// browsing a set used to cost ~16 symbols per (device, bank) visited. `.id =`
+// is numeric and interns nothing, and the id list itself comes from a
+// non-interning `.get('parameters')`. See CLAUDE.md / k4-symbolTest.
+var deviceParamIds = [];
+function setDeviceParams(paramIds) {
+    deviceParamIds = paramIds || [];
 }
-exports.setDevicePath = setDevicePath;
+exports.setDeviceParams = setDeviceParams;
 function initSlots() {
     if (slots.length) {
         return;
@@ -109,10 +117,12 @@ exports.initSlots = initSlots;
 function setParamIdx(idx, paramIdx) {
     var slot = slots[idx - 1];
     slot.binding = true;
-    if (paramIdx <= 0 || !devicePath) {
+    var targetId = paramIdx > 0 ? deviceParamIds[paramIdx] || 0 : 0;
+    if (!targetId) {
         slot.paramId = 0;
         if (slot.valueApi) {
-            // detach without setting .path (which [v8] would log for id 0)
+            // park the observers (id 0) rather than tearing them down — teardown
+            // leaks ~6 symbols each and never gives them back (CLAUDE.md)
             slot.valueApi.id = 0;
             slot.nameApi.id = 0;
             slot.autoApi.id = 0;
@@ -121,34 +131,18 @@ function setParamIdx(idx, paramIdx) {
         emitEmptySlot(idx);
         return;
     }
-    var path = devicePath + ' parameters ' + paramIdx;
-    // Lazy-create the value observer on first bind with the real path; reuse it
-    // (reassign .path) thereafter.
-    if (!slot.valueApi) {
-        slot.valueApi = new LiveAPI(makeSlotCb(idx, 'value', emitSlotValue), path);
-        slot.valueApi.property = 'value';
-    }
-    else {
-        slot.valueApi.path = path;
-    }
-    var pid = parseInt(slot.valueApi.id);
+    // Lazy-create on first bind, re-point (free) thereafter.
+    slot.valueApi = (0, liveApi_1.ensureObs)(slot.valueApi, targetId, makeSlotCb(idx, 'value', emitSlotValue), 'value');
+    var pid = (0, liveApi_1.apiId)(slot.valueApi);
     slot.paramId = pid;
     if (pid === 0) {
         slot.binding = false;
         emitEmptySlot(idx);
         return;
     }
-    // Only bind the name/automation observers once we know the path resolves.
-    if (!slot.nameApi) {
-        slot.nameApi = new LiveAPI(makeSlotCb(idx, 'name', emitSlotName), path);
-        slot.nameApi.property = 'name';
-        slot.autoApi = new LiveAPI(makeSlotCb(idx, 'automation_state', emitSlotAuto), path);
-        slot.autoApi.property = 'automation_state';
-    }
-    else {
-        slot.nameApi.path = path;
-        slot.autoApi.path = path;
-    }
+    // Only bind the name/automation observers once we know the id resolves.
+    slot.nameApi = (0, liveApi_1.ensureObs)(slot.nameApi, pid, makeSlotCb(idx, 'name', emitSlotName), 'name');
+    slot.autoApi = (0, liveApi_1.ensureObs)(slot.autoApi, pid, makeSlotCb(idx, 'automation_state', emitSlotAuto), 'automation_state');
     var meta = (0, deviceParam_1.readParamMeta)(slot.valueApi);
     slot.min = meta.min;
     slot.max = meta.max;

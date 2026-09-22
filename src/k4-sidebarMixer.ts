@@ -587,24 +587,56 @@ const onReturnsChange = (args: IdObserverArg) => {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
+// The entry's init/refresh hook. Fires on load AND on every app (re)connect —
+// `/syn` -> ---REFRESH -> [init(] -> the entry -> here.
+//
+// It used to null out every handle and let init() build fresh ones, which meant
+// ~18 still-ARMED LiveAPI observers were dropped for GC on every reconnect.
+// That is the churn the rest of the codebase is written to avoid: teardown
+// leaks ~6 permanent symbols each and never gives them back, and an armed
+// LiveAPI collected while armed can fire its callback mid-finalization (see
+// CLAUDE.md observer lifecycle / the cue-point pool note). Worse, the abandoned
+// observers kept firing into handlers that now read the REPLACEMENT objects.
+//
+// So: create once (init is idempotent), and re-push state explicitly.
 function doRefresh(c: AppContext) {
   setOscSink(c.osc)
   ctx = c
-  state.watchers = []
-  state.trackLookupObj = null
-  state.returnsObj = null
-  state.mixerObj = null
-  state.trackObj = null
-  state.volObj = null
-  state.panObj = null
-  state.crossfaderObj = null
-  state.lastTrackId = 0
-  init()
+  // On the first call init() builds the observers, and creating them fires
+  // their callbacks with the current values — that IS the initial push, so
+  // pushState would only duplicate it.
+  if (init()) {
+    return
+  }
+  pushState()
 }
 
-function init() {
-  if (state.watchers.length === MAX_SENDS) {
+// Re-emit everything a freshly (re)connected app needs. The observers already
+// hold the live values; this just replays them, which is what recreating the
+// observers used to achieve as a side effect of their initial fire.
+function pushState() {
+  osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
+  sendReturnTrackColors()
+  if (apiValid(state.crossfaderObj)) {
+    osc('/mixer/crossfader', parseFloat(state.crossfaderObj.get('value')) || 0)
+  }
+  // lastTrackId, not trackLookupObj's id: the lookup handle is constructed on
+  // 'live_set' and only re-pointed once handleTrackChange has run, so it would
+  // otherwise resolve to the Song on the very first pass.
+  if (!state.lastTrackId) {
     return
+  }
+  // handleTrackChange emits type / record / mute / solo / xfade / color /
+  // vol+pan (value and string) / sends and re-points the meter observers —
+  // exactly the strip snapshot a reconnecting app is missing.
+  handleTrackChange(state.lastTrackId)
+}
+
+// Build the observers once. Returns true if this call built them (so the
+// caller knows their initial fire already pushed state), false if they existed.
+function init(): boolean {
+  if (state.watchers.length === MAX_SENDS) {
+    return false
   }
 
   // Send watchers
@@ -718,6 +750,7 @@ function init() {
   }
   state.metersEnabled = !!meters
   osc('/sidebarMeters', state.metersEnabled ? 1 : 0)
+  return true
 }
 
 // Route table — the single-track mixer commands (old router OUTLET_MIXER).

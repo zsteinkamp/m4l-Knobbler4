@@ -5,6 +5,7 @@
 // approach. Driven by k4-bluhand (the [v8] entry) which owns the patcher I/O.
 
 import { colorToString, dequote, osc, setOscSink } from './utils'
+import { apiId, ensureObs } from './liveApi'
 import {
   propToValue,
   readParamMeta,
@@ -86,13 +87,20 @@ export function bindOsc(fn: (addr: string, val: any) => void) {
   setOscSink(fn)
 }
 
-// Canonical path of the device whose parameters the slots currently bind to.
-// Set by k4-bluhand from ctx.focus.devicePath() before (re)binding the bank, so
-// the slots follow Knobbler's focus (Live's selection when locked). '' = no
-// device → slots clear.
-let devicePath = ''
-export function setDevicePath(path: string) {
-  devicePath = path
+// Parameter IDs of the device the slots currently bind to, indexed exactly as
+// `<device> parameters N` is (element 0 is the device on/off). Set by k4-bluhand
+// from the id-list read it already does in onParameterChange; empty = no device
+// → slots clear.
+//
+// Binding by id rather than by a `<devicePath> parameters N` path string is what
+// keeps this off Max's symbol table: each distinct path interns a permanent
+// symbol, and bluhand rebuilds all 16 slots on every device AND bank change, so
+// browsing a set used to cost ~16 symbols per (device, bank) visited. `.id =`
+// is numeric and interns nothing, and the id list itself comes from a
+// non-interning `.get('parameters')`. See CLAUDE.md / k4-symbolTest.
+let deviceParamIds: number[] = []
+export function setDeviceParams(paramIds: number[]) {
+  deviceParamIds = paramIds || []
 }
 
 export function initSlots() {
@@ -130,10 +138,12 @@ export function setParamIdx(idx: number, paramIdx: number) {
   const slot = slots[idx - 1]
   slot.binding = true
 
-  if (paramIdx <= 0 || !devicePath) {
+  const targetId = paramIdx > 0 ? deviceParamIds[paramIdx] || 0 : 0
+  if (!targetId) {
     slot.paramId = 0
     if (slot.valueApi) {
-      // detach without setting .path (which [v8] would log for id 0)
+      // park the observers (id 0) rather than tearing them down — teardown
+      // leaks ~6 symbols each and never gives them back (CLAUDE.md)
       slot.valueApi.id = 0
       slot.nameApi.id = 0
       slot.autoApi.id = 0
@@ -143,18 +153,15 @@ export function setParamIdx(idx: number, paramIdx: number) {
     return
   }
 
-  const path = devicePath + ' parameters ' + paramIdx
+  // Lazy-create on first bind, re-point (free) thereafter.
+  slot.valueApi = ensureObs(
+    slot.valueApi,
+    targetId,
+    makeSlotCb(idx, 'value', emitSlotValue),
+    'value'
+  )
 
-  // Lazy-create the value observer on first bind with the real path; reuse it
-  // (reassign .path) thereafter.
-  if (!slot.valueApi) {
-    slot.valueApi = new LiveAPI(makeSlotCb(idx, 'value', emitSlotValue), path)
-    slot.valueApi.property = 'value'
-  } else {
-    slot.valueApi.path = path
-  }
-
-  const pid = parseInt(slot.valueApi.id as any)
+  const pid = apiId(slot.valueApi)
   slot.paramId = pid
   if (pid === 0) {
     slot.binding = false
@@ -162,19 +169,19 @@ export function setParamIdx(idx: number, paramIdx: number) {
     return
   }
 
-  // Only bind the name/automation observers once we know the path resolves.
-  if (!slot.nameApi) {
-    slot.nameApi = new LiveAPI(makeSlotCb(idx, 'name', emitSlotName), path)
-    slot.nameApi.property = 'name'
-    slot.autoApi = new LiveAPI(
-      makeSlotCb(idx, 'automation_state', emitSlotAuto),
-      path
-    )
-    slot.autoApi.property = 'automation_state'
-  } else {
-    slot.nameApi.path = path
-    slot.autoApi.path = path
-  }
+  // Only bind the name/automation observers once we know the id resolves.
+  slot.nameApi = ensureObs(
+    slot.nameApi,
+    pid,
+    makeSlotCb(idx, 'name', emitSlotName),
+    'name'
+  )
+  slot.autoApi = ensureObs(
+    slot.autoApi,
+    pid,
+    makeSlotCb(idx, 'automation_state', emitSlotAuto),
+    'automation_state'
+  )
 
   const meta = readParamMeta(slot.valueApi)
   slot.min = meta.min
@@ -203,7 +210,10 @@ export function val(idx: number, value: number) {
   slot.valueApi.set('value', propToValue(value, slot.min, slot.max))
   // read the value back (not the value we wrote) because some params round and
   // would report the wrong string for the value we set
-  osc('/bvalStr' + idx, valueString(slot.valueApi, parseFloat(slot.valueApi.get('value'))))
+  osc(
+    '/bvalStr' + idx,
+    valueString(slot.valueApi, parseFloat(slot.valueApi.get('value')))
+  )
 }
 
 export function setDefault(idx: number) {

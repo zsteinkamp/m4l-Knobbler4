@@ -68,7 +68,10 @@ const parentColorObj: LiveAPI[] = []
 const param: ParamType[] = []
 const outMin: number[] = []
 const outMax: number[] = []
-const deviceCheckerTask: MaxTask[] = []
+// ONE repeating poll for all 32 slots, not one Task per mapped slot: the old
+// shape ran up to 32 separate 1s timers, each doing its own LiveAPI reads.
+let deviceCheckerTask: MaxTask = null
+const DEVICE_CHECK_MS = 1000
 
 // other vars
 const allowMapping: boolean[] = []
@@ -445,11 +448,6 @@ function init(slot: number) {
     quantItems: [],
     allowParamValueUpdates: true,
   }
-  if (deviceCheckerTask[slot]) {
-    deviceCheckerTask[slot].cancel()
-    deviceCheckerTask[slot].freepeer()
-    deviceCheckerTask[slot] = null
-  }
   detach(paramNameObj[slot])
   detach(automationStateObj[slot])
   detach(deviceObj[slot])
@@ -567,6 +565,27 @@ function parentColorCallback(slot: number, iargs: IArguments) {
   }
 }
 
+// Start the shared "is the mapped device still there / did its path move?"
+// poll on the first mapping. It stays running for the life of the device;
+// checkAllDevicesPresent skips unmapped slots, so an idle instance does no
+// LiveAPI work beyond the array scan.
+function ensureDeviceChecker() {
+  if (deviceCheckerTask) {
+    return
+  }
+  deviceCheckerTask = new Task(checkAllDevicesPresent) as MaxTask
+  deviceCheckerTask.interval = DEVICE_CHECK_MS
+  deviceCheckerTask.repeat(-1)
+}
+
+function checkAllDevicesPresent() {
+  for (let slot = 1; slot <= MAX_SLOTS; slot++) {
+    if (paramObj[slot]) {
+      checkDevicePresent(slot)
+    }
+  }
+}
+
 function checkDevicePresent(slot: number) {
   //log('CHECK_DEVICE_PRESENT ' + slot)
   if (!param[slot]) return
@@ -674,15 +693,7 @@ function setPath(slot: number, paramPath: string) {
   )
   const devicePath = deviceObj[slot].unquotedpath
 
-  // poll to see if the mapped device is still present
-  if (deviceCheckerTask[slot] && deviceCheckerTask[slot].cancel) {
-    deviceCheckerTask[slot].cancel()
-    deviceCheckerTask[slot].freepeer()
-    deviceCheckerTask[slot] = null
-  }
-  deviceCheckerTask[slot] = new Task(() => checkDevicePresent(slot)) as MaxTask
-  deviceCheckerTask[slot].interval = 1000 // every second
-  deviceCheckerTask[slot].repeat(-1)
+  ensureDeviceChecker() // one shared poll covers every mapped slot
 
   // Only get the device name if it has the name property
   if (deviceObj[slot].info.match(/property name str/)) {

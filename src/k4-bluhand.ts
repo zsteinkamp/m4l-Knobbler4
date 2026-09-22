@@ -29,6 +29,10 @@ const state = {
   paramsWatcher: null as LiveAPI,
   variationsWatcher: null as LiveAPI,
   currDeviceId: 0 as number,
+  // Full `parameters` id list of the current device, indexed exactly as
+  // `<device> parameters N` is (element 0 = on/off). Handed to k4-bluhandSlots
+  // so the 16 slots bind by id instead of building a path per (device, bank).
+  allParamIds: [] as number[],
   currBank: 1,
   numBanks: 1,
   bankParamArr: [] as BluhandBank[],
@@ -62,9 +66,9 @@ function sendCurrBank() {
   }
   const bluBank = state.bankParamArr[currBankIdx]
   osc('/bTxtCurrBank', bluBank.name)
-  // Bind slots against Knobbler's current device (focus) — Live's selection
-  // when locked, its own pointer when unlocked.
-  Slots.setDevicePath(ctx.focus.devicePath())
+  // Bind slots against the current device's parameter ids (captured by
+  // onParameterChange, which is the one place that sees the device change).
+  Slots.setDeviceParams(state.allParamIds)
   while (bluBank.paramIdxArr.length < Slots.NUM_BLU_SLOTS) {
     bluBank.paramIdxArr.push(-1)
   }
@@ -134,11 +138,18 @@ function onParameterChange() {
     ctx.pluginWindow.deviceChanged(apiId(api))
   }
   if (!apiValid(api)) {
+    // Focus landed somewhere with no device — clear the slot bindings too, or
+    // sendCurrBank (from a later refresh) would re-bind the previous device's
+    // parameters.
+    state.allParamIds = []
     return
   }
   const isSupported = isDeviceSupported(api)
   const deviceType = isSupported ? api.get('class_name').toString() : api.type
   let paramIds = isSupported ? cleanArr(api.get('parameters')) : []
+  // Keep the UNSHIFTED list: bank layouts address parameters by their absolute
+  // index in it, which is what Slots resolves to an id.
+  state.allParamIds = paramIds.slice()
 
   if (paramIds.length === 0) {
     state.onOffWatcher && (state.onOffWatcher.id = 0)
