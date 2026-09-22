@@ -348,6 +348,50 @@ The device communicates via OSC messages. See `docs/OSC-API.md` for complete pro
 - `[poly~ finger]` - Multi-touch gesture detection
 - bpatchers - Repeating UI elements for parameter slots; `[dict ---settingsDict @parameter_enable 1]` persists per-instance settings
 
+## Answering "does the LOM expose X?" (grep Live, not the Max docs)
+
+**Max's bundled LOM reference lags Live and is not authoritative.** Live 12.4.3
+added `PluginDevice.is_editor_open`; nothing under
+`Max.app/Contents/Resources/C74` mentions it, so "it's not in the docs" is not
+evidence it isn't there. The real whitelist for what `[v8]` LiveAPI can reach is
+inside the Live bundle:
+
+```bash
+L="/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts"
+grep -rla "is_editor_open" "$L"          # -a: these are .pyc, binary to grep
+#   $L/_MxDCore/LomTypes.pyc                       <- the M4L LOM whitelist
+#   $L/ableton/v3/control_surface/components/device.pyc
+```
+
+- A hit in **`_MxDCore/LomTypes.pyc`** means M4L can see the member at all. No
+  hit there and it's Python-only, whatever the Live binary contains.
+- Hits elsewhere in **`MIDI Remote Scripts`** show how Live's own surfaces use
+  it, which is the cheapest read/write hint — `device.pyc` carries an
+  `__on_is_editor_open_changed` handler, i.e. the property is *observable*.
+- **The string pool does NOT tell you settable vs read-only** (a read and a
+  write reference the same name). Neither does the LOM docstring wording,
+  though "Access to…" vs "Get the…" correlates. Only a runtime write settles
+  it: `is_editor_open` turned out to be settable, verified in Live 12.4.5.
+- Sanity-check the method first with a member you know exists
+  (`appointed_device`, `selected_preset_index`) — a silent miss usually means a
+  forgotten `-a`.
+
+**Then gate on the LOM, not on a version compare.** `api.info` lists the
+object's actual members, so one read answers "is this the right device type?"
+*and* "is this Live new enough?" at once, and never provokes a console error by
+probing a property the object doesn't have:
+
+```ts
+// k4-pluginWindow: only PluginDevice carries is_editor_open, and only on
+// Live 12.4.3+ — so this is both gates in one non-interning string read.
+return /\bis_editor_open\b/.test(api.info)
+```
+
+Same trick as `utils.isDeviceSupported` (`obj.info.match(/property/)`). Keep a
+version read (`live_app` → `get_major_version`/`get_minor_version`/
+`get_bugfix_version`) only for what must be answered *before* a suitable object
+is in hand — e.g. telling the app to disable a control at handshake.
+
 ## Release Process
 
 The `frozen/` directory contains historical releases (`.amxd` device files and `.tosc` TouchOSC templates). Current development happens in `src/` and `Project/`. After building, the `Project/Knobbler4.amxd` file is the distributable device.
