@@ -264,6 +264,10 @@ Sets a chain's color; Live snaps it to the nearest color in its chooser. Rebuild
 
 Sets a track's color (nearest chooser color) and resends `/visibleTracks` with the color Live actually applied. Requires capability `navEd`.
 
+#### /nav/deleteDevice {deviceID}
+
+Deletes a device or rack via `Track.delete_device` / `Chain.delete_device`. Takes a **bare numeric LOM id**, not the `[id, value]` JSON the other nav edits use. Refuses tracks and chains, and refuses the Knobbler instance the app is connected through (deleting it would drop the connection mid-call); other Knobbler instances on the set are ordinary devices here. If the deleted device was the focused one, Live moves the selection and `/nav/currDeviceId` follows. Rebuilds `/nav/devices`. Requires capability `navDel`.
+
 #### /nav/moveDevice {JSON [deviceID, index]}
 
 Moves a device so it ends up at `index` within its own chain (the final position, as a drag list reports it) via `Song.move_device`. Live counts `move_device`'s position in the chain as it is BEFORE the device is removed, so moving down one slot means asking for two; the route translates, so clients always send the final index. When that position isn't allowed (e.g. a MIDI effect after an instrument), Live uses the nearest legal one. Rebuilds `/nav/devices`. Requires capability `navEd`.

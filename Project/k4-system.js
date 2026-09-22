@@ -33,7 +33,10 @@ var log = (0, utils_1.logFactory)(k4_config_1.default);
 // 'navEd' = the nav panel edit routes: /nav/renameTrack, /nav/colorTrack
 // (k4-visibleTracks) and /nav/renameDevice, /nav/colorChain, /nav/moveDevice
 // (k4-tracksDevices).
-var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd plugWin';
+// 'navDel' = /nav/deleteDevice (k4-tracksDevices). Separate from navEd because
+// it is destructive: an app build that predates the route must not offer a
+// Delete button that silently does nothing.
+var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin';
 var deviceVersion = '';
 var synRefreshTask = null;
 var ctx = null;

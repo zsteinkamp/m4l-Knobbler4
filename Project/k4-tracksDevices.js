@@ -303,6 +303,67 @@ function colorChain(jsonStr) {
     state.api.set('color', parseInt(edit.value.toString(), 16));
     scheduleNavRefresh();
 }
+// Where `deviceId` sits in its parent's device list, or -1. Both moveDevice and
+// deleteDevice address a device by its index within the owning chain, not by id.
+function indexInParent(siblingIds, deviceId) {
+    for (var i = 0; i < siblingIds.length; i++) {
+        if (parseInt(siblingIds[i]) === deviceId) {
+            return i;
+        }
+    }
+    return -1;
+}
+// The Knobbler instance this code is running inside. Deleting it would tear the
+// [v8] object down mid-call and take the app's connection with it, so
+// deleteDevice refuses it. Note this is only THIS instance: another Knobbler on
+// the set is an ordinary device here, and deleting it is the user's call (it
+// drops that instance's own connection, not ours).
+var thisDeviceApi = null;
+function isSelf(deviceId) {
+    if (!thisDeviceApi) {
+        thisDeviceApi = new LiveAPI(consts_1.noFn, 'this_device');
+    }
+    var selfId = (0, liveApi_1.apiId)(thisDeviceApi);
+    return selfId !== 0 && selfId === deviceId;
+}
+// /nav/deleteDevice <id> — a BARE numeric LOM id, unlike the '[id, value]' JSON
+// the rename/color/move routes take (there is no second value to carry).
+// Devices and racks only.
+//
+// Live deletes by index within the owning chain, so this resolves the device's
+// canonical_parent (a Track or a Chain) and its position there, exactly as
+// moveDevice does. If the deleted device was the focused one, Live moves the
+// selection itself and the focus observers re-push /nav/currDeviceId.
+function deleteDevice(val) {
+    var id = parseInt(String(val));
+    if (isNaN(id) || id === 0) {
+        return;
+    }
+    if (isSelf(id)) {
+        log('refusing to delete Knobbler itself');
+        return;
+    }
+    if (!pointAt(id)) {
+        return;
+    }
+    // Tracks and chains answer isDeviceSupported too (they have properties), so
+    // exclude the container types explicitly rather than relying on that check.
+    var type = state.api.type;
+    if (HAS_DEVICES[type] || !(0, utils_1.isDeviceSupported)(state.api)) {
+        return;
+    }
+    var parentId = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
+    if (!parentId) {
+        return;
+    }
+    state.api.id = parentId;
+    var index = indexInParent(devicesOf(state.api), id);
+    if (index < 0) {
+        return;
+    }
+    state.api.call('delete_device', index);
+    scheduleNavRefresh();
+}
 // /nav/moveDevice '[deviceId, index]' — reorder within the device's own chain
 // (the nav panel only offers siblings). `index` is where the device should END
 // UP. Song.move_device counts its position in the chain as it is BEFORE the
@@ -320,14 +381,7 @@ function moveDevice(jsonStr) {
     if (!parentId || isNaN(index) || index < 0)
         return;
     state.api.id = parentId;
-    var siblingIds = devicesOf(state.api);
-    var current = -1;
-    for (var i = 0; i < siblingIds.length; i++) {
-        if (parseInt(siblingIds[i]) === edit.id) {
-            current = i;
-            break;
-        }
-    }
+    var current = indexInParent(devicesOf(state.api), edit.id);
     var position = current > -1 && index > current ? index + 1 : index;
     state.api.path = 'live_set';
     state.api.call('move_device', [
@@ -370,5 +424,6 @@ var routes = [
     { prefix: '/nav/renameDevice', parse: 'val', fn: renameDevice },
     { prefix: '/nav/colorChain', parse: 'val', fn: colorChain },
     { prefix: '/nav/moveDevice', parse: 'val', fn: moveDevice },
+    { prefix: '/nav/deleteDevice', parse: 'val', fn: deleteDevice },
 ];
 exports.routes = routes;
