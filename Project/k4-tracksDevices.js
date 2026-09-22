@@ -193,7 +193,10 @@ function updateDeviceNav() {
 }
 var trackChangeDebounce = null;
 function onCurrTrackChange(val) {
-    if (val[0] !== 'id' && val[1].toString() !== 'id') {
+    // Property name is at args[0]. The old `&& val[1].toString() !== 'id'` half
+    // was a leftover from [js], which used to deliver observer args REVERSED —
+    // see the same fix in k4-sidebarMixer.onTrackChange.
+    if (val[0] !== 'id') {
         return;
     }
     var newId = (0, utils_1.cleanArr)(val)[0];

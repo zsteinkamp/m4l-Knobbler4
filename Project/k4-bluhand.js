@@ -160,10 +160,11 @@ function onParameterChange() {
             }
         }
     }
-    if (state.paramsWatcher.id !== state.currDeviceId) {
+    var deviceId = (0, liveApi_1.apiId)(state.paramsWatcher);
+    if (deviceId !== state.currDeviceId) {
         // changed device, reset bank
         state.currBank = 1;
-        state.currDeviceId = state.paramsWatcher.id;
+        state.currDeviceId = deviceId;
     }
     state.devicePath = api.unquotedpath;
     // Re-point the header track name/color at the new device's OWNING track. This
@@ -352,20 +353,38 @@ function cuePointsChange(args) {
     state.cuePointCount = cuePointIds.length;
     debounceSendCuePoints();
 }
+// The cue point at row `idx`, or null if that row doesn't exist. The pooled
+// name observer is ALREADY bound to it, so this needs no handle of its own and
+// builds no 'live_set cue_points N' path (each distinct one would intern a
+// permanent symbol). jump()/set() on the observer are safe: neither moves its
+// target, and a rename simply re-fires its own callback.
+//
+// NOTE the guard is apiValid(), not `if (api.id)`: .id reads back as the STRING
+// "0" for an unresolved object, which is truthy — the old check let a stale
+// index call jump()/set() on nothing.
+function cuePointAt(idx) {
+    var i = parseInt(idx);
+    if (isNaN(i) || i < 0 || i >= state.cuePointCount) {
+        return null;
+    }
+    var api = state.cuePointNames[i];
+    return (0, liveApi_1.apiValid)(api) ? api : null;
+}
 function playCuePoint(val) {
-    var api = new LiveAPI(null, 'live_set cue_points ' + val);
-    if (api.id) {
-        api.call('jump');
-        var ctlApi = getLiveSetApi();
-        var isPlaying = parseInt(ctlApi.get('is_playing'));
-        if (!isPlaying) {
-            ctlApi.call('start_playing');
-        }
+    var api = cuePointAt(val);
+    if (!api) {
+        return;
+    }
+    api.call('jump');
+    var ctlApi = getLiveSetApi();
+    var isPlaying = parseInt(ctlApi.get('is_playing'));
+    if (!isPlaying) {
+        ctlApi.call('start_playing');
     }
 }
 function gotoCuePoint(val) {
-    var api = new LiveAPI(null, 'live_set cue_points ' + val);
-    if (api.id) {
+    var api = cuePointAt(val);
+    if (api) {
         api.call('jump');
     }
 }
@@ -380,16 +399,16 @@ function renameCuePoint(address, value) {
     if (!m) {
         return;
     }
-    var api = new LiveAPI(null, 'live_set cue_points ' + parseInt(m[1]));
-    if (api.id) {
+    var api = cuePointAt(parseInt(m[1]));
+    if (api) {
         api.set('name', String(value));
     }
 }
 // Delete: jump to the cue (so the playhead sits on it) then toggle it off —
 // there's no direct cue-point delete in the Live API.
 function deleteCuePoint(val) {
-    var api = new LiveAPI(null, 'live_set cue_points ' + val);
-    if (api.id) {
+    var api = cuePointAt(val);
+    if (api) {
         api.call('jump');
         getLiveSetApi().call('set_or_delete_cue');
     }
