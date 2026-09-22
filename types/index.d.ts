@@ -39,6 +39,9 @@ interface AppContext {
   osc(addr: string, val: any): void
   knobbler: { bkMap(knobblerSlot: number, paramId: number): void }
   sidebar: { sidebarMeters(val: number): void }
+  // Plug-in editor windows follow the focused device (-> k4-pluginWindow).
+  // deviceId is 0 when focus landed somewhere with no device.
+  pluginWindow: { deviceChanged(deviceId: number): void }
   gotoDevice(deviceId: string): void // recall navigation (-> bluhand)
   gotoTrack(trackId: string): void // selects a track, unfolding enclosing groups (-> bluhand)
   // Knobbler's current track/device pointer (-> k4-focus). Locked = sync with

@@ -117,6 +117,12 @@ function debouncedParameterChange(args) {
 }
 function onParameterChange() {
     var api = state.paramsWatcher;
+    // The focused device changed (in both lock modes) — let the plug-in-window
+    // feature swap editor windows. Reported even for id 0 (focus landed on
+    // something with no device) so the last window still closes.
+    if (ctx) {
+        ctx.pluginWindow.deviceChanged(+api.id);
+    }
     if (+api.id === 0) {
         return;
     }

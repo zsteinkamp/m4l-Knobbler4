@@ -13,6 +13,7 @@ var utils_1 = require("./utils");
 var consts_1 = require("./consts");
 var bluhand = require("./k4-bluhand");
 var focus = require("./k4-focus");
+var pluginWindow = require("./k4-pluginWindow");
 var currentParam = require("./k4-currentParam");
 var multiMixer = require("./k4-multiMixer");
 var sidebarMixer = require("./k4-sidebarMixer");
@@ -44,6 +45,7 @@ var ctx = {
     osc: oscBatch.send,
     knobbler: { bkMap: KnobblerCore.bkMap },
     sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
+    pluginWindow: { deviceChanged: pluginWindow.deviceChanged },
     gotoDevice: bluhand.gotoDevice,
     gotoTrack: bluhand.gotoTrack,
     focus: {
@@ -87,6 +89,11 @@ function setDictPrefix(prefix) {
 // Max message to the entry; forward it to the sidebar mixer.
 function sidebarMeters(val) {
     sidebarMixer.sidebarMeters(val);
+}
+// The Max UI "Plug-in Windows" checkbox (chkPluginWindows -> [pluginWindows $1])
+// sends this Max message to the entry; same handler the app's OSC route uses.
+function pluginWindows(val) {
+    pluginWindow.setEnabled(val);
 }
 // Debug checkbox in the patcher sends `debug 1` / `debug 0` to the entry; toggle
 // both inbound (here) and outbound (oscBatch) OSC debug logging.
@@ -236,7 +243,7 @@ function initAll() {
     KnobblerCore.refresh();
 }
 // --- Route table (merged from every migrated module) -----------------------
-var ROUTES = [].concat(bluhand.routes, focus.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, tracksDevices.routes, shortcuts.routes, system.routes, dbg.routes, knobblerRoutes, entryRoutes);
+var ROUTES = [].concat(bluhand.routes, focus.routes, pluginWindow.routes, currentParam.routes, multiMixer.routes, sidebarMixer.routes, clipView.routes, visibleTracks.routes, tracksDevices.routes, shortcuts.routes, system.routes, dbg.routes, knobblerRoutes, entryRoutes);
 ROUTES.sort(function (a, b) { return (a.prefix.length > b.prefix.length ? -1 : 1); });
 function getSlotNum(prefix, address) {
     var matches = address.substring(prefix.length).match(/^\d+/);
@@ -347,6 +354,9 @@ function anything(value) {
 function init() {
     system.init(ctx);
     focus.init(ctx);
+    // Before bluhand: its device observers fire on init and call through to
+    // ctx.pluginWindow, which needs its persisted setting already loaded.
+    pluginWindow.init(ctx);
     bluhand.init(ctx);
     currentParam.init(ctx);
     multiMixer.init(ctx);

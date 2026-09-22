@@ -32,7 +32,7 @@ const log = logFactory(config)
 // 'navEd' = the nav panel edit routes: /nav/renameTrack, /nav/colorTrack
 // (k4-visibleTracks) and /nav/renameDevice, /nav/colorChain, /nav/moveDevice
 // (k4-tracksDevices).
-const REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd'
+const REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd plugWin'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null

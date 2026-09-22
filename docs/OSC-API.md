@@ -150,7 +150,15 @@ For shortcut button N (1–8), maps the button to the selected device if it is n
 
 For shortcut button N (1–8), removes the mapping.
 
+#### /pluginWindows { 0 | 1 }
+
+Turns “plug-in windows follow the focused device” on or off; off by default, persisted per device instance. Requires capability `plugWin`. While on, every change of focused device closes the previously focused plug-in's editor window and opens the new one's — including selections made in Live itself, not just navigation from the app. Focusing a device that is not a plug-in (stock Live device, Max device, rack) still closes the previous window. Turning the option on opens the currently focused plug-in immediately; turning it off closes the window the device opened and touches nothing else. Only VST/VST3/AU devices have an editor window; the device gates on the LOM itself (`PluginDevice.is_editor_open`, Live 12.4.3+) rather than on a version number. The device replies with the resulting state.
+
 ### Knobbler4 to Tablet
+
+#### /pluginWindows { -1 | 0 | 1 }
+
+Confirms the plug-in-window option: `1` on, `0` off, and `-1` when this Live is older than 12.4.3 and has no `is_editor_open` property — the app should disable the control rather than show a switch that does nothing. Sent on connect/refresh and after every `/pluginWindows` command.
 
 #### /bcurrDeviceName {string}
 

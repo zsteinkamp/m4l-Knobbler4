@@ -19,6 +19,7 @@ import {
 import { OUTLET_PAGE } from './consts'
 import * as bluhand from './k4-bluhand'
 import * as focus from './k4-focus'
+import * as pluginWindow from './k4-pluginWindow'
 import * as currentParam from './k4-currentParam'
 import * as multiMixer from './k4-multiMixer'
 import * as sidebarMixer from './k4-sidebarMixer'
@@ -54,6 +55,7 @@ const ctx: AppContext = {
   osc: oscBatch.send,
   knobbler: { bkMap: KnobblerCore.bkMap },
   sidebar: { sidebarMeters: sidebarMixer.sidebarMeters },
+  pluginWindow: { deviceChanged: pluginWindow.deviceChanged },
   gotoDevice: bluhand.gotoDevice,
   gotoTrack: bluhand.gotoTrack,
   focus: {
@@ -101,6 +103,12 @@ function setDictPrefix(prefix: any) {
 // Max message to the entry; forward it to the sidebar mixer.
 function sidebarMeters(val: number) {
   sidebarMixer.sidebarMeters(val)
+}
+
+// The Max UI "Plug-in Windows" checkbox (chkPluginWindows -> [pluginWindows $1])
+// sends this Max message to the entry; same handler the app's OSC route uses.
+function pluginWindows(val: number) {
+  pluginWindow.setEnabled(val)
 }
 
 // Debug checkbox in the patcher sends `debug 1` / `debug 0` to the entry; toggle
@@ -267,6 +275,7 @@ function initAll() {
 const ROUTES: Route[] = [].concat(
   bluhand.routes as any,
   focus.routes as any,
+  pluginWindow.routes as any,
   currentParam.routes as any,
   multiMixer.routes as any,
   sidebarMixer.routes as any,
@@ -414,6 +423,9 @@ function anything(value: any) {
 function init() {
   system.init(ctx)
   focus.init(ctx)
+  // Before bluhand: its device observers fire on init and call through to
+  // ctx.pluginWindow, which needs its persisted setting already loaded.
+  pluginWindow.init(ctx)
   bluhand.init(ctx)
   currentParam.init(ctx)
   multiMixer.init(ctx)
