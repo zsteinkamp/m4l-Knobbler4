@@ -895,7 +895,7 @@ Operator:
     - Ae Release
     - A Coarse
     - A Fine
-    - Osc-A Lev < Vel
+    - Osc-A Wave
     - Osc-A Level
   Oscillator B:
     - Be Attack
@@ -904,7 +904,7 @@ Operator:
     - Be Release
     - B Coarse
     - B Fine
-    - Osc-B Lev < Vel
+    - Osc-B Wave
     - Osc-B Level
   Oscillator C:
     - Ce Attack
@@ -913,7 +913,7 @@ Operator:
     - Ce Release
     - C Coarse
     - C Fine
-    - Osc-C Lev < Vel
+    - Osc-C Wave
     - Osc-C Level
   Oscillator D:
     - De Attack
@@ -922,8 +922,17 @@ Operator:
     - De Release
     - D Coarse
     - D Fine
-    - Osc-D Lev < Vel
+    - Osc-D Wave
     - Osc-D Level
+  Osc Extras:
+    - Osc-A Lev < Vel
+    - Osc-B Lev < Vel
+    - Osc-C Lev < Vel
+    - Osc-D Lev < Vel
+    - Osc-A Phase
+    - Osc-B Phase
+    - Osc-C Phase
+    - Osc-D Phase
   LFO:
     - Le Attack
     - Le Decay
