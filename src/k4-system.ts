@@ -36,8 +36,10 @@ const log = logFactory(config)
 // 'navDel' = /nav/deleteDevice (k4-tracksDevices). Separate from navEd because
 // it is destructive: an app build that predates the route must not offer a
 // Delete button that silently does nothing.
+// 'cue' = the master cue (preview) volume: /mixer/cue + /mixer/cueDefault
+// (k4-sidebarMixer) and mkMap of /mixer/cue (knobblerCore).
 const REPLY_CAPS =
-  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin'
+  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null

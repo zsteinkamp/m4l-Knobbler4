@@ -24,6 +24,7 @@ var state = {
     xfadeAssignObj: null,
     colorObj: null,
     crossfaderObj: null,
+    cueObj: null,
     watchers: [],
     onMixerPage: false,
     metersEnabled: false,
@@ -39,6 +40,7 @@ var state = {
         vol: { paused: false, task: null },
         pan: { paused: false, task: null },
         crossfader: { paused: false, task: null },
+        cue: { paused: false, task: null },
     },
 };
 // ---------------------------------------------------------------------------
@@ -282,6 +284,21 @@ function handleCrossfaderDefault() {
     }
     state.crossfaderObj.set('value', parseFloat(state.crossfaderObj.get('default_value')));
 }
+// Cue (preview) volume lives on the master track only, like the crossfader, so
+// it is one global control rather than a per-strip one.
+function handleCue(val) {
+    if (!(0, liveApi_1.apiValid)(state.cueObj)) {
+        return;
+    }
+    (0, utils_1.pauseUnpause)(state.pause['cue'], consts_1.PAUSE_MS);
+    state.cueObj.set('value', parseFloat(val));
+}
+function handleCueDefault() {
+    if (!(0, liveApi_1.apiValid)(state.cueObj)) {
+        return;
+    }
+    state.cueObj.set('value', parseFloat(state.cueObj.get('default_value')));
+}
 function handlePan(val) {
     if (!(0, liveApi_1.apiValid)(state.panObj)) {
         return;
@@ -341,6 +358,14 @@ var handleCrossfaderVal = function (val) {
     }
     if (!state.pause.crossfader.paused) {
         (0, utils_1.osc)('/mixer/crossfader', val[1] || 0);
+    }
+};
+var handleCueVal = function (val) {
+    if (val[0] !== 'value') {
+        return;
+    }
+    if (!state.pause.cue.paused) {
+        (0, utils_1.osc)('/mixer/cue', val[1] || 0);
     }
 };
 var handleSendVal = function (idx, val) {
@@ -544,6 +569,9 @@ function pushState() {
     if ((0, liveApi_1.apiValid)(state.crossfaderObj)) {
         (0, utils_1.osc)('/mixer/crossfader', parseFloat(state.crossfaderObj.get('value')) || 0);
     }
+    if ((0, liveApi_1.apiValid)(state.cueObj)) {
+        (0, utils_1.osc)('/mixer/cue', parseFloat(state.cueObj.get('value')) || 0);
+    }
     // lastTrackId, not trackLookupObj's id: the lookup handle is constructed on
     // 'live_set' and only re-pointed once handleTrackChange has run, so it would
     // otherwise resolve to the Song on the very first pass.
@@ -638,6 +666,12 @@ function init() {
         state.crossfaderObj.property = 'value';
         state.crossfaderObj.mode = 1;
     }
+    // Cue volume obj (always master track)
+    if (!state.cueObj) {
+        state.cueObj = new LiveAPI(handleCueVal, 'live_set master_track mixer_device cue_volume');
+        state.cueObj.property = 'value';
+        state.cueObj.mode = 1;
+    }
     // Restore meters state from settings dict; carry forward from pre-[v8] sets
     // (old key "<port>_metersEnabled" in the shared [dict settingsDict]).
     // TODO(cleanup, after 2026-07-01 / v65): remove — see k4-settings legacy bridge.
@@ -662,6 +696,7 @@ var routes = [
         parse: 'bare',
         fn: handleCrossfaderDefault,
     },
+    { prefix: '/mixer/cueDefault', parse: 'bare', fn: handleCueDefault },
     { prefix: '/mixer/sendDefault', parse: 'slot', fn: handleSendDefault },
     {
         prefix: '/mixer/send',
@@ -684,6 +719,7 @@ var routes = [
         fn: handleCrossfader,
         coalesce: true,
     },
+    { prefix: '/mixer/cue', parse: 'val', fn: handleCue, coalesce: true },
 ];
 exports.routes = routes;
 log('reloaded k4-sidebarMixer');

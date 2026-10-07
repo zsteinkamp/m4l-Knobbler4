@@ -351,6 +351,10 @@ function mkMap(slot: number, mixerPath: string) {
     setPath(slot, 'live_set master_track mixer_device crossfader')
     return
   }
+  if (ctrl === 'cue') {
+    setPath(slot, 'live_set master_track mixer_device cue_volume')
+    return
+  }
 
   let trackPath: string = null
   if (stripIdx === null || isNaN(stripIdx)) {

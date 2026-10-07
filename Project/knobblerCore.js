@@ -322,6 +322,10 @@ function mkMap(slot, mixerPath) {
         setPath(slot, 'live_set master_track mixer_device crossfader');
         return;
     }
+    if (ctrl === 'cue') {
+        setPath(slot, 'live_set master_track mixer_device cue_volume');
+        return;
+    }
     var trackPath = null;
     if (stripIdx === null || isNaN(stripIdx)) {
         // Single-strip variant: resolve against Knobbler's current track (focus;
