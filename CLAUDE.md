@@ -444,6 +444,15 @@ them. `scripts/release.sh <vNN>` builds the correct zip (README.txt + the
 `frozen/Knobbler4-<vNN>*.amxd` devices); the zip is uploaded to the release, not
 committed to the repo.
 
+**The site picks up a new release within 4 hours, not instantly.**
+plugins.steinkamp.us serves release data (the `/version/m4l-Knobbler4` check the
+device polls, and the download button) from a file cache refreshed by a cron on
+the prod host (`0 */4 * * *` → `npm run sync`; no webhook, no revalidation). To
+publish immediately after `gh release create`, run
+`ssh lightsail "cd dev/plugins && make sync"` (syncs every plugin and rebuilds the
+category bundles), then confirm with
+`curl -s https://plugins.steinkamp.us/version/m4l-Knobbler4`.
+
 **`Knobbler4-P3SA.amxd` (Push 3 standalone)** is identical to `Knobbler4.amxd`
 except for one group of objects built around the `zero.*` externals (zeroconf
 discovery), which Push 3 standalone doesn't support. To regenerate it after a
