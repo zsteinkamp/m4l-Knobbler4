@@ -173,7 +173,12 @@ function restoreSlot(slot: number) {
   }
 
   const sName = ctx.settings.get(slotKey(slot, 'customName'))
-  if (typeof sName === 'string' && sName.length) {
+  if (sName === nullString) {
+    // Saved by a bug (the legacy importer took the name field's "- - -"
+    // default for a name); it would mask the parameter's own name.
+    ctx.settings.set(slotKey(slot, 'customName'), '')
+    if (param[slot] && param[slot].customName) clearCustomName(slot)
+  } else if (typeof sName === 'string' && sName.length) {
     if (param[slot] && param[slot].customName !== sName) {
       setCustomName(slot, sName)
     }
@@ -232,7 +237,9 @@ function importLegacyMax(slot: number, val: number) {
 
 function importLegacyCustomName(slot: number, name: string) {
   whenReady(function () {
-    if (slot < 1 || slot > LEGACY_UI_SLOTS || !name) return
+    // The bpatcher's name field DEFAULTS to the "- - -" placeholder, and Live
+    // restores that on a fresh device: it is "no name", not a name to import.
+    if (slot < 1 || slot > LEGACY_UI_SLOTS || !isCustomName(name)) return
     if (!hasSetting(slot, 'customName')) {
       initSlotIfNecessary(slot)
       setCustomName(slot, name) // persists
@@ -857,6 +864,13 @@ function init(slot: number, quiet?: boolean) {
   paramObj[slot] = null
   allowMapping[slot] = true
   allowUpdateFromOsc[slot] = true
+  // Full range until setMin/setMax (or the stored settings) narrow it. Only
+  // those two ever wrote the range, and slots 1-32 got it from their knob-slot
+  // bpatcher's numboxes, so a slot past 32 had none: min and max both
+  // undefined read as min == max, and sendVal then reported every change from
+  // Live as 0 / "- - -".
+  if (outMin[slot] === undefined) outMin[slot] = 0
+  if (outMax[slot] === undefined) outMax[slot] = 1
   param[slot] = {
     val: 0,
     min: 0,
@@ -899,12 +913,20 @@ function clearCustomName(slot: number) {
   sendParamName(slot)
 }
 
+// A real custom name — not empty, and not the "- - -" placeholder the device
+// shows (and its name fields default to) for "none". Stored as a name, the
+// placeholder would hide the mapped parameter's own name.
+function isCustomName(name: any): boolean {
+  return !!name && String(name) !== nullString
+}
+
 function setCustomName(slot: number, args: string) {
   //log(args)
   if (!param[slot]) {
     return
   }
-  if (ctx) ctx.settings.set(slotKey(slot, 'customName'), args || '')
+  if (!isCustomName(args)) return clearCustomName(slot)
+  if (ctx) ctx.settings.set(slotKey(slot, 'customName'), args)
 
   param[slot].customName = args
   sendParamName(slot)
