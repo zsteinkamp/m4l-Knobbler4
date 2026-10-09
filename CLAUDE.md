@@ -124,12 +124,17 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 
 **`knobblerCore.ts`** - Core parameter mapping engine (1300+ lines)
 
-- Manages 32 parameter "slots" that users map to Ableton device parameters
+- Manages up to 256 parameter "slots" (16 named pages of 16) that users map to Ableton device parameters
+- **Pages** (capability `kPages`): an ordered list of page NAMES per set (`ctx.settings` key `kPages`, broadcast as `/kPages` and into the device's page menu, default `['Knobbler 1','Knobbler 2']`, `defaultPageName` — keep in step with the app's). Page k owns slots `16k+1..16k+16`, so a page is only a name and slot index stays a fader's identity. `/kMove '[from,to,width]'` moves a fader (width 1) or XY pad (width 2) by REWRITING slots from snapshots (`rewriteSlots` → `applySnapshot`), and `/kPageOrder '[old indices]'` reorders/deletes pages the same way in blocks. Rewrites re-point the slot's existing observers (`reArmSlot`), so moving faders never tears an observer down. The app mirrors `moveCells`' rules in `knobbler-native/lib/knobblerPages.ts` (`canMove`/`movePlan`, and `reorderPlan` for `rearrangePages`) — change both together. Multi-argument routes take one JSON-array string because `anything()` only sees the first OSC argument.
 - Maintains parallel arrays tracking: parameter objects, names, device info, track info, colors, values
 - Implements LiveAPI observers/watchers for real-time parameter updates
 - Handles debouncing to prevent feedback loops between OSC and Ableton
 - Scales values between OSC range (0-1) and Ableton parameter ranges
-- Persists slot path/min/max/customName to `ctx.settings` (`---settingsDict`), dual-written to the legacy bpatcher params for backward compat
+- **`ctx.settings` (`---settingsDict`) is the ONLY store for knobbler config:** per-slot `slot_<N>_path/min/max/customName`, `kPages`, `xyPairs`. Nothing is written to bpatcher parameters any more. `hasSetting` distinguishes "never configured" (key absent) from "deliberately emptied" (`''`) — the legacy importers depend on that.
+- **Device UI (Knobbler tab):** ONE Knobbler tab (the `Page` live.tab is `Knobbler, Bluhand, Clips, Mixer, Session` — the 6→5 change shifted existing Page automation by one entry, accepted) with a page menu (`kPageMenu` umenu) under it and 16 **view** bpatchers (`knobView-bpatcher.maxpat`, varnames `view1..16`). A view has NO slot and stores nothing (its min/max `live.numbox`es are Hidden parameters — `parameter_invisible 2`, not stored or automatable — because a live.numbox with parameter mode OFF doesn't render; everything else has parameter mode off): it listens on `---<1000+pos>-SLOT` (`VIEW_TARGET_BASE`; the patcher's one numeric forwarder) and reports edits by position (`viewMin/viewMax/viewName/viewClearName/viewUnmap`), which knobblerCore maps to slots through `uiPage`; a page switch is `refreshViews()`. `sendMsg(slot, …)` reaches a view only if the slot is on the page showing. The menu is filled with `kmenu clear/append/set` on OUTLET_PAGE (`r ---PAGE` → `route page kmenu kparam`) and reports `uiPage <idx>`.
+- **Page sync and automation:** the app and device keep the shown page in step with `/kShow <idx>` both ways (an older app's `/page/knobbler1|2` still selects page 1/2). The page is automatable through a hidden `live.numbox` "Knobbler Page" (1–16, in the parameter bank): `setUiPage` offers it as `kparam`, applied with `set` (records, no echo), and its playback arrives as `uiPage` — both through gates driven by **Automate Page Chg**, exactly like the Page tab.
+- **Legacy importers (remove after 2028-05-21):** the 32 old `knobSlot-bpatcher.maxpat` bpatchers stay, hidden and out of presentation, only so a set last saved before v61 (2026-05-21, when slot config moved to the settings dict) still loads its mappings. Their restored parameters arrive as `setPath/setMin/setMax/setCustomName` and are IMPORTED only into a slot with no setting at all; an imported or overruled path/name is then cleared in the bpatcher so the saved set carries nothing stale. See "Legacy importers" in knobblerCore for why min/max aren't cleared and what to delete on the removal date.
+- **The device patcher change was scripted:** `scripts/migrations/2026-10-knobbler-view.py` (asserts the pre-change state). `scripts/maxjson.py` serializes `.amxd` JSON byte-identically to Max (verified on both devices), so a load→edit→dump round trip diffs only what changed — use it for future scripted patcher edits.
 
 **`k4-bluhand.ts`** - Device control ("bluhand")
 
@@ -270,7 +275,7 @@ but not the blue hand the surface now follows.
 
 **`utils.ts`** - Helper functions including logging factory, path validation, color conversion, string truncation, debounced task management.
 
-**`consts.ts`** - Constants and type definitions including `MAX_SLOTS = 32`, track types, the `[v8 knobbler]` entry outlet indices, default colors.
+**`consts.ts`** - Constants and type definitions including `MAX_SLOTS` (`MAX_PAGES × SLOTS_PER_PAGE` = 256) and `LEGACY_UI_SLOTS = 32`, track types, the `[v8 knobbler]` entry outlet indices, default colors.
 
 **`toggleInput.ts`** - Track input routing enable/disable functionality.
 
@@ -356,7 +361,7 @@ both leaks symbols and can fire a callback mid-finalization.
 1. **Route-registry dispatch**: each module exports a `routes: Route[]` table; the entry merges them and calls `fn(...)` directly (replaces the old outlet fan-out)
 2. **`ctx` orchestration + require()-no-cache**: modules reach siblings/services through the `ctx` the entry injects in `init(ctx)`, never via direct imports (a direct import would be a separate dead instance); each module wires `setOscSink(ctx.osc)` for the same reason
 3. **LiveAPI Observer Pattern**: extensive use of Ableton LiveAPI observers to push real-time updates; distinguish *identity observers* (dedupable) from *operational handles* (per-module, kept)
-4. **32-Slot Parallel Arrays**: core parameter mapping uses indexed parallel arrays
+4. **Slot Parallel Arrays (indexed 1..MAX_SLOTS)**: core parameter mapping uses indexed parallel arrays
 5. **Debouncing Strategy**: multiple debouncing approaches prevent feedback loops between OSC input and direct manipulation in Live
 6. **Module exports**: the entry (`knobbler.ts`) keeps the `const module = {}; export = {}` boilerplate so tsc emits valid CommonJS for the `[v8]` object; folded feature modules use plain named exports (`export { routes, init }`)
 
@@ -495,6 +500,15 @@ file (20k-line diff for a one-attr change). For surgical edits prefer raw-text
 re-serialize with a matching pretty-printer (`json.load` already preserves key
 order) and verify it reproduces the unmodified file byte-for-byte before trusting
 it.
+
+**Z-order is the ORDER of `patcher.boxes`, and it fails silently.** Max draws a
+patcher's boxes back to front from the END of the list, so a box listed LATER is
+hidden behind any earlier box it overlaps. Appending a new box to the list
+(the obvious script move) puts it behind everything — the Knobbler tab's view
+bpatchers were appended after the content-area `panel` (obj-78) and rendered as
+a blank area, with nothing in the patcher looking wrong. Insert new presentation
+boxes BEFORE whatever they must draw over (`Patch.add(box, before=...)` in
+`scripts/migrations/2026-10-knobbler-view.py`).
 
 ## Theming UI widgets to follow Live's theme (`themecolor.*`)
 

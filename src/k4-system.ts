@@ -39,7 +39,7 @@ const log = logFactory(config)
 // 'cue' = the master cue (preview) volume: /mixer/cue + /mixer/cueDefault
 // (k4-sidebarMixer) and mkMap of /mixer/cue (knobblerCore).
 const REPLY_CAPS =
-  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue'
+  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null

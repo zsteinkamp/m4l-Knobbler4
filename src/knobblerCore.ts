@@ -14,10 +14,17 @@ import {
 import { apiId, apiValid, detach } from './liveApi'
 import {
   DEFAULT_COLOR_FF,
+  LEGACY_UI_SLOTS,
+  MAX_NAME_LEN,
+  MAX_PAGES,
   MAX_SLOTS,
+  SLOTS_PER_PAGE,
+  SLOTS_PER_ROW,
   noFn,
   nullString,
   OUTLET_MSGS,
+  OUTLET_PAGE,
+  VIEW_TARGET_BASE,
 } from './consts'
 
 import { propToValue, valueString, valueToProp } from './deviceParam'
@@ -28,7 +35,7 @@ const log = logFactory(config)
 // Orchestrator context (set in initAll) — per-instance persistence via ctx.settings.
 let ctx: AppContext = null
 
-// Pre-computed OSC address strings (indexed 1–32)
+// Pre-computed OSC address strings (indexed 1–MAX_SLOTS)
 const ADDR_VAL: string[] = []
 const ADDR_VALSTR: string[] = []
 const ADDR_VALCOLOR: string[] = []
@@ -68,7 +75,7 @@ const parentColorObj: LiveAPI[] = []
 const param: ParamType[] = []
 const outMin: number[] = []
 const outMax: number[] = []
-// ONE repeating poll for all 32 slots, not one Task per mapped slot: the old
+// ONE repeating poll for all slots, not one Task per mapped slot: the old
 // shape ran up to 32 separate 1s timers, each doing its own LiveAPI reads.
 let deviceCheckerTask: MaxTask = null
 const DEVICE_CHECK_MS = 1000
@@ -121,15 +128,12 @@ function sendXYPairs() {
   osc('/xyPairs', xyPairs)
 }
 
-// --- Slot persistence (migrating off the bpatcher #N_* params) -------------
+// --- Slot persistence -------------------------------------------------------
 //
-// Transition strategy (read-with-backfill): slot path/min/max/customName are
-// mirrored into ctx.settings (---settingsDict) on every mutation. On load the
-// legacy bpatcher widgets still fire setPath/setMin/setMax first (and still
-// persist themselves, so older versions keep working), then restoreSlot()
-// reconciles: a settings value wins; if settings is empty it backfills from the
-// value the widget just supplied. A future version deletes the #N_* params and
-// setPathParam(), leaving ctx.settings as the sole source.
+// ctx.settings (---settingsDict) is the ONLY store for knobbler config: per
+// slot path/min/max/customName (slot_<N>_<field>), plus the page names
+// (kPages) and XY pairs (xyPairs). Everything is written there on mutation and
+// read back by restoreSlot() on load/refresh.
 function slotKey(slot: number, field: string): string {
   return 'slot_' + slot + '_' + field
 }
@@ -138,45 +142,103 @@ function persistSlotPath(slot: number, path: string) {
   if (ctx) ctx.settings.set(slotKey(slot, 'path'), path || '')
 }
 
-// Restore one slot from ctx.settings, or backfill settings from the legacy
-// widget value the slot currently holds. Idempotent — safe to re-run on every
+// True once a slot field has ANY stored value. A cleared slot is stored as ''
+// (clearSlotSettings), so this is how "never configured" differs from
+// "deliberately emptied" — the distinction the legacy importers depend on.
+function hasSetting(slot: number, field: string): boolean {
+  const v = ctx.settings.get(slotKey(slot, field))
+  return v !== null && v !== undefined
+}
+
+// Restore one slot from ctx.settings. Idempotent — safe to re-run on every
 // refresh()/reconnect (matched values are no-ops).
 function restoreSlot(slot: number) {
   if (!ctx) return
 
-  // path: settings authoritative; else backfill from the legacy widget value
   const sPath = ctx.settings.get(slotKey(slot, 'path'))
   if (typeof sPath === 'string' && sPath.length) {
     if (!param[slot] || param[slot].path !== sPath) {
       setPath(slot, sPath)
     }
-  } else if (param[slot] && param[slot].path) {
-    ctx.settings.set(slotKey(slot, 'path'), param[slot].path)
   }
 
-  // min / max are stored as the 0–100 integers the widget/setMin use
+  // min / max are stored as the 0–100 integers setMin/setMax take
   const sMin = ctx.settings.get(slotKey(slot, 'min'))
-  if (typeof sMin === 'number') {
-    if (outMin[slot] !== sMin / 100.0) setMin(slot, sMin)
-  } else if (outMin[slot] !== undefined) {
-    ctx.settings.set(slotKey(slot, 'min'), Math.round(outMin[slot] * 100))
+  if (typeof sMin === 'number' && outMin[slot] !== sMin / 100.0) {
+    setMin(slot, sMin)
   }
   const sMax = ctx.settings.get(slotKey(slot, 'max'))
-  if (typeof sMax === 'number') {
-    if (outMax[slot] !== sMax / 100.0) setMax(slot, sMax)
-  } else if (outMax[slot] !== undefined) {
-    ctx.settings.set(slotKey(slot, 'max'), Math.round(outMax[slot] * 100))
+  if (typeof sMax === 'number' && outMax[slot] !== sMax / 100.0) {
+    setMax(slot, sMax)
   }
 
-  // customName never persisted before — settings is its only home
   const sName = ctx.settings.get(slotKey(slot, 'customName'))
   if (typeof sName === 'string' && sName.length) {
     if (param[slot] && param[slot].customName !== sName) {
       setCustomName(slot, sName)
     }
-  } else if (param[slot] && param[slot].customName) {
-    ctx.settings.set(slotKey(slot, 'customName'), param[slot].customName)
   }
+}
+
+// --- Legacy importers (REMOVE after 2028-05-21) ----------------------------
+//
+// Before v61 (2026-05-21) slot config lived ONLY in the 32 knob-slot
+// bpatchers' parameters (#N_path, #N_targetMin, #N_targetMax, #N_eparam).
+// Those bpatchers stay in the device, hidden, purely so a set last saved before
+// then still loads its mappings: Live restores their parameters on load, and
+// their setPath/setMin/setMax/setCustomName messages land here.
+//
+// The device no longer WRITES them, so their values go stale the moment a
+// fader moves or a slot is unmapped. That is why a value is imported only into
+// a slot with NO stored setting at all, and why an imported (or overruled) path
+// and name are then CLEARED in the bpatcher: saved, the set carries nothing
+// for them to resurrect, and each importer goes inert after one save. Min/max
+// can't be cleared that way — the bpatcher's only reset makes its numboxes
+// output, which would loop back in here — but they need not be: once a slot's
+// min/max setting exists, the importer is ignored for good.
+//
+// After 2028-05-21: delete the 32 bpatchers1..32 (and their 160 parameters)
+// from both devices, this section, and the entry's setPath/setMin/setMax/
+// setCustomName/clearCustomName handlers.
+function whenReady(fn: () => void) {
+  if (apiReady) fn()
+  else pendingCalls.push(fn)
+}
+
+function importLegacyPath(slot: number, path: string) {
+  whenReady(function () {
+    if (slot < 1 || slot > LEGACY_UI_SLOTS || !path) return
+    if (!hasSetting(slot, 'path') && isValidPath(path)) {
+      initSlotIfNecessary(slot)
+      setPath(slot, path) // persists to settings
+    }
+    legacyMsg(slot, ['path', ''])
+  })
+}
+
+function importLegacyMin(slot: number, val: number) {
+  whenReady(function () {
+    if (slot < 1 || slot > LEGACY_UI_SLOTS) return
+    if (!hasSetting(slot, 'min')) setMin(slot, val) // persists
+  })
+}
+
+function importLegacyMax(slot: number, val: number) {
+  whenReady(function () {
+    if (slot < 1 || slot > LEGACY_UI_SLOTS) return
+    if (!hasSetting(slot, 'max')) setMax(slot, val) // persists
+  })
+}
+
+function importLegacyCustomName(slot: number, name: string) {
+  whenReady(function () {
+    if (slot < 1 || slot > LEGACY_UI_SLOTS || !name) return
+    if (!hasSetting(slot, 'customName')) {
+      initSlotIfNecessary(slot)
+      setCustomName(slot, name) // persists
+    }
+    legacyMsg(slot, ['param', ''])
+  })
 }
 
 // Clear a slot's persisted state (explicit user unmap, not the startup init()).
@@ -250,7 +312,7 @@ function captureSlot(slot: number): SlotSnapshot {
 }
 
 function applySnapshot(slot: number, snap: SlotSnapshot) {
-  init(slot)
+  init(slot, !!snap.path)
   if (snap.path) {
     setPath(slot, snap.path)
     setMin(slot, snap.min)
@@ -258,6 +320,10 @@ function applySnapshot(slot: number, snap: SlotSnapshot) {
     if (snap.customName) setCustomName(slot, snap.customName)
   } else {
     clearSlotSettings(slot)
+    // The range travelled with the fader; an emptied slot starts full-range
+    // rather than handing the old one to whatever is mapped here next.
+    setMin(slot, 0)
+    setMax(slot, 100)
     refreshSlotUI(slot)
   }
 }
@@ -292,26 +358,371 @@ function swap(slotA: number, slotB: number) {
   applySnapshot(slotB, snapA)
 }
 
-function sendMsg(slot: number, msg: MessageType) {
-  //log(`${slot} - ${msg.join(' ')}`)
-  outlet(OUTLET_MSGS, [slot, ...msg])
+// --- Pages -----------------------------------------------------------------
+//
+// The app shows the slots as named pages of SLOTS_PER_PAGE, page k owning slots
+// k*16+1..k*16+16 (the Bluhand bank scheme). A page is nothing but a NAME, so
+// slot index stays the identity of a fader and everything keyed on it —
+// mappings, XY pairs, the app's value cache — is untouched. Moving a fader is a
+// slot rewrite; reordering or deleting a page is the same rewrite in blocks.
+// Rewrites re-point the slot's existing observers (reArmSlot), so none of this
+// tears an observer down and leaks symbols.
+const PAGES_KEY = 'kPages'
+let pageNames: string[] = []
+
+// Matches the app's default (knobbler-native lib/knobblerPages.ts).
+function defaultPageName(idx: number): string {
+  return 'Knobbler ' + (idx + 1)
 }
 
-// TODO(cleanup, after 2026-07-01 / v65): remove setPathParam + its call in
-// setPath, and the bpatcher #N_path/#N_targetMin/#N_targetMax params — they're
-// a dual-write kept only for backward compat (new sets readable by older
-// versions). After the cutover, ---settingsDict is the sole source for slots.
-// Track alongside the legacy settingsDict bridge (see k4-settings.ts).
-function setPathParam(slot: number, path: string) {
-  if (path) {
-    sendMsg(slot, ['path', path])
+function cleanPageName(name: any, idx: number): string {
+  const s = name == null ? '' : String(name).trim()
+  return s.length ? s.substring(0, MAX_NAME_LEN) : defaultPageName(idx)
+}
+
+function loadPages() {
+  const val = ctx.settings.get(PAGES_KEY)
+  if (val && typeof val === 'object' && (val as any).length > 0) {
+    const arr = (val as any[]).slice(0, MAX_PAGES)
+    pageNames = arr.map(function (n, i) {
+      return cleanPageName(n, i)
+    })
+  } else {
+    // Every set made before pages existed had exactly these two.
+    pageNames = [defaultPageName(0), defaultPageName(1)]
   }
 }
 
-function clearPath(slot: number) {
-  //log()
-  init(slot)
-  refreshSlotUI(slot)
+function savePages() {
+  ctx.settings.set(PAGES_KEY, pageNames)
+}
+
+function sendPages() {
+  osc('/kPages', pageNames)
+  sendPageMenu()
+}
+
+// Slots anyone can address: every page's, and never fewer than the 32 an older
+// app (or the device's own knob-slot UI) reaches.
+function activeSlots(): number {
+  return Math.max(LEGACY_UI_SLOTS, pageNames.length * SLOTS_PER_PAGE)
+}
+
+function sameSnapshot(a: SlotSnapshot, b: SlotSnapshot): boolean {
+  return (
+    a.path === b.path &&
+    (!a.path ||
+      (a.min === b.min && a.max === b.max && a.customName === b.customName))
+  )
+}
+
+// Rewrite slots[i] to hold snaps[i]. Snapshots must all be captured BEFORE the
+// first rewrite (a move reads slots it also writes). A slot already holding its
+// target is skipped, so a block move only re-points what actually changed.
+function rewriteSlots(slots: number[], snaps: SlotSnapshot[]) {
+  for (let i = 0; i < slots.length; i++) {
+    if (sameSnapshot(captureSlot(slots[i]), snaps[i])) continue
+    applySnapshot(slots[i], snaps[i])
+  }
+}
+
+function setPairs(pairs: number[]) {
+  xyPairs = pairs
+  saveXYPairs()
+  sendXYPairs()
+}
+
+function parseArgs(val: any): any[] | null {
+  try {
+    const arr = typeof val === 'string' ? JSON.parse(val) : val
+    return arr && typeof arr === 'object' && arr.length != null ? arr : null
+  } catch (e) {
+    return null
+  }
+}
+
+// A cell range [slot, slot+width) that exists and doesn't wrap onto the next row.
+function validCells(slot: number, width: number): boolean {
+  if (slot < 1 || slot + width - 1 > activeSlots()) return false
+  return width === 1 || (slot - 1) % SLOTS_PER_ROW !== SLOTS_PER_ROW - 1
+}
+
+// /kMove '[from, to, width]' — the app's Layout-mode drop. width 1 moves a
+// single fader, width 2 an XY pad (from = its left slot). Whatever sat at the
+// destination goes to the cells the move vacated, so a pad dropped one cell
+// over rotates its neighbour around it rather than overwriting it. A single
+// can't land on half a pad, and a pad can't straddle another pad.
+function moveCells(val: any) {
+  if (!apiReady) {
+    pendingCalls.push(function () {
+      moveCells(val)
+    })
+    return
+  }
+  const args = parseArgs(val)
+  if (!args) return
+  const from = +args[0]
+  const to = +args[1]
+  const width = +args[2] === 2 ? 2 : 1
+  if (from === to || !validCells(from, width) || !validCells(to, width)) return
+
+  const toIsPad = width === 2 && xyPairs.indexOf(to) !== -1
+  if (width === 2) {
+    if (xyPairs.indexOf(from) === -1) return
+    if (!toIsPad) {
+      for (let s = to; s < to + 2; s++) {
+        const pad = isSlotInPair(s)
+        if (pad !== null && pad !== from) return
+      }
+    }
+  } else if (isSlotInPair(from) !== null || isSlotInPair(to) !== null) {
+    return
+  }
+
+  const src: number[] = []
+  const dst: number[] = []
+  for (let i = 0; i < width; i++) {
+    src.push(from + i)
+    dst.push(to + i)
+  }
+  const slots = dst.slice()
+  const snaps = src.map(captureSlot)
+  const vacated = src.filter(function (s) {
+    return dst.indexOf(s) === -1
+  })
+  const displaced = dst.filter(function (s) {
+    return src.indexOf(s) === -1
+  })
+  for (let i = 0; i < vacated.length; i++) {
+    slots.push(vacated[i])
+    snaps.push(captureSlot(displaced[i]))
+  }
+
+  // Pairs are positional: a pad moving onto plain cells takes its pair marker
+  // with it; two pads swapping leave both markers where they are.
+  if (width === 2 && !toIsPad) {
+    setPairs(
+      xyPairs
+        .filter(function (p) {
+          return p !== from
+        })
+        .concat([to])
+    )
+  }
+  rewriteSlots(slots, snaps)
+}
+
+// Lay the pages out in a new order: order[k] is the OLD index of the page that
+// becomes page k, so leaving an index out deletes that page (and unmaps its
+// faders — the caller confirms). Slots past the new last page are cleared.
+function rearrangePages(order: number[]) {
+  const oldCount = pageNames.length
+  const lastSlot = activeSlots()
+  const slots: number[] = []
+  const snaps: SlotSnapshot[] = []
+  for (let k = 0; k < order.length; k++) {
+    for (let j = 1; j <= SLOTS_PER_PAGE; j++) {
+      slots.push(k * SLOTS_PER_PAGE + j)
+      snaps.push(captureSlot(order[k] * SLOTS_PER_PAGE + j))
+    }
+  }
+  const empty: SlotSnapshot = { path: '', min: 0, max: 100, customName: '' }
+  for (let s = order.length * SLOTS_PER_PAGE + 1; s <= lastSlot; s++) {
+    // Below LEGACY_UI_SLOTS a slot past the last page is still reachable by an
+    // older app, so only a deleted page's own slots are cleared there.
+    if (s <= LEGACY_UI_SLOTS && s > oldCount * SLOTS_PER_PAGE) continue
+    slots.push(s)
+    snaps.push(empty)
+  }
+
+  const pairs: number[] = []
+  for (let i = 0; i < xyPairs.length; i++) {
+    const page = Math.floor((xyPairs[i] - 1) / SLOTS_PER_PAGE)
+    if (page >= oldCount) {
+      pairs.push(xyPairs[i]) // a legacy slot outside every page: untouched
+      continue
+    }
+    const k = order.indexOf(page)
+    if (k !== -1) pairs.push(xyPairs[i] + (k - page) * SLOTS_PER_PAGE)
+  }
+
+  pageNames = order.map(function (i) {
+    return pageNames[i]
+  })
+  savePages()
+  sendPages()
+  setPairs(pairs)
+  rewriteSlots(slots, snaps)
+  setUiPage(uiPage) // the page showing may have moved or gone
+}
+
+// /kPageOrder '[old indices…]' — reorder and/or delete pages in one op.
+function setPageOrder(val: any) {
+  if (!apiReady) {
+    pendingCalls.push(function () {
+      setPageOrder(val)
+    })
+    return
+  }
+  const args = parseArgs(val)
+  if (!args || !args.length) return
+  const order: number[] = []
+  for (let i = 0; i < args.length; i++) {
+    const idx = +args[i]
+    if (!(idx >= 0 && idx < pageNames.length) || order.indexOf(idx) !== -1) {
+      return
+    }
+    order.push(idx)
+  }
+  rearrangePages(order)
+}
+
+// /kPageAdd 'name' — append a page. Its slots are whatever already sits there:
+// empty by construction past slot 32, and below it possibly mapped by an older
+// app or the device's own UI, which is worth showing rather than clearing.
+function addPage(name: any) {
+  if (!apiReady) {
+    pendingCalls.push(function () {
+      addPage(name)
+    })
+    return
+  }
+  if (pageNames.length >= MAX_PAGES) return
+  const idx = pageNames.length
+  pageNames.push(cleanPageName(name, idx))
+  savePages()
+  sendPages()
+  for (let j = 1; j <= SLOTS_PER_PAGE; j++) {
+    refreshSlotUI(idx * SLOTS_PER_PAGE + j)
+  }
+  setUiPage(uiPage)
+}
+
+// /kPageRename '[idx, name]'
+function renamePage(val: any) {
+  if (!ctx) return
+  const args = parseArgs(val)
+  if (!args) return
+  const idx = +args[0]
+  if (!(idx >= 0 && idx < pageNames.length)) return
+  pageNames[idx] = cleanPageName(args[1], idx)
+  savePages()
+  sendPages()
+}
+
+// --- Device UI: the Knobbler view ------------------------------------------
+//
+// The device's Knobbler tab shows ONE page at a time in 16 view bpatchers
+// (knobView-bpatcher.maxpat, varnames view1..view16). A view has no slot of its
+// own: it listens on "---<VIEW_TARGET_BASE + pos>-SLOT" (the patcher's one
+// forwarder addresses targets by number, and the legacy importers keep 1..32)
+// and reports edits with its POSITION
+// (viewMin/viewMax/viewName/viewClearName/viewUnmap), and this module maps
+// positions to slots through uiPage. Switching pages is just refreshViews().
+// The page menu beside the tab is filled and selected through OUTLET_PAGE
+// ("kmenu …" → the patcher's route).
+let uiPage = 0
+
+function sendMsg(slot: number, msg: MessageType) {
+  const pos = slot - uiPage * SLOTS_PER_PAGE
+  if (pos < 1 || pos > SLOTS_PER_PAGE) return
+  outlet(OUTLET_MSGS, [VIEW_TARGET_BASE + pos, ...msg])
+}
+
+// To one of the hidden legacy importer bpatchers (see Legacy importers).
+function legacyMsg(slot: number, msg: MessageType) {
+  outlet(OUTLET_MSGS, [slot, ...msg])
+}
+
+function slotOfView(pos: number): number {
+  return uiPage * SLOTS_PER_PAGE + pos
+}
+
+function sendViewRange(slot: number) {
+  sendMsg(slot, [
+    'range',
+    outMin[slot] !== undefined ? Math.round(outMin[slot] * 100) : 0,
+    outMax[slot] !== undefined ? Math.round(outMax[slot] * 100) : 100,
+  ])
+}
+
+// Everything a view shows for one slot.
+function sendView(slot: number) {
+  initSlotIfNecessary(slot)
+  sendMsg(slot, ['mapped', paramObj[slot] ? true : false])
+  sendMsg(slot, ['param', paramNameOf(slot)])
+  sendMsg(slot, ['device', deviceNameOf(slot)])
+  sendMsg(slot, ['track', trackNameOf(slot)])
+  sendMsg(slot, ['color', ...colorOf(slot)])
+  sendViewRange(slot)
+}
+
+function refreshViews() {
+  for (let pos = 1; pos <= SLOTS_PER_PAGE; pos++) {
+    sendView(slotOfView(pos))
+  }
+}
+
+function sendPageMenu() {
+  outlet(OUTLET_PAGE, ['kmenu', 'clear'])
+  for (let i = 0; i < pageNames.length; i++) {
+    outlet(OUTLET_PAGE, ['kmenu', 'append', pageNames[i]])
+  }
+  outlet(OUTLET_PAGE, ['kmenu', 'set', uiPage])
+}
+
+// Show page `idx` (clamped) on the device. Doesn't tell the app — callers that
+// start on the device do that themselves. Also offers the page to the
+// automatable "Knobbler Page" parameter (1-based); the patcher applies it with
+// `set` (so it records without echoing back here) only while Automate Page Chg
+// is on, the same gate the Page tab uses. Automation playing back arrives as
+// uiPage <idx> from that parameter.
+function setUiPage(idx: number) {
+  // The saved parameter can land before the page list has loaded; clamp to the
+  // device maximum then, and refresh() clamps to the real count afterwards.
+  const last = (pageNames.length || MAX_PAGES) - 1
+  uiPage = Math.max(0, Math.min(last, Math.floor(+idx) || 0))
+  outlet(OUTLET_PAGE, ['kmenu', 'set', uiPage])
+  outlet(OUTLET_PAGE, ['kparam', uiPage + 1])
+  refreshViews()
+}
+
+// /kShow <idx> — the app switched pages.
+function showPage(val: any) {
+  whenReady(function () {
+    setUiPage(+val)
+  })
+}
+
+// The device's page menu: switch, and have the app follow.
+function uiPageSelect(idx: number) {
+  whenReady(function () {
+    setUiPage(idx)
+    osc('/kShow', uiPage)
+  })
+}
+
+// An older app names Knobbler pages knobbler1/knobbler2 in /page/.
+function showLegacyPage(pageName: string) {
+  if (pageName === 'knobbler1') showPage(0)
+  else if (pageName === 'knobbler2') showPage(1)
+}
+
+// Edits from a view, by position on the page showing.
+function viewMin(pos: number, val: number) {
+  setMin(slotOfView(pos), val)
+}
+function viewMax(pos: number, val: number) {
+  setMax(slotOfView(pos), val)
+}
+function viewName(pos: number, name: string) {
+  setCustomName(slotOfView(pos), name)
+}
+function viewClearName(pos: number) {
+  clearCustomName(slotOfView(pos))
+}
+function viewUnmap(pos: number) {
+  unmap(slotOfView(pos))
 }
 
 function bkMap(slot: number, id: number) {
@@ -429,17 +840,19 @@ function initSlotIfNecessary(slot: number) {
   }
 }
 
-function init(slot: number) {
+// quiet: the slot is about to be re-pointed (applySnapshot), and its new value
+// string follows at once — blanking it first would flash "- - -" in between.
+function init(slot: number, quiet?: boolean) {
   if (!apiReady) {
     pendingCalls.push(function () {
-      init(slot)
+      init(slot, quiet)
     })
     return
   }
   //log(`INIT ${slot}`)
   if (paramObj[slot]) {
     detach(paramObj[slot])
-    osc(ADDR_VALSTR[slot], nullString)
+    if (!quiet) osc(ADDR_VALSTR[slot], nullString)
   }
   paramObj[slot] = null
   allowMapping[slot] = true
@@ -459,7 +872,6 @@ function init(slot: number) {
   detach(parentColorObj[slot])
   detach(trackObj[slot])
   sendMsg(slot, ['mapped', false])
-  sendMsg(slot, ['path', ''])
 }
 
 function setMin(slot: number, val: number) {
@@ -467,6 +879,7 @@ function setMin(slot: number, val: number) {
   initSlotIfNecessary(slot)
   outMin[slot] = val / 100.0
   if (ctx) ctx.settings.set(slotKey(slot, 'min'), val)
+  sendViewRange(slot)
   sendVal(slot)
 }
 
@@ -475,6 +888,7 @@ function setMax(slot: number, val: number) {
   initSlotIfNecessary(slot)
   outMax[slot] = val / 100.0
   if (ctx) ctx.settings.set(slotKey(slot, 'max'), val)
+  sendViewRange(slot)
   sendVal(slot)
 }
 
@@ -744,7 +1158,6 @@ function setPath(slot: number, paramPath: string) {
 
   //log("PARAM DATA", JSON.stringify(param), "\n");
   sendMsg(slot, ['mapped', true])
-  setPathParam(slot, param[slot].path) // legacy bpatcher persistence (dual-write)
   persistSlotPath(slot, param[slot].path) // ctx.settings (migration target)
 
   // Defer outputting the new param val because the controller
@@ -765,12 +1178,15 @@ function refresh() {
     })
     return
   }
+  loadPages()
+  sendPages()
   loadXYPairs()
   sendXYPairs()
-  for (let i = 1; i <= MAX_SLOTS; i++) {
-    restoreSlot(i) // settings-first, backfill from legacy widgets
+  for (let i = 1; i <= activeSlots(); i++) {
+    restoreSlot(i)
     refreshSlotUI(i)
   }
+  setUiPage(uiPage)
 }
 
 function refreshSlotUI(slot: number) {
@@ -799,15 +1215,47 @@ function sendQuant(slot: number) {
   )
 }
 
-function sendParamName(slot: number) {
-  //log(`SEND PARAM NAME ${slot}`)
-  initSlotIfNecessary(slot)
-  const paramName = dequote(
+// Display strings for a slot, shared by the OSC senders and the device view.
+function paramNameOf(slot: number): string {
+  return dequote(
     (
       (param[slot] && (param[slot].customName || param[slot].name)) ||
       nullString
     ).toString()
   )
+}
+
+function deviceNameOf(slot: number): string {
+  return param[slot].deviceName
+    ? dequote(param[slot].deviceName.toString())
+    : nullString
+}
+
+function trackNameOf(slot: number): string {
+  return param[slot].parentName
+    ? dequote(param[slot].parentName.toString())
+    : nullString
+}
+
+function trackColorOf(slot: number): string {
+  return param[slot].trackColor
+    ? dequote(param[slot].trackColor.toString())
+    : DEFAULT_COLOR_FF
+}
+
+// The view's color bar as 0–1 RGBA; an unmapped slot is black.
+function colorOf(slot: number): number[] {
+  let c = trackColorOf(slot)
+  if (c === DEFAULT_COLOR_FF) c = '000000FF'
+  return [0, 2, 4, 6].map(function (i) {
+    return parseInt(c.substring(i, i + 2), 16) / 255.0 || 0
+  })
+}
+
+function sendParamName(slot: number) {
+  //log(`SEND PARAM NAME ${slot}`)
+  initSlotIfNecessary(slot)
+  const paramName = paramNameOf(slot)
   sendMsg(slot, ['param', paramName])
   //log('SEND PARAM NAME ' + slot + '=' + paramName)
   osc(ADDR_PARAM[slot], paramName)
@@ -825,9 +1273,7 @@ function sendAutomationState(slot: number) {
 function sendDeviceName(slot: number) {
   //log(`SEND DEVICE NAME ${slot}`)
   initSlotIfNecessary(slot)
-  const deviceName = param[slot].deviceName
-    ? dequote(param[slot].deviceName.toString())
-    : nullString
+  const deviceName = deviceNameOf(slot)
   sendMsg(slot, ['device', deviceName])
   osc(ADDR_DEVICE[slot], deviceName)
 }
@@ -835,9 +1281,7 @@ function sendDeviceName(slot: number) {
 function sendTrackName(slot: number) {
   //log(`SEND TRACK NAME ${slot}`)
   initSlotIfNecessary(slot)
-  const trackName = param[slot].parentName
-    ? dequote(param[slot].parentName.toString())
-    : nullString
+  const trackName = trackNameOf(slot)
   sendMsg(slot, ['track', trackName])
   osc(ADDR_TRACK[slot], trackName)
 }
@@ -845,20 +1289,9 @@ function sendTrackName(slot: number) {
 function sendColor(slot: number) {
   //log(`SEND COLOR ${slot}`)
   initSlotIfNecessary(slot)
-  let trackColor = param[slot].trackColor
-    ? dequote(param[slot].trackColor.toString())
-    : DEFAULT_COLOR_FF
-  osc(ADDR_VALCOLOR[slot], trackColor)
-
+  osc(ADDR_VALCOLOR[slot], trackColorOf(slot))
   // for the color highlight in the Max for Live device
-  if (trackColor === DEFAULT_COLOR_FF) {
-    trackColor = '000000FF'
-  }
-  const red = parseInt(trackColor.substring(0, 2), 16) / 255.0 || 0
-  const grn = parseInt(trackColor.substring(2, 4), 16) / 255.0 || 0
-  const blu = parseInt(trackColor.substring(4, 6), 16) / 255.0 || 0
-  const alp = parseInt(trackColor.substring(6, 8), 16) / 255.0 || 0
-  sendMsg(slot, ['color', red, grn, blu, alp])
+  sendMsg(slot, ['color', ...colorOf(slot)])
 }
 
 function sendVal(slot: number) {
@@ -968,22 +1401,32 @@ function val(slot: number, val: number) {
 }
 
 export {
+  addPage,
   bkMap,
-  mkMap,
-  clearCustomName,
-  clearPath,
   gotoTrackFor,
+  importLegacyCustomName,
+  importLegacyMax,
+  importLegacyMin,
+  importLegacyPath,
   initAll,
+  mkMap,
+  moveCells,
   refresh,
-  setCustomName,
+  renamePage,
   setDefault,
   setDictPrefix,
-  setMax,
-  setMin,
-  setPath,
+  setPageOrder,
+  showLegacyPage,
+  showPage,
   swap,
+  uiPageSelect,
   unmap,
   val,
+  viewClearName,
+  viewMax,
+  viewMin,
+  viewName,
+  viewUnmap,
   xyJoin,
   xySplit,
 }

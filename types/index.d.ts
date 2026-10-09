@@ -14,9 +14,8 @@ type ParamType = {
   allowParamValueUpdates?: boolean
 }
 
-type MessageType =
-  | [string, number | boolean | string]
-  | [string, number, number, number, number]
+// A message to a knob-slot/view bpatcher: a selector and its arguments.
+type MessageType = [string, ...(number | boolean | string)[]]
 
 type NameBank = {
   name: string

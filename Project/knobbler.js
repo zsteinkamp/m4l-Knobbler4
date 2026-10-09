@@ -118,6 +118,7 @@ function logIn(address, value) {
 // device's page UI (---PAGE), the latter formerly the router's pageHandler.
 function pageDispatch(address) {
     var pageName = address.split('/')[2];
+    KnobblerCore.showLegacyPage(pageName);
     multiMixer.page(pageName);
     sidebarMixer.page(pageName);
     outlet(consts_1.OUTLET_PAGE, 'page', pageName);
@@ -216,26 +217,53 @@ var knobblerRoutes = [
     { prefix: '/track', parse: 'slot', fn: KnobblerCore.gotoTrackFor },
     { prefix: '/mkMap', parse: 'slotVal', fn: KnobblerCore.mkMap },
     { prefix: '/swap', parse: 'slotVal', fn: KnobblerCore.swap },
+    // Pages (CAPABILITY kPages). anything() only sees the first OSC argument, so
+    // the multi-argument ones take a JSON array string.
+    { prefix: '/kMove', parse: 'val', fn: KnobblerCore.moveCells },
+    { prefix: '/kPageAdd', parse: 'val', fn: KnobblerCore.addPage },
+    { prefix: '/kPageRename', parse: 'val', fn: KnobblerCore.renamePage },
+    { prefix: '/kPageOrder', parse: 'val', fn: KnobblerCore.setPageOrder },
+    { prefix: '/kShow', parse: 'val', fn: KnobblerCore.showPage },
 ];
-// Max-message handlers from the knob-slot bpatchers (UI / persistence params).
-// These arrive as selectors on the entry inlet, not OSC.
+// Max-message handlers. These arrive as selectors on the entry inlet, not OSC.
+//
+// From the 32 hidden legacy knob-slot bpatchers, which now only IMPORT a set
+// saved before v61 (see "Legacy importers" in knobblerCore; remove after
+// 2028-05-21).
 function setMin(slot, val) {
-    KnobblerCore.setMin(slot, val);
+    KnobblerCore.importLegacyMin(slot, val);
 }
 function setMax(slot, val) {
-    KnobblerCore.setMax(slot, val);
+    KnobblerCore.importLegacyMax(slot, val);
 }
 function setPath(slot, paramPath) {
-    KnobblerCore.setPath(slot, paramPath);
+    KnobblerCore.importLegacyPath(slot, paramPath);
 }
 function setCustomName(slot, args) {
-    KnobblerCore.setCustomName(slot, args);
+    KnobblerCore.importLegacyCustomName(slot, args);
 }
-function clearCustomName(slot) {
-    KnobblerCore.clearCustomName(slot);
+function clearCustomName(_slot) {
+    // An empty legacy name has nothing to import.
 }
-function clearPath(slot) {
-    KnobblerCore.clearPath(slot);
+// From the 16 Knobbler view bpatchers, by position on the page showing.
+function viewMin(pos, val) {
+    KnobblerCore.viewMin(pos, val);
+}
+function viewMax(pos, val) {
+    KnobblerCore.viewMax(pos, val);
+}
+function viewName(pos, name) {
+    KnobblerCore.viewName(pos, name);
+}
+function viewClearName(pos) {
+    KnobblerCore.viewClearName(pos);
+}
+function viewUnmap(pos) {
+    KnobblerCore.viewUnmap(pos);
+}
+// From the device's Knobbler page menu.
+function uiPage(idx) {
+    KnobblerCore.uiPageSelect(idx);
 }
 // Load-chain trigger (was [v8 knobbler4]'s initAll).
 function initAll() {

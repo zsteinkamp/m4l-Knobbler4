@@ -7,7 +7,18 @@ export const OUTLET_SHORTCUT_NAME = 2 // [slot, name] -> [s ---shortcutName] (de
 export const OUTLET_REFRESH = 3 // 'refresh'/'initMenuOnly' -> [s ---REFRESH_LOGIC]
 export const OUTLET_PAGE = 4 // 'page' <name> -> [s ---PAGE] (page UI)
 export const OUTLET_CONFIGURE = 5 // 'host'/'port' -> [s ---CONFIGURE] (node sender target)
-export const MAX_SLOTS = 32
+// Knobbler slots are shown as named pages of SLOTS_PER_PAGE (2 rows of
+// SLOTS_PER_ROW), page k owning slots k*16+1..k*16+16. Only the first
+// LEGACY_UI_SLOTS have a knob-slot bpatcher in the .amxd and are what an app
+// without CAPABILITY_PAGES addresses.
+export const SLOTS_PER_ROW = 8
+export const SLOTS_PER_PAGE = 16
+export const LEGACY_UI_SLOTS = 32
+export const MAX_PAGES = 16
+export const MAX_SLOTS = MAX_PAGES * SLOTS_PER_PAGE
+// The Knobbler tab's 16 view bpatchers are addressed as OUTLET_MSGS targets
+// VIEW_TARGET_BASE+1..+16, clear of the legacy importers' 1..32.
+export const VIEW_TARGET_BASE = 1000
 
 export const TYPE_TRACK = 0
 export const TYPE_CHAIN = 1
