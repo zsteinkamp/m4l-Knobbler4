@@ -918,6 +918,7 @@ function createSceneObserver(sceneIdx) {
         sceneIdx: sceneIdx,
         nameApi: null,
         colorApi: null,
+        trigApi: null,
         name: '',
         color: '',
     };
@@ -941,12 +942,47 @@ function createSceneObserver(sceneIdx) {
         cacheScene(info);
         scheduleSceneInfo();
     }, 'color');
+    info.trigApi = (0, liveApi_1.ensureObs)(info.trigApi, sid, function (args) {
+        if (!info.trigApi || args[0] !== 'is_triggered')
+            return;
+        setSceneTriggered(info.sceneIdx, !!args[1]);
+    }, 'is_triggered');
     return info;
+}
+// Scenes that are launched but not yet playing (Live's blinking scene), sent as
+// /clips/sceneTrig [rows] so the app can blink their buttons like a triggered
+// clip. Only the scenes in the window are observed — the app only shows those —
+// so a scene leaving the window leaves the set too.
+var triggeredScenes = {};
+var lastSceneTrigJson = '';
+function setSceneTriggered(row, on) {
+    if (on)
+        triggeredScenes[row] = true;
+    else
+        delete triggeredScenes[row];
+    sendSceneTriggered();
+}
+function sendSceneTriggered() {
+    var rows = Object.keys(triggeredScenes)
+        .map(function (k) {
+        return parseInt(k);
+    })
+        .sort(function (a, b) {
+        return a - b;
+    });
+    var json = JSON.stringify(rows);
+    if (json === lastSceneTrigJson)
+        return;
+    lastSceneTrigJson = json;
+    (0, utils_1.osc)('/clips/sceneTrig', rows);
 }
 // Park a scene: unsubscribe its observers (keep objects for re-pointing).
 function parkScene(info) {
     (0, liveApi_1.disableObs)(info.nameApi);
     (0, liveApi_1.disableObs)(info.colorApi);
+    (0, liveApi_1.disableObs)(info.trigApi);
+    if (triggeredScenes[info.sceneIdx])
+        setSceneTriggered(info.sceneIdx, false);
 }
 function teardownSceneObserver(info) {
     if (info.nameApi) {
@@ -956,6 +992,10 @@ function teardownSceneObserver(info) {
     if (info.colorApi) {
         (0, liveApi_1.detach)(info.colorApi);
         info.colorApi = null;
+    }
+    if (info.trigApi) {
+        (0, liveApi_1.detach)(info.trigApi);
+        info.trigApi = null;
     }
 }
 // ---------------------------------------------------------------------------
@@ -1408,6 +1448,7 @@ function doRefresh(c) {
     // A (re)connected app has cleared its cache, so the whole grid and the scene
     // list go again.
     lastScenesJson = '';
+    lastSceneTrigJson = '';
     restartPrefetch();
     if (leftTrack < 0)
         return;

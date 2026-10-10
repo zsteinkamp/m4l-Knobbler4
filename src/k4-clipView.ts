@@ -79,6 +79,7 @@ type SceneInfo = {
   sceneIdx: number
   nameApi: LiveAPI
   colorApi: LiveAPI
+  trigApi: LiveAPI // is_triggered: launched, waiting to start (Live blinks it)
   name: string
   color: string // RRGGBB hex, no #
 }
@@ -1107,6 +1108,7 @@ function createSceneObserver(sceneIdx: number): SceneInfo {
     sceneIdx: sceneIdx,
     nameApi: null,
     colorApi: null,
+    trigApi: null,
     name: '',
     color: '',
   }
@@ -1141,13 +1143,52 @@ function createSceneObserver(sceneIdx: number): SceneInfo {
     'color'
   )
 
+  info.trigApi = ensureObs(
+    info.trigApi,
+    sid,
+    function (args: any[]) {
+      if (!info.trigApi || args[0] !== 'is_triggered') return
+      setSceneTriggered(info.sceneIdx, !!args[1])
+    },
+    'is_triggered'
+  )
+
   return info
+}
+
+// Scenes that are launched but not yet playing (Live's blinking scene), sent as
+// /clips/sceneTrig [rows] so the app can blink their buttons like a triggered
+// clip. Only the scenes in the window are observed — the app only shows those —
+// so a scene leaving the window leaves the set too.
+let triggeredScenes: Record<number, boolean> = {}
+let lastSceneTrigJson = ''
+
+function setSceneTriggered(row: number, on: boolean) {
+  if (on) triggeredScenes[row] = true
+  else delete triggeredScenes[row]
+  sendSceneTriggered()
+}
+
+function sendSceneTriggered() {
+  const rows = Object.keys(triggeredScenes)
+    .map(function (k) {
+      return parseInt(k)
+    })
+    .sort(function (a, b) {
+      return a - b
+    })
+  const json = JSON.stringify(rows)
+  if (json === lastSceneTrigJson) return
+  lastSceneTrigJson = json
+  osc('/clips/sceneTrig', rows)
 }
 
 // Park a scene: unsubscribe its observers (keep objects for re-pointing).
 function parkScene(info: SceneInfo) {
   disableObs(info.nameApi)
   disableObs(info.colorApi)
+  disableObs(info.trigApi)
+  if (triggeredScenes[info.sceneIdx]) setSceneTriggered(info.sceneIdx, false)
 }
 
 function teardownSceneObserver(info: SceneInfo) {
@@ -1158,6 +1199,10 @@ function teardownSceneObserver(info: SceneInfo) {
   if (info.colorApi) {
     detach(info.colorApi)
     info.colorApi = null
+  }
+  if (info.trigApi) {
+    detach(info.trigApi)
+    info.trigApi = null
   }
 }
 
@@ -1647,6 +1692,7 @@ function doRefresh(c: AppContext) {
   // A (re)connected app has cleared its cache, so the whole grid and the scene
   // list go again.
   lastScenesJson = ''
+  lastSceneTrigJson = ''
   restartPrefetch()
   if (leftTrack < 0) return
   setupWindow(leftTrack, topScene, rightTrack, bottomScene)
