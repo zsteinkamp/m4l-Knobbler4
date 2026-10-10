@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest'
 import {
   dequote,
   isValidPath,
+  structureKeys,
   colorToString,
   truncate,
   meterVal,
@@ -245,5 +246,52 @@ describe('columnarize', () => {
     const { key, objs } = decolumnarize(columnarize('/clips/update', records))
     expect(key).toBe('/clips/update')
     expect(objs).toEqual(records)
+  })
+})
+
+describe('structureKeys', () => {
+  it('names every list along a nested rack path', () => {
+    expect(
+      structureKeys(
+        'live_set tracks 3 devices 2 chains 1 devices 0 parameters 5'
+      )
+    ).toEqual([
+      'live_set|tracks',
+      'live_set tracks 3|devices',
+      'live_set tracks 3 devices 2|chains',
+      'live_set tracks 3 devices 2 chains 1|devices',
+      'live_set tracks 3 devices 2 chains 1 devices 0|parameters',
+    ])
+  })
+
+  it('skips singular steps like master_track and mixer_device', () => {
+    expect(structureKeys('live_set master_track mixer_device volume')).toEqual(
+      []
+    )
+    expect(
+      structureKeys('live_set return_tracks 1 mixer_device sends 0')
+    ).toEqual([
+      'live_set|return_tracks',
+      'live_set return_tracks 1 mixer_device|sends',
+    ])
+  })
+
+  it("watches a drum pad's chains but not the fixed pad list", () => {
+    expect(
+      structureKeys(
+        'live_set tracks 0 devices 0 drum_pads 36 chains 0 devices 1 parameters 2'
+      )
+    ).toEqual([
+      'live_set|tracks',
+      'live_set tracks 0|devices',
+      'live_set tracks 0 devices 0 drum_pads 36|chains',
+      'live_set tracks 0 devices 0 drum_pads 36 chains 0|devices',
+      'live_set tracks 0 devices 0 drum_pads 36 chains 0 devices 1|parameters',
+    ])
+  })
+
+  it('returns nothing for an empty or unmapped path', () => {
+    expect(structureKeys('')).toEqual([])
+    expect(structureKeys(undefined as any)).toEqual([])
   })
 })

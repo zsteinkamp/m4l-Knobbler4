@@ -58,10 +58,6 @@ var parentColorObj = [];
 var param = [];
 var outMin = [];
 var outMax = [];
-// ONE repeating poll for all slots, not one Task per mapped slot: the old
-// shape ran up to 32 separate 1s timers, each doing its own LiveAPI reads.
-var deviceCheckerTask = null;
-var DEVICE_CHECK_MS = 1000;
 // other vars
 var allowMapping = [];
 var allowUpdateFromOsc = [];
@@ -826,6 +822,10 @@ function init(slot, quiet) {
             (0, utils_1.osc)(ADDR_VALSTR[slot], consts_1.nullString);
     }
     paramObj[slot] = null;
+    if (param[slot]) {
+        param[slot].path = '';
+        watchSlot(slot);
+    }
     allowMapping[slot] = true;
     allowUpdateFromOsc[slot] = true;
     // Full range until setMin/setMax (or the stored settings) narrow it. Only
@@ -966,17 +966,53 @@ function parentColorCallback(slot, iargs) {
         sendColor(slot);
     }
 }
-// Start the shared "is the mapped device still there / did its path move?"
-// poll on the first mapping. It stays running for the life of the device;
-// checkAllDevicesPresent skips unmapped slots, so an idle instance does no
-// LiveAPI work beyond the array scan.
-function ensureDeviceChecker() {
-    if (deviceCheckerTask) {
+var watchers = {};
+var parkedWatchers = [];
+var slotWatchKeys = [];
+var STRUCTURE_SETTLE_MS = 50;
+var structureTask = null;
+// Live calls back on every change (and once when the property is first set);
+// a burst — a track insert moves many paths — settles into one check.
+function onStructureChange() {
+    if (!structureTask)
+        structureTask = new Task(checkAllDevicesPresent);
+    structureTask.cancel();
+    structureTask.schedule(STRUCTURE_SETTLE_MS);
+}
+function acquireWatcher(key) {
+    var w = watchers[key];
+    if (w) {
+        w.refs++;
         return;
     }
-    deviceCheckerTask = new Task(checkAllDevicesPresent);
-    deviceCheckerTask.interval = DEVICE_CHECK_MS;
-    deviceCheckerTask.repeat(-1);
+    var sep = key.lastIndexOf('|');
+    var api = parkedWatchers.pop() || new LiveAPI(onStructureChange, '');
+    api.property = '';
+    api.path = key.substring(0, sep);
+    if ((0, liveApi_1.apiValid)(api))
+        api.property = key.substring(sep + 1);
+    watchers[key] = { api: api, refs: 1 };
+}
+function releaseWatcher(key) {
+    var w = watchers[key];
+    if (!w || --w.refs > 0)
+        return;
+    (0, liveApi_1.detach)(w.api);
+    parkedWatchers.push(w.api);
+    delete watchers[key];
+}
+// Watch the lists along this slot's current path (and stop watching any its
+// old path had that the new one doesn't).
+function watchSlot(slot) {
+    var next = param[slot] && param[slot].path ? (0, utils_1.structureKeys)(param[slot].path) : [];
+    var prev = slotWatchKeys[slot] || [];
+    next.forEach(function (k) {
+        acquireWatcher(k);
+    });
+    prev.forEach(function (k) {
+        releaseWatcher(k);
+    });
+    slotWatchKeys[slot] = next;
 }
 function checkAllDevicesPresent() {
     for (var slot = 1; slot <= consts_1.MAX_SLOTS; slot++) {
@@ -1071,7 +1107,6 @@ function setPath(slot, paramPath) {
     deviceObj[slot] = reArmSlot(deviceObj[slot], function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'), '' // property set conditionally below
     );
     var devicePath = deviceObj[slot].unquotedpath;
-    ensureDeviceChecker(); // one shared poll covers every mapped slot
     // Only get the device name if it has the name property
     if (deviceObj[slot].info.match(/property name str/)) {
         deviceObj[slot].property = 'name';
@@ -1100,6 +1135,7 @@ function setPath(slot, paramPath) {
         trackObj[slot] = reArmSlot(trackObj[slot], consts_1.noFn, matches[0], '');
     }
     //log("PARAM DATA", JSON.stringify(param), "\n");
+    watchSlot(slot);
     sendMsg(slot, ['mapped', true]);
     persistSlotPath(slot, param[slot].path); // ctx.settings (migration target)
     // Defer outputting the new param val because the controller

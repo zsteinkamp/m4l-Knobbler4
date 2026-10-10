@@ -50,6 +50,24 @@ export function isValidPath(path: string) {
   return typeof path === 'string' && path.match(/^live_set /)
 }
 
+// Lists that never change size, so never move what's in them: a drum rack
+// always has its 128 pads (each pad's chains list is watched instead).
+const FIXED_LISTS: { [list: string]: boolean } = { drum_pads: true }
+
+// "<object path>|<list property>" for every list along a parameter path: a
+// non-numeric token followed by an index names a list on the object before it.
+export function structureKeys(path: string): string[] {
+  const t = (path || '').split(' ')
+  const keys: string[] = []
+  for (let i = 1; i < t.length - 1; i++) {
+    if (FIXED_LISTS[t[i]]) continue
+    if (/^\d+$/.test(t[i + 1]) && !/^\d+$/.test(t[i])) {
+      keys.push(t.slice(0, i).join(' ') + '|' + t[i])
+    }
+  }
+  return keys
+}
+
 export function colorToString(colorVal: string) {
   if (!colorVal) {
     return DEFAULT_COLOR

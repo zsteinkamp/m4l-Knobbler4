@@ -83,6 +83,12 @@ npx eslint src/**/*.ts
 npx prettier --write src/**/*.ts
 ```
 
+Format with THIS repo's Prettier, inside the devcontainer (`docker exec
+m4l-knobbler4-node-1 sh -c "cd /app && npx prettier --write src/<file>.ts"`) —
+not the knobbler-native app's. The app's Prettier is a different version and
+re-wraps untouched code here (arrays of object literals in `utils.test.ts`), so
+a one-line change arrives with unrelated reformatting.
+
 ## Architecture Overview
 
 ### TypeScript → Max/MSP Compilation Pipeline
@@ -131,6 +137,7 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 - Handles debouncing to prevent feedback loops between OSC and Ableton
 - Scales values between OSC range (0-1) and Ableton parameter ranges
 - **`ctx.settings` (`---settingsDict`) is the ONLY store for knobbler config:** per-slot `slot_<N>_path/min/max/customName`, `kPages`, `xyPairs`. Nothing is written to bpatcher parameters any more. `hasSetting` distinguishes "never configured" (key absent) from "deliberately emptied" (`''`) — the legacy importers depend on that.
+- **A mapped slot follows its parameter by OBSERVERS, not a poll.** A deleted device or a moved path (track inserted above, device dragged) can only come from a change to a LIST along the parameter's path, so each list on a mapped path is observed (`structureKeys` in utils, refcounted by `<object path>|<list>`) and any change re-runs `checkAllDevicesPresent` after a 50ms settle. It replaced a 1s poll that read two LiveAPI paths per mapped slot every second — 512 reads/s with 16 full pages. Watchers are re-pointed and parked, never dropped (observer teardown leaks symbols).
 - **Device UI (Knobbler tab):** ONE Knobbler tab (the `Page` live.tab is `Knobbler, Bluhand, Clips, Mixer, Session` — the 6→5 change shifted existing Page automation by one entry, accepted) with a page menu (`kPageMenu` umenu) under it and 16 **view** bpatchers (`knobView-bpatcher.maxpat`, varnames `view1..16`). A view has NO slot and stores nothing (its min/max `live.numbox`es are Hidden parameters — `parameter_invisible 2`, not stored or automatable — because a live.numbox with parameter mode OFF doesn't render; everything else has parameter mode off): it listens on `---<1000+pos>-SLOT` (`VIEW_TARGET_BASE`; the patcher's one numeric forwarder) and reports edits by position (`viewMin/viewMax/viewName/viewClearName/viewUnmap`), which knobblerCore maps to slots through `uiPage`; a page switch is `refreshViews()`. `sendMsg(slot, …)` reaches a view only if the slot is on the page showing. The menu is filled with `kmenu clear/append/set` on OUTLET_PAGE (`r ---PAGE` → `route page kmenu kparam`) and reports `uiPage <idx>`.
 - **Page sync and automation:** the app and device keep the shown page in step with `/kShow <idx>` both ways (an older app's `/page/knobbler1|2` still selects page 1/2). The page is automatable through a hidden `live.numbox` "Knobbler Page" (1–16, in the parameter bank): `setUiPage` offers it as `kparam`, applied with `set` (records, no echo), and its playback arrives as `uiPage` — both through gates driven by **Automate Page Chg**, exactly like the Page tab.
 - **Legacy importers (remove after 2028-05-21):** the 32 old `knobSlot-bpatcher.maxpat` bpatchers stay, hidden and out of presentation, only so a set last saved before v61 (2026-05-21, when slot config moved to the settings dict) still loads its mappings. Their restored parameters arrive as `setPath/setMin/setMax/setCustomName` and are IMPORTED only into a slot with no setting at all; an imported or overruled path/name is then cleared in the bpatcher so the saved set carries nothing stale. See "Legacy importers" in knobblerCore for why min/max aren't cleared and what to delete on the removal date.

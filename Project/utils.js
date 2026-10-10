@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanArr = exports.columnarize = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.clientHasCap = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.isValidPath = exports.parseIdValue = exports.dequote = exports.fixFloat = exports.logFactory = void 0;
+exports.cleanArr = exports.columnarize = exports.simpleHash = exports.numArrToJson = exports.SEND_ADDR = exports.pauseUnpause = exports.buildOscPacket = exports.osc = exports.setOscSink = exports.MAX_VERSION_RAW = exports.RAWBYTES_OK = exports.meterVal = exports.getVisibleTracksList = exports.setVisibleTracks = exports.loadInstanceSetting = exports.saveInstanceSetting = exports.clientHasCap = exports.loadSetting = exports.saveSetting = exports.setDictPrefix = exports.debouncedTask = exports.isDeviceSupported = exports.truncate = exports.colorToString = exports.structureKeys = exports.isValidPath = exports.parseIdValue = exports.dequote = exports.fixFloat = exports.logFactory = void 0;
 var consts_1 = require("./consts");
 function logFactory(_a) {
     var _b = _a.outputLogs, outputLogs = _b === void 0 ? true : _b;
@@ -52,6 +52,24 @@ function isValidPath(path) {
     return typeof path === 'string' && path.match(/^live_set /);
 }
 exports.isValidPath = isValidPath;
+// Lists that never change size, so never move what's in them: a drum rack
+// always has its 128 pads (each pad's chains list is watched instead).
+var FIXED_LISTS = { drum_pads: true };
+// "<object path>|<list property>" for every list along a parameter path: a
+// non-numeric token followed by an index names a list on the object before it.
+function structureKeys(path) {
+    var t = (path || '').split(' ');
+    var keys = [];
+    for (var i = 1; i < t.length - 1; i++) {
+        if (FIXED_LISTS[t[i]])
+            continue;
+        if (/^\d+$/.test(t[i + 1]) && !/^\d+$/.test(t[i])) {
+            keys.push(t.slice(0, i).join(' ') + '|' + t[i]);
+        }
+    }
+    return keys;
+}
+exports.structureKeys = structureKeys;
 function colorToString(colorVal) {
     if (!colorVal) {
         return consts_1.DEFAULT_COLOR;
