@@ -50,6 +50,12 @@ export function isValidPath(path: string) {
   return typeof path === 'string' && path.match(/^live_set /)
 }
 
+// A path to a device itself rather than to one of its parameters (or a mixer
+// control): what a Knobbler variations slot stores.
+export function isDevicePath(path: string): boolean {
+  return /devices \d+$/.test(path || '')
+}
+
 // Lists that never change size, so never move what's in them: a drum rack
 // always has its 128 pads (each pad's chains list is watched instead).
 const FIXED_LISTS: { [list: string]: boolean } = { drum_pads: true }

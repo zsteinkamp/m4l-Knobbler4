@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest'
 // before this module's imports — utils.ts touches `new Dict(...)` at load.
 import {
   dequote,
+  isDevicePath,
   isValidPath,
   structureKeys,
   colorToString,
@@ -224,21 +225,21 @@ describe('columnarize', () => {
   }
 
   it('flattens to [key, columns, ...rows]', () => {
-    expect(columnarize('/x', [{ a: 1, b: 2 }, { a: 3, b: 4 }])).toEqual([
-      '/x',
-      ['a', 'b'],
-      [1, 2],
-      [3, 4],
-    ])
+    expect(
+      columnarize('/x', [
+        { a: 1, b: 2 },
+        { a: 3, b: 4 },
+      ])
+    ).toEqual(['/x', ['a', 'b'], [1, 2], [3, 4]])
   })
 
   it('columns = union of keys (first-seen order); absent fields are null', () => {
-    expect(columnarize('/x', [{ a: 1, b: 2 }, { a: 3, c: 9 }])).toEqual([
-      '/x',
-      ['a', 'b', 'c'],
-      [1, 2, null],
-      [3, null, 9],
-    ])
+    expect(
+      columnarize('/x', [
+        { a: 1, b: 2 },
+        { a: 3, c: 9 },
+      ])
+    ).toEqual(['/x', ['a', 'b', 'c'], [1, 2, null], [3, null, 9]])
   })
 
   it('round-trips losslessly — absent keys omitted, present 0 preserved', () => {
@@ -293,5 +294,24 @@ describe('structureKeys', () => {
   it('returns nothing for an empty or unmapped path', () => {
     expect(structureKeys('')).toEqual([])
     expect(structureKeys(undefined as any)).toEqual([])
+  })
+})
+
+describe('isDevicePath', () => {
+  it('is true for a device, at any depth', () => {
+    expect(isDevicePath('live_set tracks 2 devices 0')).toBe(true)
+    expect(isDevicePath('live_set tracks 0 devices 1 chains 2 devices 3')).toBe(
+      true
+    )
+    expect(isDevicePath('live_set return_tracks 1 devices 0')).toBe(true)
+  })
+
+  it('is false for parameters and mixer controls', () => {
+    expect(isDevicePath('live_set tracks 2 devices 0 parameters 3')).toBe(false)
+    expect(isDevicePath('live_set master_track mixer_device volume')).toBe(
+      false
+    )
+    expect(isDevicePath('live_set tracks 1 mixer_device sends 0')).toBe(false)
+    expect(isDevicePath('')).toBe(false)
   })
 })

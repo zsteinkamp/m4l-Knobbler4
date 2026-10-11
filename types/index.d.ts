@@ -12,6 +12,8 @@ type ParamType = {
   deviceName?: string
   trackColor?: string
   allowParamValueUpdates?: boolean
+  // A rack's variations rather than a parameter (knobblerCore: Variation slots)
+  isVariations?: boolean
 }
 
 // A message to a knob-slot/view bpatcher: a selector and its arguments.

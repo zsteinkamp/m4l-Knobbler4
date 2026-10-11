@@ -29,7 +29,9 @@ var ADDR_DEVICE = [];
 var ADDR_TRACK = [];
 var ADDR_QUANT = [];
 var ADDR_QUANT_ITEMS = [];
+var ADDR_KIND = [];
 for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
+    ADDR_KIND[_i] = '/kind' + _i;
     ADDR_VAL[_i] = '/val' + _i;
     ADDR_VALSTR[_i] = '/valStr' + _i;
     ADDR_VALCOLOR[_i] = '/val' + _i + 'color';
@@ -235,6 +237,10 @@ function clearSlotSettings(slot) {
 function xyJoin(leftIdx) {
     //log('xyJOIN', leftIdx)
     if (leftIdx < 1 || leftIdx >= consts_1.MAX_SLOTS) {
+        return;
+    }
+    // A variations slot is a set of buttons, not an axis.
+    if (isVariationsSlot(leftIdx) || isVariationsSlot(leftIdx + 1)) {
         return;
     }
     // check no overlap with existing pairs
@@ -695,6 +701,7 @@ function bkMap(slot, id) {
 exports.bkMap = bkMap;
 // Resolve a mixer OSC path (e.g. "/mixer/3/vol", "/mixer/0/send1",
 // "/mixer/vol") to a Live API parameter path and bind it to the given slot.
+// Also takes VARIATIONS_SOURCE, which maps the focused rack's variations.
 function mkMap(slot, mixerPath) {
     if (!apiReady) {
         pendingCalls.push(function () {
@@ -704,6 +711,14 @@ function mkMap(slot, mixerPath) {
     }
     if (!mixerPath)
         return;
+    // The Bluhand Variations row: the rack Knobbler is focused on.
+    if (mixerPath === VARIATIONS_SOURCE) {
+        scratchApi.path = ctx.focus.devicePath();
+        var rackPath = scratchApi.unquotedpath;
+        if (rackPath && (0, utils_1.isDevicePath)(rackPath))
+            setPath(slot, rackPath);
+        return;
+    }
     var parts = String(mixerPath).split('/'); // ['', 'mixer', '3', 'vol'] or ['', 'mixer', 'vol']
     if (parts.length < 3 || parts[1] !== 'mixer') {
         log('mkMap: unrecognized path ' + mixerPath);
@@ -845,6 +860,7 @@ function init(slot, quiet) {
         quantItems: [],
         allowParamValueUpdates: true,
     };
+    parkMacros(slot);
     (0, liveApi_1.detach)(paramNameObj[slot]);
     (0, liveApi_1.detach)(automationStateObj[slot]);
     (0, liveApi_1.detach)(deviceObj[slot]);
@@ -905,7 +921,7 @@ function gotoTrackFor(slot) {
 exports.gotoTrackFor = gotoTrackFor;
 function setDefault(slot) {
     //log('DEFAULT TOP ' + slot)
-    if (!paramObj[slot]) {
+    if (!paramObj[slot] || isVariationsSlot(slot)) {
         return;
     }
     if (!allowUpdateFromOsc[slot]) {
@@ -1069,6 +1085,184 @@ function reArmSlot(api, cb, target, prop) {
         api.property = prop;
     return api;
 }
+// --- Variation slots ---------------------------------------------------------
+//
+// A slot can hold a rack's macro VARIATIONS instead of a parameter: the app
+// shows them as one button per variation and a tap recalls it. Its stored path
+// is the rack's own path ("... devices N"), which is what makes it a variations
+// slot, so persistence, moves, swaps and the structure watchers carry it like
+// any other path. Mapped from the app's Bluhand Variations row (/mkMap with
+// VARIATIONS_SOURCE): the rack Knobbler is focused on.
+//
+// It still reports through the parameter addresses: /quantN is the variation
+// count, /quantItemsN the button labels, /valN the selected one (as MultiButton
+// encodes an index) and /valStrN its label. /kindN 'var' tells the app it is
+// variations, which also renders 1 or 2 of them, or none.
+//
+// "Modified" (the label gets a '*'): Live keeps the last recalled variation
+// selected however far the macros have since moved, and the API has no way to
+// read a variation's stored values. So the macros are snapshotted when a
+// variation is recalled, and any macro that later differs marks it modified. A
+// recall made in Live is caught as selected_variation_index changing.
+var VARIATIONS_SOURCE = '/blu/variations';
+var MAX_MACROS = 16;
+var VARIATION_SETTLE_MS = 50;
+var macroObj = [];
+var macroSnap = [];
+var varSelected = [];
+var varModified = [];
+var varResnap = [];
+var varTask = [];
+function isVariationsSlot(slot) {
+    return !!(param[slot] && param[slot].isVariations);
+}
+function macroValues(slot) {
+    return (macroObj[slot] || []).map(function (api) {
+        return api && api.property ? parseFloat(api.get('value')) : 0;
+    });
+}
+// Stop observing a slot's macros (the observers are parked, not dropped).
+function parkMacros(slot) {
+    var objs = macroObj[slot] || [];
+    for (var i = 0; i < objs.length; i++) {
+        if (objs[i])
+            objs[i].property = '';
+    }
+    macroSnap[slot] = [];
+}
+// Bind `slot` to the rack at `path`. False if it isn't a rack.
+function bindVariations(slot, path) {
+    scratchApi.path = path;
+    if (!(0, liveApi_1.apiValid)(scratchApi) || !+scratchApi.get('can_have_chains')) {
+        log("Not a rack for slot ".concat(slot, ": ").concat(path));
+        return false;
+    }
+    var pairLeft = isSlotInPair(slot);
+    if (pairLeft !== null)
+        xySplit(pairLeft);
+    var rack = reArmSlot(paramObj[slot], function (iargs) {
+        if (iargs[0] === 'variation_count')
+            onVariationsChanged(slot);
+    }, path, 'variation_count');
+    paramObj[slot] = rack;
+    // A parameter's name and automation observers have nothing to watch here.
+    if (paramNameObj[slot])
+        paramNameObj[slot].property = '';
+    if (automationStateObj[slot])
+        automationStateObj[slot].property = '';
+    param[slot].isVariations = true;
+    param[slot].id = (0, liveApi_1.apiId)(rack);
+    param[slot].path = rack.unquotedpath;
+    param[slot].name = 'Variations';
+    param[slot].min = 0;
+    param[slot].max = 1;
+    // The macros (parameters 1..16; 0 is the rack's on/off), watched for edits.
+    var ids = rack.get('parameters');
+    var nMacros = Math.max(0, Math.min(MAX_MACROS, Math.floor((ids ? ids.length : 0) / 2) - 1));
+    if (!macroObj[slot])
+        macroObj[slot] = [];
+    for (var i = 0; i < MAX_MACROS; i++) {
+        if (i < nMacros) {
+            macroObj[slot][i] = reArmSlot(macroObj[slot][i], function (iargs) {
+                if (iargs[0] === 'value')
+                    settleVariations(slot);
+            }, param[slot].path + ' parameters ' + (i + 1), 'value');
+        }
+        else if (macroObj[slot][i]) {
+            macroObj[slot][i].property = '';
+        }
+    }
+    // Whatever the macros hold now is the baseline: a set can't tell us whether
+    // they had moved before it was loaded or the slot was mapped.
+    varSelected[slot] = +rack.get('selected_variation_index');
+    macroSnap[slot] = macroValues(slot);
+    varModified[slot] = false;
+    varResnap[slot] = false;
+    readVariations(slot);
+    deviceObj[slot] = reArmSlot(deviceObj[slot], function (iargs) { return deviceNameCallback(slot, iargs); }, param[slot].path, 'name');
+    param[slot].deviceName = deviceObj[slot].get('name');
+    return true;
+}
+// Count, selection and labels from the rack into param[slot].
+function readVariations(slot) {
+    var rack = paramObj[slot];
+    var count = +rack.get('variation_count') || 0;
+    var sel = varSelected[slot];
+    var items = [];
+    for (var i = 0; i < count; i++) {
+        items.push(i + 1 + (i === sel && varModified[slot] ? '*' : ''));
+    }
+    param[slot].quant = count;
+    param[slot].quantItems = items;
+}
+function sendVariations(slot) {
+    readVariations(slot);
+    sendQuant(slot);
+    sendVal(slot);
+}
+// Stored or deleted in Live: the count changed, and the selection may have.
+function onVariationsChanged(slot) {
+    if (!isVariationsSlot(slot))
+        return;
+    settleVariations(slot);
+    sendVariations(slot);
+}
+// Macro values arrive one parameter at a time (a recall moves them all), so
+// decide once they settle: a new selection means a recall happened, which
+// makes the current values the new baseline; otherwise compare with it.
+function settleVariations(slot) {
+    if (!varTask[slot]) {
+        varTask[slot] = new Task(function () {
+            if (!isVariationsSlot(slot))
+                return;
+            var sel = +paramObj[slot].get('selected_variation_index');
+            var selChanged = sel !== varSelected[slot];
+            var modified = false;
+            if (varResnap[slot] || selChanged) {
+                varSelected[slot] = sel;
+                macroSnap[slot] = macroValues(slot);
+                varResnap[slot] = false;
+            }
+            else {
+                var now = macroValues(slot);
+                var snap = macroSnap[slot] || [];
+                for (var i = 0; i < now.length; i++) {
+                    if (Math.abs(now[i] - (snap[i] || 0)) > 1e-6)
+                        modified = true;
+                }
+            }
+            if (modified !== varModified[slot] || selChanged) {
+                varModified[slot] = modified;
+                sendVariations(slot);
+            }
+        });
+    }
+    varTask[slot].cancel();
+    varTask[slot].schedule(VARIATION_SETTLE_MS);
+}
+// A tap in the app: recall that variation.
+function recallVariation(slot, prop) {
+    var count = param[slot].quant;
+    if (!count)
+        return;
+    var idx = Math.max(0, Math.min(count - 1, Math.floor(prop * (count - 1))));
+    paramObj[slot].set('selected_variation_index', idx);
+    paramObj[slot].call('recall_selected_variation');
+    varSelected[slot] = idx;
+    varModified[slot] = false;
+    varResnap[slot] = true;
+    sendVariations(slot);
+    settleVariations(slot);
+}
+// The selected variation as /valN: MultiButton's index encoding (its
+// idxToProp), or -1 with nothing selected so no button lights.
+function variationProp(slot) {
+    var count = param[slot].quant;
+    var sel = varSelected[slot];
+    if (sel < 0 || sel >= count)
+        return -1;
+    return count > 1 ? Math.min(1, (sel + 0.01) / (count - 1)) : 0;
+}
 function setPath(slot, paramPath) {
     //log(`SETPATH ${slot}: ${paramPath}`)
     if (!apiReady) {
@@ -1083,38 +1277,14 @@ function setPath(slot, paramPath) {
         //log(`skipping ${slot}: ${paramPath}`)
         return;
     }
-    // Re-point (or create) the param value observer, then validate the resolved id.
-    var pv = reArmSlot(paramObj[slot], function (iargs) { return paramValueCallback(slot, iargs); }, paramPath, '');
-    if (!(0, liveApi_1.apiValid)(pv)) {
-        log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
+    if ((0, utils_1.isDevicePath)(paramPath)) {
+        if (!bindVariations(slot, paramPath))
+            return;
+    }
+    else if (!bindParam(slot, paramPath)) {
         return;
     }
-    pv.property = 'value';
-    paramObj[slot] = pv;
-    paramNameObj[slot] = reArmSlot(paramNameObj[slot], function (iargs) { return paramNameCallback(slot, iargs); }, paramPath, 'name');
-    automationStateObj[slot] = reArmSlot(automationStateObj[slot], function (iargs) { return automationStateCallback(slot, iargs); }, paramPath, 'automation_state');
-    param[slot].id = (0, liveApi_1.apiId)(paramObj[slot]);
-    param[slot].path = paramObj[slot].unquotedpath;
-    param[slot].val = parseFloat(paramObj[slot].get('value'));
-    param[slot].min = parseFloat(paramObj[slot].get('min')) || 0;
-    param[slot].max = parseFloat(paramObj[slot].get('max')) || 1;
-    param[slot].name = paramObj[slot].get('name')[0];
-    var isQuantized = parseInt(paramObj[slot].get('is_quantized')) > 0;
-    param[slot].quantItems = isQuantized
-        ? paramObj[slot].get('value_items')
-        : [];
-    param[slot].quant = param[slot].quantItems.length;
-    deviceObj[slot] = reArmSlot(deviceObj[slot], function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'), '' // property set conditionally below
-    );
     var devicePath = deviceObj[slot].unquotedpath;
-    // Only get the device name if it has the name property
-    if (deviceObj[slot].info.match(/property name str/)) {
-        deviceObj[slot].property = 'name';
-        param[slot].deviceName = deviceObj[slot].get('name');
-    }
-    else if (param[slot].path.match(/mixer_device/)) {
-        param[slot].deviceName = 'Mixer';
-    }
     var parentId = deviceObj[slot].get('canonical_parent');
     // parent name
     parentNameObj[slot] = reArmSlot(parentNameObj[slot], function (iargs) { return parentNameCallback(slot, iargs); }, parentId, 'name');
@@ -1146,6 +1316,44 @@ function setPath(slot, paramPath) {
     });
     (0, utils_1.debouncedTask)('sendVal', slot, sendValTask, 333);
     sendNames(slot);
+}
+// Bind `slot` to the parameter at `paramPath`. False if it doesn't resolve.
+function bindParam(slot, paramPath) {
+    // Re-point (or create) the param value observer, then validate the resolved id.
+    var pv = reArmSlot(paramObj[slot], function (iargs) { return paramValueCallback(slot, iargs); }, paramPath, '');
+    if (!(0, liveApi_1.apiValid)(pv)) {
+        log("Invalid path for slot ".concat(slot, ": ").concat(paramPath));
+        return false;
+    }
+    pv.property = 'value';
+    paramObj[slot] = pv;
+    // Was this slot a rack's variations? Its macros aren't watched any more.
+    param[slot].isVariations = false;
+    parkMacros(slot);
+    paramNameObj[slot] = reArmSlot(paramNameObj[slot], function (iargs) { return paramNameCallback(slot, iargs); }, paramPath, 'name');
+    automationStateObj[slot] = reArmSlot(automationStateObj[slot], function (iargs) { return automationStateCallback(slot, iargs); }, paramPath, 'automation_state');
+    param[slot].id = (0, liveApi_1.apiId)(paramObj[slot]);
+    param[slot].path = paramObj[slot].unquotedpath;
+    param[slot].val = parseFloat(paramObj[slot].get('value'));
+    param[slot].min = parseFloat(paramObj[slot].get('min')) || 0;
+    param[slot].max = parseFloat(paramObj[slot].get('max')) || 1;
+    param[slot].name = paramObj[slot].get('name')[0];
+    var isQuantized = parseInt(paramObj[slot].get('is_quantized')) > 0;
+    param[slot].quantItems = isQuantized
+        ? paramObj[slot].get('value_items')
+        : [];
+    param[slot].quant = param[slot].quantItems.length;
+    deviceObj[slot] = reArmSlot(deviceObj[slot], function (iargs) { return deviceNameCallback(slot, iargs); }, paramObj[slot] && paramObj[slot].get('canonical_parent'), '' // property set conditionally below
+    );
+    // Only get the device name if it has the name property
+    if (deviceObj[slot].info.match(/property name str/)) {
+        deviceObj[slot].property = 'name';
+        param[slot].deviceName = deviceObj[slot].get('name');
+    }
+    else if (param[slot].path.match(/mixer_device/)) {
+        param[slot].deviceName = 'Mixer';
+    }
+    return true;
 }
 function refresh() {
     //log('IN REFRESH')
@@ -1181,10 +1389,13 @@ function sendNames(slot) {
 }
 function sendQuant(slot) {
     initSlotIfNecessary(slot);
+    var isVar = isVariationsSlot(slot);
+    (0, utils_1.osc)(ADDR_KIND[slot], isVar ? 'var' : '');
     (0, utils_1.osc)(ADDR_QUANT[slot], param[slot].quant);
     // Always an array — the app decodes the payload the same way either way.
-    // (The empty case used to ship the literal STRING '[]'.)
-    (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], param[slot].quant > 2 ? param[slot].quantItems : []);
+    // (The empty case used to ship the literal STRING '[]'.) A parameter with 2
+    // values is a toggle in the app; a rack's variations are buttons at any count.
+    (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], isVar || param[slot].quant > 2 ? param[slot].quantItems : []);
 }
 // Display strings for a slot, shared by the OSC senders and the device view.
 function paramNameOf(slot) {
@@ -1225,7 +1436,12 @@ function sendParamName(slot) {
 }
 function sendAutomationState(slot) {
     initSlotIfNecessary(slot);
-    var automationState = parseInt((paramObj && paramObj[slot] && paramObj[slot].get('automation_state')) || 0);
+    var automationState = isVariationsSlot(slot)
+        ? 0
+        : parseInt((paramObj &&
+            paramObj[slot] &&
+            paramObj[slot].get('automation_state')) ||
+            0);
     //log('PAYLOAD ' + ADDR_PARAM_AUTO[slot] + ' ' + automationState)
     (0, utils_1.osc)(ADDR_PARAM_AUTO[slot], automationState);
 }
@@ -1257,6 +1473,12 @@ function sendVal(slot) {
         return;
     }
     initSlotIfNecessary(slot);
+    if (isVariationsSlot(slot)) {
+        var prop = variationProp(slot);
+        (0, utils_1.osc)(ADDR_VAL[slot], prop);
+        (0, utils_1.osc)(ADDR_VALSTR[slot], prop < 0 ? consts_1.nullString : param[slot].quantItems[varSelected[slot]]);
+        return;
+    }
     if (!(0, liveApi_1.apiValid)(paramObj[slot]) ||
         param[slot].val === undefined ||
         param[slot].max === undefined ||
@@ -1272,6 +1494,11 @@ function sendVal(slot) {
 // new value received over OSC
 function val(slot, val) {
     //log(slot + ' - VAL: ' + val)
+    if (isVariationsSlot(slot)) {
+        if (allowUpdateFromOsc[slot])
+            recallVariation(slot, val);
+        return;
+    }
     if (paramObj[slot]) {
         if (allowUpdateFromOsc[slot]) {
             // scale the 0..1 value to the param's min/max range
