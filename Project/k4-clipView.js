@@ -333,6 +333,28 @@ function sendStopPending(trackIdx, pending) {
         return;
     (0, utils_1.osc)('/clips/stopPending', { t: trackIdx, sp: pending ? 1 : 0 });
 }
+// Everything playing is about to stop: some track has a quantized stop pending
+// and no other track is playing or launching. That's what Stop All Clips
+// arms, from the app, Live or a controller, so the app blinks its all-stop
+// button while it's 1. Live has no such property, so it's derived from the
+// window's tracks (the only ones observed). Sent as /clips/stopAllPending 0|1.
+var lastStopAllPending = -1;
+function sendStopAllPending() {
+    var stopping = false;
+    var continuing = false;
+    for (var k in trackPlayObservers) {
+        var t = trackPlayObservers[k];
+        if (t.firedSlot === -2)
+            stopping = true;
+        else if (t.playingSlot >= 0 || t.firedSlot >= 0)
+            continuing = true;
+    }
+    var pending = stopping && !continuing ? 1 : 0;
+    if (pending === lastStopAllPending)
+        return;
+    lastStopAllPending = pending;
+    (0, utils_1.osc)('/clips/stopAllPending', pending);
+}
 // ---------------------------------------------------------------------------
 // Track List
 // ---------------------------------------------------------------------------
@@ -496,6 +518,7 @@ function createTrackPlayObservers(trackIdx) {
             updateCellFromTrack(tObs.trackIdx, newSlot);
         // Retarget progress polling at the now-playing clip (or clear it).
         setTrackPlayingClip(tObs, newSlot);
+        sendStopAllPending();
         if (tObs.playingClipId >= 0)
             ensureProgressRunning();
     }, 'playing_slot_index');
@@ -515,6 +538,7 @@ function createTrackPlayObservers(trackIdx) {
         if ((oldSlot === -2) !== (newSlot === -2)) {
             sendStopPending(tObs.trackIdx, newSlot === -2);
         }
+        sendStopAllPending();
     }, 'fired_slot_index');
     // arm only for tracks that can be armed; disable (not teardown) otherwise.
     if (canBeArmed) {
@@ -1449,6 +1473,7 @@ function doRefresh(c) {
     // list go again.
     lastScenesJson = '';
     lastSceneTrigJson = '';
+    lastStopAllPending = -1;
     restartPrefetch();
     if (leftTrack < 0)
         return;
