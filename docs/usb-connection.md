@@ -52,6 +52,7 @@ Requires iOS 17 or newer. Works with both USB-C and Lightning devices.
    > it a moment.
 
 3. Tap the **USB** row. That's it.
+   ![Knobbler's Setup page listing the Mac twice, with the USB row connected](images/usb-connection/ios-usb-connected.png)
 
 If the USB row never appears, try a different cable: some USB-C cables carry
 power only, not data.
