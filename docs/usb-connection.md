@@ -39,6 +39,8 @@ and macOS does not, and Apple devices network over USB only with a Mac.
 
 ### iPad or iPhone with a Mac
 
+Requires iOS 17 or newer. Works with both USB-C and Lightning devices.
+
 1. Add Knobbler to your Live Set, and connect the iPad or iPhone to the Mac with
    a USB cable.
 2. Open the Knobbler app and go to **Setup**. Your Mac appears under
