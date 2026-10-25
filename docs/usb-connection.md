@@ -51,6 +51,9 @@ and macOS does not, and Apple devices network over USB only with a Mac.
 
 3. Tap the **USB** row. That's it.
 
+If the USB row never appears, try a different cable: some USB-C cables carry
+power only, not data.
+
 ### Android with a Windows computer
 
 Requires Android 14 or newer.
@@ -67,6 +70,9 @@ Requires Android 14 or newer.
 
 3. Open the Knobbler app and go to **Setup**. Your computer appears under
    **Available devices** a second time, marked **USB**. Tap it.
+
+If the USB row never appears, try a different cable: some USB-C cables carry
+power only, not data.
 
 **If the USB row appears but connecting fails with "No response",** Windows
 Firewall is blocking Ableton Live on the cable. Windows treats every USB tether as
