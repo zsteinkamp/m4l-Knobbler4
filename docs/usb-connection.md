@@ -6,13 +6,85 @@ reliability of a cable. Knobbler works in these situations too.
 
 There are three approaches, in rough order of convenience:
 
-- A **[phone hotspot](#phone-hotspot)** — tether both the Mac and the tablet to
-  your phone's Personal Hotspot. Zero config, auto-discovery still works, and it
-  travels anywhere.
-- A **direct [USB connection](#usb-connection-recommended)** between an iPad/iPhone
-  and a Mac — rock-solid and wired, but you fill in two IP addresses by hand.
+- A **direct [USB connection](#usb-connection-recommended)** — plug in a cable
+  and tap your computer in the app, just like on WiFi. Works for an iPad or
+  iPhone with a **Mac**, and for an Android tablet or phone with a **Windows**
+  computer.
+- A **[phone hotspot](#phone-hotspot)** — tether both the computer and the tablet
+  to your phone's Personal Hotspot. Zero config, auto-discovery still works, and
+  it travels anywhere.
 - An **[ad-hoc WiFi network](#ad-hoc-wifi-network)** created on the Mac — wireless
   with no router, but the most setup.
+
+## USB Connection (recommended)
+
+A cable is the most reliable link you can give Knobbler: no radio, no router, and
+no WiFi dropouts while you record automation. Since app version 2026.10.21 it is
+also as easy as WiFi. The computer shows up in the app's **Setup** page a second
+time, marked **USB**, and one tap connects through the cable. No IP addresses to
+look up.
+
+**Which combinations work:**
+
+| Tablet / phone | Computer | Over USB |
+| -------------- | -------- | -------- |
+| iPad / iPhone  | Mac      | Yes      |
+| Android        | Windows  | Yes      |
+| iPad / iPhone  | Windows  | No — use WiFi |
+| Android        | Mac      | No — use WiFi |
+
+The cable only carries a network when both ends speak the same kind of USB
+networking. Android's USB tethering uses a protocol (RNDIS) that Windows supports
+and macOS does not, and Apple devices network over USB only with a Mac.
+
+### iPad or iPhone with a Mac
+
+1. Add Knobbler to your Live Set, and connect the iPad or iPhone to the Mac with
+   a USB cable.
+2. Open the Knobbler app and go to **Setup**. Your Mac appears under
+   **Available devices** a second time, marked **USB**. (If the Mac is also on
+   WiFi, you'll see both rows.)
+
+   > **Note:** after plugging in, it can take up to 30 seconds for the two
+   > devices to set up the cable's network. If the USB row isn't there yet, give
+   > it a moment.
+
+3. Tap the **USB** row. That's it.
+
+### Android with a Windows computer
+
+Requires Android 14 or newer.
+
+1. Add Knobbler to your Live Set, and connect the tablet or phone to the Windows
+   computer with a USB cable.
+2. On the tablet, turn on **USB tethering**: **Settings → Connections → Mobile
+   Hotspot and Tethering → USB tethering** (the exact path varies a little by
+   manufacturer).
+   ![USB tethering switch in Android Settings](images/usb-connection/android-tether.jpg)
+
+   > **Note:** Android turns USB tethering off whenever the cable is unplugged,
+   > so switch it back on each time you plug in.
+
+3. Open the Knobbler app and go to **Setup**. Your computer appears under
+   **Available devices** a second time, marked **USB**. Tap it.
+
+**If the USB row appears but connecting fails with "No response",** Windows
+Firewall is blocking Ableton Live on the cable. Windows treats every USB tether as
+a new **Public** network, while Live is usually allowed only on **Private**
+networks (that's the box Windows suggests the first time Live goes online). To fix
+it once and for all:
+
+1. Open **Windows Security → Firewall & network protection → Allow an app
+   through firewall**.
+2. Click **Change settings** (the checkboxes are greyed out until you do), find
+   **Ableton Live** in the list, and tick **Public** as well as **Private**.
+   ![Windows Firewall's Allowed apps list with Public and Private ticked for Ableton Live](images/usb-connection/windows-firewall-public.png)
+3. Click **OK**, then tap the USB row again.
+
+This also lets Live accept connections on genuinely public networks, such as café
+WiFi. If you'd rather not allow that, the alternative is to mark the tether's
+network **Private** in **Settings → Network & internet → Ethernet** each time you
+plug in.
 
 ## Phone Hotspot
 
@@ -39,17 +111,14 @@ WiFi network. **Auto-discovery works, and there are no IP addresses to type in.*
 > **If discovery comes up empty:** a few phone-hotspot configurations isolate the
 > connected devices from each other, so the Mac and tablet can't see one another
 > even though both are online. If the scan finds nothing, just fall back to the
-> [manual-IP method](#usb-connection-recommended) — read each device's hotspot IP
-> and type them in by hand, exactly like the USB setup below.
+> [manual-IP method](#manual-usb-setup-older-app-versions) — read each device's
+> hotspot IP and type them in by hand, exactly like the manual USB setup below.
 
-## USB Connection (recommended)
+## Manual USB Setup (older app versions)
 
-With modern iOS and macOS, simply connecting an iPad or iPhone to a Mac with a USB
-cable creates a private `169.254.x.x` ("link-local") network between the two
-devices automatically — no Internet Sharing setup required.
-
-Because the auto-discovery features of Knobbler don't operate over this link-local
-network, you'll fill in the two IP addresses manually. It's a one-time setup.
+App versions before 2026.10.21 don't discover computers over USB, so with an iPad
+or iPhone and a Mac you fill in the two IP addresses by hand. Connecting the cable
+creates a private `169.254.x.x` ("link-local") network between the two devices.
 
 1. Connect the iPad or iPhone to the Mac with a USB cable.
 

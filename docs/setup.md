@@ -33,4 +33,4 @@ Next, check out all of Knobbler's [Features](./features.md).
 
 If you're having trouble, then check out [Troubleshooting](./troubleshooting.md).
 
-If you are somewhere without a WiFi network, here are some instructions to [connect over USB or create a private WiFi network on your Mac](usb-connection.md).
+You can also connect with a USB cable, which is just as easy and more reliable than WiFi: an iPad or iPhone with a Mac, or an Android tablet or phone with a Windows computer. See [Connecting Without WiFi](usb-connection.md).
