@@ -1,6 +1,6 @@
 # Connecting Without WiFi (USB or Ad-Hoc)
 
-Sometimes you can't (or don't want to) put your Mac and tablet on the same WiFi
+Sometimes you can't (or don't want to) put your computer and tablet on the same WiFi
 network — you're at a venue, a practice space, or you simply want the rock-solid
 reliability of a cable. Knobbler works in these situations too.
 
@@ -13,7 +13,7 @@ There are three approaches, in rough order of convenience:
 - A **[phone hotspot](#phone-hotspot)** — tether both the computer and the tablet
   to your phone's Personal Hotspot. Zero config, auto-discovery still works, and
   it travels anywhere.
-- An **[ad-hoc WiFi network](#ad-hoc-wifi-network)** created on the Mac — wireless
+- An **[ad-hoc WiFi network](#ad-hoc-wifi-network)** created on your computer — wireless
   with no router, but the most setup.
 
 ## USB Connection (recommended)
@@ -119,55 +119,10 @@ WiFi network. **Auto-discovery works, and there are no IP addresses to type in.*
 
 > **If discovery comes up empty:** a few phone-hotspot configurations isolate the
 > connected devices from each other, so the Mac and tablet can't see one another
-> even though both are online. If the scan finds nothing, just fall back to the
-> [manual-IP method](#manual-usb-setup-older-app-versions) — read each device's
-> hotspot IP and type them in by hand, exactly like the manual USB setup below.
-
-## Manual USB Setup (older app versions)
-
-App versions before 2026.10.21 don't discover computers over USB, so with an iPad
-or iPhone and a Mac you fill in the two IP addresses by hand. Connecting the cable
-creates a private `169.254.x.x` ("link-local") network between the two devices.
-
-1. Connect the iPad or iPhone to the Mac with a USB cable.
-
-   > **Note:** after plugging in the cable, it can take up to 30 seconds for the
-   > computer to negotiate the link-local network and assign the IP addresses. If
-   > the addresses below don't appear right away, wait a moment and check again.
-
-2. **Find the tablet's address.** Open the Knobbler app and go to
-   **Setup → Connection**. The app displays its own `169.254.x.x` address at the
-   top of the panel, labeled **"This device:"**.
-   ![The Knobbler app's Connection page showing its 169.254 address](images/usb-connection/app-connection-address.png)
-
-3. **Point the Live device at the tablet.** In the Knobbler4 device in Ableton
-   Live, type the tablet's address (from step 2) into the **Hostname or IP** box,
-   and set **App Port** to **2347**. (Leave the device's own **Device Port** at
-   **2346**.)
-   ![The Knobbler4 Live device with the tablet's IP filled in manually](images/usb-connection/live-device-manual-ip.png)
-
-4. **Find the Mac's address.** Open Terminal on the Mac and run:
-
-   ```
-   ifconfig -a | grep 169.254
-   ```
-
-   Note the `169.254.x.x` address it prints (the value after `inet`).
-   ![Terminal showing the ifconfig command and the Mac's 169.254 address](images/usb-connection/mac-ifconfig-address.png)
-
-5. **Point the app at the Mac.** In the Knobbler app, type the Mac's address (from
-   step 4) into the **Host or IP** box. Leave the device port at its default,
-   **2346**.
-
-6. Press **Test** in the app to exercise the connection. A green **Connected**
-   banner confirms the link is working.
-   ![The Knobbler app's Connection page set up correctly, showing the Connected banner](images/usb-connection/app-connected.png)
-
-At this point Knobbler should be fully functional over the USB cable.
-
-> **Tip:** the two ports are not the same on purpose — the Live device sends to the
-> tablet on **2347**, and the tablet sends to the device on **2346** (the default).
-> If Test fails, double-check that you didn't swap the two addresses or ports.
+> even though both are online. If the scan finds nothing, read each device's
+> hotspot IP and type them in by hand: the tablet's address into the Live
+> device's **Hostname or IP** box (App Port **2347**), and the Mac's address into
+> the app's **Host or IP** box.
 
 ## Ad-Hoc WiFi Network
 
