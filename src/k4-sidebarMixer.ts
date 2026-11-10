@@ -22,6 +22,7 @@ import {
   TYPE_MAIN,
   TYPE_RETURN,
   TYPE_GROUP,
+  isMixerPageName,
 } from './consts'
 import {
   handleExclusiveArm,
@@ -169,7 +170,7 @@ function sidebarMeters(val: number) {
 function page(pageNameArg: string) {
   const pageName = pageNameArg.toString()
   const wasMixerPage = state.onMixerPage
-  state.onMixerPage = pageName === 'mixer' || pageName === 'session'
+  state.onMixerPage = isMixerPageName(pageName)
 
   if (!state.onMixerPage && wasMixerPage) {
     if (state.metersEnabled && state.hasOutput) startMeterFlush()

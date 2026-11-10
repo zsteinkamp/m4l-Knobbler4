@@ -973,7 +973,7 @@ function sendMetersState() {
 function page(pageNameArg) {
     var pageName = pageNameArg.toString();
     var wasMixerPage = onMixerPage;
-    onMixerPage = pageName === 'mixer' || pageName === 'session';
+    onMixerPage = (0, consts_1.isMixerPageName)(pageName);
     if (onMixerPage && !wasMixerPage) {
         if (metersEnabled && visibleCount > 0)
             startMeterFlush();

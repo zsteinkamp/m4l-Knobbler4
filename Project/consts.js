@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FIELD_INDENT = exports.FIELD_COLOR = exports.FIELD_NAME = exports.FIELD_ID = exports.FIELD_TYPE = exports.nullString = exports.METER_FLUSH_MS = exports.PAUSE_MS = exports.MAX_SENDS = exports.MAX_NAME_LEN = exports.noFn = exports.DEFAULT_COLOR_FF = exports.DEFAULT_COLOR = exports.TYPE_CHILD_CHAIN = exports.TYPE_RACK = exports.TYPE_DEVICE = exports.TYPE_GROUP = exports.TYPE_MAIN = exports.TYPE_RETURN = exports.TYPE_CHAIN = exports.TYPE_TRACK = exports.VIEW_TARGET_BASE = exports.MAX_SLOTS = exports.MAX_PAGES = exports.LEGACY_UI_SLOTS = exports.SLOTS_PER_PAGE = exports.SLOTS_PER_ROW = exports.OUTLET_CONFIGURE = exports.OUTLET_PAGE = exports.OUTLET_REFRESH = exports.OUTLET_SHORTCUT_NAME = exports.OUTLET_MSGS = exports.OUTLET_OSC = exports.INLET_MSGS = void 0;
+exports.isMixerPageName = exports.FIELD_INDENT = exports.FIELD_COLOR = exports.FIELD_NAME = exports.FIELD_ID = exports.FIELD_TYPE = exports.nullString = exports.METER_FLUSH_MS = exports.PAUSE_MS = exports.MAX_SENDS = exports.MAX_NAME_LEN = exports.noFn = exports.DEFAULT_COLOR_FF = exports.DEFAULT_COLOR = exports.TYPE_CHILD_CHAIN = exports.TYPE_RACK = exports.TYPE_DEVICE = exports.TYPE_GROUP = exports.TYPE_MAIN = exports.TYPE_RETURN = exports.TYPE_CHAIN = exports.TYPE_TRACK = exports.VIEW_TARGET_BASE = exports.MAX_SLOTS = exports.MAX_PAGES = exports.LEGACY_UI_SLOTS = exports.SLOTS_PER_PAGE = exports.SLOTS_PER_ROW = exports.OUTLET_CONFIGURE = exports.OUTLET_PAGE = exports.OUTLET_REFRESH = exports.OUTLET_SHORTCUT_NAME = exports.OUTLET_MSGS = exports.OUTLET_OSC = exports.INLET_MSGS = void 0;
 exports.INLET_MSGS = 0;
 // [v8 knobbler] entry outlet map (shared by all folded-in modules):
 exports.OUTLET_OSC = 0; // OSC out -> [gate] -> [node.script] sender
@@ -45,3 +45,13 @@ exports.FIELD_ID = 1;
 exports.FIELD_NAME = 2;
 exports.FIELD_COLOR = 3;
 exports.FIELD_INDENT = 4;
+// Page names (from the app's `/page/<name>`) on which the full per-strip mixer
+// meters stream. 'session' was the composite page's name before it became
+// 'split' (2026.11); both are accepted so a new device serves old and new app
+// builds. One definition, because the last time this list was duplicated the
+// Session->Split rename updated the app but not the two device gates, which
+// silently froze the split page's meters.
+function isMixerPageName(pageName) {
+    return pageName === 'mixer' || pageName === 'session' || pageName === 'split';
+}
+exports.isMixerPageName = isMixerPageName;

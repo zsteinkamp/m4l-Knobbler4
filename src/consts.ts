@@ -47,3 +47,13 @@ export const FIELD_ID = 1
 export const FIELD_NAME = 2
 export const FIELD_COLOR = 3
 export const FIELD_INDENT = 4
+
+// Page names (from the app's `/page/<name>`) on which the full per-strip mixer
+// meters stream. 'session' was the composite page's name before it became
+// 'split' (2026.11); both are accepted so a new device serves old and new app
+// builds. One definition, because the last time this list was duplicated the
+// Session->Split rename updated the app but not the two device gates, which
+// silently froze the split page's meters.
+export function isMixerPageName(pageName: string): boolean {
+  return pageName === 'mixer' || pageName === 'session' || pageName === 'split'
+}

@@ -23,6 +23,7 @@ import {
   TYPE_RETURN,
   TYPE_MAIN,
   DEFAULT_COLOR,
+  isMixerPageName,
 } from './consts'
 import {
   CAPABILITY_PREFETCH,
@@ -1175,7 +1176,7 @@ function sendMetersState() {
 function page(pageNameArg: string) {
   const pageName = pageNameArg.toString()
   const wasMixerPage = onMixerPage
-  onMixerPage = pageName === 'mixer' || pageName === 'session'
+  onMixerPage = isMixerPageName(pageName)
 
   if (onMixerPage && !wasMixerPage) {
     if (metersEnabled && visibleCount > 0) startMeterFlush()
