@@ -9,7 +9,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.xySplit = exports.xyJoin = exports.viewUnmap = exports.viewName = exports.viewMin = exports.viewMax = exports.viewClearName = exports.val = exports.unmap = exports.uiPageSelect = exports.swap = exports.showPage = exports.showLegacyPage = exports.setPageOrder = exports.setDictPrefix = exports.setDefault = exports.renamePage = exports.refresh = exports.moveCells = exports.mkMap = exports.initAll = exports.importLegacyPath = exports.importLegacyMin = exports.importLegacyMax = exports.importLegacyCustomName = exports.gotoTrackFor = exports.bkMap = exports.addPage = void 0;
+exports.xySplit = exports.xyJoin = exports.viewUnmap = exports.viewName = exports.viewMin = exports.viewMax = exports.viewClearName = exports.val = exports.unmap = exports.uiPageSelect = exports.swap = exports.showPage = exports.showLegacyPage = exports.setSlotMode = exports.setPageOrder = exports.setDictPrefix = exports.setDefault = exports.renamePage = exports.refresh = exports.pressSlot = exports.moveCells = exports.mkMap = exports.mapPath = exports.initAll = exports.importLegacyPath = exports.importLegacyMin = exports.importLegacyMax = exports.importLegacyCustomName = exports.gotoTrackFor = exports.bkMap = exports.addPage = void 0;
 var utils_1 = require("./utils");
 Object.defineProperty(exports, "setDictPrefix", { enumerable: true, get: function () { return utils_1.setDictPrefix; } });
 var liveApi_1 = require("./liveApi");
@@ -30,6 +30,11 @@ var ADDR_TRACK = [];
 var ADDR_QUANT = [];
 var ADDR_QUANT_ITEMS = [];
 var ADDR_KIND = [];
+// Button-mode (Fader/Momentary/Toggle) addresses, CAPABILITY kBtn: the two real
+// parameter values a mom/tog slot jumps between, and its current logical state.
+var ADDR_ONVAL = [];
+var ADDR_OFFVAL = [];
+var ADDR_KON = [];
 for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
     ADDR_KIND[_i] = '/kind' + _i;
     ADDR_VAL[_i] = '/val' + _i;
@@ -41,6 +46,9 @@ for (var _i = 1; _i <= consts_1.MAX_SLOTS; _i++) {
     ADDR_TRACK[_i] = '/track' + _i;
     ADDR_QUANT[_i] = '/quant' + _i;
     ADDR_QUANT_ITEMS[_i] = '/quantItems' + _i;
+    ADDR_ONVAL[_i] = '/onval' + _i;
+    ADDR_OFFVAL[_i] = '/offval' + _i;
+    ADDR_KON[_i] = '/kon' + _i;
 }
 // Module-level scratchpad for one-off lookups (reuse via .path is fastest)
 // Initialized in initAll() to avoid "Live API is not initialized" at load time
@@ -60,6 +68,9 @@ var parentColorObj = [];
 var param = [];
 var outMin = [];
 var outMax = [];
+var slotMode = [];
+var slotOnVal = [];
+var slotOffVal = [];
 // other vars
 var allowMapping = [];
 var allowUpdateFromOsc = [];
@@ -156,6 +167,14 @@ function restoreSlot(slot) {
             setCustomName(slot, sName);
         }
     }
+    // Button mode (kBtn). Stored on/off are real parameter values; absent means
+    // "default to the param's max / min", resolved lazily in buttonVals().
+    var sMode = ctx.settings.get(slotKey(slot, 'mode'));
+    slotMode[slot] = sMode === 'mom' || sMode === 'tog' ? sMode : 'fader';
+    var sOn = ctx.settings.get(slotKey(slot, 'onVal'));
+    slotOnVal[slot] = typeof sOn === 'number' ? sOn : undefined;
+    var sOff = ctx.settings.get(slotKey(slot, 'offVal'));
+    slotOffVal[slot] = typeof sOff === 'number' ? sOff : undefined;
 }
 // --- Legacy importers (REMOVE after 2028-05-21) ----------------------------
 //
@@ -233,6 +252,12 @@ function clearSlotSettings(slot) {
         return;
     ctx.settings.set(slotKey(slot, 'path'), '');
     ctx.settings.set(slotKey(slot, 'customName'), '');
+    ctx.settings.set(slotKey(slot, 'mode'), 'fader');
+    ctx.settings.set(slotKey(slot, 'onVal'), '');
+    ctx.settings.set(slotKey(slot, 'offVal'), '');
+    slotMode[slot] = 'fader';
+    slotOnVal[slot] = undefined;
+    slotOffVal[slot] = undefined;
 }
 function xyJoin(leftIdx) {
     //log('xyJOIN', leftIdx)
@@ -275,6 +300,20 @@ function unmap(slot) {
     refreshSlotUI(slot);
 }
 exports.unmap = unmap;
+// OSC /mapN {path} — bind a Live API parameter path to slot N (CAPABILITY
+// kPath): the scripting counterpart to the in-app map gesture, for external
+// controllers. `path` is a canonical LOM path, e.g.
+// "live_set tracks 0 devices 0 parameters 1" (a device path binds that rack's
+// variations, like the in-app flow). setPath validates the path, binds +
+// persists the mapping, and pushes the slot's name/color/value — so a client
+// confirms by observing /paramN. An invalid or non-parameter path is a no-op.
+// Pairs with /unmapN.
+function mapPath(slot, path) {
+    if (slot < 1 || slot > consts_1.MAX_SLOTS)
+        return;
+    setPath(slot, path == null ? '' : String(path));
+}
+exports.mapPath = mapPath;
 function captureSlot(slot) {
     var p = param[slot];
     return {
@@ -282,6 +321,9 @@ function captureSlot(slot) {
         min: outMin[slot] !== undefined ? Math.round(outMin[slot] * 100) : 0,
         max: outMax[slot] !== undefined ? Math.round(outMax[slot] * 100) : 100,
         customName: p && p.customName ? p.customName : '',
+        mode: slotMode[slot] || 'fader',
+        onVal: slotOnVal[slot],
+        offVal: slotOffVal[slot],
     };
 }
 function applySnapshot(slot, snap) {
@@ -292,6 +334,12 @@ function applySnapshot(slot, snap) {
         setMax(slot, snap.max);
         if (snap.customName)
             setCustomName(slot, snap.customName);
+        applySlotMode(slot, snap.mode || 'fader', snap.onVal, snap.offVal);
+        // setPath's sendNames ran with the OLD (destination) mode, so re-emit the
+        // kind + button state now that applySlotMode has moved it in — otherwise a
+        // stale /kind would overwrite the app's correct optimistic value.
+        sendQuant(slot);
+        sendButton(slot);
     }
     else {
         clearSlotSettings(slot);
@@ -380,7 +428,12 @@ function activeSlots() {
 function sameSnapshot(a, b) {
     return (a.path === b.path &&
         (!a.path ||
-            (a.min === b.min && a.max === b.max && a.customName === b.customName)));
+            (a.min === b.min &&
+                a.max === b.max &&
+                a.customName === b.customName &&
+                a.mode === b.mode &&
+                a.onVal === b.onVal &&
+                a.offVal === b.offVal)));
 }
 // Rewrite slots[i] to hold snaps[i]. Snapshots must all be captured BEFORE the
 // first rewrite (a move reads slots it also writes). A slot already holding its
@@ -491,7 +544,15 @@ function rearrangePages(order) {
             snaps.push(captureSlot(order[k] * consts_1.SLOTS_PER_PAGE + j));
         }
     }
-    var empty = { path: '', min: 0, max: 100, customName: '' };
+    var empty = {
+        path: '',
+        min: 0,
+        max: 100,
+        customName: '',
+        mode: 'fader',
+        onVal: undefined,
+        offVal: undefined,
+    };
     for (var s = order.length * consts_1.SLOTS_PER_PAGE + 1; s <= lastSlot; s++) {
         // Below LEGACY_UI_SLOTS a slot past the last page is still reachable by an
         // older app, so only a deleted page's own slots are cleared there.
@@ -1386,16 +1447,52 @@ function sendNames(slot) {
     sendTrackName(slot);
     sendColor(slot);
     sendQuant(slot);
+    sendButton(slot);
+}
+// The kind the app renders a slot as: variations buttons, a mom/tog button, or
+// a plain fader. Variations are a rack (not a normal param) and win over button
+// mode. The returned string is also what rides ADDR_KIND.
+function slotKindStr(slot) {
+    if (isVariationsSlot(slot))
+        return 'var';
+    var m = slotMode[slot];
+    return m === 'mom' || m === 'tog' ? m : '';
 }
 function sendQuant(slot) {
     initSlotIfNecessary(slot);
-    var isVar = isVariationsSlot(slot);
-    (0, utils_1.osc)(ADDR_KIND[slot], isVar ? 'var' : '');
+    (0, utils_1.osc)(ADDR_KIND[slot], slotKindStr(slot));
     (0, utils_1.osc)(ADDR_QUANT[slot], param[slot].quant);
     // Always an array — the app decodes the payload the same way either way.
     // (The empty case used to ship the literal STRING '[]'.) A parameter with 2
     // values is a toggle in the app; a rack's variations are buttons at any count.
-    (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], isVar || param[slot].quant > 2 ? param[slot].quantItems : []);
+    (0, utils_1.osc)(ADDR_QUANT_ITEMS[slot], isVariationsSlot(slot) || param[slot].quant > 2
+        ? param[slot].quantItems
+        : []);
+}
+// The two real values a mom/tog slot jumps between, resolving an unset on/off
+// to the parameter's max / min (CAPABILITY kBtn). Safe to call for any slot.
+function buttonVals(slot) {
+    var p = param[slot];
+    var pMax = p && p.max !== undefined ? p.max : 1;
+    var pMin = p && p.min !== undefined ? p.min : 0;
+    return {
+        on: slotOnVal[slot] !== undefined ? slotOnVal[slot] : pMax,
+        off: slotOffVal[slot] !== undefined ? slotOffVal[slot] : pMin,
+    };
+}
+// The on/off values (so the app's edit dialog can prefill) and the slot's
+// current logical state (1 = nearer on, for the button highlight).
+function sendButton(slot) {
+    var _a = buttonVals(slot), on = _a.on, off = _a.off;
+    (0, utils_1.osc)(ADDR_ONVAL[slot], on);
+    (0, utils_1.osc)(ADDR_OFFVAL[slot], off);
+    (0, utils_1.osc)(ADDR_KON[slot], buttonIsOn(slot, on, off) ? 1 : 0);
+}
+// Whether the current value sits on the "on" side of the on/off midpoint. Used
+// both for the highlight and to decide which way a toggle flips.
+function buttonIsOn(slot, on, off) {
+    var v = param[slot] && param[slot].val !== undefined ? param[slot].val : off;
+    return Math.abs(v - on) <= Math.abs(v - off);
 }
 // Display strings for a slot, shared by the OSC senders and the device view.
 function paramNameOf(slot) {
@@ -1556,3 +1653,91 @@ function val(slot, val) {
     }
 }
 exports.val = val;
+// Set a slot's button mode + on/off values (kBtn), persist them, and emit. An
+// undefined on/off means "default to the param's max/min" (resolved lazily).
+// Shared by the OSC entry (setSlotMode) and the Layout-move snapshot restore.
+function applySlotMode(slot, mode, onVal, offVal) {
+    slotMode[slot] = mode === 'mom' || mode === 'tog' ? mode : 'fader';
+    slotOnVal[slot] = typeof onVal === 'number' ? onVal : undefined;
+    slotOffVal[slot] = typeof offVal === 'number' ? offVal : undefined;
+    if (ctx) {
+        ctx.settings.set(slotKey(slot, 'mode'), slotMode[slot]);
+        ctx.settings.set(slotKey(slot, 'onVal'), slotOnVal[slot] === undefined ? '' : slotOnVal[slot]);
+        ctx.settings.set(slotKey(slot, 'offVal'), slotOffVal[slot] === undefined ? '' : slotOffVal[slot]);
+    }
+}
+// OSC /kMode '[slot, mode, onVal?, offVal?]' — the app's mode dialog. onVal/
+// offVal are real parameter values; omit them to default to the param's
+// max/min. A variations slot is a set of buttons already and can't be a
+// mom/tog button.
+function setSlotMode(rawVal) {
+    if (!apiReady) {
+        pendingCalls.push(function () {
+            setSlotMode(rawVal);
+        });
+        return;
+    }
+    var args = parseArgs(rawVal);
+    if (!args)
+        return;
+    var slot = +args[0];
+    if (slot < 1 || slot > consts_1.MAX_SLOTS)
+        return;
+    initSlotIfNecessary(slot);
+    if (isVariationsSlot(slot))
+        return;
+    var mode = args[1] === 'mom' || args[1] === 'tog' ? args[1] : 'fader';
+    var onVal = typeof args[2] === 'number' ? args[2] : undefined;
+    var offVal = typeof args[3] === 'number' ? args[3] : undefined;
+    applySlotMode(slot, mode, onVal, offVal);
+    sendQuant(slot); // re-emit ADDR_KIND
+    sendButton(slot);
+    sendVal(slot);
+}
+exports.setSlotMode = setSlotMode;
+// OSC /kBtn '[slot, action]', action = 'on' | 'off' | 'toggle' — a button
+// press. Sets the parameter to one of its two stored REAL values directly, so
+// it is exact across Live's non-linear parameter warps (no normalization).
+function pressSlot(rawVal) {
+    if (!apiReady) {
+        pendingCalls.push(function () {
+            pressSlot(rawVal);
+        });
+        return;
+    }
+    var args = parseArgs(rawVal);
+    if (!args)
+        return;
+    var slot = +args[0];
+    var action = String(args[1]);
+    if (slot < 1 || slot > consts_1.MAX_SLOTS)
+        return;
+    if (!(0, liveApi_1.apiValid)(paramObj[slot]) || isVariationsSlot(slot))
+        return;
+    if (!allowUpdateFromOsc[slot])
+        return;
+    var _a = buttonVals(slot), on = _a.on, off = _a.off;
+    var target;
+    if (action === 'on')
+        target = on;
+    else if (action === 'off')
+        target = off;
+    else if (action === 'toggle')
+        target = buttonIsOn(slot, on, off) ? off : on;
+    else
+        return;
+    // Mirror val(): suppress the param-observer echo briefly so setting the value
+    // doesn't loop back out, then read the applied value back (Live may quantize).
+    if (param[slot].allowParamValueUpdates) {
+        param[slot].allowParamValueUpdates = false;
+        var allowUpdatesTask = new Task(function () {
+            param[slot].allowParamValueUpdates = true;
+        });
+        (0, utils_1.debouncedTask)('allowUpdates', slot, allowUpdatesTask, 500);
+    }
+    paramObj[slot].set('value', target);
+    param[slot].val = parseFloat(paramObj[slot].get('value'));
+    sendVal(slot);
+    sendButton(slot);
+}
+exports.pressSlot = pressSlot;

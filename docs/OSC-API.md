@@ -18,6 +18,10 @@ Sets the value of Slot N, as a float between 0 and 1, inclusive. If Slot N is al
 
 Removes the mapping for Slot N. Has side effects of messages sent from Knobbler to tablet to update name, color, and value to unassigned values.
 
+#### /mapN {string}
+
+Binds the Live API parameter at the given **path** to Knobbler Slot N, the scripting counterpart to mapping in the app — intended for external controllers that build mappings programmatically. The argument is a single canonical Live Object Model path string, e.g. `live_set tracks 0 devices 0 parameters 1` (spaces and all, as one OSC string). A **device** path (e.g. `live_set tracks 0 devices 0`) binds that rack's variations, exactly as the in-app gesture does. The path must begin with `live_set`; an invalid or non-parameter path is ignored. On success the usual name, color, and value messages are sent (so a client confirms the result by watching `/paramN`), and the mapping persists with the Live set. Pairs with `/unmapN`. Advertised by the `kPath` capability in `/ack`/`/pong`.
+
 #### /defaultvalN
 
 Sets the value of the parameter mapped to Slot N to its default value. Does so in a way to trigger an update back to the tablet. (A legacy space-separated alias `/default val` with the slot as a suffix is also accepted.)
@@ -42,6 +46,14 @@ Join Slot N and Slot N+1 into an X-Y pad pair, where N (the left slot index) is 
 
 Split a previously joined X-Y pad pair, where N (the left slot index) is the message **argument**. Triggers an `/xyPairs` response.
 
+#### /kMode {JSON string}
+
+Sets a slot's control type and, for a button, its two values (CAPABILITY `kBtn`). The argument is a JSON array `[slot, mode, onVal, offVal]`: `mode` is `"fader"`, `"mom"` (momentary) or `"tog"` (toggle); `onVal`/`offVal` are the **real** parameter values the button jumps between and may be omitted to default to the parameter's max/min. The device persists the mode with the Live set, carries it through Layout moves, and re-emits `/kindN`, `/onvalN`, `/offvalN`, `/konN`. A variations slot cannot become a button. e.g. `/kMode "[3,\"tog\",1,0]"`.
+
+#### /kBtn {JSON string}
+
+Presses a Momentary/Toggle slot (CAPABILITY `kBtn`). The argument is a JSON array `[slot, action]` where `action` is `"on"`, `"off"`, or `"toggle"`. `on`/`off` set the slot's stored on/off value; `toggle` flips to whichever value the parameter is not currently nearer. The value is set directly (exact across non-linear parameter warps). Momentary buttons send `on` on touch-down and `off` on release; toggles send `toggle`. e.g. `/kBtn "[3,\"toggle\"]"`.
+
 ### Knobbler4 to Tablet
 
 #### /deviceN {string}
@@ -63,6 +75,18 @@ The number of quantization steps for the parameter in Slot N. Continuous (non-qu
 #### /quantItemsN {JSON string}
 
 A JSON-encoded array of individual item names for each quantized step. The array is empty if a parameter is not quantized.
+
+#### /kindN {string}
+
+How the tablet should render Slot N: `""` (empty) for a continuous fader, `"var"` for a rack's variations (buttons, CAPABILITY `kVar`), or `"mom"`/`"tog"` for a Momentary/Toggle button (CAPABILITY `kBtn`).
+
+#### /onvalN {float} / /offvalN {float}
+
+The two **real** parameter values a Momentary/Toggle slot jumps between (CAPABILITY `kBtn`), used to prefill the mode editor. Default to the parameter's max/min until set via `/kMode`.
+
+#### /konN {integer}
+
+The current logical state of a Momentary/Toggle slot (CAPABILITY `kBtn`): `1` when the parameter is nearer its on value, else `0`. Drives the button highlight.
 
 #### /trackN {string}
 

@@ -236,6 +236,8 @@ const entryRoutes: Route[] = [
 const knobblerRoutes: Route[] = [
   { prefix: '/val', parse: 'slotVal', fn: KnobblerCore.val, coalesce: true },
   { prefix: '/unmap', parse: 'slot', fn: KnobblerCore.unmap },
+  // Map a Live API parameter path to slot N for external/scripting clients.
+  { prefix: '/map', parse: 'slotVal', fn: KnobblerCore.mapPath },
   { prefix: '/xyJoin', parse: 'val', fn: KnobblerCore.xyJoin },
   { prefix: '/xySplit', parse: 'val', fn: KnobblerCore.xySplit },
   { prefix: '/defaultval', parse: 'slot', fn: KnobblerCore.setDefault },
@@ -250,6 +252,10 @@ const knobblerRoutes: Route[] = [
   { prefix: '/kPageRename', parse: 'val', fn: KnobblerCore.renamePage },
   { prefix: '/kPageOrder', parse: 'val', fn: KnobblerCore.setPageOrder },
   { prefix: '/kShow', parse: 'val', fn: KnobblerCore.showPage },
+  // Button mode (CAPABILITY kBtn): set a slot's Fader/Momentary/Toggle mode +
+  // on/off values, and press a mom/tog button.
+  { prefix: '/kMode', parse: 'val', fn: KnobblerCore.setSlotMode },
+  { prefix: '/kBtn', parse: 'val', fn: KnobblerCore.pressSlot },
 ]
 
 // Max-message handlers. These arrive as selectors on the entry inlet, not OSC.

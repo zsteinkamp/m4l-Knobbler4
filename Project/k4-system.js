@@ -38,7 +38,11 @@ var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Delete button that silently does nothing.
 // 'cue' = the master cue (preview) volume: /mixer/cue + /mixer/cueDefault
 // (k4-sidebarMixer) and mkMap of /mixer/cue (knobblerCore).
-var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar';
+// 'kBtn' = a Knobbler slot can be a Momentary/Toggle button between two values
+// (knobblerCore setSlotMode/pressSlot, /kindN 'mom'|'tog', /onvalN /offvalN /konN).
+// 'kPath' = external clients can bind a Live API parameter path to a slot via
+// the /mapN {path} OSC route (knobblerCore mapPath).
+var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath';
 var deviceVersion = '';
 var synRefreshTask = null;
 var ctx = null;
