@@ -22,7 +22,7 @@ Every mapping is saved with your Live Set. Pick up right where you left off, wor
 
 ### Features
 
-- **32 assignable faders** across two pages. Auto-labeling, auto-coloring, high-resolution, and always showing you exactly what is happening in your music. Pair any two faders into an **X-Y pad** for two-dimensional control, or flip on **Spring mode** to make any slider momentary.
+- **Assignable faders, buttons and X-Y pads** across as many named pages as you need (up to 16 per set). Auto-labeling, auto-coloring, high-resolution, and always showing you exactly what is happening in your music. Pair two sliders into an **X-Y pad** for two-dimensional control, turn any slot into a **Momentary or Toggle button**, or flip on **Spring mode** to make a slider momentary.
 - **Experimental Spring Physics** -- a new layer of interaction. Fling sliders and X-Y pads and watch them respond with gravity and rubber-band simulation, driving parameter values with momentum and bounce.
 - **Bluhand** -- a dedicated page with all of the parameters of the currently selected device. Parameter banks are labeled and just a touch away. Store, recall, and randomize **Variations** in Racks.
 - **Full-screen mixer** -- volume, pan, mute, solo, arm, sends, and real-time meters for every track in your set. Scrollable, with send controls for every return track.
