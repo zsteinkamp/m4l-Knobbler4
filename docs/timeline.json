@@ -1,0 +1,2158 @@
+{
+  "generated": "2026-11-11T17:01:06.893Z",
+  "repo": "zsteinkamp/m4l-Knobbler4",
+  "appReleases": [
+    {
+      "side": "app",
+      "version": "2026.11.6",
+      "date": "2026-11-06",
+      "approx": false,
+      "title": "2026.11.6",
+      "notes": [
+        {
+          "text": "The Session page is now Split: a two-pane screen where you choose what goes on top and what goes on the bottom. Tap the bar at the top of each pane to switch it between Mixer, Clips, Knobbler and Bluhand",
+          "tag": null
+        },
+        {
+          "text": "Put Knobbler in both panes to see two pages of knobs at once; each pane picks its own page",
+          "tag": null
+        },
+        {
+          "text": "A Knobbler slot can now be a button instead of a fader. In Layout mode, set any mapped slot to Momentary or Toggle and it jumps between two parameter values you pick, defaulting to the parameter’s full range. Requires Knobbler4 device v74 or newer",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.10.21",
+      "date": "2026-10-21",
+      "approx": false,
+      "title": "2026.10.21",
+      "notes": [
+        {
+          "text": "USB connections to a Mac are now discovered automatically, so using Knobbler over a cable is as simple as Wi-Fi: plug your iPad or iPhone into the Mac running Live, and the Mac appears a second time under Available devices, marked USB. Tap it to connect through the cable. No IP addresses to look up. USB connections to a Windows computer are not supported; use Wi-Fi there",
+          "tag": "iOS"
+        },
+        {
+          "text": "USB connections to a Windows computer are now discovered automatically, so using Knobbler over a cable is as simple as Wi-Fi: plug your tablet or phone into the Windows computer running Live and turn on USB tethering in Settings (under Mobile Hotspot and Tethering). The computer appears a second time under Available devices, marked USB. Tap it to connect. USB tethering turns off whenever you unplug, and if connecting says \"No response\", allow Ableton Live on Public networks in Windows Firewall (see the setup guide). Requires Android 14 or newer. USB connections to a Mac are not supported; use Wi-Fi there",
+          "tag": "Android"
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.10.10",
+      "date": "2026-10-10",
+      "approx": false,
+      "title": "2026.10.10",
+      "notes": [
+        {
+          "text": "Put a rack’s macro variations on a Knobbler page (requires Knobbler4 device v74 or newer): on Bluhand, tap the Map button, tap the rack’s variations, then tap a Knobbler slot. Tap a variation to recall it. Once you move a macro it shows an asterisk (“2*”), and tapping it again restores what the variation stored",
+          "tag": null
+        },
+        {
+          "text": "On the Clips and Session pages, a scene button blinks while its scene waits to start, just like a launched clip, and the Stop All button blinks while everything waits to stop (requires Knobbler4 device v74 or newer)",
+          "tag": null
+        },
+        {
+          "text": "Parameters with many choices, like a delay’s time divisions, stay readable: their buttons keep a comfortable size and scroll when they don’t all fit",
+          "tag": null
+        },
+        {
+          "text": "Fix: on phones in landscape, opening a window like Pan & Sends no longer flips the screen to the portrait layout",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.10.9",
+      "date": "2026-10-09",
+      "approx": false,
+      "title": "2026.10.9",
+      "notes": [
+        {
+          "text": "Name your Knobbler pages, and have up to 16 of them per Live set instead of two (requires Knobbler4 device v73 or newer). Tap a page button to switch to it, hold one to rename or delete it, hold and drag it to reorder, and tap + to add a page",
+          "tag": null
+        },
+        {
+          "text": "Layout mode, in place of XY Join: tap Layout above the sliders to join or split XY pads. On tablets you can also drag any fader or XY pad to another spot, or hold it at the edge of the screen to move it to another page",
+          "tag": null
+        },
+        {
+          "text": "Cue volume on the Main strip (requires Knobbler4 device v72 or newer): the slider just above the Main fader sets Live’s Cue level for your headphones. Double-tap it to reset",
+          "tag": null
+        },
+        {
+          "text": "The labels on send, pan and crossfader sliders stay readable at high levels instead of disappearing behind the slider’s fill",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.10.6",
+      "date": "2026-10-06",
+      "approx": false,
+      "title": "2026.10.6",
+      "notes": [
+        {
+          "text": "Smoother and more responsive, especially with large sets: Knobbler now uses much less memory and processing power while meters are running and sliders are moving",
+          "tag": null
+        },
+        {
+          "text": "Grab a slider, fader or XY pad while it springs back and it follows your finger right away. Before, it moved a little and then stopped until you lifted your finger and grabbed it again",
+          "tag": null
+        },
+        {
+          "text": "New Navigation Panel Width setting on tablets: choose Wide, Normal or Narrow in Setup > Settings",
+          "tag": null
+        },
+        {
+          "text": "Live Set Navigation now animates: tracks, devices and chains slide open and closed as you move around your set",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.9.28",
+      "date": "2026-09-28",
+      "approx": false,
+      "title": "2026.9.28",
+      "notes": [
+        {
+          "text": "On tablets, swipe left and right on the Bluhand page to move between parameter banks. Each bank has its own page, so the next bank’s sliders slide into view as you swipe",
+          "tag": null
+        },
+        {
+          "text": "Fixed a scroll position that could jump on the first touch after switching pages",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.9.24",
+      "date": "2026-09-24",
+      "approx": false,
+      "title": "2026.9.24",
+      "notes": [
+        {
+          "text": "Parameters with many choices, like a filter type, now show every choice as a button in a scrolling list instead of falling back to a slider",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.9.22",
+      "date": "2026-09-22",
+      "approx": false,
+      "title": "2026.9.22",
+      "notes": [
+        {
+          "text": "Edit your set from Live Set Navigation (requires Knobbler4 device v71 or newer). Long-press a track or chain to rename it or change its color, or a device to rename or delete it. Drag devices to reorder them. Group tracks now fold with the arrow button beside them",
+          "tag": null
+        },
+        {
+          "text": "New Plug-in Windows setting (requires Knobbler4 device v71 or newer and Live 12.4.3 or newer): the plug-in window opens automatically as Knobbler moves to a plug-in, and closes when it moves on. Toggle it from the toolbar or Setup > Settings > Device",
+          "tag": null
+        },
+        {
+          "text": "Follow Live Selection is now also in Setup > Settings > Device, next to the new Plug-in Windows setting",
+          "tag": null
+        },
+        {
+          "text": "Settings stored in the Knobbler device, like Level Meters and Follow Selection, are now greyed out until you connect, so they can no longer flip back on their own when the device connects",
+          "tag": null
+        },
+        {
+          "text": "Live Set Navigation shows “No devices” under a track that has none",
+          "tag": null
+        },
+        {
+          "text": "Pressing Refresh no longer scrolls the Mixer and Clips pages back to the start",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.9.14",
+      "date": "2026-09-14",
+      "approx": false,
+      "title": "2026.9.14",
+      "notes": [
+        {
+          "text": "Every page is now ready before you open it. Knobbler loads the Mixer, Clips and Session pages in the background after connecting, so even the first switch from Setup is instant",
+          "tag": null
+        },
+        {
+          "text": "On big sets, the tracks and clips just off screen are already filled in when you scroll to them, instead of appearing a moment later (requires Knobbler4 device v70 or newer)",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.9.13",
+      "date": "2026-09-13",
+      "approx": false,
+      "title": "2026.9.13",
+      "notes": [
+        {
+          "text": "Fixed a Mixer fader that could get stuck showing -inf after pressing Refresh, even though the track in Live was at a normal level",
+          "tag": null
+        },
+        {
+          "text": "Scrolling quickly through a big Mixer or Session page no longer briefly shows the wrong fader or volume on strips coming into view",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.9.12",
+      "date": "2026-09-12",
+      "approx": false,
+      "title": "2026.9.12",
+      "notes": [
+        {
+          "text": "More work on scrolling: the Mixer, Clips and Session pages are now about twice as responsive to your finger. Changing direction mid-drag, or reaching out to stop a moving grid, happens right away instead of a moment later",
+          "tag": null
+        },
+        {
+          "text": "Scrolling now uses your device’s own scrolling, so the fling, the slow-down and the bounce at the edges feel like everything else on your device",
+          "tag": null
+        },
+        {
+          "text": "Faders and sliders respond more immediately, especially on a busy set with meters running",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.9.9",
+      "date": "2026-09-09",
+      "approx": false,
+      "title": "2026.9.9",
+      "notes": [
+        {
+          "text": "Big sets scroll dramatically faster. The Mixer, Clips and Session pages no longer rebuild their contents as you scroll, so panning stays smooth with 50+ tracks",
+          "tag": null
+        },
+        {
+          "text": "Mixer strips now appear the moment the page opens instead of filling in a moment later",
+          "tag": null
+        },
+        {
+          "text": "Fixed a freeze that could happen when scrolling quickly back and forth on a large set",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.8.31",
+      "date": "2026-08-31",
+      "approx": false,
+      "title": "2026.8.31",
+      "notes": [
+        {
+          "text": "Knobbler keeps working after the trial ends. The Knobbler and Bluhand pages, Device Shortcuts and Current Param are now free forever — the same set the original TouchOSC template had",
+          "tag": null
+        },
+        {
+          "text": "The Mixer, Clips, Session and Live Set Navigation pages come with the paid version and now show a on their tab. They stay fully usable during your trial",
+          "tag": null
+        },
+        {
+          "text": "Knobbler is now free to download with the same 30-day trial. If you already bought it, you keep everything — no action needed",
+          "tag": "Android"
+        },
+        {
+          "text": "Full Screen is now on by default, for more room to play. Turn it off in Setup > Settings if you want the status bar back",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.8.12",
+      "date": "2026-08-12",
+      "approx": false,
+      "title": "2026.8.12",
+      "notes": [
+        {
+          "text": "Reorder your Device Shortcuts (requires Knobbler4 device v70 or newer) — tap the Map button, tap a shortcut button to pick it up, then tap another shortcut to swap the two devices (or an empty button to move it there)",
+          "tag": null
+        },
+        {
+          "text": "If you already own Knobbler and are ever asked to purchase it again, the purchase screen now has an “Already bought Knobbler?” link that walks you through getting your access back",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.8.4",
+      "date": "2026-08-04",
+      "approx": false,
+      "title": "2026.8.4",
+      "notes": [
+        {
+          "text": "Track Width: long-press the Width button in the toolbar and slide left or right to resize the track columns on the Mixer, Session, and Clips pages — whatever is in the middle of the screen stays put as they resize. Double-tap the panel to return to 100%; your setting is remembered",
+          "tag": null
+        },
+        {
+          "text": "New Scroll Lock setting (Setup > Settings > Mixer): when on, a fader drag on the mixer page can no longer slip sideways into an accidental left/right pan",
+          "tag": null
+        },
+        {
+          "text": "Fix: on the Clips page, the empty area beside a grid with only a few tracks can now be dragged to scroll",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.6.17",
+      "date": "2026-06-17",
+      "approx": false,
+      "title": "2026.6.17",
+      "notes": [
+        {
+          "text": "Clip progress now appears on the Session page too — playing clips show the same phase pie, play count, and loop length as the Clips page (requires Knobbler4 device v68 or newer)",
+          "tag": null
+        },
+        {
+          "text": "Fix: the What’s New window now scrolls on phone",
+          "tag": null
+        },
+        {
+          "text": "Fix: a recording clip now shows its growing length (bars.beats.16ths) like Live, instead of a huge number",
+          "tag": null
+        },
+        {
+          "text": "A clip slot triggered to record now pulses its border until recording begins (even with the transport stopped), like Live, requires device v68 or newer",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.6.15",
+      "date": "2026-06-15",
+      "approx": false,
+      "title": "2026.6.15",
+      "notes": [
+        {
+          "text": "Live clip progress (requires Knobbler4 device v67 or newer) — playing clips show a phase pie that fills as the clip plays, along with the current beat and play count; clips with a pending stop flash until they actually stop",
+          "tag": null
+        },
+        {
+          "text": "Setup ▸ Connection redesigned for a clearer, simpler connection flow",
+          "tag": null
+        },
+        {
+          "text": "Mixer track-name headers now match the text color and height of the track buttons in the side nav, with return and main tracks showing their icons",
+          "tag": null
+        },
+        {
+          "text": "The Tips popup can now be dragged around the screen, with a swipeable tip carousel",
+          "tag": null
+        },
+        {
+          "text": "Page nav now adapts to smaller tablet screens and windows — tab labels no longer overflow or clip into one another on narrower layouts",
+          "tag": null
+        },
+        {
+          "text": "Fixes: X-Y pad halves that straddle two rows now render instead of disappearing; X-Y pad gradients refresh correctly on rotation and resize",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.6.2",
+      "date": "2026-06-02",
+      "approx": false,
+      "title": "2026.6.2",
+      "notes": [
+        {
+          "text": "Instant page switching, now even on the largest sets — moving between the Knobbler, Bluhand, Mixer, Session, and Clips pages is immediate no matter how big your Live set is",
+          "tag": null
+        },
+        {
+          "text": "Volume fader now mirrors Ableton Live's fader exactly — the handle sits at the same height as Live's fader at every level",
+          "tag": null
+        },
+        {
+          "text": "Fix: Tempo box now works — long-press and slide to nudge the tempo, or tap to type a value",
+          "tag": "Android"
+        },
+        {
+          "text": "Many more reliability and performance enhancements making this the best Knobbler yet!",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.5.25",
+      "date": "2026-05-25",
+      "approx": false,
+      "title": "2026.5.25",
+      "notes": [
+        {
+          "text": "Multiplayer Knobbler (requires Knobbler4 device v64): tap the “Follow Sel” button in the toolbar to unlock a surface from Live's selected track and device so it navigates on its own — run an instance per tablet and each can control a different track and device at the same time",
+          "tag": null
+        },
+        {
+          "text": "Tempo nudge: long-press the Tempo box and slide left or right to change the tempo in 1 BPM steps (a quick tap still opens it for typing)",
+          "tag": null
+        },
+        {
+          "text": "Fix: clip launching touch sensitivity",
+          "tag": "Android"
+        },
+        {
+          "text": "Fix: bluhand parameter mapping no longer cancels its own selection on tap",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.5.24",
+      "date": "2026-05-24",
+      "approx": false,
+      "title": "2026.5.24",
+      "notes": [
+        {
+          "text": "Swap or move a mapping between knobbler slots (requires Knobbler4 device v62) — tap the Map button, tap a mapped slot, then tap another slot to swap the two mappings (or move it, if the target slot is empty)",
+          "tag": null
+        },
+        {
+          "text": "Two-phase mapping redesign: everything mappable outlines green, and the picked source pulses in time with the music so it’s always clear which slot you’re mapping from",
+          "tag": null
+        },
+        {
+          "text": "Cue Points modal (requires Knobbler4 device v63): live transport position with scrub, set the arrangement loop points, plus add and rename cue points right from the app",
+          "tag": null
+        },
+        {
+          "text": "Fixes: slider drag no longer lost when you pause before sliding; mixer sliders no longer stick at the wrong value; variation button alignment and segmented-control selected-text contrast",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.5.19",
+      "date": "2026-05-19",
+      "approx": false,
+      "title": "2026.5.19",
+      "notes": [
+        {
+          "text": "Mixer-to-knobbler mapping (requires Knobbler4 device v60) — tap the Map button, then tap any mixer (volume / pan / sends / mute / crossfader) or bluhand source, then tap a knobbler slot to complete the mapping",
+          "tag": null
+        },
+        {
+          "text": "Page tabs can now be placed at the top or bottom of the screen (Setup → General)",
+          "tag": null
+        },
+        {
+          "text": "Full Screen setting hides the status bar for max screen real estate",
+          "tag": null
+        },
+        {
+          "text": "Mapping outline now flashes in time with the song tempo",
+          "tag": null
+        },
+        {
+          "text": "Mixer sidebar restyled to match the main mixer strip",
+          "tag": null
+        },
+        {
+          "text": "Auto-discovery shows your device IP next to the Connection headline for easier debugging",
+          "tag": null
+        },
+        {
+          "text": "Many UI refinements: standardized border radii, tighter clip rows, cleaner channel strips",
+          "tag": null
+        },
+        {
+          "text": "Fixes: mixer page now shows active channels immediately on first open; tapping a green-outlined bluhand slider in mapping mode correctly selects it as the source",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.5.11",
+      "date": "2026-05-11",
+      "approx": false,
+      "title": "2026.5.11",
+      "notes": [
+        {
+          "text": "Instant page switching — Knobbler, Bluhand, Mixer, Session, and Clips pages stay loaded and switch with no perceptible delay",
+          "tag": null
+        },
+        {
+          "text": "Free trial extension granted to expired-trial users — 30 more days to check Knobbler out again",
+          "tag": null
+        },
+        {
+          "text": "Render coalescing tuned to collapse OSC burst replies into a single frame",
+          "tag": null
+        },
+        {
+          "text": "Many small UI and UX improvements and fixes.",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.5.5",
+      "date": "2026-05-05",
+      "approx": false,
+      "title": "2026.5.5",
+      "notes": [
+        {
+          "text": "Push 3 Standalone support — one-tap connect to push.local on shared Wi-Fi, or 192.168.0.1 in Push hotspot mode",
+          "tag": null
+        },
+        {
+          "text": "Improvements to connecting and testing connections",
+          "tag": null
+        },
+        {
+          "text": "Buttons and clips no longer fire on touch-down — drags now correctly start scrolling/panning even when your finger lands on a button",
+          "tag": null
+        },
+        {
+          "text": "Spring animations now synced to display refresh for smoother motion",
+          "tag": null
+        },
+        {
+          "text": "Improvements to graphics rendering speed",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.4.27",
+      "date": "2026-04-27",
+      "approx": false,
+      "title": "2026.4.27",
+      "notes": [
+        {
+          "text": "Draggable ghost — long-press the origin indicator during a spring animation to drag the target in real-time",
+          "tag": null
+        },
+        {
+          "text": "Tap the spring icon on any animating control to open the release settings overlay",
+          "tag": null
+        },
+        {
+          "text": "Release animations now survive tab switches seamlessly",
+          "tag": null
+        },
+        {
+          "text": "Batched OSC sends during animations for lower network overhead",
+          "tag": null
+        },
+        {
+          "text": "XY pad dot clamped to pad bounds during spring overshoot",
+          "tag": null
+        },
+        {
+          "text": "Tapping Knobbler in the nav bar toggles between page 1 and 2",
+          "tag": null
+        },
+        {
+          "text": "Bigger XY pad touch dot",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.4.22",
+      "date": "2026-04-22",
+      "approx": false,
+      "title": "2026.4.22",
+      "notes": [
+        {
+          "text": "Release modes: time (with easing), rubber band, and gravity — expanding beyond spring-only",
+          "tag": null
+        },
+        {
+          "text": "Release animations persist when navigating away and resume on return",
+          "tag": null
+        },
+        {
+          "text": "Ghost indicator shows touch start position on all sliders with fade animation",
+          "tag": null
+        },
+        {
+          "text": "Connection test retries automatically instead of hanging",
+          "tag": null
+        },
+        {
+          "text": "Fixed light mode button text visibility",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.4.20",
+      "date": "2026-04-20",
+      "approx": false,
+      "title": "2026.4.20",
+      "notes": [
+        {
+          "text": "Adjustable spring duration — long press the Spring button to open a draggable slider (1ms to 100s)",
+          "tag": null
+        },
+        {
+          "text": "Silky smooth sliders — gesture handling moved to the GPU for native framerate response",
+          "tag": null
+        },
+        {
+          "text": "Faster OSC communication with leading-edge coalesced sends",
+          "tag": null
+        },
+        {
+          "text": "Spring mode remembers its target when re-touching during spring-back",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.4.16",
+      "date": "2026-04-16",
+      "approx": false,
+      "title": "2026.4.16",
+      "notes": [
+        {
+          "text": "New Spring (momentary) mode — touch any slider or X-Y pad, drag, release to spring back to its original value",
+          "tag": null
+        },
+        {
+          "text": "Tap any text below a slider to select that track on Knobbler pages, not just the track name",
+          "tag": null
+        },
+        {
+          "text": "Tempo display always shows 2 decimal places",
+          "tag": null
+        },
+        {
+          "text": "Fixed crash from invalid color values",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.4.11",
+      "date": "2026-04-11",
+      "approx": false,
+      "title": "2026.4.11",
+      "notes": [
+        {
+          "text": "What's New page in Setup and popup on version update",
+          "tag": null
+        },
+        {
+          "text": "Typography improvements",
+          "tag": null
+        },
+        {
+          "text": "Light mode volume slider tick marks",
+          "tag": null
+        },
+        {
+          "text": "Faster startup and smoother animations",
+          "tag": null
+        },
+        {
+          "text": "Fixed Cue Points dialog",
+          "tag": "Android"
+        },
+        {
+          "text": "Visual gap above return tracks and main track in nav",
+          "tag": null
+        },
+        {
+          "text": "Consistent feeling clips panning between Clips and Session pages",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.4.7",
+      "date": "2026-04-07",
+      "approx": false,
+      "title": "2026.4.7",
+      "notes": [
+        {
+          "text": "Buttons now support multitouch — tap buttons while using sliders",
+          "tag": null
+        },
+        {
+          "text": "Feedback tab is now always accessible from Setup",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.4.3",
+      "date": "2026-04-03",
+      "approx": false,
+      "title": "2026.4.3",
+      "notes": [
+        {
+          "text": "Auto, Light, and Dark appearance modes",
+          "tag": null
+        },
+        {
+          "text": "Remembers your last page across app restarts",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.3.31",
+      "date": "2026-03-31",
+      "approx": false,
+      "title": "2026.3.31",
+      "notes": [
+        {
+          "text": "Knobbler Tips page with usage tips and tricks",
+          "tag": null
+        },
+        {
+          "text": "Long press the help button to jump to Tips",
+          "tag": null
+        },
+        {
+          "text": "Fixed nav panel width on iPad resize",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.3.29",
+      "date": "2026-03-29",
+      "approx": false,
+      "title": "2026.3.29",
+      "notes": [
+        {
+          "text": "Session page with combined clips and mixer view (iPad)",
+          "tag": null
+        },
+        {
+          "text": "Scene overview bar with tap and pan navigation",
+          "tag": null
+        },
+        {
+          "text": "Clip and scene long press actions (rename, color, delete)",
+          "tag": null
+        },
+        {
+          "text": "Transport controls beside session mixer",
+          "tag": null
+        },
+        {
+          "text": "Restore Purchases button on phone",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.3.27",
+      "date": "2026-03-27",
+      "approx": false,
+      "title": "2026.3.27",
+      "notes": [
+        {
+          "text": "Fixed purchases not syncing across devices",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.3.26",
+      "date": "2026-03-26",
+      "approx": false,
+      "title": "2026.3.26",
+      "notes": [
+        {
+          "text": "Fixed a crash when receiving certain messages",
+          "tag": null
+        },
+        {
+          "text": "Stop button for empty clip slots",
+          "tag": null
+        },
+        {
+          "text": "Fixed toggle controls not reflecting current state",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.3.25",
+      "date": "2026-03-25",
+      "approx": false,
+      "title": "2026.3.25",
+      "notes": [
+        {
+          "text": "Improved clips grid scrolling on iOS",
+          "tag": null
+        },
+        {
+          "text": "Support for one-tap connection",
+          "tag": null
+        },
+        {
+          "text": "Auto-discovery results sorted by address",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.3.24",
+      "date": "2026-03-24",
+      "approx": false,
+      "title": "2026.3.24",
+      "notes": [
+        {
+          "text": "Smoother clips grid scrolling with GPU acceleration",
+          "tag": null
+        },
+        {
+          "text": "Fixed solo muting for return and main tracks",
+          "tag": null
+        },
+        {
+          "text": "Muted channels show subtle meter colors",
+          "tag": null
+        },
+        {
+          "text": "Consistent touch target sizes across the app",
+          "tag": null
+        },
+        {
+          "text": "Fixed pan slider in sends modal",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026.3.1",
+      "date": "2026-03-01",
+      "approx": false,
+      "title": "2026.3.1",
+      "notes": [
+        {
+          "text": "Phone layout overhaul — unified pages, swipeable mixer sidebar",
+          "tag": null
+        },
+        {
+          "text": "Toolbar toggle button on all page nav bars",
+          "tag": null
+        },
+        {
+          "text": "Auto-polling device discovery (no more refresh button)",
+          "tag": null
+        },
+        {
+          "text": "Long press pan knob to open sends modal",
+          "tag": null
+        },
+        {
+          "text": "Nav panel stays on clips/mixer when tapping tracks",
+          "tag": null
+        },
+        {
+          "text": "Selected track auto-centers on clips and mixer pages",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2026 Q1",
+      "date": "2026-02-15",
+      "approx": true,
+      "title": "2026 Q1",
+      "notes": [
+        {
+          "text": "Mixer page with multi-track channel strips, volume meters, and track overview bar with drag-to-navigate",
+          "tag": null
+        },
+        {
+          "text": "X-Y pad with join/split UI, automation indicators, and two-finger precision mode",
+          "tag": null
+        },
+        {
+          "text": "Batched OSC protocol for lower network overhead and faster slider response",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2025 Q4",
+      "date": "2025-11-15",
+      "approx": true,
+      "title": "2025 Q4",
+      "notes": [
+        {
+          "text": "Multi-button support with quantization toggle — buttons now execute multiple actions",
+          "tag": null
+        },
+        {
+          "text": "Improved Bluhand title hit targets and gesture responsiveness",
+          "tag": null
+        },
+        {
+          "text": "Tempo edit bug fixes and UI refinements",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2025 Q3",
+      "date": "2025-08-15",
+      "approx": true,
+      "title": "2025 Q3",
+      "notes": [
+        {
+          "text": "In-app purchase model with free trial on iOS",
+          "tag": null
+        },
+        {
+          "text": "Group track expand/collapse via long-press with visual feedback",
+          "tag": null
+        },
+        {
+          "text": "Tablet and phone layout refinements including larger toolbar buttons and responsive margins",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2025 Q2",
+      "date": "2025-05-15",
+      "approx": true,
+      "title": "2025 Q2",
+      "notes": [
+        {
+          "text": "Current Param display — see the active parameter name and value at a glance",
+          "tag": null
+        },
+        {
+          "text": "Variations support for Ableton Live instruments",
+          "tag": null
+        },
+        {
+          "text": "Device port configuration",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2025 Q1",
+      "date": "2025-02-15",
+      "approx": true,
+      "title": "2025 Q1",
+      "notes": [
+        {
+          "text": "Knobbler and Bluhand pages with banks and shortcuts for hardware control mapping",
+          "tag": null
+        },
+        {
+          "text": "Auto-discovery of Ableton Live instances on local network with tap-to-connect setup flow",
+          "tag": null
+        }
+      ]
+    },
+    {
+      "side": "app",
+      "version": "2024 Q4",
+      "date": "2024-11-15",
+      "approx": true,
+      "title": "2024 Q4",
+      "notes": [
+        {
+          "text": "Knobbler OSC app for controlling Ableton Live",
+          "tag": null
+        },
+        {
+          "text": "Slider controls with real-time OSC-based modulation",
+          "tag": null
+        }
+      ]
+    }
+  ],
+  "deviceReleases": [
+    {
+      "side": "device",
+      "version": "v74",
+      "date": "2026-11-11",
+      "approx": false,
+      "title": "Button Slots, Variations & Split View Support",
+      "notes": [
+        "**Buttons, not just faders.** Any Knobbler slot can now be a Momentary or Toggle button instead of a continuous fader. In the app's Layout mode, pick a mapped slot and choose Momentary or Toggle; it jumps between two values you set, which default to the parameter's full range (min and max). Momentary holds the on value while pressed; Toggle flips between the two. Requires forthcoming Knobbler app version 2026.11.6 or newer.",
+        "**A rack's variations on a Knobbler page.** A slot can now hold an Instrument or Audio Effect rack's macro variations instead of a parameter, recalling them from the page like buttons. Map it from Bluhand: tap the Map button, tap the rack's variations, then tap a Knobbler slot. A variation shows an asterisk (\"2*\") once you've nudged a macro away from what it stored, and tapping it again restores it. Requires Knobbler app 2026.10.10 or newer.",
+        "**Support for Split view.** Forthcoming app version 2026.11.6 contains a new Split view, which lets you display any two app pages, one above the other.",
+        "**Scene launch and stop feedback.** On the Clips page, a scene button now blinks while its scene waits to start — the same quantized \"launched, waiting for the bar\" feedback a single clip already gave — and the Stop All button blinks while everything playing waits to stop. The same feedback appears in the forthcoming Split view, in Knobbler app 2026.11.6 or newer. Requires Knobbler app 2026.10.10 or newer.",
+        "**OSC API Updates** A user request to enable integrating other tools with Knobbler, this adds a `/mapN {path}` endpoint that allows parameters to be mapped to a Knobbler slot by the parameter's Live API path. Thanks Mike ([Dream Reactor](https://dreamreactor.net/))! See the [OSC-API](https://plugins.steinkamp.us/m4l-Knobbler4/OSC-API#tablet-to-knobbler4) doc for detail."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/4214c067-8a7e-4e59-a8b9-d059d2baecf2",
+        "https://github.com/user-attachments/assets/1443bd39-aa5d-4a59-8338-c8260d7db9d1"
+      ],
+      "videos": [
+        "https://github.com/user-attachments/assets/7447614b-4a74-4822-8d35-1d8528422f98"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v73",
+      "date": "2026-10-10",
+      "approx": false,
+      "title": "Named Knobbler Pages",
+      "notes": [
+        "**Named Knobbler pages.** Knobbler is no longer limited to two pages of 16. A Live set can now have up to 16 pages, each with its own name, and the app's new **Layout** mode lets you drag faders and XY pads to any spot on any page. Pages are added, renamed, reordered and deleted from the app. Requires forthcoming Knobbler app version 2026.10.9 or newer.",
+        "**One Knobbler tab on the device.** The device panel now has a single Knobbler tab with a page menu above the slots, kept in step with the app in both directions. The page shown can be automated: turn on Automate Page Chg and record the \"Knobbler Page\" parameter.",
+        "**Heads up for existing Page automation.** The Page tab's entries are now Knobbler, Bluhand, Clips, Mixer, Session. With \"Knobbler 2\" gone, existing automation of the Page parameter points one entry later than before (what selected Bluhand now selects Clips).",
+        "**Fixes and housekeeping.** Unmapping from the device panel now sticks instead of coming back on the next refresh. Knobbler's settings are now stored in one place within the set, and mappings in older sets carry over when they're opened. Mapped parameters follow track and device moves without the device checking every second, so large Knobbler setups cost less while nothing is changing."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/5a50a2de-d2b1-4bd4-a590-afa7953f046e",
+        "https://github.com/user-attachments/assets/df79f770-915c-4cc6-ab5d-26fb3066ca70",
+        "https://github.com/user-attachments/assets/c893a94f-0ba0-4525-825b-14b289fe6a12"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v72",
+      "date": "2026-10-07",
+      "approx": false,
+      "title": "Master Cue Volume + Operator Bank Rework",
+      "notes": [
+        "**Master cue volume.** The master track's cue (preview/headphone) volume can now be controlled from the app, and mapped to any Knobbler slot like other parameters. Requires forthcoming Knobbler app version 2026.10.7 or newer. Thanks Knobbler user Sam Beard for the request!",
+        "**Operator banks reworked.** The Oscillator A–D pages now control each oscillator's **waveform** in place of its level-from-velocity amount. Those velocity amounts moved to a new **Osc Extras** page, alongside each oscillator's phase."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/abcd12b4-29aa-4054-94cc-12d03fa08928",
+        "https://github.com/user-attachments/assets/0c79fb29-897b-40a9-9187-345a4f8f9b1f",
+        "https://github.com/user-attachments/assets/40d206b9-348e-4026-9f00-a960e0cac592"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v71",
+      "date": "2026-09-22",
+      "approx": false,
+      "title": "Edit Your Set From the Nav Panel",
+      "notes": [
+        "New opt-in **Auto-Open Plug-in Windows** mode, from the app or the checkbox on the device's Bluhand page: as you move between devices, the plug-in editor window for the one you left closes and the new one's opens. Off by default. Needs Live **12.4.3** or newer — on older versions the control is disabled rather than quietly doing nothing.",
+        "The nav panel is no longer read-only. Long-press any row to **rename it, recolor it, reorder devices, or delete one** — tracks, devices and chains, without reaching for the computer. Live snaps colors to the nearest one in its own chooser, so you get the same color you'd have picked in Live. Requires the Knobbler app **2026.9.22** or later.",
+        "Deleting is deliberately narrow: devices and racks only, never a track or a chain, and never the Knobbler device your app is talking through.",
+        "**Fixes**",
+        "- Recoloring a track now updates its channel strip immediately, instead of holding the old color until you navigate away and back. - Jumping to, renaming or deleting a cue point no longer acts on the wrong cue after the cue list has changed.",
+        "**Under the hood**, another round of the memory work from v66. Reconnecting the app used to throw away and rebuild a whole channel strip's worth of Live watchers every time, and browsing devices on the Bluhand page leaked a little on every device and bank change. Both now reuse what they already have, so long sessions on large sets hold their performance better."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/62fcdf8b-84d5-46c0-bd5e-605de45a0873"
+      ],
+      "videos": [
+        "https://github.com/user-attachments/assets/a46e408d-7376-42cf-9e52-1162bf4d241e",
+        "https://github.com/user-attachments/assets/129e35d5-7b08-488d-9dd5-e574c289d5e8",
+        "https://github.com/user-attachments/assets/e33babd3-2cae-4ed9-892f-6ffa44d419af"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v70",
+      "date": "2026-09-14",
+      "approx": false,
+      "title": "Support for Pre-loading Clips and Mixer Tracks",
+      "notes": [
+        "Scrolling the Mixer and Clips pages on a large set now shows **real values the moment a strip or clip slot comes into view**. Knobbler used to know only about what was on screen, so anything a scroll revealed sat empty or stale until the device caught up. The device now fills in everything off screen in the background, so the page is already populated when you get there. Requires the Knobbler app **2026.9.14** or later.",
+        "Faders and buttons on a strip you've just scrolled to now **control Live immediately**. Before, a touch that landed before the device had caught up with the scroll was quietly ignored.",
+        "Under the hood, the device still only *watches* what's on screen — watching every strip and clip slot would strain Live on a big set. It reads the rest at a gentle pace instead: short slices of work with pauses in between so Live stays responsive, a longer rest between full passes on bigger sets, and only what has actually changed gets sent to the app.",
+        "The device panel also reads \"intentionally blank\" on the Clips, Mixer and Session pages, which have no controls on the device itself."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/6db48f60-22e0-402b-a3f6-9ba1d52bac05",
+        "https://github.com/user-attachments/assets/20d146ff-2b31-4943-87f5-748934e1ad90"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v69",
+      "date": "2026-08-11",
+      "approx": false,
+      "title": "Blue Hand Follows Rack Chains",
+      "notes": [
+        "The device page now follows Live's **blue hand**, so selecting a chain inside a rack switches the controls to that chain's device instead of staying on the rack. If you use racks to hold a chain per song, the surface now gives you that chain's macros as you switch.",
+        "Under the hood, Live keeps two separate \"current device\" pointers and they disagree inside racks: clicking a chain moves the blue hand into the chain, but leaves the track's *selected device* pointing at the rack. Knobbler was watching the latter, which is why the device page stuck on whichever device you clicked first.",
+        "Note: the blue hand only exists when a control surface is configured in Live's Preferences (Link/Tempo/MIDI). Without one, Live stops maintaining that pointer, so Knobbler falls back to the previous behavior of tracking the selected device.",
+        "Thanks to Jamie for reporting this."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/852eac52-9cba-4941-b3c4-c329b0ad2e8d"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v68",
+      "date": "2026-06-21",
+      "approx": false,
+      "title": "Recording Clip Feedback, Meters On by Default",
+      "notes": [
+        "This release improves feedback while recording Session clips:",
+        "- A recording clip now reports a **growing length**, streamed live as bars.beats.16ths, so you can watch it grow as you record. - Clips that are armed-and-waiting now show a distinct **pending-record** state, so it's clear what's about to capture versus what's already rolling. Requires app version 2026.6.17 ore newer to make use of this. - Level **meters now default on** for new device instances.",
+        "As always, the app and device negotiate capabilities and use only the features they have in common, so you can mix and match versions freely — update one side, or roll back to reopen an older set, and it just works."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/209af73f-f0dd-404c-84f3-81d89c3a0063",
+        "https://github.com/user-attachments/assets/e027722d-71f7-4b53-9b3d-b0620017e7f8"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v67",
+      "date": "2026-06-16",
+      "approx": false,
+      "title": "Live Clip Progress, Mixer Meter Fix",
+      "notes": [
+        "This release adds a live progress indicator to the Session clip grid. The phase pie and the pending-stop flash now stream in real time from the playing clip, so you can see exactly where each clip is in its loop right from your device. (Throttled and gated on transport playback to keep it light.)",
+        "Other fixes in this release:",
+        "- Mixer meters no longer print a warning on MIDI tracks. - Documentation: consolidated the USB / link-local connection guide.",
+        "As always, you can mix and match app and device versions freely — they negotiate capabilities and only use what they have in common, so updating one side or rolling back to reopen an older set just works."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/6ebc5856-0023-49f5-b8f3-155c88b5608c"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v66",
+      "date": "2026-06-03",
+      "approx": false,
+      "title": "Massive Efficiency Gains, Theme Fixes, Track Rename Fix",
+      "notes": [
+        "This release contains a massive amount of under-the-hood work on keeping the device footprint as small as possible in your Live Set. This has been a week of learning for me about how the Max symbol table operates, and how Max for Live interacts with it in good and bad ways. The result is a much leaner and faster Knobbler. I hope you can feel it too.",
+        "Additionally, this release contains fixes for non-dark themes. Rookie move. (shaking my head)",
+        "There's also a bugfix around track renaming or changing color. It's now tracked in real time in Knobbler as it should have been."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/c1a7e263-fc8f-47e7-8df4-c079bbf17554",
+        "https://github.com/user-attachments/assets/8a469c8a-26c1-487b-b3f0-f0fa69b3cc13",
+        "https://github.com/user-attachments/assets/aea95946-fa64-417d-94a0-07070c4517a8"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v64",
+      "date": "2026-05-26",
+      "approx": false,
+      "title": "Support multiplayer Knobbler; UTF-8 fix",
+      "notes": [
+        "With app version 2026.5.25 or newer: Multiplayer Knobbler! Knobbler can now be disconnected from Live's \"selected track\" and \"selected device\" and navigate its own path — tap **Follow Sel** in the toolbar to unlock a surface, so multiple tablets can each drive their own track/device in one Live Set.",
+        "Also fixed a packet-encoding bug: things would break (blank nav/clips/mixer) if a track or clip name contained a non-ASCII (UTF-8) character."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/67c3d5b4-932b-4c6d-995e-5c8e37faf1d9"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v65",
+      "date": "2026-05-26",
+      "approx": false,
+      "title": "Back to Arrangement; multiplayer reliability",
+      "notes": [
+        "Requires the latest app version to expose the new Back to Arrangement button.",
+        "**Back to Arrangement** — a new toolbar button mirrors Live's own. When Session clips override Arrangement playback, tap it to return playback to what's written in the Arrangement. It lights up orange whenever an override is active.",
+        "**Multiplayer reliability** — clip views now keep updating through long multiplayer sessions. Clip and mixer observers are bounded to a warm buffer around the viewport instead of growing without limit.",
+        "**Efficiency** — a new columnar OSC encoding (`col`) sends arrays of objects as named columns plus bare-value rows instead of repeating keys in every record, and any oversized payload is now chunked generically (`chunkAny`) — cutting bandwidth and packet overhead on busy clip grids and large sets."
+      ],
+      "images": [
+        "https://raw.githubusercontent.com/zsteinkamp/m4l-Knobbler4/main/docs/images/ipad-toolbar-back-to-arrangement.png"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v63",
+      "date": "2026-05-24",
+      "approx": false,
+      "title": "Arrangement Transport & Cue Points",
+      "notes": [
+        "Arrangement transport control via the new `pos` capability: stream the song-position playhead (throttled ~20Hz) with song length and time signature, and scrub it from the app (`/scrub`). Stream the arrangement loop brace (`loop_start`/`loop_length`) with inbound `/loopStart` + `/loopLength` to set the loop edges. Add or remove a cue point at the playhead (`/addCuePoint`), rename one (`/renameCuePoint/`), and jump-and-delete (`/deleteCuePoint`). Reconnecting clients get cue points and position re-pushed.",
+        "Requires app version 2026.5.24 or newer."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/6c473745-719d-4af1-8894-ff53c8c35019"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v62",
+      "date": "2026-05-23",
+      "approx": false,
+      "title": "Support for Swap; Reliability Fix",
+      "notes": [
+        "With app version 2026.5.22 or newer, swap or move a slot's mapping to another slot via the new `swap` capability. XY pairs survive a swap (only a move out of a pair splits it). Fix: detach Bluhand cue-point observers before dropping them."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/e8f5e689-a26e-4cbd-93e8-748f68dcc000",
+        "https://github.com/user-attachments/assets/96d11ae3-f12a-4435-9750-34a8d687f22f",
+        "https://github.com/user-attachments/assets/f3ed0cc8-c4b9-443e-83a7-89688e1c320f"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v61",
+      "date": "2026-05-22",
+      "approx": false,
+      "title": "Massive performance update, works with 12.3 again",
+      "notes": [
+        "Massive rearchitecture yielding big leaps in speed and efficiency. Works on Live 12.3 (and earlier) again.",
+        "Reworked the Max patch from a dozen [v8] nodes with a message-based routing infrastructure to a single [v8] with internal routing. Patcher simplified dramatically. Performance improved dramatically. Opportunities for efficiency abound.",
+        "Migrated from Live 12.4 / Max 9.1 specific [udpsend] usage (rawbytes) to conditionally use it if the Max is new enough. Otherwise falls back on using [udpsend] as usual. Also disables batching for older Max to avoid symbol table pollution problems that JSON payloads can create. See https://steinkamp.us/posts/2026-05-15-knobbler-and-the-max-symbol-table",
+        "Before:",
+        "After:",
+        "This version also introduces a new dict-based settings system that will bring new possibilities and reliability in the future. I plan to support legacy+new storage for 5 versions or a couple of months, then remove the legacy bridge settings code."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/f9604725-6cc3-459b-a7ef-85e45263294f",
+        "https://github.com/user-attachments/assets/4abc5ad3-cc12-4f65-9b2e-51c8df8e4ed0"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v60",
+      "date": "2026-05-20",
+      "approx": false,
+      "title": "WARNING: 12.4 ONLY Mixer mapping, migrate to [v8], implicit mute by solo",
+      "notes": [
+        "UPDATE / NOTE: THIS RELEASE ONLY WORKS WITH Live 12.4 / Max 9.1 -- v61 restores compatability with 12.3 / 0.0",
+        "This release is a big one!",
+        "The big under the hood change is a migration from the legacy [js] (2011-era SpiderMonkey JS interpreter) to [v8] (modern, fast JS interpreter). This had a big cascading effect with huge positive performance impact for Knobbler. The biggest takeaway I cataloged here: https://steinkamp.us/posts/2026-05-15-knobbler-and-the-max-symbol-table",
+        "User-facing changes include support for the /mkMapN OSC messages, which the app uses to map Mixer elements to Knobbler sliders. In a future app release (>= 2026.5.19) there is a toolbar button to engage \"Mapping\" mode, where mixer elements indicate their ability to be mapped, tap one of them, then tap a Knobbler slider. The Main track Crossfader is supported too.",
+        "The mixer module also watches \"mute_by_solo\" on tracks so that their mute status can be propertly displayed when other tracks are soloed."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v59",
+      "date": "2026-05-12",
+      "approx": false,
+      "title": "P3SA Multi-Device Support, Optimize Performance",
+      "notes": [
+        "This release enables Push 3 Standalone users to run multiple Knobblers instances and devices.",
+        "It does this by exposing the device listen port as a numeric parameter, so it can be changed on the P3SA.",
+        "It also includes a performance optimization where single-message OSC sends bypass the batcher."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/71c7885d-f22c-47ed-b761-9895a6f8ad57"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v57",
+      "date": "2026-04-28",
+      "approx": false,
+      "title": "Performance for Physics",
+      "notes": [
+        "This is a purely under-the-hood release with changes in Knobbler's core message sending and receiving architecture.",
+        "Forthcoming app changes will put different stresses on Knobbler, with the potential for many simultaneous continuous oscililations of parameter values from experimental physics-based models in Knobbler's controls. Fling an X-Y control around its original position and let it orbit forever."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/1984a9f3-4537-4dda-bd21-d64e67c7944d",
+        "https://github.com/user-attachments/assets/e20e48c9-5623-44d6-872b-1bea43eb1293"
+      ],
+      "videos": [
+        "https://github.com/user-attachments/assets/7b44f933-7900-4002-bc9f-0a7d0e989fc7"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v58",
+      "date": "2026-04-28",
+      "approx": false,
+      "title": "Honor \"Select on Launch\" Preference",
+      "notes": [
+        "Honor Live's \"Select on Launch\" preference when firing clips and scenes from the Knobbler clip view -- previously these always selected the launched clip/scene regardless of the preference. Thanks to u/Jorne555 on Reddit for the report!"
+      ],
+      "images": [],
+      "videos": [
+        "https://github.com/user-attachments/assets/918241d4-01f5-498a-8bc9-df08bcfcec8e"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v56",
+      "date": "2026-04-22",
+      "approx": false,
+      "title": "Live 12.4 Readiness, P3SA",
+      "notes": [
+        "This release focuses on readiness for Live 12.4.",
+        "In this upcoming version, many parameter names were renamed. Thanks so much to Knobbler user extrordinaire Niels Otto for alerting me to the problems in the 12.4 Beta. In doing this project, I simplified how the relationship between devices and parameter names is expressed. I moved it from a strange decompilation of the Push 2 control surface script and run through many text transformation filters to generate a valid Javascript file, then manual tweaks of course to make it work.",
+        "This new version is a YAML file that is read by a preprocessor who outputs Javascript with the same interface as the original monstrosity.",
+        "This version also adds a dozen devices to the list of custom device-banks in the YAML files. I hand-tuned them, but if you have ideas for better organization then please let me know or open a pull request on `src/deviceBanks.yaml`.",
+        "Thanks again Niels! 🫶",
+        "This update contains two .amxd files. - Knobbler4-v56.amxd -- The update you should use in your Live Sets. - Knobbler4-Push3Standalone-v56.amxd - An experimental version to be used with the Push 3 Standalone.",
+        "There is also a README.txt file with P3SA instructions and a plea :)"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/d9c9078f-b55f-41f8-8147-d53867f2e7ad",
+        "https://github.com/user-attachments/assets/c384af22-0302-47f8-897b-42c0b7e6a90d"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v55",
+      "date": "2026-04-13",
+      "approx": false,
+      "title": "Multi-device X-Y fix; Experimental performance boost",
+      "notes": [
+        "Per-instance settings for multi-device support (X-Y pairs and meters state are now independent per device); Session page tab; Experimental performance improvement for mixer and clip view scrolling."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/38ed584e-e0ac-4885-aca6-a7fa698b0410"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v54",
+      "date": "2026-03-31",
+      "approx": false,
+      "title": "Session view",
+      "notes": [
+        "Provides support for verion 2026.3.31 of the app, which includes a new Session view. This version of the device contains changes to support that view, along with other performance enhancements designed to limit data floods when changing tracks rapidly."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/a8a2ecbf-e77e-49c1-acc6-3ecf07c9acb8"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v53",
+      "date": "2026-03-25",
+      "approx": false,
+      "title": "Clips View!",
+      "notes": [
+        "Another big release for Knobbler this year -- Clips view! Requires app version 2026.3.24, whivh ias currently in beta, but update to be ready for it.",
+        "Full-screen multi-track mixer with per-strip observers and output meters; Clip view with grid state, scene management, clip launching/recording/deleting, and color editing; Current parameter display with lock/unlock; Sidebar mixer with real-time volume/pan strings; Auto-config for streamlined setup; OSC message batching for improved network performance; Solo count reporting; Live track color sync in nav and mixer; Fix LiveAPI .id string comparison bugs that caused console errors on track/device changes; Many stability and performance improvements."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/b070c9f0-b34b-4119-8e52-78daa6853bdc"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v52",
+      "date": "2026-03-03",
+      "approx": false,
+      "title": "Mixer View; Data Bundling; Efficiency and Reliability",
+      "notes": [
+        "This is a huge release! Inspired by the most popular end-user request, version 52 of the Knobbler4 device now has support for a Mixer View!",
+        "This functionality will be fully available once the new version of the app makes its way to the Apple App Store and Google Play Stores. I expect that to happen before Friday, March 6.",
+        "Support for real-time meters, even in multi-channel mixer view through the use of an efficient batching approach.",
+        "Intelligently allocates and re-uses resources in Ableton Live to scale to very large sets.",
+        "New communication architecture to chunk and batch OSC messages. Helps prevent against network floods and dropped messages.",
+        "A thorough reworking of how LiveAPI objects are allocated and re-used in the device. These changes have eliminated crashes and dramatically reduced CPU usage and \"spinning beach ball\" moments."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/7193e487-8d48-476c-b379-eff69582ea77"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v51",
+      "date": "2026-02-15",
+      "approx": false,
+      "title": "X-Y Support; Large Set Reliability",
+      "notes": [
+        "This is a significant release in that it contains support for X-Y controls in the forthcoming 2026.2.14 release of the app. In addition, large sets should work perfectly with Knobbler now. Large track and device inventory messages are now sent in smaller chunks and reassembled on the app side.",
+        "https://youtube.com/shorts/CtO5K97r9Wg"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/ec8380b4-806c-4aaa-9e3d-b04ce2031136"
+      ],
+      "videos": [
+        "https://youtube.com/shorts/CtO5K97r9Wg"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v50",
+      "date": "2026-02-03",
+      "approx": false,
+      "title": "Adds support for undo and redo toolbar buttons.",
+      "notes": [
+        "Adds support for Undo/Redo buttons when used with version 2026.2.3 of the app or newer."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/0583030c-c5d9-498e-bd65-dfdb9500553a"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v49",
+      "date": "2026-01-30",
+      "approx": false,
+      "title": "Handle `/playCuePoint` message",
+      "notes": [
+        "This update supports a forthcoming app update that adds a play button next to each cue point."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/a4efaa08-6350-4337-896e-b165762153f5"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v48",
+      "date": "2025-12-12",
+      "approx": false,
+      "title": "Send Cue Point display time",
+      "notes": [
+        "This release is a small change to add Bars.Beats.16ths display to cue points display. This requires the forthcoming Knobbler app version 2025.12.12."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/2247332c-138e-4e64-b049-5ce3ede0daba"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v47",
+      "date": "2025-10-23",
+      "approx": false,
+      "title": "Cue Points Support",
+      "notes": [
+        "This release adds the `/cuePoints [...]` OSC message to populate a list of cue points in the next app release.",
+        "It also handles the message `/gotoCuePoint N` which is what the app sends when a cue point is chosen."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/1ae69e9a-f62a-46f7-8df3-c1c03c2e63c9"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v46",
+      "date": "2025-10-07",
+      "approx": false,
+      "title": "Support for Multi-Buttons",
+      "notes": [
+        "This release adds the `/quantItemsN {list}` OSC message for a parameter. For quantized parameters, this message will contain a JSON-encoded list of value names for each quantized step.",
+        "This is used by a forthcoming version of the Knobbler app (2025.10.7) to display multiple buttons for parameters with between 3-8 quantized items."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/712b078b-a693-40f2-ac3d-590a14945892"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v45",
+      "date": "2025-10-06",
+      "approx": false,
+      "title": "Support for button UI for toggles",
+      "notes": [
+        "This release adds support for a forthcoming app release that supports toggle buttons in the UI instead of sliders for parameters with two possible states. This is done with the OSC message `/quantN X` where N is the slider slot number and X is the number of states, with 0 meaning continuous. If X==2, then the slider will be changed to a button.",
+        "Update now to be ready for the app update :)"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/517e5720-d9d5-47a0-8f74-53831cde9c87",
+        "https://github.com/user-attachments/assets/8748228d-8971-46d2-93a1-e44f661bfd51"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v44",
+      "date": "2025-09-15",
+      "approx": false,
+      "title": "Fix missing VST param bug",
+      "notes": [
+        "Thanks Peter Bäckgren for the bug report!",
+        "This release reverts a change in v42 that removed the last param from VST devices with the intent of fixing a CPU hog issue when changing presets with some plugins that do not emit parameter names/values in a friendly way.",
+        "There is still a bit of a CPU hit now, but it is better than before. Enjoy all of your VST parameters now!"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/7fd13693-ee41-4827-87d4-8e02ae9dccc5"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v43",
+      "date": "2025-09-04",
+      "approx": false,
+      "title": "Observe track record arm status",
+      "notes": [
+        "This release is a small bugfix. Somehow I had overlooked the need to observe the track's record arm status and report it to the mixer panel running in Knobbler. This change fixes that, so now toggling record arm status in the Live UI is properly reflected in the Knobbler UI."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/2e6d2f7a-0665-438a-b3f9-d28c91b6fdc2"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v42",
+      "date": "2025-09-03",
+      "approx": false,
+      "title": "Fix VST Preset Bug",
+      "notes": [
+        "Thanks u/Ahfekz on Reddit for alerting me to a bug where in most VST instrument plugins, changing presets would often bring the system to its knees if Knobbler was in the set. I have found the culprit -- when changing presets, VSTs will emit all parameters, and some will do so into the same parameter slot in Ableton. This was causing a flurry of activity being sent to the tablet, as the last slider on a Bluhand page was receiving every parameter value.",
+        "Some VSTs do this right (TAL J-8 is one that does) and most that I tried do it wrong (Moog Mariana, g-Force plugins, etc). The ones that do it right have a parameter slot per parameter, the ones that do it wrong just send every parameter into the same slot.",
+        "Anyhow, I did some defensive coding in Knobbler to protect agains these cases. There is still a bit of a CPU jolt when changing presets but it is far far less impactful than before, at least in my testing.",
+        "This release also lays the foundation for a better chain navigation UX that requires an app update to complete. Once that is out, when looking at a rack in the Navigation pane, you can tap on the chain item to show the list of chains again. Previously a tap on a chain item had no impact and thus navigating to chains was cumbersome.",
+        "No visual changes in this one."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/03b23144-7351-4f89-a341-db6395444f77"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v41",
+      "date": "2025-08-02",
+      "approx": false,
+      "title": "Optional Page Automation",
+      "notes": [
+        "This relase makes automating page changes optional.",
+        "The page automation feature was originally added to make it possible to change Knobbler pages via automation in Arrangement view, but had the poor side effect of recording automation for all page changes while recording, which is not what most people want.",
+        "Thanks Jamie Lidell for the suggestion and feedback!"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/f919bcf3-2e38-4198-8fe7-ad6036aa996d"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v39",
+      "date": "2025-07-21",
+      "approx": false,
+      "title": "/toggleGroup and Better Help",
+      "notes": [
+        "This release adds support for receiving a new /toggleGroup {ID} OSC message. This message causes a given Group Track to be expanded or collapsed, depending on its current fold state.",
+        "It also improves the contextual help in Live, both in tooltips and in Help / Info text (mouse not shown hovering over Port box).",
+        "Also adds a \"Quick Start\" section to the help pop-up."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/3af0e769-78c3-4699-a4c2-fd2b4b7ed6eb",
+        "https://github.com/user-attachments/assets/626bd44f-6418-4a4a-9fb3-5a96fb329207"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v40",
+      "date": "2025-07-21",
+      "approx": false,
+      "title": "Chain color for Bluhand and Current Param Slider",
+      "notes": [
+        "This release improves the Bluhand and Current Param Slider experience by using the chain color if applicable.",
+        "Previously, those components would only use the containing track color. It is possible to set custom colors for rack chains, so those colors are now honored."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/352330c4-5ac9-413a-a0b8-03e39c1a46df"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v38",
+      "date": "2025-07-14",
+      "approx": false,
+      "title": "Rework app discovery UX",
+      "notes": [
+        "This release improves the app discovery and selection process to be more intuitive and reliable. Fixes a bug where discovery was not initiatied on device startup, causing unnecessary frustration for new users. Presents a prompt in the list to select a Knobbler App or to notify that no apps were found."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/ffd0ea48-bfa4-476a-acff-d90ad71f610b",
+        "https://github.com/user-attachments/assets/a7c3b50e-0d0d-4f85-97b6-25364bbb9caa"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v37",
+      "date": "2025-07-08",
+      "approx": false,
+      "title": "Keepalive /ping /pong; Fix color issue",
+      "notes": [
+        "This release supports a forthcoming app feature where a `/ping` message will be sent every 5 seconds. The device will answer that message with an immediate `/pong` response. This is intended to keep the network connection \"warmed up\" in the hopes that it prevents the situation where it seems Knobbler needs to \"wake up\" after a period of disuse. It seems this is a non-tunable behavior of iOS's network stack.",
+        "Also fixes a bug on the Bluhand page when switching devices that would send the old device color value to each slider immediately prior to sending the new device color value. This would sometimes result in sliders that were the wrong color."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/686a2e15-1ee3-43b2-b8bd-f5c848094341"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v36",
+      "date": "2025-06-25",
+      "approx": false,
+      "title": "Audio Effect + Current Param Support (future app!)",
+      "notes": [
+        "This release switches the Knobbler device to be an Audio Effect device. Several users have requested this in order to put Knobbler in the Main / Master track and not disrupt their existing templates or layouts. Made sense to me!",
+        "This release also adds support for Current Param functionality, which gives a persistent slider controlling the last selected parameter. This will be released in an app update soon, which will also support phones! So update now and be ready when that hits."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/843b8057-32b9-4dd0-bb74-13e8c7d061f5"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v35",
+      "date": "2025-05-27",
+      "approx": false,
+      "title": "Multiple Tablet / Instance Support",
+      "notes": [
+        "This release adds a \"Device Port\" field, which unlocks the ability to run mutiple Knobbler devices, which unlocks the ability to use multiple tablets!",
+        "Instructions in the docs."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/9ccdb045-0114-4ae2-8cd9-716a98dce630"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v34",
+      "date": "2025-04-29",
+      "approx": false,
+      "title": "Reliability Improvements",
+      "notes": [
+        "This release removes support from the Clips functionality introduced in v33. It was a can of worms and I decided to shelve it for now.",
+        "Other changes in this release are just reliability improvements, mostly for if things get in an odd state."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v32",
+      "date": "2025-04-04",
+      "approx": false,
+      "title": "Support for variations, random macros, version checks",
+      "notes": [
+        "This release adds support for rack macro variations., randomize macro values, and will now alert if a new device version is available.",
+        "Macro variation support is as much as I could get from the Live API, where Variation support is limited to only getting the number of variations. The currently selected variation index can be queried, but not observed. The variation names are not available.",
+        "Even with the limitiations, I think it's still a really great improvement.",
+        "Support on the iPad is currently in testing and will be rolled out ASAP!",
+        "Long-press a variation to delete it. Press the camera icon to capture a new variation. Press the dice icon to randomize all the macros.",
+        "Knobbler now checks if an update is available when it starts up. If one is available, the question mark icon will turn to a \"!!\"."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/523d3a00-4068-4ff3-9db7-ac01eb2c1552",
+        "https://github.com/user-attachments/assets/aba1dd1d-9406-4496-a489-f7bb1184babd"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v31",
+      "date": "2025-03-20",
+      "approx": false,
+      "title": "Resilience, Performance",
+      "notes": [
+        "This release includes an important fix for some of Ableton's \"forgotten\" devices that do not have a standard JS API implementation, such as CC Control.",
+        "There is also a nice simplification of how the device name is built for the Bluhand page.",
+        "Fancy About page."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/aceefd93-ee9d-4258-9255-9623785366de"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v30",
+      "date": "2025-03-05",
+      "approx": false,
+      "title": "Page Param, Auto-Collapse Racks",
+      "notes": [
+        "This release connects the tabs in the device to the tabs on the tablet screen. This lets you trigger different Knobbler screens by automating or modulating the page tab parameter. Thanks @chapelierfou for the request!",
+        "It also contains support for new functionality in the iPad/Android app around toggling track children display, cleaning up racks when collapsing them, and other small improvements."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/c8eaad31-2197-46cc-ae8a-e8c14d725df4"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v29",
+      "date": "2025-03-01",
+      "approx": false,
+      "title": "Eliminate control surface requirement; More reliable nav",
+      "notes": [
+        "This release eliminates the need to configure a control surface.",
+        "I had been relying on the \"Blue Hand\" icon (aka `live_set appointed_device`) which is only available when certain control surfaces are selected. I started using this long ago after trying and failing to use the `selected_device` property of the selected track. Well, either Ableton fixed this in Live 12 or I just got a little wiser and figured out that I could use `live_set view selected_track view selected_device`, which does not have the control surface requirement.",
+        "The release also makes the nav display more reliable in that it watches for color and name changes for the current track and updates the nav when that happens. It also will send the full nav payload on track changes, which in my testing did not slow things down to any perceptible degree. If you do observe a slowdown, please let me know.",
+        "Thanks to all who have written in with questions and suggestions so far!",
+        "Happy Knobblin :)"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/9709f0df-6528-4610-8409-8ffee7c9cecf"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v28",
+      "date": "2025-02-24",
+      "approx": false,
+      "title": "Fix group tracks navigation bug",
+      "notes": [
+        "Fix a bug where when looking at tracks inside of a group, the tracks would be shown at the end of the track list rather than where they should be in the hierarchy. Thanks again Andrew Carroll for reporting the bug."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/52b8a997-4355-4441-85d5-14e9fa4212a3"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v27",
+      "date": "2025-02-22",
+      "approx": false,
+      "title": "Fix Empty Track Bug",
+      "notes": [
+        "This release fixes a bug in the track/device navigation where a track with no devices would cause some chaos.",
+        "Thanks Andrew Carroll for reporting the bug!",
+        "This is also the first `.amxd`-only release in quite a while. Knobbler for iPad is now generally available and I've moved on from TouchOSC. It's great software, but I wanted to go places that it couldn't. Long live TouchOSC!"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/6d3fd5c3-bda4-4f66-bdaf-da57f21f917d"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v25",
+      "date": "2025-02-19",
+      "approx": false,
+      "title": "Fix VST Parameter Bug",
+      "notes": [
+        "Fixes a bug that mostly shows up in configuring VST parameters, but was related to any time the set of parameters changes. Ended up simplifying some of how Bluhand works as a result. :) Thanks again Andrew Norris for the bug report!"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/4a13cebe-fd64-4f6b-a714-d15d11655487"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v26",
+      "date": "2025-02-19",
+      "approx": false,
+      "title": "ACTUALLY fix parameter bug",
+      "notes": [
+        "Thanks 1000x Andrew Norris for keeping me honest.",
+        "Check out Andrew's stuff: https://andrewnorris.uk/",
+        "Actually fixes the problem where adding parameters via \"Configure\" in VSTs would not properly update the Bluhand sliders in real time.",
+        "**** NOTE ** This is the final release that includes a supported TouchOSC .tosc template. Subsequent releases are only tested and supported with the native Knobbler app.**"
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v24",
+      "date": "2025-02-18",
+      "approx": false,
+      "title": "Watch track output status for mixer enable/disable",
+      "notes": [
+        "Watch `has_audio_output` more closely to enable/disable mixer controls appropriately.",
+        "Thanks Andrew Norris for the bug report! Check out Andrew's stuff at https://andrewnorris.uk/",
+        "Still looking for beta testers for the Knobbler iPad app. Email me at zack@steinkamp.us if you are interested."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/1befcbe0-426c-4b33-82d9-4ca51c78e8e3"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v23",
+      "date": "2025-02-17",
+      "approx": false,
+      "title": "Detect control surfaces; stability",
+      "notes": [
+        "* Detect control surfaces and show a warning if not present (required for Bluhand) * Overhaul refresh system to be snappier and not get lost * Fix bug in exclusive arm code that would try to arm un-armable tracks and generate a warning in the Max console * Add `control_surfaces.txt` file listing control surfaces that will enable Bluhand functionality * Added `Debug` switch to toggle OSC logging to the Max Window * Publishes device version in OSC (`/deviceVersion Knobbler-v23`) so that the iPad app can validate it is new enough"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/cf8ad420-92c3-4190-adff-f099062bc4e7"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v22",
+      "date": "2025-02-14",
+      "approx": false,
+      "title": "Exclusive Arm/Solo",
+      "notes": [
+        "Add support to honor the user's exclusive arm/solo setting for the forthcoming iPad app."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v20",
+      "date": "2025-02-06",
+      "approx": false,
+      "title": "Handle collapsed groups; Stability",
+      "notes": [
+        "This relase handles collapsed tracks and brings some additional stability and performance to Knobbler.",
+        "Native app is really shaping up. This could be it."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/b7dd8b09-4b2c-4b6d-9f84-4626e1baec95"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v19",
+      "date": "2025-02-04",
+      "approx": false,
+      "title": "Device on/off; Performance Improvements",
+      "notes": [
+        "* Provides support for device on/off to the native app * Performance improvments (caching parent colors and parameter name => parm id list index)",
+        "Preview of unreleased iPad app:"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/79ae5da1-6053-42ff-ab08-a333a32a507c"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v18",
+      "date": "2025-02-02",
+      "approx": false,
+      "title": "Support for better dropdowns; Automation state",
+      "notes": [
+        "This is another release in support of the forthcoming native iPad app. The TouchOSC layout is unchanged from v9. Hopefully the iPad app can exit testing this week and go into the App Store :)",
+        "* Provides Track/Device data in a consistent format that has enough information so that the app can show a nice hierarchal display. * Shows automation state (red/grey circles) and parameter disabled state (green circle / grey slider)."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/bc13ef4f-44c0-4b88-88f7-47a5f348415a",
+        "https://github.com/user-attachments/assets/63fda708-201f-449a-a94f-a06f452e7853",
+        "https://github.com/user-attachments/assets/be01c33a-c4f8-4bc2-adee-3516b93b6caa"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v17",
+      "date": "2025-01-29",
+      "approx": false,
+      "title": "Session Record + Main Channel",
+      "notes": [
+        "This small release adds Session Record (circle icon) functionality and adds the Main channel to the channel list."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/99d3c76b-c519-42a4-9b72-3386c99112d2"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v16",
+      "date": "2025-01-26",
+      "approx": false,
+      "title": "Track/device browsing, tempo controls",
+      "notes": [
+        "More native iPad app functionality: * Browse all tracks and devices in your set in the Bluhand page * Tempo controls (metronome, tap tempo, tempo input box) * Rack macro parameters limited to visible number in Bluhand -- no more useless sliders"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/31768293-fc57-4699-aa8d-6eb035e56926"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v15",
+      "date": "2025-01-23",
+      "approx": false,
+      "title": "Header Control Buttons Galore!",
+      "notes": [
+        "Removed the title from the native iPad app and added a bunch of buttons.",
+        "This releaes supports the functionality and indicators in the row of buttons at the top. They are intended to mimic the buttons at the top of the Live window. I also added marker navigation buttons and brought back Toggle Record Enable."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/30627787-665c-481b-b2e6-f80e7e7cea59"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v14",
+      "date": "2025-01-21",
+      "approx": false,
+      "title": "Knobbler bugfix for v13",
+      "notes": [
+        "Fixes a critical bug with the v13 release. Again, I neglected to test the frozen version and ended up bundling an outdated bpatcher with the frozen archive. Max can be a PITA with stuff like this. Anyhow, sorry for the thrash.",
+        "v13 included some improvements for the forthcoming native iOS app, namely direct access to parameter banks and track/device nagivation controls."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/4ce160a6-8f3c-4f83-b1db-e2bdedcd7976"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v12",
+      "date": "2025-01-13",
+      "approx": false,
+      "title": "Tabbed Interface, Bluhand banks improvements, Bugfixes",
+      "notes": [
+        "* New more compact tabbed UI * Bluhand device presets now in the UI * Fix bug with shortcut buttons that could make re-opening a set assign the buttons incorrectly * Curated parameter banks for some stock Live devices (not done) * Use `live.banks` for Max for Live devices on Bluhand * Fix small bug in Bluhand that was emitting errors into the console"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/71b8e7d2-f600-41d2-8387-ef3f9ae0c5a6"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v11",
+      "date": "2025-01-05",
+      "approx": false,
+      "title": "Bluhand+Knobbler bugfixes; Native app prep",
+      "notes": [
+        "Thanks to Matthew Flook for reporting a bug in Bluhand that prevented initial values from being displayed. Also fixed a problem with Knobbler mapping. Both problems were related to Max's \"Freeze\" function pulling in files from other projects mistakenly and getting very old/odd versions bundled. I learned my lesson and will test more with the Frozen version, since now I know there can be real differences with un-frozen versions.",
+        "Also adds `/syn` message receiving, which responds with `/ack`. This will help the Native iOS/Android app (forthcoming) to provide positive confirmation that the connection is set up correctly."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v10",
+      "date": "2024-12-20",
+      "approx": false,
+      "title": "Bugfix for Current Param Knob crash",
+      "notes": [
+        "Fixes a bug (#13) in the Current Param Knob functionality that caused a garbage string value to be displayed, and in some cases led to a crash.",
+        "The problem came from Current Param Knob errantly scaling the parameter value to a number outside of the parameter's min/max range, then passing that value to the parameter's `str_for_value` call, which appears to lack bounds checking for the value argument.",
+        "Thanks @[rds2024-3004](https://github.com/rds2024-3004) for the bug report!"
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v9",
+      "date": "2024-12-04",
+      "approx": false,
+      "title": "Simplifications, Bugfixes, Bundled .tosc Template",
+      "notes": [
+        "This release includes some internal simplifications, important bugfixes, and a versioned/bundled .tosc file.",
+        "In reverse order, since there are essential changes to the `.tosc` file, I've versioned that and put it in the `frozen/` directory and put the versioned file in the .zip. Make sure that going forward the version of the .tosc template matches the version of Knobbler!",
+        "Bugfixes mostly are around displaying values of toggle buttons. The bug was that if a slider was controlling a toggle, the value would be displayed as \"On\" until the value reached zero. In reality, anything less than 1 will switch the toggle to \"Off\" state. The M4L routine that returns the string value of a parameter seems to have a rounding bug if you just ask it \"What is the string value of 0.99?\" it will respond with \"On\" even though the param itself would be showing \"Off\". Anyhow!",
+        "The other big change is under-the hood in how OSC messages are routed to different parts of this device (Knobbler, Bluhand, CurrParamKnob, etc). I replaced a tangle of `[regex ...]` objects with a JS file, simplifying things in the main patcher quite a bit and removing some error/bug potential from adding new messages.",
+        "Old:",
+        "New:"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/136bef5f-0ba2-4139-957f-be6439ef7a95",
+        "https://github.com/user-attachments/assets/1d430de0-6300-49a7-ac8a-f661e53cf39f"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v8",
+      "date": "2024-12-01",
+      "approx": false,
+      "title": "Fix recall bug",
+      "notes": [
+        "A wiley one, again partially due to moving to a single instance of the JS. Not complaining, except for the bugs that are hard to find.",
+        "If you mapped a parameter on Knobbler then made any change that would affect the order of the track or device (e.g. reordering devices or tracks) then the new path to the mapped param was not stored.",
+        "Also fixes some bugs around startup sequence."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v7",
+      "date": "2024-11-30",
+      "approx": false,
+      "title": "Use chain color / title if in a rack",
+      "notes": [
+        "Previously, all parameters in a track would be displayed in Knobbler4 with the same color and track name.",
+        "This version changes that behavior so that if a parameter is in a rack (MIDI, Instrument, Audio Effect), then Knobbler4 will use the color and title of the Chain the parameter's device is in.",
+        "For those who use lots of racks, this may be a game changer."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v6",
+      "date": "2024-11-28",
+      "approx": false,
+      "title": "Fix #10 - Multiple sliders mapped to the same param don't update",
+      "notes": [
+        "Thanks @rds2024-3004 for the bug report.",
+        "This release makes general fixes and improvements to how various locks are handled in the JS code."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v5",
+      "date": "2024-10-30",
+      "approx": false,
+      "title": "Telemetry",
+      "notes": [
+        "This release adds a telemetry \"ping\" on load.",
+        "As an independent developer, it's beneficial to both me and the people who use my devices to know which devices are used the most. This change adds a small amount of telemetry to this device that runs when you add the device to your Live Set. It assembles a short string containing the device name, the hostname of the computer it is running on (not the IP), the type of OS (Mac or Windows), and the CPU type (e.g. \"arm64\"). This message is sent to a computer that I own and operate, who appends this message to a log file.",
+        "The device will function as normal if the telemetry fails for any reason. The telemetry does not block the loading or operation of the device."
+      ],
+      "images": [],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v4",
+      "date": "2024-10-25",
+      "approx": false,
+      "title": "Device Presets in Bluhand",
+      "notes": [
+        "Adds a row of buttons across the top of the Bluhand tab that you can assign to jump to specific devices. Tap to map, long-press (1.5 seconds) to unmap.",
+        "Video walkthrough of the new features! https://youtu.be/Y9Nx1VpCqVM"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/d81222a0-8384-4563-8407-11baa17791fb"
+      ],
+      "videos": [
+        "https://youtu.be/Y9Nx1VpCqVM"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v3",
+      "date": "2024-10-12",
+      "approx": false,
+      "title": "Bugfixes, refinements",
+      "notes": [
+        "Fine tuning of TouchOSC layout. Font size refinement, better alignment of header items.",
+        "Walkthrough video: https://www.youtube.com/watch?v=1SvkGQ3_K8k",
+        "Bug Fixes: * Knobbler slider 25 was mislabeled 15 in the TouchOSC template. * In Bluhand, if a parameter value was purely numeric it would not show. * In Bluhand, if you were looking at bank > 1 and changed the device to a device with only one bank, the display would not be correct. Changed it so that it always starts at bank 1 when changing devices. * The Current Param Slider value was updating infrequently. Removed unnecessary slowdown code in its update routine.",
+        "Enhancements: * Added instructions for connecting between Mac and iPad via USB"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/c185f6d2-a105-4513-b5d7-dce18ead778a",
+        "https://github.com/user-attachments/assets/660be805-96a0-4157-a1f9-3fba913c57ea"
+      ],
+      "videos": [
+        "https://www.youtube.com/watch?v=1SvkGQ3_K8k"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v2",
+      "date": "2024-09-23",
+      "approx": false,
+      "title": "Bluhand + Double-tap default",
+      "notes": [
+        "This release re-adds the Bluhand functionality from the prior major version of Knobbler. Bluhand lets you directly manipulate every parameter of the currently selected device on your iPad.",
+        "It's all implemented in pure Max and no Javascript (which was a source of slowness and crashes of Ableton Live in Knobbler3).",
+        "Also adds the ability to double-tap a slider to reset it to its default value.",
+        "Make sure you update the `.tosc` files on your iPad when downloading this release!"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/99da07bd-ef6f-4b07-895f-24f198bd8089",
+        "https://github.com/user-attachments/assets/4c12bafc-0f97-46fe-aa8b-be9c4d6089b3"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v1",
+      "date": "2024-09-09",
+      "approx": false,
+      "title": "Initial Release",
+      "notes": [
+        "Introducing Knobbler4!",
+        "A ground-up rethink and rewrite of Knobbler3, bringing awesome performance and reliability, two things Knobbler3 started struggling with as it grew.",
+        "Knobbler4 is _noticeably_ less taxing on your computer, and so far (knock on wood) has been reliable for me.",
+        "Note that this release eliminates the Bluhand functionality from Knobbler3. That was the main culprit for the performance and reliability problems. I am looking into how I can fix that, since I came to really like it, especially combined with device shortcut keys.",
+        "Anyhow, give Knobbler4 a shot and let me know what you think. Thanks!"
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/e52934a2-62c4-4de7-a4b5-df1d0be60373"
+      ],
+      "videos": []
+    }
+  ]
+}
