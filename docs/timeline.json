@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-11T17:01:06.893Z",
+  "generated": "2026-11-11T19:14:34.106Z",
   "repo": "zsteinkamp/m4l-Knobbler4",
   "appReleases": [
     {
@@ -7,7 +7,7 @@
       "version": "2026.11.6",
       "date": "2026-11-06",
       "approx": false,
-      "title": "2026.11.6",
+      "title": "The Session page is now Split",
       "notes": [
         {
           "text": "The Session page is now Split: a two-pane screen where you choose what goes on top and what goes on the bottom. Tap the bar at the top of each pane to switch it between Mixer, Clips, Knobbler and Bluhand",
@@ -28,7 +28,7 @@
       "version": "2026.10.21",
       "date": "2026-10-21",
       "approx": false,
-      "title": "2026.10.21",
+      "title": "Automatic USB discovery",
       "notes": [
         {
           "text": "USB connections to a Mac are now discovered automatically, so using Knobbler over a cable is as simple as Wi-Fi: plug your iPad or iPhone into the Mac running Live, and the Mac appears a second time under Available devices, marked USB. Tap it to connect through the cable. No IP addresses to look up. USB connections to a Windows computer are not supported; use Wi-Fi there",
@@ -45,7 +45,7 @@
       "version": "2026.10.10",
       "date": "2026-10-10",
       "approx": false,
-      "title": "2026.10.10",
+      "title": "Put a rack’s macro variations on a Knobbler page",
       "notes": [
         {
           "text": "Put a rack’s macro variations on a Knobbler page (requires Knobbler4 device v74 or newer): on Bluhand, tap the Map button, tap the rack’s variations, then tap a Knobbler slot. Tap a variation to recall it. Once you move a macro it shows an asterisk (“2*”), and tapping it again restores what the variation stored",
@@ -70,7 +70,7 @@
       "version": "2026.10.9",
       "date": "2026-10-09",
       "approx": false,
-      "title": "2026.10.9",
+      "title": "Name your Knobbler pages",
       "notes": [
         {
           "text": "Name your Knobbler pages, and have up to 16 of them per Live set instead of two (requires Knobbler4 device v73 or newer). Tap a page button to switch to it, hold one to rename or delete it, hold and drag it to reorder, and tap + to add a page",
@@ -95,7 +95,7 @@
       "version": "2026.10.6",
       "date": "2026-10-06",
       "approx": false,
-      "title": "2026.10.6",
+      "title": "Smoother and more responsive",
       "notes": [
         {
           "text": "Smoother and more responsive, especially with large sets: Knobbler now uses much less memory and processing power while meters are running and sliders are moving",
@@ -120,7 +120,7 @@
       "version": "2026.9.28",
       "date": "2026-09-28",
       "approx": false,
-      "title": "2026.9.28",
+      "title": "Swipe between Bluhand banks",
       "notes": [
         {
           "text": "On tablets, swipe left and right on the Bluhand page to move between parameter banks. Each bank has its own page, so the next bank’s sliders slide into view as you swipe",
@@ -137,7 +137,7 @@
       "version": "2026.9.24",
       "date": "2026-09-24",
       "approx": false,
-      "title": "2026.9.24",
+      "title": "Parameters with many choices",
       "notes": [
         {
           "text": "Parameters with many choices, like a filter type, now show every choice as a button in a scrolling list instead of falling back to a slider",
@@ -150,7 +150,7 @@
       "version": "2026.9.22",
       "date": "2026-09-22",
       "approx": false,
-      "title": "2026.9.22",
+      "title": "Edit your set from Live Set Navigation",
       "notes": [
         {
           "text": "Edit your set from Live Set Navigation (requires Knobbler4 device v71 or newer). Long-press a track or chain to rename it or change its color, or a device to rename or delete it. Drag devices to reorder them. Group tracks now fold with the arrow button beside them",
@@ -183,7 +183,7 @@
       "version": "2026.9.14",
       "date": "2026-09-14",
       "approx": false,
-      "title": "2026.9.14",
+      "title": "Every page is now ready before you open it",
       "notes": [
         {
           "text": "Every page is now ready before you open it. Knobbler loads the Mixer, Clips and Session pages in the background after connecting, so even the first switch from Setup is instant",
@@ -200,7 +200,7 @@
       "version": "2026.9.13",
       "date": "2026-09-13",
       "approx": false,
-      "title": "2026.9.13",
+      "title": "Fixed a stuck Mixer fader",
       "notes": [
         {
           "text": "Fixed a Mixer fader that could get stuck showing -inf after pressing Refresh, even though the track in Live was at a normal level",
@@ -217,7 +217,7 @@
       "version": "2026.9.12",
       "date": "2026-09-12",
       "approx": false,
-      "title": "2026.9.12",
+      "title": "More work on scrolling",
       "notes": [
         {
           "text": "More work on scrolling: the Mixer, Clips and Session pages are now about twice as responsive to your finger. Changing direction mid-drag, or reaching out to stop a moving grid, happens right away instead of a moment later",
@@ -238,7 +238,7 @@
       "version": "2026.9.9",
       "date": "2026-09-09",
       "approx": false,
-      "title": "2026.9.9",
+      "title": "Big sets scroll dramatically faster",
       "notes": [
         {
           "text": "Big sets scroll dramatically faster. The Mixer, Clips and Session pages no longer rebuild their contents as you scroll, so panning stays smooth with 50+ tracks",
@@ -259,7 +259,7 @@
       "version": "2026.8.31",
       "date": "2026-08-31",
       "approx": false,
-      "title": "2026.8.31",
+      "title": "Knobbler keeps working after the trial ends",
       "notes": [
         {
           "text": "Knobbler keeps working after the trial ends. The Knobbler and Bluhand pages, Device Shortcuts and Current Param are now free forever — the same set the original TouchOSC template had",
@@ -284,7 +284,7 @@
       "version": "2026.8.12",
       "date": "2026-08-12",
       "approx": false,
-      "title": "2026.8.12",
+      "title": "Reorder your Device Shortcuts",
       "notes": [
         {
           "text": "Reorder your Device Shortcuts (requires Knobbler4 device v70 or newer) — tap the Map button, tap a shortcut button to pick it up, then tap another shortcut to swap the two devices (or an empty button to move it there)",
@@ -301,7 +301,7 @@
       "version": "2026.8.4",
       "date": "2026-08-04",
       "approx": false,
-      "title": "2026.8.4",
+      "title": "Track Width",
       "notes": [
         {
           "text": "Track Width: long-press the Width button in the toolbar and slide left or right to resize the track columns on the Mixer, Session, and Clips pages — whatever is in the middle of the screen stays put as they resize. Double-tap the panel to return to 100%; your setting is remembered",
@@ -322,7 +322,7 @@
       "version": "2026.6.17",
       "date": "2026-06-17",
       "approx": false,
-      "title": "2026.6.17",
+      "title": "Clip progress now appears on the Session page too",
       "notes": [
         {
           "text": "Clip progress now appears on the Session page too — playing clips show the same phase pie, play count, and loop length as the Clips page (requires Knobbler4 device v68 or newer)",
@@ -347,7 +347,7 @@
       "version": "2026.6.15",
       "date": "2026-06-15",
       "approx": false,
-      "title": "2026.6.15",
+      "title": "Live clip progress",
       "notes": [
         {
           "text": "Live clip progress (requires Knobbler4 device v67 or newer) — playing clips show a phase pie that fills as the clip plays, along with the current beat and play count; clips with a pending stop flash until they actually stop",
@@ -380,7 +380,7 @@
       "version": "2026.6.2",
       "date": "2026-06-02",
       "approx": false,
-      "title": "2026.6.2",
+      "title": "Instant page switching, now even on the largest sets",
       "notes": [
         {
           "text": "Instant page switching, now even on the largest sets — moving between the Knobbler, Bluhand, Mixer, Session, and Clips pages is immediate no matter how big your Live set is",
@@ -405,7 +405,7 @@
       "version": "2026.5.25",
       "date": "2026-05-25",
       "approx": false,
-      "title": "2026.5.25",
+      "title": "Multiplayer Knobbler",
       "notes": [
         {
           "text": "Multiplayer Knobbler (requires Knobbler4 device v64): tap the “Follow Sel” button in the toolbar to unlock a surface from Live's selected track and device so it navigates on its own — run an instance per tablet and each can control a different track and device at the same time",
@@ -430,7 +430,7 @@
       "version": "2026.5.24",
       "date": "2026-05-24",
       "approx": false,
-      "title": "2026.5.24",
+      "title": "Swap or move a mapping between knobbler slots",
       "notes": [
         {
           "text": "Swap or move a mapping between knobbler slots (requires Knobbler4 device v62) — tap the Map button, tap a mapped slot, then tap another slot to swap the two mappings (or move it, if the target slot is empty)",
@@ -455,7 +455,7 @@
       "version": "2026.5.19",
       "date": "2026-05-19",
       "approx": false,
-      "title": "2026.5.19",
+      "title": "Mixer-to-knobbler mapping",
       "notes": [
         {
           "text": "Mixer-to-knobbler mapping (requires Knobbler4 device v60) — tap the Map button, then tap any mixer (volume / pan / sends / mute / crossfader) or bluhand source, then tap a knobbler slot to complete the mapping",
@@ -496,7 +496,7 @@
       "version": "2026.5.11",
       "date": "2026-05-11",
       "approx": false,
-      "title": "2026.5.11",
+      "title": "Instant page switching",
       "notes": [
         {
           "text": "Instant page switching — Knobbler, Bluhand, Mixer, Session, and Clips pages stay loaded and switch with no perceptible delay",
@@ -521,7 +521,7 @@
       "version": "2026.5.5",
       "date": "2026-05-05",
       "approx": false,
-      "title": "2026.5.5",
+      "title": "Push 3 Standalone support",
       "notes": [
         {
           "text": "Push 3 Standalone support — one-tap connect to push.local on shared Wi-Fi, or 192.168.0.1 in Push hotspot mode",
@@ -550,7 +550,7 @@
       "version": "2026.4.27",
       "date": "2026-04-27",
       "approx": false,
-      "title": "2026.4.27",
+      "title": "Draggable ghost",
       "notes": [
         {
           "text": "Draggable ghost — long-press the origin indicator during a spring animation to drag the target in real-time",
@@ -587,7 +587,7 @@
       "version": "2026.4.22",
       "date": "2026-04-22",
       "approx": false,
-      "title": "2026.4.22",
+      "title": "Release modes",
       "notes": [
         {
           "text": "Release modes: time (with easing), rubber band, and gravity — expanding beyond spring-only",
@@ -616,7 +616,7 @@
       "version": "2026.4.20",
       "date": "2026-04-20",
       "approx": false,
-      "title": "2026.4.20",
+      "title": "Adjustable spring duration",
       "notes": [
         {
           "text": "Adjustable spring duration — long press the Spring button to open a draggable slider (1ms to 100s)",
@@ -641,7 +641,7 @@
       "version": "2026.4.16",
       "date": "2026-04-16",
       "approx": false,
-      "title": "2026.4.16",
+      "title": "New Spring mode",
       "notes": [
         {
           "text": "New Spring (momentary) mode — touch any slider or X-Y pad, drag, release to spring back to its original value",
@@ -666,7 +666,7 @@
       "version": "2026.4.11",
       "date": "2026-04-11",
       "approx": false,
-      "title": "2026.4.11",
+      "title": "What’s New page and update popup",
       "notes": [
         {
           "text": "What's New page in Setup and popup on version update",
@@ -703,7 +703,7 @@
       "version": "2026.4.7",
       "date": "2026-04-07",
       "approx": false,
-      "title": "2026.4.7",
+      "title": "Buttons now support multitouch",
       "notes": [
         {
           "text": "Buttons now support multitouch — tap buttons while using sliders",
@@ -720,7 +720,7 @@
       "version": "2026.4.3",
       "date": "2026-04-03",
       "approx": false,
-      "title": "2026.4.3",
+      "title": "Auto, Light, and Dark appearance modes",
       "notes": [
         {
           "text": "Auto, Light, and Dark appearance modes",
@@ -737,7 +737,7 @@
       "version": "2026.3.31",
       "date": "2026-03-31",
       "approx": false,
-      "title": "2026.3.31",
+      "title": "Knobbler Tips page with usage tips and tricks",
       "notes": [
         {
           "text": "Knobbler Tips page with usage tips and tricks",
@@ -758,7 +758,7 @@
       "version": "2026.3.29",
       "date": "2026-03-29",
       "approx": false,
-      "title": "2026.3.29",
+      "title": "Session page with combined clips and mixer view",
       "notes": [
         {
           "text": "Session page with combined clips and mixer view (iPad)",
@@ -787,7 +787,7 @@
       "version": "2026.3.27",
       "date": "2026-03-27",
       "approx": false,
-      "title": "2026.3.27",
+      "title": "Fixed purchases not syncing across devices",
       "notes": [
         {
           "text": "Fixed purchases not syncing across devices",
@@ -800,7 +800,7 @@
       "version": "2026.3.26",
       "date": "2026-03-26",
       "approx": false,
-      "title": "2026.3.26",
+      "title": "Fixed a crash when receiving certain messages",
       "notes": [
         {
           "text": "Fixed a crash when receiving certain messages",
@@ -821,7 +821,7 @@
       "version": "2026.3.25",
       "date": "2026-03-25",
       "approx": false,
-      "title": "2026.3.25",
+      "title": "Clips grid scrolling refinements",
       "notes": [
         {
           "text": "Improved clips grid scrolling on iOS",
@@ -842,7 +842,7 @@
       "version": "2026.3.24",
       "date": "2026-03-24",
       "approx": false,
-      "title": "2026.3.24",
+      "title": "Smoother clips grid scrolling with GPU acceleration",
       "notes": [
         {
           "text": "Smoother clips grid scrolling with GPU acceleration",
@@ -871,7 +871,7 @@
       "version": "2026.3.1",
       "date": "2026-03-01",
       "approx": false,
-      "title": "2026.3.1",
+      "title": "Phone layout overhaul",
       "notes": [
         {
           "text": "Phone layout overhaul — unified pages, swipeable mixer sidebar",
@@ -904,7 +904,7 @@
       "version": "2026 Q1",
       "date": "2026-02-15",
       "approx": true,
-      "title": "2026 Q1",
+      "title": "Mixer page with multi-track channel strips",
       "notes": [
         {
           "text": "Mixer page with multi-track channel strips, volume meters, and track overview bar with drag-to-navigate",
@@ -925,7 +925,7 @@
       "version": "2025 Q4",
       "date": "2025-11-15",
       "approx": true,
-      "title": "2025 Q4",
+      "title": "Multi-button support with quantization toggle",
       "notes": [
         {
           "text": "Multi-button support with quantization toggle — buttons now execute multiple actions",
@@ -946,7 +946,7 @@
       "version": "2025 Q3",
       "date": "2025-08-15",
       "approx": true,
-      "title": "2025 Q3",
+      "title": "In-app purchase model with free trial on iOS",
       "notes": [
         {
           "text": "In-app purchase model with free trial on iOS",
@@ -967,7 +967,7 @@
       "version": "2025 Q2",
       "date": "2025-05-15",
       "approx": true,
-      "title": "2025 Q2",
+      "title": "Current Param display",
       "notes": [
         {
           "text": "Current Param display — see the active parameter name and value at a glance",
@@ -988,7 +988,7 @@
       "version": "2025 Q1",
       "date": "2025-02-15",
       "approx": true,
-      "title": "2025 Q1",
+      "title": "Knobbler and Bluhand pages",
       "notes": [
         {
           "text": "Knobbler and Bluhand pages with banks and shortcuts for hardware control mapping",
@@ -1005,7 +1005,7 @@
       "version": "2024 Q4",
       "date": "2024-11-15",
       "approx": true,
-      "title": "2024 Q4",
+      "title": "Knobbler - an app to control Ableton Live",
       "notes": [
         {
           "text": "Knobbler OSC app for controlling Ableton Live",
