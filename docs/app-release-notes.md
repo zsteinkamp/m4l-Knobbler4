@@ -8,9 +8,8 @@ These are the release notes for the Knobbler **app** on your iPad, iPhone or And
 
 ### 2026.11.6 — November 6, 2026
 
-- The Session page is now Split: a two-pane screen where you choose what goes on top and what goes on the bottom. Tap the bar at the top of each pane to switch it between Mixer, Clips, Knobbler and Bluhand
-- Put Knobbler in both panes to see two pages of knobs at once; each pane picks its own page
 - A Knobbler slot can now be a button instead of a fader. In Layout mode, set any mapped slot to Momentary or Toggle and it jumps between two parameter values you pick, defaulting to the parameter’s full range. Requires Knobbler4 device v74 or newer
+- The Session page is now Split: a two-pane screen where each pane shows the Mixer, Clips, Knobbler or Bluhand — tap the bar at the top of a pane to switch it. Put Knobbler in both panes to keep two pages on screen at once, each pane on its own page
 
 ### 2026.10.21 — October 21, 2026
 
