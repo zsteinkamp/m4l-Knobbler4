@@ -4,6 +4,8 @@
   title: Feature Walkthrough
 - fname: app-release-notes.md
   title: App Release Notes
+- fname: timeline.md
+  title: Release Timeline
 - fname: mapping.md
   title: Mapping Mode
 - fname: setup.md
