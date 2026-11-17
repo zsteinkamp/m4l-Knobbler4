@@ -13,7 +13,10 @@ function getTrackInputStatus(currTrack) {
     //log(
     //  'GET INPUT STATUS ' + currTrack.type + ' ' + currTrack.get('can_be_armed')
     //)
-    if (!parseInt(currTrack.get('is_foldable').toString()) &&
+    // Live 13 reports can_be_armed = 1 on return tracks, which have no input
+    // routing, so skip them before checking it.
+    if (String(currTrack.path).indexOf('return_tracks') === -1 &&
+        !parseInt(currTrack.get('is_foldable').toString()) &&
         parseInt(currTrack.get('can_be_armed').toString())) {
         var airt = JSON.parse(currTrack.get('available_input_routing_types').toString()).available_input_routing_types;
         currentInput = JSON.parse(currTrack.get('input_routing_type').toString()).input_routing_type;
