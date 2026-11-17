@@ -449,7 +449,18 @@ is in hand — e.g. telling the app to disable a control at handshake.
 - **Racks can have up to 32 macros** (`visible_macro_count` up to 32). Code that
   assumed ≤16 (two rows of 8) broke: the bluhand macro padding computed
   `Array(8 - count/2)` and threw a RangeError. Above 16 it now lists the macros
-  straight through and banks page them.
+  straight through and banks page them. **Which half Live shows (1–16 vs
+  17–32) is NOT readable** — no rack or rack-view member for it.
+- **"Show Macro As Button" is invisible to the LOM** except through the value
+  text: the macro stays `is_quantized 0`, range 0–127, no new member, and
+  nothing observable fires on the switch (`/debug/watch` watched value, name,
+  state, min, max, is_quantized, value_items and the rack's `parameters`).
+  `str_for_value` becomes "Off"/"On". `k4-bluhandSlots` detects it from that
+  (`detectButton`) at bind and on a value change whose text disagrees, so a
+  switch made in Live shows on the macro's next value change.
+- **The probe port varies per set:** `[udpreceive]` can bind 2355 etc., not
+  2346. Find it with `lsof -nP -iUDP | grep ^Live` and pass `--to <port>` to
+  `tools/osc-probe.js`, or every probe silently goes nowhere.
 - **Stale ids after a set switch (not Live-13-specific, surfaced while testing):**
   the device reloads with no new handshake, so the app can send ids from the
   previous set, and a stale id can resolve to an unrelated object (the Song).
