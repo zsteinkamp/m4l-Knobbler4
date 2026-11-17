@@ -9,7 +9,7 @@ import {
   saveSetting,
   truncate,
 } from './utils'
-import { apiId, apiValid, repointPath } from './liveApi'
+import { apiId, apiValid, isChain, isDevice, repointPath } from './liveApi'
 import config from './k4-config'
 import {
   FIELD_INDENT,
@@ -327,11 +327,8 @@ function pointAt(id: number): boolean {
 function renameDevice(jsonStr: string) {
   const edit = parseIdValue(jsonStr)
   if (!edit || !pointAt(edit.id)) return
-  const type = state.api.type as string
-  if (
-    !CHAIN_TYPES[type] &&
-    (HAS_DEVICES[type] || !isDeviceSupported(state.api))
-  ) {
+  // Ids can be stale (see isDevice): accept only a device or a chain.
+  if (!isChain(state.api) && !isDevice(state.api)) {
     return
   }
   state.api.set('name', edit.value.toString())
@@ -393,10 +390,8 @@ function deleteDevice(val: any) {
   if (!pointAt(id)) {
     return
   }
-  // Tracks and chains answer isDeviceSupported too (they have properties), so
-  // exclude the container types explicitly rather than relying on that check.
-  const type = state.api.type as string
-  if (HAS_DEVICES[type] || !isDeviceSupported(state.api)) {
+  // Ids can be stale (see isDevice): devices and racks only.
+  if (!isDevice(state.api)) {
     return
   }
   const parentId = cleanArr(state.api.get('canonical_parent'))[0]
@@ -422,7 +417,7 @@ function deleteDevice(val: any) {
 // effect after an instrument; the refresh shows where it really landed.
 function moveDevice(jsonStr: string) {
   const edit = parseIdValue(jsonStr)
-  if (!edit || !pointAt(edit.id) || !isDeviceSupported(state.api)) return
+  if (!edit || !pointAt(edit.id) || !isDevice(state.api)) return
   const parentId = cleanArr(state.api.get('canonical_parent'))[0]
   const index = parseInt(edit.value.toString())
   if (!parentId || isNaN(index) || index < 0) return

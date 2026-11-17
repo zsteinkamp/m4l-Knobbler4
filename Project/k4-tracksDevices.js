@@ -153,9 +153,9 @@ function updateDeviceNav() {
         var parentObjParentRaw = (0, utils_1.cleanArr)(parentObj.get('canonical_parent'))[0];
         if (parentObjParentRaw === undefined)
             break;
-        var isChain = parentObj.type === 'Chain' || parentObj.type === 'DrumChain';
+        var isChain_1 = parentObj.type === 'Chain' || parentObj.type === 'DrumChain';
         var color = null;
-        if (isChain) {
+        if (isChain_1) {
             color = (0, utils_1.colorToString)(parentObj.get('color').toString());
         }
         else {
@@ -165,7 +165,7 @@ function updateDeviceNav() {
         }
         var parentObjParentId = parentObjParentRaw;
         ret.unshift([
-            /* TYPE   */ isChain ? consts_1.TYPE_CHAIN : consts_1.TYPE_RACK,
+            /* TYPE   */ isChain_1 ? consts_1.TYPE_CHAIN : consts_1.TYPE_RACK,
             /* ID     */ (0, liveApi_1.apiId)(parentObj),
             /* NAME   */ (0, utils_1.truncate)(parentObj.get('name').toString(), consts_1.MAX_NAME_LEN),
             /* COLOR  */ color,
@@ -286,9 +286,8 @@ function renameDevice(jsonStr) {
     var edit = (0, utils_1.parseIdValue)(jsonStr);
     if (!edit || !pointAt(edit.id))
         return;
-    var type = state.api.type;
-    if (!CHAIN_TYPES[type] &&
-        (HAS_DEVICES[type] || !(0, utils_1.isDeviceSupported)(state.api))) {
+    // Ids can be stale (see isDevice): accept only a device or a chain.
+    if (!(0, liveApi_1.isChain)(state.api) && !(0, liveApi_1.isDevice)(state.api)) {
         return;
     }
     state.api.set('name', edit.value.toString());
@@ -346,10 +345,8 @@ function deleteDevice(val) {
     if (!pointAt(id)) {
         return;
     }
-    // Tracks and chains answer isDeviceSupported too (they have properties), so
-    // exclude the container types explicitly rather than relying on that check.
-    var type = state.api.type;
-    if (HAS_DEVICES[type] || !(0, utils_1.isDeviceSupported)(state.api)) {
+    // Ids can be stale (see isDevice): devices and racks only.
+    if (!(0, liveApi_1.isDevice)(state.api)) {
         return;
     }
     var parentId = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
@@ -374,7 +371,7 @@ function deleteDevice(val) {
 // effect after an instrument; the refresh shows where it really landed.
 function moveDevice(jsonStr) {
     var edit = (0, utils_1.parseIdValue)(jsonStr);
-    if (!edit || !pointAt(edit.id) || !(0, utils_1.isDeviceSupported)(state.api))
+    if (!edit || !pointAt(edit.id) || !(0, liveApi_1.isDevice)(state.api))
         return;
     var parentId = (0, utils_1.cleanArr)(state.api.get('canonical_parent'))[0];
     var index = parseInt(edit.value.toString());

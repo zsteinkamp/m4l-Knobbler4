@@ -4,7 +4,7 @@
 // per-instance state here to diverge, unlike utils' oscSink or the singletons
 // the entry hands out through ctx).
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.repointPath = exports.disableObs = exports.ensureObs = exports.reArm = exports.obsById = exports.detach = exports.apiValid = exports.apiId = void 0;
+exports.repointPath = exports.disableObs = exports.ensureObs = exports.reArm = exports.obsById = exports.detach = exports.isChain = exports.isDevice = exports.isTrack = exports.apiValid = exports.apiId = void 0;
 // --- Reading .id --------------------------------------------------------
 //
 // @types/maxmsp declares `LiveAPI.id` as `number`, but at RUNTIME it reads back
@@ -25,6 +25,24 @@ function apiValid(api) {
     return apiId(api) !== 0;
 }
 exports.apiValid = apiValid;
+// LOM class checks for ids that come off the wire. The app can hold ids from a
+// previous set (a set switch reloads the device with no new handshake), and in
+// the new set a stale id can resolve to an unrelated object — the Song, a
+// track — that `apiValid` and `isDeviceSupported` both accept. `.type` is a
+// plain string read. Device classes all end in "Device" (RackDevice,
+// PluginDevice, SimplerDevice, …); chains are Chain or DrumChain.
+function isTrack(api) {
+    return apiValid(api) && api.type === 'Track';
+}
+exports.isTrack = isTrack;
+function isDevice(api) {
+    return apiValid(api) && /Device$/.test(String(api.type));
+}
+exports.isDevice = isDevice;
+function isChain(api) {
+    return apiValid(api) && /Chain$/.test(String(api.type));
+}
+exports.isChain = isChain;
 // --- Binding and re-pointing observers ----------------------------------
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications
 // before detaching, to prevent callbacks firing on invalidated objects

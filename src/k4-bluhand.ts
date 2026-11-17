@@ -12,7 +12,15 @@ import {
   setOscSink,
   osc,
 } from './utils'
-import { apiId, apiValid, obsById, repointPath } from './liveApi'
+import {
+  apiId,
+  apiValid,
+  isChain,
+  isDevice,
+  isTrack,
+  obsById,
+  repointPath,
+} from './liveApi'
 import config from './k4-config'
 import { noFn } from './consts'
 import { getBankParamArr } from './k4-bluhandBanks'
@@ -759,7 +767,7 @@ function unfoldParentTracks(objId: number) {
 function getParentTrackForDevice(deviceId: number) {
   const util = getUtilApi()
   util.id = deviceId
-  if (isDeviceSupported(util)) {
+  if (isDevice(util)) {
     let counter = 0
     while (counter < 20) {
       util.id = parseInt(util.get('canonical_parent')[1] as any)
@@ -774,7 +782,12 @@ function getParentTrackForDevice(deviceId: number) {
 
 function gotoDevice(deviceIdStr: string) {
   const deviceId = parseInt(deviceIdStr)
-  if (deviceId === 0) {
+  if (!deviceId) {
+    return
+  }
+  const util = getUtilApi()
+  util.id = deviceId
+  if (!isDevice(util)) {
     return
   }
   const trackId = getParentTrackForDevice(deviceId)
@@ -789,10 +802,11 @@ function gotoDevice(deviceIdStr: string) {
 function hideChains(deviceId: string) {
   const obj = getUtilApi()
   obj.id = parseInt(deviceId as any)
-  if (!apiValid(obj)) {
+  // The id can be stale (see isDevice) — seen resolving to the Song.
+  if (!isDevice(obj)) {
     return
   }
-  if (isDeviceSupported(obj) && +obj.get('can_have_chains')) {
+  if (/\bcan_have_chains\b/.test(obj.info) && +obj.get('can_have_chains')) {
     obj.goto('view')
     obj.set('is_showing_chain_devices', 0)
   }
@@ -800,8 +814,12 @@ function hideChains(deviceId: string) {
 
 function gotoChain(chainIdStr: string) {
   const chainId = parseInt(chainIdStr)
-  unfoldParentTracks(chainId)
   const api = getUtilApi()
+  api.id = chainId
+  if (!isChain(api)) {
+    return
+  }
+  unfoldParentTracks(chainId)
   api.id = chainId
   const devices = cleanArr(api.get('devices'))
   if (devices && devices[0]) {
@@ -817,13 +835,13 @@ function gotoChain(chainIdStr: string) {
 function toggleGroup(groupId: number) {
   const util = getUtilApi()
   util.id = groupId
-  if (!apiValid(util)) {
-    log('ERROR: Invalid id ' + groupId)
+  if (!isTrack(util)) {
+    log('ERROR: Not a track ' + groupId)
     return
   }
-  const isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'))
-  if (!isFoldable) {
+  if (!parseInt(util.get('is_foldable'))) {
     log('ERROR: Not foldable ' + groupId)
+    return
   }
   const foldState = parseInt(util.get('fold_state'))
   util.set('fold_state', foldState ? 0 : 1)
@@ -833,19 +851,20 @@ function gotoTrack(trackIdStr: string) {
   const trackId = parseInt(trackIdStr)
   const util = getUtilApi()
   util.id = trackId
-  if (apiValid(util)) {
-    let counter = 0
-    while (counter < 20) {
-      const groupIds = cleanArr(util.get('group_track'))
-      if (!groupIds.length) break
-      util.id = groupIds[0]
-      if (!apiValid(util)) break
-      const foldState = parseInt(util.get('fold_state').toString())
-      if (foldState === 1) {
-        util.set('fold_state', 0)
-      }
-      counter++
+  if (!isTrack(util)) {
+    return
+  }
+  let counter = 0
+  while (counter < 20) {
+    const groupIds = cleanArr(util.get('group_track'))
+    if (!groupIds.length) break
+    util.id = groupIds[0]
+    if (!apiValid(util)) break
+    const foldState = parseInt(util.get('fold_state').toString())
+    if (foldState === 1) {
+      util.set('fold_state', 0)
     }
+    counter++
   }
   ctx.focus.selectTrack(trackId)
 }

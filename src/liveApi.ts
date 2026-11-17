@@ -23,6 +23,22 @@ export function apiValid(api: LiveAPI): boolean {
   return apiId(api) !== 0
 }
 
+// LOM class checks for ids that come off the wire. The app can hold ids from a
+// previous set (a set switch reloads the device with no new handshake), and in
+// the new set a stale id can resolve to an unrelated object — the Song, a
+// track — that `apiValid` and `isDeviceSupported` both accept. `.type` is a
+// plain string read. Device classes all end in "Device" (RackDevice,
+// PluginDevice, SimplerDevice, …); chains are Chain or DrumChain.
+export function isTrack(api: LiveAPI): boolean {
+  return apiValid(api) && api.type === 'Track'
+}
+export function isDevice(api: LiveAPI): boolean {
+  return apiValid(api) && /Device$/.test(String(api.type))
+}
+export function isChain(api: LiveAPI): boolean {
+  return apiValid(api) && /Chain$/.test(String(api.type))
+}
+
 // --- Binding and re-pointing observers ----------------------------------
 
 // Safely tear down a LiveAPI observer: unsubscribe from property notifications

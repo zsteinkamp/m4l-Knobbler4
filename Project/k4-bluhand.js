@@ -702,7 +702,7 @@ function unfoldParentTracks(objId) {
 function getParentTrackForDevice(deviceId) {
     var util = getUtilApi();
     util.id = deviceId;
-    if ((0, utils_1.isDeviceSupported)(util)) {
+    if ((0, liveApi_1.isDevice)(util)) {
         var counter = 0;
         while (counter < 20) {
             util.id = parseInt(util.get('canonical_parent')[1]);
@@ -716,7 +716,12 @@ function getParentTrackForDevice(deviceId) {
 }
 function gotoDevice(deviceIdStr) {
     var deviceId = parseInt(deviceIdStr);
-    if (deviceId === 0) {
+    if (!deviceId) {
+        return;
+    }
+    var util = getUtilApi();
+    util.id = deviceId;
+    if (!(0, liveApi_1.isDevice)(util)) {
         return;
     }
     var trackId = getParentTrackForDevice(deviceId);
@@ -732,18 +737,23 @@ exports.gotoDevice = gotoDevice;
 function hideChains(deviceId) {
     var obj = getUtilApi();
     obj.id = parseInt(deviceId);
-    if (!(0, liveApi_1.apiValid)(obj)) {
+    // The id can be stale (see isDevice) — seen resolving to the Song.
+    if (!(0, liveApi_1.isDevice)(obj)) {
         return;
     }
-    if ((0, utils_1.isDeviceSupported)(obj) && +obj.get('can_have_chains')) {
+    if (/\bcan_have_chains\b/.test(obj.info) && +obj.get('can_have_chains')) {
         obj.goto('view');
         obj.set('is_showing_chain_devices', 0);
     }
 }
 function gotoChain(chainIdStr) {
     var chainId = parseInt(chainIdStr);
-    unfoldParentTracks(chainId);
     var api = getUtilApi();
+    api.id = chainId;
+    if (!(0, liveApi_1.isChain)(api)) {
+        return;
+    }
+    unfoldParentTracks(chainId);
     api.id = chainId;
     var devices = (0, utils_1.cleanArr)(api.get('devices'));
     if (devices && devices[0]) {
@@ -758,13 +768,13 @@ function gotoChain(chainIdStr) {
 function toggleGroup(groupId) {
     var util = getUtilApi();
     util.id = groupId;
-    if (!(0, liveApi_1.apiValid)(util)) {
-        log('ERROR: Invalid id ' + groupId);
+    if (!(0, liveApi_1.isTrack)(util)) {
+        log('ERROR: Not a track ' + groupId);
         return;
     }
-    var isFoldable = util.type === 'Track' && parseInt(util.get('is_foldable'));
-    if (!isFoldable) {
+    if (!parseInt(util.get('is_foldable'))) {
         log('ERROR: Not foldable ' + groupId);
+        return;
     }
     var foldState = parseInt(util.get('fold_state'));
     util.set('fold_state', foldState ? 0 : 1);
@@ -773,21 +783,22 @@ function gotoTrack(trackIdStr) {
     var trackId = parseInt(trackIdStr);
     var util = getUtilApi();
     util.id = trackId;
-    if ((0, liveApi_1.apiValid)(util)) {
-        var counter = 0;
-        while (counter < 20) {
-            var groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
-            if (!groupIds.length)
-                break;
-            util.id = groupIds[0];
-            if (!(0, liveApi_1.apiValid)(util))
-                break;
-            var foldState = parseInt(util.get('fold_state').toString());
-            if (foldState === 1) {
-                util.set('fold_state', 0);
-            }
-            counter++;
+    if (!(0, liveApi_1.isTrack)(util)) {
+        return;
+    }
+    var counter = 0;
+    while (counter < 20) {
+        var groupIds = (0, utils_1.cleanArr)(util.get('group_track'));
+        if (!groupIds.length)
+            break;
+        util.id = groupIds[0];
+        if (!(0, liveApi_1.apiValid)(util))
+            break;
+        var foldState = parseInt(util.get('fold_state').toString());
+        if (foldState === 1) {
+            util.set('fold_state', 0);
         }
+        counter++;
     }
     ctx.focus.selectTrack(trackId);
 }
