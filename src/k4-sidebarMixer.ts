@@ -10,7 +10,7 @@ import {
   PauseState,
   SEND_ADDR,
 } from './utils'
-import { apiValid } from './liveApi'
+import { apiValid, isTrack } from './liveApi'
 import config from './k4-config'
 import {
   noFn,
@@ -508,6 +508,18 @@ const onTrackChange = (args: IdObserverArg) => {
 
 function handleTrackChange(id: number) {
   state.trackLookupObj.id = id
+  // The focus track can briefly resolve to nothing (id 0), e.g. while a set
+  // is being swapped. Its unquotedpath is then '', the `.path = path` below
+  // leaves the mute/color observers on the Song they were created on, and
+  // arming them logged "'Song' object has no attribute 'mute'". Park the
+  // path-managed observers and wait for the next track change.
+  if (!isTrack(state.trackLookupObj)) {
+    state.muteObj.property = ''
+    state.mutedViaSoloObj.property = ''
+    state.xfadeAssignObj.property = ''
+    state.colorObj.property = ''
+    return
+  }
 
   // track type
   const path = state.trackLookupObj.unquotedpath
