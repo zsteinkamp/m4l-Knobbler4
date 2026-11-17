@@ -159,15 +159,19 @@ function onParameterChange() {
         var numMacros = parseInt(api.get('visible_macro_count'));
         if (numMacros) {
             paramIds = paramIds.slice(0, numMacros);
-            if (numMacros > 1) {
-                // put filler in the macros to look more like the
-                // even 2-row split that Live shows
-                var halfMacros = numMacros / 2;
-                var filler = Array(8 - halfMacros);
-                for (var i = 0; i < filler.length; i++) {
-                    filler[i] = 0;
-                }
-                paramIds = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], paramIds.slice(0, halfMacros), true), filler, true), paramIds.slice(halfMacros, numMacros), true), filler, true);
+            // put filler in the macros to look more like the even 2-row split that
+            // Live shows — only when they fit two rows of 8. Live 13 threw a
+            // RangeError on Array(8 - half): a count above 16 makes that negative and
+            // an odd count makes it fractional. Each row is padded to 8 on its own.
+            var halfMacros = Math.ceil(numMacros / 2);
+            if (numMacros > 1 && halfMacros <= 8) {
+                var filler = function (n) {
+                    var arr = [];
+                    for (var i = 0; i < n; i++)
+                        arr.push(0);
+                    return arr;
+                };
+                paramIds = __spreadArray(__spreadArray(__spreadArray(__spreadArray([], paramIds.slice(0, halfMacros), true), filler(8 - halfMacros), true), paramIds.slice(halfMacros, numMacros), true), filler(8 - (numMacros - halfMacros)), true);
             }
         }
     }

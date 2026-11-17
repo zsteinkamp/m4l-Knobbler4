@@ -169,19 +169,22 @@ function onParameterChange() {
     const numMacros = parseInt(api.get('visible_macro_count'))
     if (numMacros) {
       paramIds = paramIds.slice(0, numMacros)
-      if (numMacros > 1) {
-        // put filler in the macros to look more like the
-        // even 2-row split that Live shows
-        const halfMacros = numMacros / 2
-        const filler = Array(8 - halfMacros)
-        for (let i = 0; i < filler.length; i++) {
-          filler[i] = 0
+      // put filler in the macros to look more like the even 2-row split that
+      // Live shows — only when they fit two rows of 8. Live 13 threw a
+      // RangeError on Array(8 - half): a count above 16 makes that negative and
+      // an odd count makes it fractional. Each row is padded to 8 on its own.
+      const halfMacros = Math.ceil(numMacros / 2)
+      if (numMacros > 1 && halfMacros <= 8) {
+        const filler = (n: number) => {
+          const arr: number[] = []
+          for (let i = 0; i < n; i++) arr.push(0)
+          return arr
         }
         paramIds = [
           ...paramIds.slice(0, halfMacros),
-          ...filler,
+          ...filler(8 - halfMacros),
           ...paramIds.slice(halfMacros, numMacros),
-          ...filler,
+          ...filler(8 - (numMacros - halfMacros)),
         ]
       }
     }
