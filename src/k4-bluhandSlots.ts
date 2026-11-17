@@ -27,6 +27,43 @@ interface BluSlot {
   binding: boolean
   allowOscOut: boolean
   suppressTask: Task
+  // Live 13 rack macro shown as a button (see detectButton). `maybeButton`:
+  // the parameter has a macro's shape, so its value text is worth checking.
+  maybeButton: boolean
+  isButton: boolean
+}
+
+// --- Live 13 macro buttons ----------------------------------------------------
+// Live 13 can show a rack macro as a button ("Show Macro As Button"), and the
+// LOM gives no sign of it: the macro stays is_quantized 0, range 0–127, with no
+// new member, and nothing observable fires when the appearance changes
+// (measured with /debug/info, Nov 2026). The only trace is its value text,
+// which becomes "Off"/"On". So a non-quantized 0–127 parameter whose ends read
+// "Off" and "On" is reported as a 2-step slot, and the app draws its button.
+// A dial mapped to an on/off parameter reads the same way and becomes a
+// button too, which suits it.
+//
+// Checked at bind (two str_for_value reads, macro-shaped params only) and
+// again whenever the value text emitSlotValue already reads disagrees with the
+// current state — that catches a switch made in Live on the next value change,
+// at no extra cost per value.
+const BUTTON_ITEMS = ['Off', 'On']
+
+function isOnOff(str: string): boolean {
+  return str === 'On' || str === 'Off'
+}
+
+function detectButton(slot: BluSlot): boolean {
+  if (!slot.maybeButton) return false
+  return (
+    dequote(String(valueString(slot.valueApi, slot.min))) === 'Off' &&
+    dequote(String(valueString(slot.valueApi, slot.max))) === 'On'
+  )
+}
+
+function emitQuant(idx: number, quantCount: number, quantItems: string[]) {
+  osc('/bquant' + idx, quantCount)
+  osc('/bquantItems' + idx, quantItems)
 }
 
 const slots: BluSlot[] = []
@@ -38,8 +75,19 @@ function emitSlotValue(idx: number) {
     return
   }
   const v = parseFloat(slot.valueApi.get('value'))
+  const str = valueString(slot.valueApi, v)
+  if (slot.maybeButton && isOnOff(dequote(String(str))) !== slot.isButton) {
+    // The text disagrees with what we reported: the macro's appearance was
+    // switched in Live. Re-check properly before telling the app.
+    const isButton = detectButton(slot)
+    if (isButton !== slot.isButton) {
+      slot.isButton = isButton
+      if (isButton) emitQuant(idx, 2, BUTTON_ITEMS)
+      else emitQuant(idx, 0, [])
+    }
+  }
   osc('/bval' + idx, valueToProp(v, slot.min, slot.max))
-  osc('/bvalStr' + idx, valueString(slot.valueApi, v))
+  osc('/bvalStr' + idx, str)
 }
 
 function emitSlotName(idx: number) {
@@ -118,6 +166,8 @@ export function initSlots() {
       binding: false,
       allowOscOut: true,
       suppressTask: null,
+      maybeButton: false,
+      isButton: false,
     }
     // Reuse one suppression Task per slot (cancel() does not free, and val()
     // fires on every inbound OSC value). The LiveAPI observers are created
@@ -139,6 +189,8 @@ export function setParamIdx(idx: number, paramIdx: number) {
   slot.binding = true
 
   const targetId = paramIdx > 0 ? deviceParamIds[paramIdx] || 0 : 0
+  slot.maybeButton = false
+  slot.isButton = false
   if (!targetId) {
     slot.paramId = 0
     if (slot.valueApi) {
@@ -186,8 +238,10 @@ export function setParamIdx(idx: number, paramIdx: number) {
   const meta = readParamMeta(slot.valueApi)
   slot.min = meta.min
   slot.max = meta.max
-  osc('/bquant' + idx, meta.quantCount)
-  osc('/bquantItems' + idx, meta.quantItems)
+  slot.maybeButton = !meta.isQuantized && meta.min === 0 && meta.max === 127
+  slot.isButton = detectButton(slot)
+  if (slot.isButton) emitQuant(idx, 2, BUTTON_ITEMS)
+  else emitQuant(idx, meta.quantCount, meta.quantItems)
   osc('/bval' + idx + 'color', slotColor)
 
   slot.binding = false

@@ -63,7 +63,11 @@ function readSymCountFile(): number {
   try {
     const f = new File(SYMCOUNT_FILE, 'read')
     if (!f.isopen) {
-      log('symbolCount: cannot open ' + SYMCOUNT_FILE + ' (console wiring set up?)')
+      log(
+        'symbolCount: cannot open ' +
+          SYMCOUNT_FILE +
+          ' (console wiring set up?)'
+      )
       return -1
     }
     const text = f.readstring(f.eof)
@@ -213,10 +217,163 @@ function inputRouting() {
   )
 }
 
+// --- /debug/info [id | path] -------------------------------------------------
+// What can M4L see on an object? Replies with the object's `info` (every LOM
+// member it exposes — the only authoritative answer in Live 13, whose whitelist
+// is built at runtime), its view's `info`, and for a rack, each macro's
+// parameter `info` plus the fields a button would show up in (is_quantized,
+// min/max, value_items). No argument = the focused (bluhand) device. Written
+// for probing Live 13's 32-macro racks: is the shown macro page (1–16 vs 17–32)
+// readable, and can a macro shown as a button be told apart?
+//
+// One JSON STRING reply, like /debug/inputRouting. Sets `.path` when given a
+// path, which interns it — debug only.
+
+let infoApi: LiveAPI = null
+let ctx: AppContext = null
+
+function debugInfo(arg: any) {
+  if (!infoApi) infoApi = new LiveAPI(noFn, '')
+  const a = arg === undefined || arg === null ? '' : String(arg).trim()
+  if (a === '' || a === 'blu') {
+    const path = ctx ? ctx.focus.devicePath() : ''
+    if (!path) {
+      osc('/debug/info', JSON.stringify({ error: 'no focused device' }))
+      return
+    }
+    infoApi.path = path
+  } else if (/^\d+$/.test(a)) {
+    infoApi.id = parseInt(a)
+  } else {
+    infoApi.path = a
+  }
+  const id = parseInt(String(infoApi.id))
+  if (!id) {
+    osc('/debug/info', JSON.stringify({ error: 'does not resolve: ' + a }))
+    return
+  }
+  const out: any = {
+    id: id,
+    type: String(infoApi.type),
+    path: String(infoApi.unquotedpath),
+    info: String(infoApi.info),
+  }
+
+  const isRack = /\bcan_have_chains\b/.test(out.info)
+  const paramIds: number[] = []
+  if (isRack) {
+    out.visible_macro_count = String(infoApi.get('visible_macro_count'))
+    const raw = infoApi.get('parameters') as any[]
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] !== 'id') paramIds.push(parseInt(raw[i]))
+    }
+  }
+
+  infoApi.id = id
+  infoApi.goto('view')
+  out.view = { type: String(infoApi.type), info: String(infoApi.info) }
+
+  if (isRack) {
+    // parameters[0] is Device On; macros follow.
+    const macros: any[] = []
+    for (let i = 1; i < paramIds.length; i++) {
+      infoApi.id = paramIds[i]
+      const m: any = {
+        i: i,
+        name: String(infoApi.get('name')),
+        quantized: String(infoApi.get('is_quantized')),
+        min: String(infoApi.get('min')),
+        max: String(infoApi.get('max')),
+        value: String(infoApi.get('value')),
+      }
+      if (m.quantized === '1') {
+        m.items = String(infoApi.get('value_items'))
+      }
+      // One full member list is enough to spot a new per-parameter property.
+      if (i === 1) m.info = String(infoApi.info)
+      macros.push(m)
+    }
+    out.macros = macros
+  }
+
+  osc('/debug/info', JSON.stringify(out))
+}
+
+// --- /debug/watch [macroIndex] ----------------------------------------------
+// Which LOM property fires when a Live 13 macro is switched between dial and
+// button ("Show Macro As Button")? Observes every candidate on one parameter
+// of the focused device (default parameters[1] = Macro 1) and the device's own
+// `parameters` list, and sends `/debug/watch "<prop> <value>"` on each event.
+// A property that isn't observable just never fires. Observers are created
+// once and re-pointed on each call (teardown leaks symbols).
+
+const WATCH_PROPS = [
+  'value',
+  'name',
+  'is_quantized',
+  'value_items',
+  'min',
+  'max',
+  'state',
+  'is_enabled',
+  'automation_state',
+  'default_value',
+]
+const watchApis: LiveAPI[] = []
+let watchDeviceApi: LiveAPI = null
+
+function watchCb(label: string) {
+  return function (args: IArguments) {
+    const a = arrayfromargs(args)
+    if (a[0] !== label) return
+    osc('/debug/watch', label + ' ' + a.slice(1).join(' '))
+  }
+}
+
+function debugWatch(arg: any) {
+  const macro = parseInt(String(arg)) || 1
+  const path = ctx ? ctx.focus.devicePath() : ''
+  if (!path) {
+    osc('/debug/watch', 'error: no focused device')
+    return
+  }
+  if (!infoApi) infoApi = new LiveAPI(noFn, '')
+  infoApi.path = path
+  const deviceId = parseInt(String(infoApi.id))
+  const ids: number[] = []
+  const raw = infoApi.get('parameters') as any[]
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] !== 'id') ids.push(parseInt(raw[i]))
+  }
+  const paramId = ids[macro]
+  if (!paramId) {
+    osc('/debug/watch', 'error: no parameter ' + macro)
+    return
+  }
+  for (let i = 0; i < WATCH_PROPS.length; i++) {
+    if (!watchApis[i]) {
+      watchApis[i] = new LiveAPI(watchCb(WATCH_PROPS[i]), '')
+    }
+    watchApis[i].id = paramId
+    watchApis[i].property = WATCH_PROPS[i]
+  }
+  if (!watchDeviceApi) {
+    watchDeviceApi = new LiveAPI(watchCb('parameters'), '')
+  }
+  watchDeviceApi.id = deviceId
+  watchDeviceApi.property = 'parameters'
+  infoApi.id = paramId
+  osc(
+    '/debug/watch',
+    'watching ' + String(infoApi.get('name')) + ' (id ' + paramId + ')'
+  )
+}
+
 // --- lifecycle ---------------------------------------------------------------
 
 function init(c: AppContext) {
   setOscSink(c.osc) // own utils instance -> shared batch buffer (see CLAUDE.md)
+  ctx = c
 }
 
 log('reloaded k4-debug')
@@ -225,6 +382,8 @@ const routes: Route[] = [
   { prefix: '/debug/symbolCount', parse: 'bare', fn: symbolCount },
   { prefix: '/debug/bench', parse: 'val', fn: bench },
   { prefix: '/debug/inputRouting', parse: 'bare', fn: inputRouting },
+  { prefix: '/debug/info', parse: 'val', fn: debugInfo },
+  { prefix: '/debug/watch', parse: 'val', fn: debugWatch },
 ]
 
 export { routes, init }
