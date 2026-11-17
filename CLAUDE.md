@@ -439,6 +439,25 @@ version read (`live_app` → `get_major_version`/`get_minor_version`/
 `get_bugfix_version`) only for what must be answered *before* a suitable object
 is in hand — e.g. telling the app to disable a control at handshake.
 
+## Live 13 differences (found in the beta, Nov 2026)
+
+- **Return tracks report `can_be_armed = 1`** but have no input routing:
+  reading `available_input_routing_types`/`input_routing_type` logs "not
+  available on return tracks" and returns nothing. `can_be_armed` no longer
+  implies "has input routing" — `getTrackInputStatus` (`toggleInput.ts`) skips
+  returns by path first. `arm` itself reads fine on returns.
+- **Racks can have up to 32 macros** (`visible_macro_count` up to 32). Code that
+  assumed ≤16 (two rows of 8) broke: the bluhand macro padding computed
+  `Array(8 - count/2)` and threw a RangeError. Above 16 it now lists the macros
+  straight through and banks page them.
+- **Stale ids after a set switch (not Live-13-specific, surfaced while testing):**
+  the device reloads with no new handshake, so the app can send ids from the
+  previous set, and a stale id can resolve to an unrelated object (the Song).
+  Gate any id from the wire on its LOM type — `isTrack`/`isDevice`/`isChain`
+  in `liveApi.ts` — never on `apiValid` or `isDeviceSupported` alone (both
+  accept the Song and tracks). A stale id landing on a *same-type* object is
+  still undetectable device-side.
+
 ## Release Process
 
 The `frozen/` directory contains historical releases (`.amxd` device files and `.tosc` TouchOSC templates). Current development happens in `src/` and `Project/`. After building, the `Project/Knobbler4.amxd` file is the distributable device.
