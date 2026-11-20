@@ -1,0 +1,16 @@
+{
+  "//": "Typecheck only (esbuild bundles). Node scripts run under Node for Max (Node 22), not Max's ES5 [js], so they live outside the root tsconfig.",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": false,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["*.ts"],
+  "exclude": ["*.test.ts"]
+}

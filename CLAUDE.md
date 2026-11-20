@@ -503,6 +503,40 @@ discovery), which Push 3 standalone doesn't support. To regenerate it after a
 and Save As `Knobbler4-P3SA`. (Both load the same compiled `Project/*.js`, so JS
 changes apply to both automatically — only patcher edits need this re-sync.)
 
+**Push 3 standalone CAN advertise discovery, through avahi's D-Bus API (proven
+2026-11-20).** The publisher is `src/node/k4-advertise.ts`, built by
+`yarn build:node` (typecheck via `src/node/tsconfig.json`, then esbuild) into ONE
+bundled `Project/k4-advertise.js`, so the frozen device needs no `node_modules`.
+It lives outside the root `tsconfig` because it runs under Node 22, not Max's ES5
+`[js]`. **Patch wiring (P3SA variant only):** `[node.script k4-advertise.js
+@autostart 1]`, fed from the same `[prepend port]` (desktop `obj-168`) that
+feeds `[zero.announce]` via `[t b l b l]`; it takes `port <n>` and re-publishes on
+change. The name copies the desktop's
+`"<host> - Knobbler4 Device :<port>"`. Verified on the Push as `ableton`:
+publish, withdraw-on-exit, and rename to `… #2` on a collision. **A collision
+with a name on the SAME avahi daemon is an `AddService` error
+(`org.freedesktop.Avahi.CollisionError`), not a `StateChanged` collision**; the
+script handles both. Identical records from two publishers are NOT a collision
+(mDNS conflicts only on differing rdata). On a Mac it logs "system D-Bus
+unavailable" and does nothing. The Push runs `avahi-daemon` with no
+interface restrictions, and its D-Bus policy lets ANY user call
+`EntryGroupNew` → `AddService` → `Commit` (only `SetHostName` is denied). Live
+runs as `ableton` (uid 1000), which can't write `/etc/avahi/services` (root-owned)
+but can reach the world-writable system bus socket. Node for Max ships on the
+Push (`node` v22.18.0 under `.../packages/Node for Max/source/bin/linux/node/`).
+A `dbus-next` script bundled with esbuild (`--external:usocket --external:x11`),
+run as `ableton`, published `_osc._udp` on an arbitrary port, and the Mac resolved
+it at `push.local:<port>`. **The entry group belongs to the publishing bus
+connection**, so avahi withdrew it ~0s after the process exited: the
+advertisement lives exactly as long as the node process, which tracks the device.
+So a `[node.script]` in the P3SA variant can advertise the user's chosen port and
+re-publish on a port change (`EntryGroup.Reset` + `AddService` + `Commit`). The
+name must contain "Knobbler" for the app to list it; handle the group's
+`StateChanged` collision state (two Pushes on one LAN) with
+`Server.GetAlternativeServiceName`. A static `/etc/avahi/services/knobbler.service`
+(root via SSH) also works, but it hard-codes the port, lists the Push whether or
+not the device is loaded, and is likely wiped by a firmware update.
+
 ## Editing `.amxd` device files
 
 `.amxd` files are a binary header followed by the patcher JSON and a trailing NUL

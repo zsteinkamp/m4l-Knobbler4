@@ -2,15 +2,19 @@
   "license": "MIT",
   "scripts": {
     "generate": "node scripts/generateDeviceParams.js",
-    "build": "yarn generate && yarn tsc",
+    "build": "yarn generate && yarn tsc && yarn build:node",
+    "build:node": "tsc -p src/node && esbuild src/node/k4-advertise.ts --bundle --platform=node --target=node22 --external:max-api --external:usocket --external:x11 --outfile=Project/k4-advertise.js",
     "dev": "yarn install --frozen-lockfile && yarn generate && node scripts/generateDeviceParams.js --watch & yarn tsc --watch",
     "test": "vitest run"
   },
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.7",
     "@types/maxmsp": "^1.0.12",
+    "@types/node": "22",
     "@typescript-eslint/eslint-plugin": "^5.1.0",
     "@typescript-eslint/parser": "^5.0.1",
+    "dbus-next": "0.10.2",
+    "esbuild": "0.25.0",
     "eslint": "^8.52.0",
     "js-yaml": "^4.3.2",
     "prettier": "^3.1.0",
