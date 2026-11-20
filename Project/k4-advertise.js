@@ -12056,6 +12056,7 @@ function setPort(value) {
 }
 if (maxApi) {
   maxApi.addHandler("port", setPort);
+  maxApi.outlet("ready");
 } else {
   setPort(process.argv[2] || "2346");
   const stop = () => {

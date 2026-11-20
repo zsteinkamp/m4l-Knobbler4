@@ -509,9 +509,15 @@ changes apply to both automatically — only patcher edits need this re-sync.)
 bundled `Project/k4-advertise.js`, so the frozen device needs no `node_modules`.
 It lives outside the root `tsconfig` because it runs under Node 22, not Max's ES5
 `[js]`. **Patch wiring (P3SA variant only):** `[node.script k4-advertise.js
-@autostart 1]`, fed from the same `[prepend port]` (desktop `obj-168`) that
-feeds `[zero.announce]` via `[t b l b l]`; it takes `port <n>` and re-publishes on
-change. The name copies the desktop's
+@autostart 1]` (`obj-11`), fed by `[live.numbox listenPort]` → `[int]`
+(`obj-166`) → `[prepend port]` (`obj-168`); it takes `port <n>` and re-publishes
+on change. **Its left outlet goes through `[route ready]` back to that `[int]`'s
+left inlet, and the device does not advertise without it.** The patch sends `port`
+once, while the device loads, which is before Node has started the script, so
+Node for Max drops it and the script waits for a port forever (running process, no
+D-Bus connection). The script sends `ready` on start, and the bang re-sends the
+stored port (also rebinding `[udpreceive]` to the same port, once). A first test
+that worked without this was the race going the other way. The name copies the desktop's
 `"<host> - Knobbler4 Device :<port>"`. Verified on the Push as `ableton`:
 publish, withdraw-on-exit, and rename to `… #2` on a collision. **A collision
 with a name on the SAME avahi daemon is an `AddService` error

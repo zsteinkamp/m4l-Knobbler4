@@ -25,6 +25,7 @@ import { parsePort, serviceName } from './serviceName'
 type MaxApi = {
   addHandler: (msg: string, fn: (...args: unknown[]) => void) => void
   post: (...args: unknown[]) => void
+  outlet: (...args: unknown[]) => Promise<void>
 }
 
 let maxApi: MaxApi | null = null
@@ -192,6 +193,10 @@ function setPort(value: unknown) {
 
 if (maxApi) {
   maxApi.addHandler('port', setPort)
+  // The patch sends `port` once, when the device loads, which is before Node
+  // has started this script, so Node for Max drops it. Ask for it again: the
+  // patch routes `ready` to a bang on the [int] holding the Device Port.
+  maxApi.outlet('ready')
 } else {
   setPort(process.argv[2] || '2346')
   const stop = () => {
