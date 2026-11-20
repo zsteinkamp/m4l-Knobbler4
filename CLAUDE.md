@@ -517,7 +517,19 @@ once, while the device loads, which is before Node has started the script, so
 Node for Max drops it and the script waits for a port forever (running process, no
 D-Bus connection). The script sends `ready` on start, and the bang re-sends the
 stored port (also rebinding `[udpreceive]` to the same port, once). A first test
-that worked without this was the race going the other way. The name copies the desktop's
+that worked without this was the race going the other way.
+
+**A port change can leave a stale row on a tablet for up to ~2 minutes, and that
+is accepted.** The name carries the port, so a change withdraws the old name and
+announces a new one. Captured from the Mac on 2026-11-20: avahi sends the old
+name's goodbye (PTR/SRV/TXT, TTL 0) immediately but only ONCE, while the new name
+is announced three times. A tablet that misses the single goodbye keeps the old
+row until the 120 s SRV TTL runs out. Dropping the port from the name (so a change
+only re-announces the SRV) would fix it, but the author chose to keep the port:
+it tells several Knobblers on one host apart, and the port rarely changes.
+`setPort` also waits 500 ms for the encoder to settle, because re-registering on
+every step tripped avahi's rate limit and left the Push unlisted for about a
+minute. The name copies the desktop's
 `"<host> - Knobbler4 Device :<port>"`. Verified on the Push as `ableton`:
 publish, withdraw-on-exit, and rename to `… #2` on a collision. **A collision
 with a name on the SAME avahi daemon is an `AddService` error
