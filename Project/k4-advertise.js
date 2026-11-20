@@ -12043,16 +12043,22 @@ async function rename() {
   alternativeName = await server.GetAlternativeServiceName(currentName());
   log("name in use, renaming to", alternativeName);
 }
+var PORT_SETTLE_MS = 500;
+var pendingPort = null;
 function setPort(value) {
   const p = parsePort(value);
   if (p == null) {
     log("ignoring invalid port", value);
     return;
   }
-  if (p === port) return;
-  port = p;
-  alternativeName = null;
-  schedule(publish);
+  if (pendingPort) clearTimeout(pendingPort);
+  pendingPort = setTimeout(() => {
+    pendingPort = null;
+    if (p === port) return;
+    port = p;
+    alternativeName = null;
+    schedule(publish);
+  }, PORT_SETTLE_MS);
 }
 if (maxApi) {
   maxApi.addHandler("port", setPort);

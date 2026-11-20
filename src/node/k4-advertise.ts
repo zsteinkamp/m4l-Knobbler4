@@ -179,16 +179,26 @@ async function rename(): Promise<void> {
   log('name in use, renaming to', alternativeName)
 }
 
+// Turning the Device Port encoder sends a port per step. Re-registering on each
+// one tripped avahi's rate limit (2346 -> 2363 left the Push unlisted for about a
+// minute), so publish only once the value has settled.
+const PORT_SETTLE_MS = 500
+let pendingPort: ReturnType<typeof setTimeout> | null = null
+
 function setPort(value: unknown) {
   const p = parsePort(value)
   if (p == null) {
     log('ignoring invalid port', value)
     return
   }
-  if (p === port) return
-  port = p
-  alternativeName = null
-  schedule(publish)
+  if (pendingPort) clearTimeout(pendingPort)
+  pendingPort = setTimeout(() => {
+    pendingPort = null
+    if (p === port) return
+    port = p
+    alternativeName = null
+    schedule(publish)
+  }, PORT_SETTLE_MS)
 }
 
 if (maxApi) {
