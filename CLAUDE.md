@@ -537,6 +537,18 @@ name must contain "Knobbler" for the app to list it; handle the group's
 (root via SSH) also works, but it hard-codes the port, lists the Push whether or
 not the device is loaded, and is likely wiped by a firmware update.
 
+**After freezing the P3SA device, run `python3 scripts/strip-n4m.py
+frozen/Knobbler4-vNN-P3SA.amxd` BEFORE committing it.** Freezing a device that
+contains a `node.script` makes Max embed the entire Node for Max package (docs,
+examples, npm and its `node_modules`) as a `pkg@` entry, "Node for Max/zipfolder":
+v76 went from 1 MB to 83 MB, over GitHub's 50 MB warning. Live already ships Node
+for Max (the Push too), so the script cuts that entry out and leaves every other
+embedded file byte-identical. No Max setting to exclude it was found. It has to
+happen before the commit, because a committed 83 MB blob stays in git history (v76's
+was removed by rewriting history). `scripts/release.sh` refuses a device that still
+embeds a package (`strip-n4m.py --check`). An UNFROZEN device only references
+`k4-advertise.js` by name, so a device for the Push must be frozen.
+
 ## Editing `.amxd` device files
 
 `.amxd` files are a binary header followed by the patcher JSON and a trailing NUL

@@ -28,6 +28,11 @@ fi
 echo "Found ${#DEVICES[@]} device(s):"
 printf "  %s\n" "${DEVICES[@]}"
 
+# Freezing a node.script embeds the whole Node for Max package (~80 MB)
+if ! python3 scripts/strip-n4m.py --check "${DEVICES[@]}"; then
+  exit 1
+fi
+
 # Check README.txt exists
 if [ ! -f frozen/README.txt ]; then
   echo "ERROR: frozen/README.txt not found"
