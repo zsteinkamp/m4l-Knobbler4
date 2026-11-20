@@ -36,16 +36,25 @@ In Ableton Live, drag `Knobbler4-vXX-Push3Standalone.amxd` onto your Push 3 in A
 
 ### Connecting
 
-The Push 3 Standalone does not support Knobbler's auto-discovery, so you'll connect manually. The app's Setup tab has a **Push 3 Standalone** helper card with one-tap shortcuts for the two common addresses:
+From v76, the Push 3 Standalone shows up in the app automatically, just like a computer:
+
+1. Open the Knobbler app on your phone or tablet and go to the **Setup** tab.
+2. Under **Available devices**, tap your Push. It's listed by its network name (normally `push`), with your Device Port underneath.
+3. You should see "Connected".
+
+It's listed while a set with Knobbler4 is loaded on the Push, and leaves the list when you remove the device or switch to a set without it.
+
+#### Connecting manually
+
+With an older Knobbler4, or if your Push doesn't appear, connect manually. The app's Setup tab has a **Push 3 Standalone** helper card with one-tap shortcuts for the two common addresses:
 
 ![Setup tab with Push 3 Standalone helper card](images/push3-standalone-setup.jpg)
 
-1. Open the Knobbler app on your phone or tablet and go to the **Setup** tab.
-2. In the **Push 3 Standalone** card, tap the address that matches your situation:
+1. In the **Push 3 Standalone** card, tap the address that matches your situation:
    - **`push.local`** — both your P3SA and tablet are on the same shared WiFi network.
    - **`192.168.0.1`** — your tablet is connected to the Push's WiFi hotspot.
-3. Confirm the port is `2346`.
-4. You should see "Connected".
+2. Confirm the port matches the device's **Device Port** (`2346` unless you've changed it).
+3. You should see "Connected".
 
 ### Multiple Knobbler devices, including Push 3 Standalone
 

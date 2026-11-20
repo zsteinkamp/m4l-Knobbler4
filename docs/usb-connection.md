@@ -4,12 +4,15 @@ Sometimes you can't (or don't want to) put your computer and tablet on the same 
 network — you're at a venue, a practice space, or you simply want the rock-solid
 reliability of a cable. Knobbler works in these situations too.
 
-There are three approaches, in rough order of convenience:
+There are four approaches, in rough order of convenience:
 
 - A **direct [USB connection](#usb-connection-recommended)** — plug in a cable
   and tap your computer in the app, just like on WiFi. Works for an iPad or
   iPhone with a **Mac**, and for an Android tablet or phone with a **Windows**
   computer.
+- An **[Ethernet cable](#ethernet-with-usb-adapters)** between two USB
+  Ethernet adapters — works with any tablet and any computer, and with a
+  **Push 3 Standalone**.
 - A **[phone hotspot](#phone-hotspot)** — tether both the computer and the tablet
   to your phone's Personal Hotspot. Zero config, auto-discovery still works, and
   it travels anywhere.
@@ -26,10 +29,10 @@ look up.
 
 **Which combinations work:**
 
-| Tablet / phone | Computer | Over USB |
-| -------------- | -------- | -------- |
-| iPad / iPhone  | Mac      | Yes      |
-| Android        | Windows  | Yes      |
+| Tablet / phone | Computer | Over USB      |
+| -------------- | -------- | ------------- |
+| iPad / iPhone  | Mac      | Yes           |
+| Android        | Windows  | Yes           |
 | iPad / iPhone  | Windows  | No — use WiFi |
 | Android        | Mac      | No — use WiFi |
 
@@ -95,6 +98,44 @@ WiFi. If you'd rather not allow that, the alternative is to mark the tether's
 network **Private** in **Settings → Network & internet → Ethernet** each time you
 plug in.
 
+## Ethernet with USB Adapters
+
+If your combination isn't in the USB table above, or you're using a
+[Push 3 Standalone](./push3-standalone.md), run an ordinary Ethernet cable
+between two USB Ethernet adapters. It's just as reliable as USB, and it works
+with any tablet or phone and any computer.
+
+**On the tablet or phone:** a **USB-C to Ethernet adapter**. Get one with a
+**USB-C charging port** (power pass-through), so the tablet charges through
+the adapter while you play. For example:
+
+- [Plugable USB-C to 2.5Gb Ethernet with 100W charging (USBC-E2500PD)](https://www.amazon.com/s?k=Plugable+USBC-E2500PD)
+- [Belkin USB-C to Ethernet + Charge Adapter](https://www.amazon.com/s?k=Belkin+USB-C+to+Ethernet+%2B+Charge+Adapter)
+
+**On the computer or Push 3 Standalone:** a **USB-A to Ethernet adapter**. On
+Push 3 Standalone it goes in the USB-A port on the back. For example:
+
+- [TP-Link UE306 USB 3.0 to Gigabit Ethernet](https://www.amazon.com/s?k=TP-Link+UE306)
+- [UGREEN USB 3.0 to Gigabit Ethernet Adapter](https://www.amazon.com/s?k=UGREEN+USB+3.0+Gigabit+Ethernet+Adapter)
+
+A computer that already has an Ethernet port needs no adapter on its side.
+
+1. Plug an adapter into each device and connect them with an Ethernet cable.
+   On Push 3 Standalone, turn **Wi-Fi off** in the Setup menu first, as
+   Ableton recommends for a wired connection.
+2. Add Knobbler to your Live Set, open the Knobbler app and go to **Setup**.
+   - **Computer:** your computer appears under **Available devices**. Tap it.
+   - **Push 3 Standalone:** with Knobbler4 v76 or newer, your Push appears
+     under **Available devices** too. With an older device, tap
+     **`push.local`** in the **Push 3 Standalone** card (see
+     [Connecting](./push3-standalone.md#connecting)).
+
+With the two adapters cabled straight to each other there's no router to hand
+out addresses, so each device gives itself one (a `169.254.x.x` address). If
+the app doesn't find the other side, plug both cables into any home router
+instead, with or without Internet; it hands out addresses and the connection
+works like WiFi.
+
 ## Phone Hotspot
 
 If you have a phone with you, the simplest no-router option is to tether **both**
@@ -143,7 +184,6 @@ contribute instructions, please [let me know](mailto:zack@steinkamp.us).
    ```
 
 2. Configure sharing settings:
-
    - Open System Settings
    - Navigate to Sharing
    - Select Internet Sharing (i)
@@ -169,5 +209,5 @@ contribute instructions, please [let me know](mailto:zack@steinkamp.us).
 
 7. Select your Mac in the "Found These Knobblers" section. You should get a "Connection Successful!" message.
    ![Connection Success](images/wifi-adhoc/connection-success.png)
-</content>
-</invoke>
+   </content>
+   </invoke>
