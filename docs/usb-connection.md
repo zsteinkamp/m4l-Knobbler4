@@ -131,6 +131,11 @@ A computer that already has an Ethernet port needs no adapter on its side.
      **`push.local`** in the **Push 3 Standalone** card (see
      [Connecting](./push3-standalone.md#connecting)).
 
+   **Give it about 30 seconds after plugging in.** With no router on the
+   cable, both sides first have to give themselves an address, and the
+   device only shows up in the list once they have. Leave Setup open and it
+   appears on its own.
+
    The row for the cable is marked **USB**, because the app treats any direct
    cable link that way. If the device is also on your Wi-Fi it's listed twice;
    tap the **USB** row to use the cable.
