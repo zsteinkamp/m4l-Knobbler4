@@ -160,6 +160,8 @@ newer):
 4. **Save**, then turn **Ethernet** back on.
 
 The tablet keeps using Wi-Fi for the Internet; the cable is only for Knobbler.
+To use the adapter with a router later, switch it back to **DHCP** in the same
+menu.
 
 ### No Router on the Cable
 
