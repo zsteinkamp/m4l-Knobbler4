@@ -124,6 +124,8 @@ example:
 A computer that already has an Ethernet port needs no adapter on its side.
 
 1. Plug an adapter into each device and connect them with an Ethernet cable.
+   On an **Android** tablet, set its address once first
+   ([below](#android-give-the-tablet-an-address)).
 2. Add Knobbler to your Live Set, open the Knobbler app and go to **Setup**.
    - **Computer:** your computer appears under **Available devices**. Tap it.
    - **Push 3 Standalone:** with Knobbler4 v76 or newer, your Push appears
@@ -139,6 +141,27 @@ A computer that already has an Ethernet port needs no adapter on its side.
    The row for the cable is marked **USB**, because the app treats any direct
    cable link that way. If the device is also on your Wi-Fi it's listed twice;
    tap the **USB** row to use the cable.
+
+### Android: Give the Tablet an Address
+
+An iPad or iPhone gives itself an address on the cable automatically. An
+Android tablet doesn't, so set one once (needs Knobbler app 2026.11.16 or
+newer):
+
+1. With the adapter plugged in, open **Settings → Connections → More
+   connection settings → Ethernet**. (On non-Samsung tablets the menu may be
+   elsewhere; look for **Ethernet**.)
+2. Turn **Ethernet off**. The settings can only be changed while it's off.
+3. Choose **Static IP** and enter:
+   - **IP address:** `169.254.1.2`
+   - **Netmask:** `255.255.0.0`
+   - **DNS address:** `8.8.8.8`
+   - **Default gateway:** `169.254.1.1`
+4. **Save**, then turn **Ethernet** back on.
+
+The tablet keeps using Wi-Fi for the Internet; the cable is only for Knobbler.
+
+### No Router on the Cable
 
 With the two adapters cabled straight to each other there's no router to hand
 out addresses, so each device gives itself one (a `169.254.x.x` address). If
