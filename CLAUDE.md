@@ -244,6 +244,11 @@ but not the blue hand the surface now follows.
 - Handles Ableton instruments with multiple parameter pages
 - Imports device bank definitions from `deviceParams.ts`
 
+**`k4-bluhandXY.ts`** - Auto XY (capability `aXY`, setting `/autoXY`, on by default)
+
+- Pure matcher: adjacent bank parameters whose names form a fixed pairing (Freq/Cutoff + Res/Q, X + Y, Pan + Tilt, Time + Feedback; whole words, case-insensitive) become one XY pad in the app. Never across the two rows of 8, never overlapping.
+- `k4-bluhand` reads every bank's names on each device/parameter-list change (one `.id =` + `get('name')` per parameter, no symbols) and sends `/bxyPairs` in APP slot numbering (bank k = `16k+1..`) from `sendBankNames`, ahead of `/bBanks`. Deliberately no per-user overrides: a new pairing is a device release.
+
 **`k4-sidebarMixer.ts`** - Single-track mixer (the selected track)
 
 - Volume, pan, sends, mute, solo, arm, crossfade-assign, record; meters

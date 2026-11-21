@@ -42,7 +42,9 @@ var log = (0, utils_1.logFactory)(k4_config_1.default);
 // (knobblerCore setSlotMode/pressSlot, /kindN 'mom'|'tog', /onvalN /offvalN /konN).
 // 'kPath' = external clients can bind a Live API parameter path to a slot via
 // the /mapN {path} OSC route (knobblerCore mapPath).
-var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath';
+// 'aXY' = Auto XY on bluhand: /bxyPairs pads from matching parameter names
+// (k4-bluhandXY), toggled by the /autoXY <0|1> setting.
+var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath aXY';
 var deviceVersion = '';
 var synRefreshTask = null;
 var ctx = null;

@@ -20,6 +20,7 @@ var liveApi_1 = require("./liveApi");
 var k4_config_1 = require("./k4-config");
 var consts_1 = require("./consts");
 var k4_bluhandBanks_1 = require("./k4-bluhandBanks");
+var k4_bluhandXY_1 = require("./k4-bluhandXY");
 var Slots = require("./k4-bluhandSlots");
 var log = (0, utils_1.logFactory)(k4_config_1.default);
 // Orchestrator context (set in init) — used for the cross-module bkMap call.
@@ -41,9 +42,15 @@ var state = {
     cuePointNames: [],
     cuePointTimes: [],
     cuePointCount: 0,
+    // Auto XY (k4-bluhandXY): pads for every bank, in app slot numbering.
+    autoXY: true,
+    xyPairs: [],
 };
 // --- Bank display ----------------------------------------------------------
 function sendBankNames() {
+    // Ahead of /bBanks, so a bank page has its pads by the time the app moves to
+    // it. Not slot-addressed, so it needs none of the bank translation /bvalN does.
+    (0, utils_1.osc)('/bxyPairs', state.autoXY ? state.xyPairs : []);
     var currBankIdx = state.currBank - 1;
     var banks = state.bankParamArr.map(function (bank, idx) {
         return { name: bank.name, sel: idx === currBankIdx };
@@ -203,10 +210,54 @@ function onParameterChange() {
     }
     state.bankParamArr = (0, k4_bluhandBanks_1.getBankParamArr)(paramIds, deviceType, api);
     state.numBanks = state.bankParamArr.length;
+    computeXYPairs();
     if (state.currBank > state.numBanks) {
         state.currBank = state.numBanks;
     }
     debounceSendCurrBank();
+}
+// --- Auto XY ---------------------------------------------------------------
+var AUTO_XY_KEY = 'autoXY';
+var nameApi = null;
+function paramName(paramIdx) {
+    var id = paramIdx > 0 ? state.allParamIds[paramIdx] || 0 : 0;
+    if (!id)
+        return '';
+    if (!nameApi)
+        nameApi = new LiveAPI(consts_1.noFn, '');
+    nameApi.id = id; // numeric: interns no symbol (CLAUDE.md)
+    if (+nameApi.id === 0)
+        return '';
+    return (0, utils_1.dequote)(nameApi.get('name').toString());
+}
+// Reads every bank's parameter names up front (one get per parameter), so
+// the pads are known for all bank pages, not only the one on screen. Skipped
+// while the feature is off.
+function computeXYPairs() {
+    if (!state.autoXY) {
+        state.xyPairs = [];
+        return;
+    }
+    state.xyPairs = (0, k4_bluhandXY_1.allPairs)(state.bankParamArr.map(function (bank) {
+        var names = [];
+        for (var i = 0; i < k4_bluhandXY_1.SLOTS_PER_BANK; i++) {
+            var idx = bank.paramIdxArr[i];
+            names.push(idx === undefined ? '' : paramName(idx));
+        }
+        return names;
+    }));
+}
+// /autoXY <0|1> from the app; persisted per device instance, on by default.
+function setAutoXY(val) {
+    var next = !!+val;
+    if (next !== state.autoXY) {
+        state.autoXY = next;
+        if (ctx)
+            ctx.settings.set(AUTO_XY_KEY, next ? 1 : 0);
+        computeXYPairs();
+    }
+    (0, utils_1.osc)('/autoXY', state.autoXY ? 1 : 0);
+    sendBankNames();
 }
 function toggleOnOff() {
     if (!state.onOffWatcher) {
@@ -674,6 +725,7 @@ function pushState() {
     debounceSendCuePoints();
     emitCurrDeviceName();
     onVariationChange();
+    (0, utils_1.osc)('/autoXY', state.autoXY ? 1 : 0);
     sendCurrBank();
 }
 // --- Navigation ------------------------------------------------------------
@@ -897,6 +949,9 @@ function init(c) {
     (0, utils_1.setOscSink)(c.osc);
     Slots.bindOsc(c.osc);
     ctx = c;
+    var storedAutoXY = c.settings.get(AUTO_XY_KEY);
+    state.autoXY =
+        storedAutoXY === null || storedAutoXY === undefined ? true : !!+storedAutoXY;
     Slots.initSlots();
     initTransportObservers();
     initSongPosObservers();
@@ -926,6 +981,7 @@ var routes = [
     { prefix: '/bval', parse: 'slotVal', fn: val, coalesce: true },
     { prefix: '/bkMap', parse: 'slotVal', fn: bkMap },
     { prefix: '/bBank', parse: 'slot', fn: gotoBank },
+    { prefix: '/autoXY', parse: 'val', fn: setAutoXY },
     { prefix: '/bbankPrev', parse: 'bare', fn: bankPrev },
     { prefix: '/bbankNext', parse: 'bare', fn: bankNext },
     { prefix: '/bdefaultbval', parse: 'slot', fn: bSetDefault },

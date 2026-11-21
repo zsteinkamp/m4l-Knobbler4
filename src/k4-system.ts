@@ -42,8 +42,10 @@ const log = logFactory(config)
 // (knobblerCore setSlotMode/pressSlot, /kindN 'mom'|'tog', /onvalN /offvalN /konN).
 // 'kPath' = external clients can bind a Live API parameter path to a slot via
 // the /mapN {path} OSC route (knobblerCore mapPath).
+// 'aXY' = Auto XY on bluhand: /bxyPairs pads from matching parameter names
+// (k4-bluhandXY), toggled by the /autoXY <0|1> setting.
 const REPLY_CAPS =
-  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath'
+  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath aXY'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null

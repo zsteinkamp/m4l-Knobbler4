@@ -24,6 +24,7 @@ import {
 import config from './k4-config'
 import { noFn } from './consts'
 import { getBankParamArr } from './k4-bluhandBanks'
+import { allPairs, SLOTS_PER_BANK } from './k4-bluhandXY'
 import * as Slots from './k4-bluhandSlots'
 
 const log = logFactory(config)
@@ -48,11 +49,17 @@ const state = {
   cuePointNames: [] as LiveAPI[], // pooled; only the first cuePointCount are live
   cuePointTimes: [] as LiveAPI[],
   cuePointCount: 0,
+  // Auto XY (k4-bluhandXY): pads for every bank, in app slot numbering.
+  autoXY: true,
+  xyPairs: [] as number[],
 }
 
 // --- Bank display ----------------------------------------------------------
 
 function sendBankNames() {
+  // Ahead of /bBanks, so a bank page has its pads by the time the app moves to
+  // it. Not slot-addressed, so it needs none of the bank translation /bvalN does.
+  osc('/bxyPairs', state.autoXY ? state.xyPairs : [])
   const currBankIdx = state.currBank - 1
   const banks = state.bankParamArr.map((bank, idx) => {
     return { name: bank.name, sel: idx === currBankIdx }
@@ -228,12 +235,59 @@ function onParameterChange() {
   }
   state.bankParamArr = getBankParamArr(paramIds, deviceType, api)
   state.numBanks = state.bankParamArr.length
+  computeXYPairs()
 
   if (state.currBank > state.numBanks) {
     state.currBank = state.numBanks
   }
 
   debounceSendCurrBank()
+}
+
+// --- Auto XY ---------------------------------------------------------------
+
+const AUTO_XY_KEY = 'autoXY'
+
+let nameApi: LiveAPI = null
+function paramName(paramIdx: number): string {
+  const id = paramIdx > 0 ? state.allParamIds[paramIdx] || 0 : 0
+  if (!id) return ''
+  if (!nameApi) nameApi = new LiveAPI(noFn, '')
+  nameApi.id = id // numeric: interns no symbol (CLAUDE.md)
+  if (+nameApi.id === 0) return ''
+  return dequote(nameApi.get('name').toString())
+}
+
+// Reads every bank's parameter names up front (one get per parameter), so
+// the pads are known for all bank pages, not only the one on screen. Skipped
+// while the feature is off.
+function computeXYPairs() {
+  if (!state.autoXY) {
+    state.xyPairs = []
+    return
+  }
+  state.xyPairs = allPairs(
+    state.bankParamArr.map(function (bank) {
+      const names: string[] = []
+      for (let i = 0; i < SLOTS_PER_BANK; i++) {
+        const idx = bank.paramIdxArr[i]
+        names.push(idx === undefined ? '' : paramName(idx))
+      }
+      return names
+    })
+  )
+}
+
+// /autoXY <0|1> from the app; persisted per device instance, on by default.
+function setAutoXY(val: number) {
+  const next = !!+val
+  if (next !== state.autoXY) {
+    state.autoXY = next
+    if (ctx) ctx.settings.set(AUTO_XY_KEY, next ? 1 : 0)
+    computeXYPairs()
+  }
+  osc('/autoXY', state.autoXY ? 1 : 0)
+  sendBankNames()
 }
 
 function toggleOnOff() {
@@ -735,6 +789,7 @@ function pushState() {
   debounceSendCuePoints()
   emitCurrDeviceName()
   onVariationChange()
+  osc('/autoXY', state.autoXY ? 1 : 0)
   sendCurrBank()
 }
 
@@ -969,6 +1024,9 @@ function init(c: AppContext) {
   setOscSink(c.osc)
   Slots.bindOsc(c.osc)
   ctx = c
+  const storedAutoXY = c.settings.get(AUTO_XY_KEY)
+  state.autoXY =
+    storedAutoXY === null || storedAutoXY === undefined ? true : !!+storedAutoXY
   Slots.initSlots()
   initTransportObservers()
   initSongPosObservers()
@@ -1008,6 +1066,7 @@ const routes: Route[] = [
   { prefix: '/bval', parse: 'slotVal', fn: val, coalesce: true },
   { prefix: '/bkMap', parse: 'slotVal', fn: bkMap },
   { prefix: '/bBank', parse: 'slot', fn: gotoBank },
+  { prefix: '/autoXY', parse: 'val', fn: setAutoXY },
   { prefix: '/bbankPrev', parse: 'bare', fn: bankPrev },
   { prefix: '/bbankNext', parse: 'bare', fn: bankNext },
   { prefix: '/bdefaultbval', parse: 'slot', fn: bSetDefault },
