@@ -112,18 +112,24 @@ the adapter and you aren't relying on the battery during a set. For example:
 - [Belkin USB-C to Ethernet + Charge Adapter (100W)](https://www.amazon.com/s?k=Belkin+USB-C+to+Ethernet+%2B+Charge+Adapter) (tested with an iPad and Push 3 Standalone)
 - [Plugable USB-C to 2.5Gb Ethernet with 100W charging (USBC-E2500PD)](https://www.amazon.com/s?k=Plugable+USBC-E2500PD)
 
-**On the computer or Push 3 Standalone:** a **USB-A to Ethernet adapter**. On
-Push 3 Standalone it goes in the USB-A port on the back. Push 3 Standalone
-has drivers for adapters built on the common **ASIX AX88179** and **Realtek
-RTL8152/RTL8153** chips, which covers most USB 3.0 Gigabit adapters. For
-example:
+**On the computer or Push 3 Standalone:** a **USB-A to Ethernet adapter**.
+
+> **Use the USB-A port on the back of the Push, not the USB-C port.** The
+> Ethernet adapter on the Push side must be a **USB-A** adapter plugged into
+> the Push's **USB-A** port. It will not work in the Push's USB-C port, even
+> with a USB-C adapter.
+
+Push 3 Standalone has drivers for adapters built on the common **ASIX
+AX88179** and **Realtek RTL8152/RTL8153** chips, which covers most USB 3.0
+Gigabit adapters. For example:
 
 - [UGREEN USB 3.0 to Gigabit Ethernet Adapter](https://www.amazon.com/s?k=UGREEN+USB+3.0+Gigabit+Ethernet+Adapter)
 - [TP-Link UE306 USB 3.0 to Gigabit Ethernet](https://www.amazon.com/s?k=TP-Link+UE306)
 
 A computer that already has an Ethernet port needs no adapter on its side.
 
-1. Plug an adapter into each device and connect them with an Ethernet cable.
+1. Plug an adapter into each device (on Push 3 Standalone, the **USB-A**
+   port) and connect them with an Ethernet cable.
    On an **Android** tablet, set its address once first
    ([below](#android-give-the-tablet-an-address)).
 2. Add Knobbler to your Live Set, open the Knobbler app and go to **Setup**.

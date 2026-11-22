@@ -46,11 +46,16 @@ It's listed while a set with Knobbler4 is loaded on the Push, and leaves the lis
 
 #### Over an Ethernet cable
 
-For a wired link, put a USB Ethernet adapter in the Push's USB-A port and
-another on your tablet, and connect them with an Ethernet cable. The Push then
-appears in **Available devices** marked **USB**, about 30 seconds after you
-plug in. An iPad needs no setup; an Android tablet needs an address set once.
+For a wired link, put a USB-A Ethernet adapter in the Push's **USB-A** port
+and a USB-C Ethernet adapter on your tablet, and connect them with an
+Ethernet cable. The Push then appears in **Available devices** marked
+**USB**, about 30 seconds after you plug in. An iPad needs no setup; an Android tablet needs an address set once.
 See [Ethernet with USB Adapters](usb-connection.md#ethernet-with-usb-adapters).
+
+> **Use the USB-A port on the back of the Push, not the USB-C port.** The
+> Ethernet adapter on the Push side must be a **USB-A** adapter plugged into
+> the Push's **USB-A** port. It will not work in the Push's USB-C port, even
+> with a USB-C adapter.
 
 #### Connecting manually
 
