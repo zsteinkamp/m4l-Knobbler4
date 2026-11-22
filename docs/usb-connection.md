@@ -147,16 +147,16 @@ monitor connects fine.
    ([below](#manual-ip)).
 2. Add Knobbler to your Live Set, open the Knobbler app and go to **Setup**.
 
+   **Give it about 30 seconds after plugging in.** With no router on the
+   cable, an iPad or iPhone and the computer (or Push) each have to give
+   themselves an address first, so the list stays empty for a while — that's
+   normal. Leave Setup open and the device appears on its own.
+
    - **Computer:** your computer appears under **Available devices**. Tap it.
    - **Push 3 Standalone:** with Knobbler4 v76 or newer, your Push appears
      under **Available devices** too. With an older device, tap
      **`push.local`** in the **Push 3 Standalone** card (see
      [Connecting](./push3-standalone.md#connecting)).
-
-   **Give it about 30 seconds after plugging in.** With no router on the
-   cable, both sides first have to give themselves an address, and the
-   device only shows up in the list once they have. Leave Setup open and it
-   appears on its own.
 
    The row for the cable is marked **USB**, because the app treats any direct
    cable link that way. If the device is also on your Wi-Fi it's listed twice;
