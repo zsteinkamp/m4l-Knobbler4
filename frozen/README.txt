@@ -24,7 +24,7 @@ Push 3 Standalone Instructions
 - Add the Knobbler4-vXX-P3SA.amxd file to your Live Set on the Push 3
   1) Navigate to the Main track (small button to the right of the other track selection buttons)
   2) Press the "+" button next to the jog wheel
-  3) Device > Max for Live > Knobbler-vXX-P3SA
+  3) Device > Max for Live > Knobbler4-vXX-P3SA
 - Run the Knobbler app on your touch device.
 - Go to the Setup page of the Knobbler app.
   - If your P3SA is on a shared WiFi (e.g. your home WiFi), then tap or enter the hostname 'push.local'.
