@@ -103,9 +103,9 @@ Two adjacent Knobbler sliders can be linked into an X-Y pad, giving you two-dime
 
 <img alt="Link Button" src="images/link_mode_xy_start.jpg" width="32%"/> <img alt="Link Mode" src="images/link_mode_xy_link.jpg" width="32%"/> <img alt="X-Y Created" src="images/link_mode_xy_end.jpg" width="32%"/>
 
-To create an X-Y pad, tap the Link button in the toolbar, then tap between two adjacent sliders to combine them. The two sliders will be replaced with an X-Y pad. The left slider controls the X axis and the right slider controls the Y axis.
+To create an X-Y pad, tap **Layout** above the sliders. A link icon appears between each pair of side-by-side sliders; tap one to combine those two sliders into an X-Y pad. The left slider controls the X axis and the right slider controls the Y axis.
 
-To split an X-Y pad back into two individual sliders, tap the Link button in the toolbar, then tap the X-Y pad you want to split.
+To split an X-Y pad back into two individual sliders, tap **Layout**, then tap the broken-link icon on the pad. You stay in Layout mode after a join or split, so you can make several changes in a row; tap **Layout** again when you're done.
 
 X-Y pad assignments are saved per page and persist with your Live Set.
 

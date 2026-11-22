@@ -63,7 +63,7 @@ choice.
 
 Bluhand has no manual join or split. If you want an XY pad that doesn't
 follow these names, map the two parameters to a Knobbler page and join them
-there in Layout mode (see [Mapping Mode](./mapping.md)).
+there in Layout mode (see [X-Y Pads](features.md#x-y-pads)).
 
 ### Want another pairing?
 
