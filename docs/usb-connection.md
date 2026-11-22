@@ -113,6 +113,8 @@ If your combination isn't in the USB table above, or you're using a
 between two USB Ethernet adapters. It's just as reliable as USB, and it works
 with any tablet or phone and any computer.
 
+![A Belkin USB-C Ethernet adapter for the tablet and a USB-A Ethernet adapter for the computer or Push, joined by an Ethernet cable](images/usb-connection/ethernet-adapters.jpg)
+
 **On the tablet or phone:** a **USB-C to Ethernet adapter**. Get one with a
 **USB-C charging port** (power pass-through), so the tablet charges through
 the adapter and you aren't relying on the battery during a set. For example:
