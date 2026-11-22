@@ -125,6 +125,10 @@ The device can be toggled off and on with the orange button next to the device t
 
 > Make sure you do not turn off the Knobbler device! Otherwise you will have to turn it back on using the mouse. :)
 
+#### Auto XY Pads
+
+Bluhand joins two neighboring parameters that belong together, like a filter's Frequency and Resonance or two macros named X and Y, into one XY pad on its own. See [Auto XY Pads](./auto-xy.md) for the full word list and how to make your own pads with rack macros.
+
 #### Default Value
 
 All sliders in Knobbler respond to a double-tap by resetting the parameter to its default value. Double-tap to default.
