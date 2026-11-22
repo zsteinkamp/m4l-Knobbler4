@@ -44,6 +44,14 @@ From v76, the Push 3 Standalone shows up in the app automatically, just like a c
 
 It's listed while a set with Knobbler4 is loaded on the Push, and leaves the list when you remove the device or switch to a set without it.
 
+#### Over an Ethernet cable
+
+For a wired link, put a USB Ethernet adapter in the Push's USB-A port and
+another on your tablet, and connect them with an Ethernet cable. The Push then
+appears in **Available devices** marked **USB**, about 30 seconds after you
+plug in. An iPad needs no setup; an Android tablet needs an address set once.
+See [Ethernet with USB Adapters](usb-connection.md#ethernet-with-usb-adapters).
+
 #### Connecting manually
 
 With an older Knobbler4, or if your Push doesn't appear, connect manually. The app's Setup tab has a **Push 3 Standalone** helper card with one-tap shortcuts for the two common addresses:

@@ -87,7 +87,7 @@ If Bonjour is running, ensure that the Windows Firewall is configured to allow t
 
 The simplest and most reliable option is to get a cheap WiFi access point and bring it with you. [Here is one for $30 on Amazon.](https://www.amazon.com/TP-Link-AC1200-Router-Archer-A54/dp/B09G5Y1HWZ)
 
-Or use a USB cable: an iPad or iPhone connects over USB to a Mac, and an Android tablet or phone to a Windows computer. See [Connecting Without WiFi](usb-connection.md), which also covers an ad-hoc WiFi network on a Mac.
+Or use a cable: an iPad or iPhone connects over USB to a Mac, and an Android tablet or phone to a Windows computer. Any other combination, including a Push 3 Standalone, works over an Ethernet cable between two USB Ethernet adapters. See [Connecting Without WiFi](usb-connection.md), which also covers an ad-hoc WiFi network on a Mac.
 
 If you are on Windows, [these instructions](https://support.structure.io/article/354-how-to-create-an-ad-hoc-connection-with-windows) may help.
 

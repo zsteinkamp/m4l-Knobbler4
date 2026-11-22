@@ -29,12 +29,12 @@ look up.
 
 **Which combinations work:**
 
-| Tablet / phone | Computer | Over USB      |
-| -------------- | -------- | ------------- |
-| iPad / iPhone  | Mac      | Yes           |
-| Android        | Windows  | Yes           |
-| iPad / iPhone  | Windows  | No — use WiFi |
-| Android        | Mac      | No — use WiFi |
+| Tablet / phone | Computer | Over USB                                                 |
+| -------------- | -------- | -------------------------------------------------------- |
+| iPad / iPhone  | Mac      | Yes                                                      |
+| Android        | Windows  | Yes                                                      |
+| iPad / iPhone  | Windows  | No — use [Ethernet](#ethernet-with-usb-adapters) or WiFi |
+| Android        | Mac      | No — use [Ethernet](#ethernet-with-usb-adapters) or WiFi |
 
 The cable only carries a network when both ends speak the same kind of USB
 networking. Android's USB tethering uses a protocol (RNDIS) that Windows supports
@@ -141,6 +141,11 @@ A computer that already has an Ethernet port needs no adapter on its side.
    The row for the cable is marked **USB**, because the app treats any direct
    cable link that way. If the device is also on your Wi-Fi it's listed twice;
    tap the **USB** row to use the cable.
+
+**On Windows, if the row appears but connecting fails with "No response",**
+it's the same firewall setting as for USB: Windows files a cable with no
+router as a **Public** network. Tick **Public** for Ableton Live as described
+[above](#android-with-a-windows-computer).
 
 ### Android: Give the Tablet an Address
 
