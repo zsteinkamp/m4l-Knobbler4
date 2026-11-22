@@ -28,11 +28,11 @@ Pair Knobbler with P3SA and you can:
 When you download the Knobbler4 release, the `.zip` contains two `.amxd` files:
 
 - **`Knobbler4-vXX.amxd`** — for your computer.
-- **`Knobbler4-vXX-Push3Standalone.amxd`** — for the Push 3 Standalone.
+- **`Knobbler4-vXX-P3SA.amxd`** — for the Push 3 Standalone.
 
 ### Installing
 
-In Ableton Live, drag `Knobbler4-vXX-Push3Standalone.amxd` onto your Push 3 in Ableton, then add it to the Main track of the set or template you want to use on Push.
+In Ableton Live, drag `Knobbler4-vXX-P3SA.amxd` onto your Push 3 in Ableton, then add it to the Main track of the set or template you want to use on Push.
 
 ### Connecting
 
