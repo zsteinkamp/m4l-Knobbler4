@@ -6,11 +6,11 @@ reliability of a cable. Knobbler works in these situations too.
 
 **Which cable do I need?**
 
-|                       | iOS (iPad / iPhone)                                            | Android                                                                                                                    |
-| --------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Mac**               | [USB cable](#ipad-or-iphone-with-a-mac)                        | [Ethernet, with two USB adapters](#ethernet-with-usb-adapters) + [a one-time address](#android-give-the-tablet-an-address) |
-| **Windows**           | [Ethernet, with two USB adapters](#ethernet-with-usb-adapters) | [USB cable](#android-with-a-windows-computer)                                                                              |
-| **Push 3 Standalone** | [Ethernet, with two USB adapters](#ethernet-with-usb-adapters) | [Ethernet, with two USB adapters](#ethernet-with-usb-adapters) + [a one-time address](#android-give-the-tablet-an-address) |
+|                       | iOS (iPad / iPhone)                                  | Android                                                                                                 |
+| --------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Mac**               | [USB cable](#ipad-or-iphone-with-a-mac)              | [USB Ethernet Adapters](#ethernet-with-usb-adapters) + [Manual IP](#android-give-the-tablet-an-address) |
+| **Windows**           | [USB Ethernet Adapters](#ethernet-with-usb-adapters) | [USB cable](#android-with-a-windows-computer)                                                           |
+| **Push 3 Standalone** | [USB Ethernet Adapters](#ethernet-with-usb-adapters) | [USB Ethernet Adapters](#ethernet-with-usb-adapters) + [Manual IP](#android-give-the-tablet-an-address) |
 
 There are four approaches, in rough order of convenience:
 
