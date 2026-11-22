@@ -6,6 +6,16 @@
 
 These are the release notes for the Knobbler **app** on your iPad, iPhone or Android device. For the Max for Live **device** changelog, see the [GitHub releases](https://github.com/zsteinkamp/m4l-Knobbler4/releases). Notes marked _(iOS only)_ or _(Android only)_ apply to just that platform.
 
+### 2026.11.16 — November 16, 2026
+
+- Push 3 Standalone now appears under Available devices in Setup, just like a computer: tap it to connect, with no address to type. It shows the Device Port you’ve set, and leaves the list when Knobbler is removed from the set. Requires Knobbler4 device v76 or newer
+- Bluhand now makes an XY pad on its own when two neighboring parameters belong together: Frequency and Resonance, X and Y, Pan and Tilt, Time and Feedback. Rename two rack macros to X and Y and they join into a pad straight away. Turn it off with Auto XY Pads in Bluhand under Settings → Device. Requires Knobbler4 device v77 or newer
+- Setup responds instantly when you pick a device or clear the connection, and connecting is more reliable: tapping a device always connects afresh, even the one already selected
+- Switching Bluhand banks is snappier
+- Put the pan slider above the fader instead of below it with Pan Above Fader in Settings → Mixer
+- Connect over an Ethernet cable: a USB Ethernet adapter on your iPad or iPhone, cabled to one on your computer or in the USB-A port of a Push 3 Standalone. There’s nothing to set up: about 30 seconds after you plug in, the device shows up under Available devices, marked USB. With a Mac, a plain USB cable works too; Ethernet is the wired option for a Windows computer or Push 3 Standalone _(iOS only)_
+- Connect over an Ethernet cable: a USB-C Ethernet adapter on your tablet, cabled to one on your computer or in the USB-A port of a Push 3 Standalone. Set a manual IP once in the tablet’s Ethernet settings (see Manual IP in the setup guide); the device then shows up under Available devices, marked USB. With a Windows computer, a plain USB cable with USB tethering works too; Ethernet is the wired option for a Mac or Push 3 Standalone _(Android only)_
+
 ### 2026.11.6 — November 6, 2026
 
 - A Knobbler slot can now be a button instead of a fader. In Layout mode, set any mapped slot to Momentary or Toggle and it jumps between two parameter values you pick, defaulting to the parameter’s full range. Requires Knobbler4 device v74 or newer

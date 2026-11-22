@@ -1,7 +1,44 @@
 {
-  "generated": "2026-11-11T20:19:58.893Z",
+  "generated": "2026-11-22T20:22:29.340Z",
   "repo": "zsteinkamp/m4l-Knobbler4",
   "appReleases": [
+    {
+      "side": "app",
+      "version": "2026.11.16",
+      "date": "2026-11-16",
+      "approx": false,
+      "title": "Bluhand Auto XY + Push 3 Standalone discovery",
+      "notes": [
+        {
+          "text": "Push 3 Standalone now appears under Available devices in Setup, just like a computer: tap it to connect, with no address to type. It shows the Device Port you’ve set, and leaves the list when Knobbler is removed from the set. Requires Knobbler4 device v76 or newer",
+          "tag": null
+        },
+        {
+          "text": "Bluhand now makes an XY pad on its own when two neighboring parameters belong together: Frequency and Resonance, X and Y, Pan and Tilt, Time and Feedback. Rename two rack macros to X and Y and they join into a pad straight away. Turn it off with Auto XY Pads in Bluhand under Settings → Device. Requires Knobbler4 device v77 or newer",
+          "tag": null
+        },
+        {
+          "text": "Setup responds instantly when you pick a device or clear the connection, and connecting is more reliable: tapping a device always connects afresh, even the one already selected",
+          "tag": null
+        },
+        {
+          "text": "Switching Bluhand banks is snappier",
+          "tag": null
+        },
+        {
+          "text": "Put the pan slider above the fader instead of below it with Pan Above Fader in Settings → Mixer",
+          "tag": null
+        },
+        {
+          "text": "Connect over an Ethernet cable: a USB Ethernet adapter on your iPad or iPhone, cabled to one on your computer or in the USB-A port of a Push 3 Standalone. There’s nothing to set up: about 30 seconds after you plug in, the device shows up under Available devices, marked USB. With a Mac, a plain USB cable works too; Ethernet is the wired option for a Windows computer or Push 3 Standalone",
+          "tag": "iOS"
+        },
+        {
+          "text": "Connect over an Ethernet cable: a USB-C Ethernet adapter on your tablet, cabled to one on your computer or in the USB-A port of a Push 3 Standalone. Set a manual IP once in the tablet’s Ethernet settings (see Manual IP in the setup guide); the device then shows up under Available devices, marked USB. With a Windows computer, a plain USB cable with USB tethering works too; Ethernet is the wired option for a Mac or Push 3 Standalone",
+          "tag": "Android"
+        }
+      ]
+    },
     {
       "side": "app",
       "version": "2026.11.6",
@@ -1015,6 +1052,55 @@
     }
   ],
   "deviceReleases": [
+    {
+      "side": "device",
+      "version": "v77",
+      "date": "2026-11-22",
+      "approx": false,
+      "title": "Bluhand Auto XY",
+      "notes": [
+        "Bluhand now makes XY pads on its own!",
+        "- Two neighboring parameters that belong together become one XY pad in the app. - Rename two rack macros with **X** and **Y** in their names (see logic and full word list below) and they join into a pad right away; rename them apart and they split. - Turn it off with **Auto XY Pads in Bluhand** under the app's **Settings → Device** (Knobbler app 2026.11.16 or newer). It's on by default and remembered per device.",
+        "### Which parameters pair up",
+        "| Left parameter contains | Right parameter contains | |---|---| | **Freq**, **Frequency** or **Cutoff** | **Res**, **Reso**, **Resonance** or **Q** | | **X** | **Y** | | **Pan** | **Tilt** | | **Time** | **Feedback** |",
+        "### How to get a pad",
+        "1. **Put the two parameters side by side**, the left word first: \"Cutoff\" then \"Resonance\" pairs, but \"Resonance\" then \"Cutoff\" doesn't. 2. **Keep them on the same row.** Bluhand shows a bank as two rows of eight, and a pad never spans the break between them. Each parameter can belong to only one pad. 3. **Use whole words, in any case.** \"Filter Cutoff\" and \"LFO X\" match, but \"Xtra\" and \"Timer\" don't. A number stuck to a word stops it matching: \"Freq 2\" and \"Freq-2\" work, \"Freq2\" doesn't.",
+        "For a rack, rename its macros: for example, name macros 1 and 2 **X** and **Y**, or **Cutoff** and **Reso**.",
+        "Want another pairing? Email me and it can go in a future release. zack@steinkamp.us"
+      ],
+      "images": [],
+      "videos": [
+        "https://github.com/user-attachments/assets/3b10ad85-7b36-400c-84e3-d7c681dcf611"
+      ]
+    },
+    {
+      "side": "device",
+      "version": "v76",
+      "date": "2026-11-20",
+      "approx": false,
+      "title": "Push 3 Standalone Auto-Discovery",
+      "notes": [
+        "Push 3 Standalone now shows up in the app automatically!",
+        "- The Push appears under **Available devices** in the app's Setup page, just like a computer. Tap it to connect; there's no address to type. - It advertises whatever **Device Port** you've set, and follows a change within about a second of the port settling. - It leaves the list when you remove Knobbler from the set or switch to a set without it. - Older devices still connect the manual way: tap **push.local** or **192.168.0.1** in the app's Push 3 Standalone card."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/492114b5-5951-4da4-a26c-e00be64c0f01"
+      ],
+      "videos": []
+    },
+    {
+      "side": "device",
+      "version": "v75",
+      "date": "2026-11-17",
+      "approx": false,
+      "title": "Live 13 Beta Fixes",
+      "notes": [
+        "Fixes for the Live 13 beta.",
+        "- Return tracks no longer log input-routing errors. Live 13 reports them as armable even though they have no input routing. - Bluhand now handles racks with more than 16 macros, which Live 13 allows (up to 32). Racks with an odd number of macros no longer throw an error either. - Macros set to \"Show Macro As Button\" in Live 13 now appear as buttons on the Bluhand page. A change made in Live shows up the next time the macro's value changes. - Live 13's new Mid/Side and Multiband racks work like any other rack. Their chains, macros and devices show up in navigation and on the Bluhand page. - Switching sets no longer logs errors about missing properties on the Song. Knobbler now checks that ids from the app still point at a track, device or chain, and the mixer waits for a valid track."
+      ],
+      "images": [],
+      "videos": []
+    },
     {
       "side": "device",
       "version": "v74",
