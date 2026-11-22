@@ -182,6 +182,11 @@ The tablet keeps using Wi-Fi for the Internet; the cable is only for Knobbler.
 To use the adapter with a router later, switch it back to **DHCP** in the same
 menu.
 
+> **Coming, hopefully:** I'm in communication with Ableton about letting Push
+> 3 Standalone hand out addresses on the cable itself. That would make an
+> Android tablet plug-and-play with the Push, the way an iPad already is, with
+> no manual IP to set.
+
 ### No Router on the Cable
 
 With the two adapters cabled straight to each other there's no router to hand
