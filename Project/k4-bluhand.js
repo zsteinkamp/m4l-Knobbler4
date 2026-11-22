@@ -247,6 +247,24 @@ function computeXYPairs() {
         return names;
     }));
 }
+// A parameter on the current bank was renamed. Re-pair after the burst
+// settles (a rename can fire per keystroke-commit, and one rename may touch
+// several slots), and send /bxyPairs only when the pairing actually changed.
+// Only the bank on screen is observed, which covers renaming rack macros;
+// other banks catch up on the next device/parameter change.
+var renameTask = new Task(function () {
+    if (!state.autoXY)
+        return;
+    var before = state.xyPairs.join(',');
+    computeXYPairs();
+    if (state.xyPairs.join(',') !== before) {
+        (0, utils_1.osc)('/bxyPairs', state.xyPairs);
+    }
+});
+function onParamRename() {
+    renameTask.cancel();
+    renameTask.schedule(50);
+}
 // /autoXY <0|1> from the app; persisted per device instance, on by default.
 function setAutoXY(val) {
     var next = !!+val;
@@ -953,6 +971,7 @@ function init(c) {
     state.autoXY =
         storedAutoXY === null || storedAutoXY === undefined ? true : !!+storedAutoXY;
     Slots.initSlots();
+    Slots.setRenameHandler(onParamRename);
     initTransportObservers();
     initSongPosObservers();
     initNameColorObservers();

@@ -5,7 +5,7 @@
 // state out over OSC, mirroring knobblerCore's scaling and feedback-suppression
 // approach. Driven by k4-bluhand (the [v8] entry) which owns the patcher I/O.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.setDeviceParams = exports.bindOsc = exports.NUM_BLU_SLOTS = void 0;
+exports.setColor = exports.getParamId = exports.setDefault = exports.val = exports.setParamIdx = exports.initSlots = exports.setDeviceParams = exports.bindOsc = exports.setRenameHandler = exports.NUM_BLU_SLOTS = void 0;
 var utils_1 = require("./utils");
 var liveApi_1 = require("./liveApi");
 var deviceParam_1 = require("./deviceParam");
@@ -70,6 +70,22 @@ function emitSlotName(idx) {
         return;
     }
     (0, utils_1.osc)('/bparam' + idx, (0, utils_1.dequote)(slot.nameApi.get('name')[0]));
+}
+// Called when a bound parameter is renamed in Live (not on bind), so Auto XY
+// can re-pair: renaming two rack macros to "X"/"Y" joins them on the spot.
+var onRename = null;
+function setRenameHandler(fn) {
+    onRename = fn;
+}
+exports.setRenameHandler = setRenameHandler;
+function onSlotNameChange(idx) {
+    var slot = slots[idx - 1];
+    if (slot.binding || slot.paramId === 0) {
+        return;
+    }
+    emitSlotName(idx);
+    if (onRename)
+        onRename();
 }
 function emitSlotAuto(idx) {
     var slot = slots[idx - 1];
@@ -186,7 +202,7 @@ function setParamIdx(idx, paramIdx) {
         return;
     }
     // Only bind the name/automation observers once we know the id resolves.
-    slot.nameApi = (0, liveApi_1.ensureObs)(slot.nameApi, pid, makeSlotCb(idx, 'name', emitSlotName), 'name');
+    slot.nameApi = (0, liveApi_1.ensureObs)(slot.nameApi, pid, makeSlotCb(idx, 'name', onSlotNameChange), 'name');
     slot.autoApi = (0, liveApi_1.ensureObs)(slot.autoApi, pid, makeSlotCb(idx, 'automation_state', emitSlotAuto), 'automation_state');
     var meta = (0, deviceParam_1.readParamMeta)(slot.valueApi);
     slot.min = meta.min;

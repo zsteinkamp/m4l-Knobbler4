@@ -98,6 +98,22 @@ function emitSlotName(idx: number) {
   osc('/bparam' + idx, dequote(slot.nameApi.get('name')[0]))
 }
 
+// Called when a bound parameter is renamed in Live (not on bind), so Auto XY
+// can re-pair: renaming two rack macros to "X"/"Y" joins them on the spot.
+let onRename: () => void = null
+export function setRenameHandler(fn: () => void) {
+  onRename = fn
+}
+
+function onSlotNameChange(idx: number) {
+  const slot = slots[idx - 1]
+  if (slot.binding || slot.paramId === 0) {
+    return
+  }
+  emitSlotName(idx)
+  if (onRename) onRename()
+}
+
 function emitSlotAuto(idx: number) {
   const slot = slots[idx - 1]
   if (slot.binding || slot.paramId === 0) {
@@ -225,7 +241,7 @@ export function setParamIdx(idx: number, paramIdx: number) {
   slot.nameApi = ensureObs(
     slot.nameApi,
     pid,
-    makeSlotCb(idx, 'name', emitSlotName),
+    makeSlotCb(idx, 'name', onSlotNameChange),
     'name'
   )
   slot.autoApi = ensureObs(

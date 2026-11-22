@@ -248,6 +248,7 @@ but not the blue hand the surface now follows.
 
 - Pure matcher: adjacent bank parameters whose names form a fixed pairing (Freq/Cutoff + Res/Q, X + Y, Pan + Tilt, Time + Feedback; whole words, case-insensitive) become one XY pad in the app. Never across the two rows of 8, never overlapping.
 - `k4-bluhand` reads every bank's names on each device/parameter-list change (one `.id =` + `get('name')` per parameter, no symbols) and sends `/bxyPairs` in APP slot numbering (bank k = `16k+1..`) from `sendBankNames`, ahead of `/bBanks`. Deliberately no per-user overrides: a new pairing is a device release.
+- **Renames re-pair live.** Renaming a parameter fires no `parameters` change, so the slot `name` observers (`k4-bluhandSlots`, via `setRenameHandler`) trigger a 50ms-debounced recompute that sends `/bxyPairs` alone, and only if the pairing changed: renaming two macros to "X"/"Y" joins them at once, renaming away splits them. Only the on-screen bank is observed (that covers rack macros); renames in other banks show on the next device/parameter change. The bind-time observer fire is skipped by the slot's `binding` guard.
 
 **`k4-sidebarMixer.ts`** - Single-track mixer (the selected track)
 
