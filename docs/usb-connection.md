@@ -6,11 +6,11 @@ reliability of a cable. Knobbler works in these situations too.
 
 **Which cable do I need?**
 
-|                       | iOS (iPad / iPhone)                                  | Android                                                                                                 |
-| --------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Mac**               | [USB cable](#ipad-or-iphone-with-a-mac)              | [USB Ethernet Adapters](#ethernet-with-usb-adapters) + [Manual IP](#android-give-the-tablet-an-address) |
-| **Windows**           | [USB Ethernet Adapters](#ethernet-with-usb-adapters) | [USB cable](#android-with-a-windows-computer)                                                           |
-| **Push 3 Standalone** | [USB Ethernet Adapters](#ethernet-with-usb-adapters) | [USB Ethernet Adapters](#ethernet-with-usb-adapters) + [Manual IP](#android-give-the-tablet-an-address) |
+|                       | iOS (iPad / iPhone)                                  | Android                                                                        |
+| --------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Mac**               | [USB cable](#ipad-or-iphone-with-a-mac)              | [USB Ethernet Adapters](#ethernet-with-usb-adapters) + [Manual IP](#manual-ip) |
+| **Windows**           | [USB Ethernet Adapters](#ethernet-with-usb-adapters) | [USB cable](#android-with-a-windows-computer)                                  |
+| **Push 3 Standalone** | [USB Ethernet Adapters](#ethernet-with-usb-adapters) | [USB Ethernet Adapters](#ethernet-with-usb-adapters) + [Manual IP](#manual-ip) |
 
 There are four approaches, in rough order of convenience:
 
@@ -139,7 +139,7 @@ A computer that already has an Ethernet port needs no adapter on its side.
 1. Plug an adapter into each device (on Push 3 Standalone, the **USB-A**
    port) and connect them with an Ethernet cable.
    On an **Android** tablet, set its address once first
-   ([below](#android-give-the-tablet-an-address)).
+   ([below](#manual-ip)).
 2. Add Knobbler to your Live Set, open the Knobbler app and go to **Setup**.
    - **Computer:** your computer appears under **Available devices**. Tap it.
    - **Push 3 Standalone:** with Knobbler4 v76 or newer, your Push appears
@@ -161,7 +161,7 @@ it's the same firewall setting as for USB: Windows files a cable with no
 router as a **Public** network. Tick **Public** for Ableton Live as described
 [above](#android-with-a-windows-computer).
 
-### Android: Give the Tablet an Address
+### Manual IP
 
 An iPad or iPhone gives itself an address on the cable automatically. An
 Android tablet doesn't, so set one once (needs Knobbler app 2026.11.16 or
