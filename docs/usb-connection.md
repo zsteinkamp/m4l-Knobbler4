@@ -119,7 +119,7 @@ with any tablet or phone and any computer.
 **USB-C charging port** (power pass-through), so the tablet charges through
 the adapter and you aren't relying on the battery during a set. For example:
 
-- [Belkin USB-C to Ethernet + Charge Adapter (100W)](https://www.amazon.com/s?k=Belkin+USB-C+to+Ethernet+%2B+Charge+Adapter) (tested with an iPad and Push 3 Standalone)
+- [Belkin USB-C to Ethernet + Charge Adapter (100W)](https://www.amazon.com/s?k=Belkin+USB-C+to+Ethernet+%2B+Charge+Adapter) (tested with an iPad, an Android tablet, a Mac and Push 3 Standalone)
 - [Plugable USB-C to 2.5Gb Ethernet with 100W charging (USBC-E2500PD)](https://www.amazon.com/s?k=Plugable+USBC-E2500PD)
 
 **On the computer or Push 3 Standalone:** a **USB-A to Ethernet adapter**.
@@ -137,12 +137,16 @@ Gigabit adapters. For example:
 - [TP-Link UE306 USB 3.0 to Gigabit Ethernet](https://www.amazon.com/s?k=TP-Link+UE306)
 
 A computer that already has an Ethernet port needs no adapter on its side.
+That includes the Ethernet port on a USB-C dock or monitor the computer is
+plugged into: an Android tablet cabled to the Ethernet port of a Mac's USB-C
+monitor connects fine.
 
 1. Plug an adapter into each device (on Push 3 Standalone, the **USB-A**
    port) and connect them with an Ethernet cable.
    On an **Android** tablet, set its address once first
    ([below](#manual-ip)).
 2. Add Knobbler to your Live Set, open the Knobbler app and go to **Setup**.
+
    - **Computer:** your computer appears under **Available devices**. Tap it.
    - **Push 3 Standalone:** with Knobbler4 v76 or newer, your Push appears
      under **Available devices** too. With an older device, tap
@@ -245,6 +249,7 @@ contribute instructions, please [let me know](mailto:zack@steinkamp.us).
    ```
 
 2. Configure sharing settings:
+
    - Open System Settings
    - Navigate to Sharing
    - Select Internet Sharing (i)
