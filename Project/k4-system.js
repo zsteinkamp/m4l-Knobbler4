@@ -44,7 +44,9 @@ var log = (0, utils_1.logFactory)(k4_config_1.default);
 // the /mapN {path} OSC route (knobblerCore mapPath).
 // 'aXY' = Auto XY on bluhand: /bxyPairs pads from matching parameter names
 // (k4-bluhandXY), toggled by the /autoXY <0|1> setting.
-var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath aXY';
+// 'bPin' = /bPin <0|1> holds bluhand on the device it shows while Knobbler's
+// focus moves on (k4-bluhand setPin).
+var REPLY_CAPS = ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath aXY bPin';
 var deviceVersion = '';
 var synRefreshTask = null;
 var ctx = null;

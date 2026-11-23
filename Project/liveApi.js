@@ -4,7 +4,7 @@
 // per-instance state here to diverge, unlike utils' oscSink or the singletons
 // the entry hands out through ctx).
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.repointPath = exports.disableObs = exports.ensureObs = exports.reArm = exports.obsById = exports.detach = exports.isChain = exports.isDevice = exports.isTrack = exports.apiValid = exports.apiId = void 0;
+exports.repointPath = exports.repointId = exports.disableObs = exports.ensureObs = exports.reArm = exports.obsById = exports.detach = exports.isChain = exports.isDevice = exports.isTrack = exports.apiValid = exports.apiId = void 0;
 // --- Reading .id --------------------------------------------------------
 //
 // @types/maxmsp declares `LiveAPI.id` as `number`, but at RUNTIME it reads back
@@ -105,6 +105,19 @@ exports.disableObs = disableObs;
 // empty target detaches the observer (id 0 → reads nothing). Used by the
 // focus-following observers, which must bind by path to auto-follow Live's
 // selection while locked.
+// The id-bound counterpart of repointPath: follow one OBJECT (mode 0) rather
+// than a path, so the target stays put when Live's selection moves or devices
+// are inserted ahead of it. Same clear-then-set re-fire. Interns nothing.
+function repointId(api, id, prop) {
+    if (!api)
+        return;
+    api.property = '';
+    api.mode = 0;
+    api.id = id;
+    if (prop)
+        api.property = prop;
+}
+exports.repointId = repointId;
 function repointPath(api, target, prop) {
     if (!api)
         return;

@@ -44,8 +44,10 @@ const log = logFactory(config)
 // the /mapN {path} OSC route (knobblerCore mapPath).
 // 'aXY' = Auto XY on bluhand: /bxyPairs pads from matching parameter names
 // (k4-bluhandXY), toggled by the /autoXY <0|1> setting.
+// 'bPin' = /bPin <0|1> holds bluhand on the device it shows while Knobbler's
+// focus moves on (k4-bluhand setPin).
 const REPLY_CAPS =
-  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath aXY'
+  ' mxr mkMap swap pos focus b2a prog sym scSwap navEd navDel plugWin cue kPages kVar kBtn kPath aXY bPin'
 
 let deviceVersion = ''
 let synRefreshTask: MaxTask = null

@@ -148,6 +148,7 @@ The device is ONE `[v8 knobbler]` object (`src/knobbler.ts`) — the old `[v8 ro
 
 - Transport, parameter banks, rack variations/macros, the 16 device-parameter slots (delegated to `k4-bluhandSlots.ts`), and navigation (`gotoTrack`/`gotoDevice`/`gotoChain` — `gotoTrack`/`gotoDevice` exposed via `ctx`)
 - Its "current track/device" observers (name/color, `paramsWatcher`, `variationsWatcher`, `selectedDeviceApi`) bind via `ctx.focus.trackPath()`/`devicePath()` and re-point on `ctx.focus.onChange` — they do NOT hardcode Live's selection paths. See `k4-focus.ts`.
+- **Pin (`/bPin <0|1>`, capability `bPin`) holds bluhand on the device it shows while the focus moves on** — the app's Bluhand lock button. `setPin` re-binds those same observers to the shown device BY ID (`repointId`, mode 0: follows the object, so a device inserted ahead of it doesn't shift it), and `rebindFocusHandles` returns early while pinned; unpinning just runs it again. This is NOT the global Follow Sel (`/focusLock`): focus, navigation, and the mixer keep following. Not persisted (a device id doesn't survive a set reload), and a deleted pinned device unpins itself from `onParameterChange`.
 
 **`k4-focus.ts`** - Knobbler's "current target" (the lock feature)
 

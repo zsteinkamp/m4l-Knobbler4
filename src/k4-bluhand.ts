@@ -19,6 +19,7 @@ import {
   isDevice,
   isTrack,
   obsById,
+  repointId,
   repointPath,
 } from './liveApi'
 import config from './k4-config'
@@ -52,6 +53,9 @@ const state = {
   // Auto XY (k4-bluhandXY): pads for every bank, in app slot numbering.
   autoXY: true,
   xyPairs: [] as number[],
+  // Pin (/bPin): the device id bluhand is held on, or 0 to follow Knobbler's
+  // focus. Not persisted: a device id doesn't survive reloading the set.
+  pinnedId: 0,
 }
 
 // --- Bank display ----------------------------------------------------------
@@ -153,6 +157,11 @@ function onParameterChange() {
     ctx.pluginWindow.deviceChanged(apiId(api))
   }
   if (!apiValid(api)) {
+    // The pinned device was deleted: let go and follow focus again.
+    if (state.pinnedId) {
+      setPin(0)
+      return
+    }
     // Focus landed somewhere with no device — clear the slot bindings too, or
     // sendCurrBank (from a later refresh) would re-bind the previous device's
     // parameters.
@@ -767,6 +776,8 @@ function deviceTrackPath(): string {
 // targets are Live's selection paths (auto-following), so this only fires on
 // unlock-mode navigation and lock transitions — see k4-focus.
 function rebindFocusHandles() {
+  // A pinned bluhand ignores focus moves; setPin(0) calls this to catch up.
+  if (state.pinnedId) return
   const dp = ctx.focus.devicePath()
   // Track name/color are NOT repointed here: they follow the displayed device's
   // owning track, repointed in onParameterChange when the device actually
@@ -785,6 +796,29 @@ function rebindFocusHandles() {
   }
   // Slots + banks follow the new device: paramsWatcher's repoint re-fires
   // debouncedParameterChange, which rebuilds the bank/slot bindings.
+}
+
+// --- Pin -------------------------------------------------------------------
+// /bPin 1 holds bluhand on the device it shows now, so navigating (in Live or
+// from the app) moves Knobbler's focus without moving bluhand. The same
+// observers rebindFocusHandles points at the focus path are bound to the
+// device by id instead, which also survives devices inserted ahead of it.
+// /bPin 0 re-points them at the focus. Track name/color need nothing: they
+// follow the shown device's track from onParameterChange.
+function setPin(val: number) {
+  const next = val ? state.currDeviceId : 0
+  if (next !== state.pinnedId) {
+    state.pinnedId = next
+    if (next) {
+      repointId(deviceNameApi, next, 'name')
+      repointId(state.paramsWatcher, next, 'parameters')
+      repointId(state.variationsWatcher, next, 'variation_count')
+      repointId(getSelectedDeviceApi(), next, '')
+    } else {
+      rebindFocusHandles()
+    }
+  }
+  osc('/bPin', state.pinnedId ? 1 : 0)
 }
 
 // Re-push all bluhand state to a (re)connecting client. Called at the end of
@@ -808,6 +842,7 @@ function pushState() {
   emitCurrDeviceName()
   onVariationChange()
   osc('/autoXY', state.autoXY ? 1 : 0)
+  osc('/bPin', state.pinnedId ? 1 : 0)
   sendCurrBank()
 }
 
@@ -1086,6 +1121,7 @@ const routes: Route[] = [
   { prefix: '/bkMap', parse: 'slotVal', fn: bkMap },
   { prefix: '/bBank', parse: 'slot', fn: gotoBank },
   { prefix: '/autoXY', parse: 'val', fn: setAutoXY },
+  { prefix: '/bPin', parse: 'val', fn: setPin },
   { prefix: '/bbankPrev', parse: 'bare', fn: bankPrev },
   { prefix: '/bbankNext', parse: 'bare', fn: bankNext },
   { prefix: '/bdefaultbval', parse: 'slot', fn: bSetDefault },

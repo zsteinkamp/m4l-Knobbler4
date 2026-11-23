@@ -104,6 +104,17 @@ export function disableObs(api: LiveAPI) {
 // empty target detaches the observer (id 0 → reads nothing). Used by the
 // focus-following observers, which must bind by path to auto-follow Live's
 // selection while locked.
+// The id-bound counterpart of repointPath: follow one OBJECT (mode 0) rather
+// than a path, so the target stays put when Live's selection moves or devices
+// are inserted ahead of it. Same clear-then-set re-fire. Interns nothing.
+export function repointId(api: LiveAPI, id: number, prop: string) {
+  if (!api) return
+  api.property = ''
+  api.mode = 0
+  api.id = id
+  if (prop) api.property = prop
+}
+
 export function repointPath(api: LiveAPI, target: string, prop: string) {
   if (!api) return
   api.property = ''
