@@ -125,6 +125,10 @@ First, try clicking `Rescan Network` and choosing your tablet from the dropdown.
 
 Next, ensure that Knobbler has "Local Network" permissions. Go to Settings ... Privacy & Security ... Local Network and ensure that Knobbler is enabled.
 
+On the computer side, open the Max Window in Live (right-click the Knobbler device's title bar and choose `Open Max Window`). If you see `udpsend: Error sending packet.`, Live itself is not allowed to send on your network. On a Mac, go to System Settings ... Privacy & Security ... Local Network and ensure that `Ableton Live` is enabled, then restart Live.
+
+![Mac Local Network Settings](images/mac-local-network.png)
+
 If that does not work, then check to see if any other apps may be running on the tablet that could interfere with Knobbler receiving data. Most likely this would be the app [Protokol](https://hexler.net/protokol) (mentioned below) used to debug the connection. If it is left running, it will eat all the network messages destined for TouchOSC. You will need to restart Knobbler after closing Protokol.
 
 If the port is correct, then the last thing to try is to use the iPad's IP address instead of its hostname in the Knobbler device configuration. To see the iPad's IP address, go to the WiFi settings and click the information icon next to your WiFi network.
