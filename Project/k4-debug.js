@@ -236,7 +236,7 @@ function debugInfo(arg) {
         path: String(infoApi.unquotedpath),
         info: String(infoApi.info),
     };
-    var isRack = /\bcan_have_chains\b/.test(out.info);
+    var isRack = String(infoApi.get('can_have_chains')) === '1';
     var paramIds = [];
     if (isRack) {
         out.visible_macro_count = String(infoApi.get('visible_macro_count'));
@@ -271,6 +271,33 @@ function debugInfo(arg) {
             macros.push(m);
         }
         out.macros = macros;
+    }
+    else {
+        // Any other device: its parameter names and the banks Live reports, which
+        // is what k4-bluhandBanks lays Bluhand out from.
+        infoApi.id = id;
+        out.class_name = String(infoApi.get('class_name'));
+        var raw = infoApi.get('parameters');
+        for (var i = 0; i < raw.length; i++) {
+            if (raw[i] !== 'id')
+                paramIds.push(parseInt(raw[i]));
+        }
+        var bankCount = parseInt(String(infoApi.call('get_bank_count'))) || 0;
+        var banks = [];
+        for (var b = 0; b < bankCount; b++) {
+            banks.push({
+                name: String(infoApi.call('get_bank_name', b)),
+                params: String(infoApi.call('get_bank_parameters', b)),
+            });
+        }
+        out.bank_count = bankCount;
+        out.banks = banks;
+        var names = [];
+        for (var i = 0; i < paramIds.length; i++) {
+            infoApi.id = paramIds[i];
+            names.push(i + ':' + String(infoApi.get('name')));
+        }
+        out.params = names;
     }
     (0, utils_1.osc)('/debug/info', JSON.stringify(out));
 }

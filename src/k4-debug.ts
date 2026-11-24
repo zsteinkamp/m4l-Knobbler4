@@ -259,7 +259,7 @@ function debugInfo(arg: any) {
     info: String(infoApi.info),
   }
 
-  const isRack = /\bcan_have_chains\b/.test(out.info)
+  const isRack = String(infoApi.get('can_have_chains')) === '1'
   const paramIds: number[] = []
   if (isRack) {
     out.visible_macro_count = String(infoApi.get('visible_macro_count'))
@@ -294,6 +294,31 @@ function debugInfo(arg: any) {
       macros.push(m)
     }
     out.macros = macros
+  } else {
+    // Any other device: its parameter names and the banks Live reports, which
+    // is what k4-bluhandBanks lays Bluhand out from.
+    infoApi.id = id
+    out.class_name = String(infoApi.get('class_name'))
+    const raw = infoApi.get('parameters') as any[]
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] !== 'id') paramIds.push(parseInt(raw[i]))
+    }
+    const bankCount = parseInt(String(infoApi.call('get_bank_count'))) || 0
+    const banks: any[] = []
+    for (let b = 0; b < bankCount; b++) {
+      banks.push({
+        name: String(infoApi.call('get_bank_name', b)),
+        params: String(infoApi.call('get_bank_parameters', b)),
+      })
+    }
+    out.bank_count = bankCount
+    out.banks = banks
+    const names: string[] = []
+    for (let i = 0; i < paramIds.length; i++) {
+      infoApi.id = paramIds[i]
+      names.push(i + ':' + String(infoApi.get('name')))
+    }
+    out.params = names
   }
 
   osc('/debug/info', JSON.stringify(out))

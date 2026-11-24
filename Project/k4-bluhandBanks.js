@@ -93,7 +93,17 @@ function getBankParamArr(paramIds, deviceType, deviceObj) {
         // Max device, look for live.banks
         var bankCount = deviceObj.call('get_bank_count') || 0;
         if (bankCount > 0) {
-            return getMaxBanksParamArr(bankCount, deviceObj);
+            var banks = getMaxBanksParamArr(bankCount, deviceObj);
+            // Bank indices count Device On as 0, so `paramIds` (Device On removed)
+            // ends at index paramIds.length. Some of Live's own Max devices (Shaper)
+            // bank parameters the API doesn't expose — Shaper's banks name indices up
+            // to 49 against 14 parameters — and trusting them left most slots empty.
+            // Then the banks can't be trusted at all: lay out every parameter instead.
+            var valid = banks.every(function (bank) {
+                return bank.paramIdxArr.every(function (idx) { return idx <= paramIds.length; });
+            });
+            if (valid)
+                return banks;
         }
     }
     // deviceParamMap is custom or crafted parameter organization
