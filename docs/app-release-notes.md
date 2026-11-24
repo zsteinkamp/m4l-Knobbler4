@@ -6,6 +6,10 @@
 
 These are the release notes for the Knobbler **app** on your iPad, iPhone or Android device. For the Max for Live **device** changelog, see the [GitHub releases](https://github.com/zsteinkamp/m4l-Knobbler4/releases). Notes marked _(iOS only)_ or _(Android only)_ apply to just that platform.
 
+### 2026.11.22 — November 22, 2026
+
+- Lock Bluhand to the device it shows with the new button to the right of its banks and variations. While it’s locked, you can select other tracks and devices, in Live or in Knobbler, and Bluhand stays put. Requires Knobbler4 device v78 or newer
+
 ### 2026.11.16 — November 16, 2026
 
 - Push 3 Standalone now appears under Available devices in Setup, just like a computer: tap it to connect, with no address to type. It shows the Device Port you’ve set, and leaves the list when Knobbler is removed from the set. Requires Knobbler4 device v76 or newer

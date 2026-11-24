@@ -1,7 +1,20 @@
 {
-  "generated": "2026-11-22T20:22:29.340Z",
+  "generated": "2026-11-24T06:26:18.309Z",
   "repo": "zsteinkamp/m4l-Knobbler4",
   "appReleases": [
+    {
+      "side": "app",
+      "version": "2026.11.22",
+      "date": "2026-11-22",
+      "approx": false,
+      "title": "Lock Bluhand to a device",
+      "notes": [
+        {
+          "text": "Lock Bluhand to the device it shows with the new button to the right of its banks and variations. While it’s locked, you can select other tracks and devices, in Live or in Knobbler, and Bluhand stays put. Requires Knobbler4 device v78 or newer",
+          "tag": null
+        }
+      ]
+    },
     {
       "side": "app",
       "version": "2026.11.16",
@@ -1052,6 +1065,23 @@
     }
   ],
   "deviceReleases": [
+    {
+      "side": "device",
+      "version": "v78",
+      "date": "2026-11-24",
+      "approx": false,
+      "title": "Bluhand Lock",
+      "notes": [
+        "Lock Bluhand to the device it shows!",
+        "- Tap the new **lock** button to the right of Bluhand's banks and variations. While it's locked, you can select other tracks and devices, in Live or in the app, and Bluhand stays on its device. Tap it again to follow the selection. Needs Knobbler app 2026.11.22 or newer. - If the locked device is deleted, Bluhand unlocks and follows the selection again.",
+        "### Fixes",
+        "- Bluhand showed only a couple of parameters for Live's **Shaper**. Shaper's own banks point at parameters Live doesn't expose, so most slots were empty; Bluhand now lays out all of its parameters instead. Any other device whose banks do the same is fixed too."
+      ],
+      "images": [
+        "https://github.com/user-attachments/assets/dbea59ca-559d-4ad7-8fbc-46d0df3030ba"
+      ],
+      "videos": []
+    },
     {
       "side": "device",
       "version": "v77",
