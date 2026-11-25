@@ -7,8 +7,14 @@
 import { colorToString, dequote, osc, setOscSink } from './utils'
 import { apiId, ensureObs } from './liveApi'
 import {
+  isNumericLabel,
+  MacroSteps,
+  probeMacroSteps,
+  propToStep,
   propToValue,
   readParamMeta,
+  stepToProp,
+  stepValue,
   valueString,
   valueToProp,
 } from './deviceParam'
@@ -27,38 +33,36 @@ interface BluSlot {
   binding: boolean
   allowOscOut: boolean
   suppressTask: Task
-  // Live 13 rack macro shown as a button (see detectButton). `maybeButton`:
-  // the parameter has a macro's shape, so its value text is worth checking.
-  maybeButton: boolean
-  isButton: boolean
+  // Live 13 rack macro whose value text names steps (see probeSteps).
+  // `maybeSteps`: the parameter has a macro's shape, so its text is worth
+  // reading. `steps`: what the app was told, null = a dial.
+  maybeSteps: boolean
+  steps: MacroSteps | null
 }
 
-// --- Live 13 macro buttons ----------------------------------------------------
-// Live 13 can show a rack macro as a button ("Show Macro As Button"), and the
-// LOM gives no sign of it: the macro stays is_quantized 0, range 0–127, with no
-// new member, and nothing observable fires when the appearance changes
-// (measured with /debug/info, Nov 2026). The only trace is its value text,
-// which becomes "Off"/"On". So a non-quantized 0–127 parameter whose ends read
-// "Off" and "On" is reported as a 2-step slot, and the app draws its button.
-// A dial mapped to an on/off parameter reads the same way and becomes a
-// button too, which suits it.
+// --- Live 13 macro steps -----------------------------------------------------
+// A Live 13 rack macro reads its target's value text, so a macro mapped to a
+// filter type reads "Low Pass"/"High Pass"/… and one shown as a button reads
+// "Off"/"On" (probeMacroSteps in deviceParam). Such a macro is reported as a
+// quantized slot with those items, and its value travels in MultiButton's
+// index encoding, translated here to and from a value inside each step's run.
 //
-// Checked at bind (two str_for_value reads, macro-shaped params only) and
-// again whenever the value text emitSlotValue already reads disagrees with the
-// current state — that catches a switch made in Live on the next value change,
-// at no extra cost per value.
-const BUTTON_ITEMS = ['Off', 'On']
+// Probed at bind, and again when the value text emitSlotValue already reads
+// isn't the step it should be — a remap or a "Show As Button" switch in Live
+// shows on the macro's next value change, at no extra cost per value.
 
-function isOnOff(str: string): boolean {
-  return str === 'On' || str === 'Off'
+function probeSteps(slot: BluSlot): MacroSteps | null {
+  if (!slot.maybeSteps) return null
+  return probeMacroSteps(
+    (v) => dequote(String(valueString(slot.valueApi, v))),
+    slot.min,
+    slot.max
+  )
 }
 
-function detectButton(slot: BluSlot): boolean {
-  if (!slot.maybeButton) return false
-  return (
-    dequote(String(valueString(slot.valueApi, slot.min))) === 'Off' &&
-    dequote(String(valueString(slot.valueApi, slot.max))) === 'On'
-  )
+function emitSteps(idx: number, steps: MacroSteps | null) {
+  if (steps) emitQuant(idx, steps.items.length, steps.items)
+  else emitQuant(idx, 0, [])
 }
 
 function emitQuant(idx: number, quantCount: number, quantItems: string[]) {
@@ -76,14 +80,24 @@ function emitSlotValue(idx: number) {
   }
   const v = parseFloat(slot.valueApi.get('value'))
   const str = valueString(slot.valueApi, v)
-  if (slot.maybeButton && isOnOff(dequote(String(str))) !== slot.isButton) {
-    // The text disagrees with what we reported: the macro's appearance was
-    // switched in Live. Re-check properly before telling the app.
-    const isButton = detectButton(slot)
-    if (isButton !== slot.isButton) {
-      slot.isButton = isButton
-      if (isButton) emitQuant(idx, 2, BUTTON_ITEMS)
-      else emitQuant(idx, 0, [])
+  if (slot.maybeSteps) {
+    const text = dequote(String(str))
+    let k = slot.steps ? slot.steps.items.indexOf(text) : -1
+    // A dial whose text turned non-numeric, or a step that isn't one of ours:
+    // the macro was remapped or switched in Live. Re-probe before telling.
+    if (slot.steps ? k < 0 : !isNumericLabel(text)) {
+      slot.steps = probeSteps(slot)
+      emitSteps(idx, slot.steps)
+      // Still a dial. Keep watching only while its text is numeric: a
+      // non-numeric dial (note names) would otherwise re-probe on every
+      // value change. It is probed again at its next bind.
+      if (!slot.steps) slot.maybeSteps = isNumericLabel(text)
+      k = slot.steps ? slot.steps.items.indexOf(text) : -1
+    }
+    if (slot.steps) {
+      osc('/bval' + idx, stepToProp(Math.max(0, k), slot.steps.items.length))
+      osc('/bvalStr' + idx, str)
+      return
     }
   }
   osc('/bval' + idx, valueToProp(v, slot.min, slot.max))
@@ -182,8 +196,8 @@ export function initSlots() {
       binding: false,
       allowOscOut: true,
       suppressTask: null,
-      maybeButton: false,
-      isButton: false,
+      maybeSteps: false,
+      steps: null,
     }
     // Reuse one suppression Task per slot (cancel() does not free, and val()
     // fires on every inbound OSC value). The LiveAPI observers are created
@@ -205,8 +219,8 @@ export function setParamIdx(idx: number, paramIdx: number) {
   slot.binding = true
 
   const targetId = paramIdx > 0 ? deviceParamIds[paramIdx] || 0 : 0
-  slot.maybeButton = false
-  slot.isButton = false
+  slot.maybeSteps = false
+  slot.steps = null
   if (!targetId) {
     slot.paramId = 0
     if (slot.valueApi) {
@@ -254,9 +268,9 @@ export function setParamIdx(idx: number, paramIdx: number) {
   const meta = readParamMeta(slot.valueApi)
   slot.min = meta.min
   slot.max = meta.max
-  slot.maybeButton = !meta.isQuantized && meta.min === 0 && meta.max === 127
-  slot.isButton = detectButton(slot)
-  if (slot.isButton) emitQuant(idx, 2, BUTTON_ITEMS)
+  slot.maybeSteps = !meta.isQuantized && meta.min === 0 && meta.max === 127
+  slot.steps = probeSteps(slot)
+  if (slot.steps) emitSteps(idx, slot.steps)
   else emitQuant(idx, meta.quantCount, meta.quantItems)
   osc('/bval' + idx + 'color', slotColor)
 
@@ -277,7 +291,12 @@ export function val(idx: number, value: number) {
   slot.suppressTask.cancel()
   slot.suppressTask.schedule(OSC_SUPPRESS_MS)
 
-  slot.valueApi.set('value', propToValue(value, slot.min, slot.max))
+  slot.valueApi.set(
+    'value',
+    slot.steps
+      ? stepValue(slot.steps, propToStep(value, slot.steps.items.length))
+      : propToValue(value, slot.min, slot.max)
+  )
   // read the value back (not the value we wrote) because some params round and
   // would report the wrong string for the value we set
   osc(

@@ -29,7 +29,16 @@ import {
   VIEW_TARGET_BASE,
 } from './consts'
 
-import { propToValue, valueString, valueToProp } from './deviceParam'
+import {
+  isNumericLabel,
+  probeMacroSteps,
+  propToStep,
+  propToValue,
+  stepToProp,
+  stepValue,
+  valueString,
+  valueToProp,
+} from './deviceParam'
 
 import config from './k4-config'
 const log = logFactory(config)
@@ -1532,6 +1541,10 @@ function bindParam(slot: number, paramPath: string): boolean {
     ? (paramObj[slot].get('value_items') as unknown as string[])
     : []
   param[slot].quant = param[slot].quantItems.length
+  param[slot].maybeSteps =
+    !isQuantized && param[slot].min === 0 && param[slot].max === 127
+  param[slot].steps = null
+  probeSteps(slot)
 
   deviceObj[slot] = reArmSlot(
     deviceObj[slot],
@@ -1548,6 +1561,26 @@ function bindParam(slot: number, paramPath: string): boolean {
     param[slot].deviceName = 'Mixer'
   }
   return true
+}
+
+// A Live 13 rack macro that reads its target's value text ("Low Pass", "High
+// Pass", …, or "Off"/"On" shown as a button) is a quantized slot with those
+// items; its value travels in MultiButton's index encoding (sendVal / val).
+// The min/max sub-range doesn't apply to it, as it doesn't to a button.
+// Probed at bind, and again when the text sendVal reads isn't the step it
+// should be: a remap in Live shows on the macro's next value change.
+function probeSteps(slot: number) {
+  const p = param[slot]
+  const steps = p.maybeSteps
+    ? probeMacroSteps(
+        (v) => dequote(String(valueString(paramObj[slot], v))),
+        p.min,
+        p.max
+      )
+    : null
+  p.steps = steps
+  p.quantItems = steps ? steps.items : []
+  p.quant = p.quantItems.length
 }
 
 function refresh() {
@@ -1751,6 +1784,26 @@ function sendVal(slot: number) {
     return
   }
 
+  if (param[slot].maybeSteps) {
+    const p = param[slot]
+    const str = valueString(paramObj[slot], p.val)
+    const text = dequote(String(str))
+    let k = p.steps ? p.steps.items.indexOf(text) : -1
+    if (p.steps ? k < 0 : !isNumericLabel(text)) {
+      probeSteps(slot)
+      sendQuant(slot)
+      // Still a dial: keep watching only while its text is numeric, or a
+      // non-numeric dial (note names) re-probes on every value change.
+      if (!p.steps) p.maybeSteps = isNumericLabel(text)
+      k = p.steps ? p.steps.items.indexOf(text) : -1
+    }
+    if (p.steps) {
+      osc(ADDR_VAL[slot], stepToProp(Math.max(0, k), p.steps.items.length))
+      osc(ADDR_VALSTR[slot], str)
+      return
+    }
+  }
+
   osc(
     ADDR_VAL[slot],
     valueToProp(
@@ -1777,13 +1830,16 @@ function val(slot: number, val: number) {
   if (paramObj[slot]) {
     if (allowUpdateFromOsc[slot]) {
       // scale the 0..1 value to the param's min/max range
-      param[slot].val = propToValue(
-        val,
-        param[slot].min,
-        param[slot].max,
-        outMin[slot],
-        outMax[slot]
-      )
+      const steps = param[slot].steps
+      param[slot].val = steps
+        ? stepValue(steps, propToStep(val, steps.items.length))
+        : propToValue(
+            val,
+            param[slot].min,
+            param[slot].max,
+            outMin[slot],
+            outMax[slot]
+          )
 
       // prevent updates from params directly being sent to OSC for 500ms
       if (param[slot].allowParamValueUpdates) {

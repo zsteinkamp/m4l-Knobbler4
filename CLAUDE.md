@@ -462,8 +462,16 @@ is in hand — e.g. telling the app to disable a control at handshake.
   text: the macro stays `is_quantized 0`, range 0–127, no new member, and
   nothing observable fires on the switch (`/debug/watch` watched value, name,
   state, min, max, is_quantized, value_items and the rack's `parameters`).
-  `str_for_value` becomes "Off"/"On". `k4-bluhandSlots` detects it from that
-  (`detectButton`) at bind and on a value change whose text disagrees, so a
+  `str_for_value` becomes "Off"/"On".
+- **A Live 13 macro reads its TARGET's value text**: mapped to a filter type it
+  says "Low Pass"/"High Pass"/… where Live 12 said "0".."127". Same invisibility
+  (`is_quantized 0`, 0–127, no `value_items`). `probeMacroSteps` (`deviceParam`)
+  finds the steps from `str_for_value` alone (two reads reject numeric text,
+  three more reject dense text, otherwise a bisection of ~7 reads per step, up
+  to `MAX_MACRO_STEPS`), and both Bluhand and Knobbler slots report such a macro
+  as quantized with those items, translating MultiButton's index encoding to and
+  from each step's run (Off/On is the 2-step case). Probed at bind and again
+  when a value's text isn't the expected step, so a remap or a Show-As-Button
   switch made in Live shows on the macro's next value change.
 - **The probe port varies per set:** `[udpreceive]` can bind 2355 etc., not
   2346. Find it with `lsof -nP -iUDP | grep ^Live` and pass `--to <port>` to

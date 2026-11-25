@@ -14,6 +14,10 @@ type ParamType = {
   allowParamValueUpdates?: boolean
   // A rack's variations rather than a parameter (knobblerCore: Variation slots)
   isVariations?: boolean
+  // A Live 13 macro whose value text names steps (deviceParam probeMacroSteps):
+  // `maybeSteps` = macro-shaped, worth reading; `steps` = null for a dial.
+  maybeSteps?: boolean
+  steps?: import('../src/deviceParam').MacroSteps | null
 }
 
 // A message to a knob-slot/view bpatcher: a selector and its arguments.

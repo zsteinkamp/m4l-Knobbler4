@@ -12,29 +12,26 @@ var deviceParam_1 = require("./deviceParam");
 exports.NUM_BLU_SLOTS = 16;
 var OSC_SUPPRESS_MS = 300;
 var INVALID_COLOR = '333333ff';
-// --- Live 13 macro buttons ----------------------------------------------------
-// Live 13 can show a rack macro as a button ("Show Macro As Button"), and the
-// LOM gives no sign of it: the macro stays is_quantized 0, range 0–127, with no
-// new member, and nothing observable fires when the appearance changes
-// (measured with /debug/info, Nov 2026). The only trace is its value text,
-// which becomes "Off"/"On". So a non-quantized 0–127 parameter whose ends read
-// "Off" and "On" is reported as a 2-step slot, and the app draws its button.
-// A dial mapped to an on/off parameter reads the same way and becomes a
-// button too, which suits it.
+// --- Live 13 macro steps -----------------------------------------------------
+// A Live 13 rack macro reads its target's value text, so a macro mapped to a
+// filter type reads "Low Pass"/"High Pass"/… and one shown as a button reads
+// "Off"/"On" (probeMacroSteps in deviceParam). Such a macro is reported as a
+// quantized slot with those items, and its value travels in MultiButton's
+// index encoding, translated here to and from a value inside each step's run.
 //
-// Checked at bind (two str_for_value reads, macro-shaped params only) and
-// again whenever the value text emitSlotValue already reads disagrees with the
-// current state — that catches a switch made in Live on the next value change,
-// at no extra cost per value.
-var BUTTON_ITEMS = ['Off', 'On'];
-function isOnOff(str) {
-    return str === 'On' || str === 'Off';
+// Probed at bind, and again when the value text emitSlotValue already reads
+// isn't the step it should be — a remap or a "Show As Button" switch in Live
+// shows on the macro's next value change, at no extra cost per value.
+function probeSteps(slot) {
+    if (!slot.maybeSteps)
+        return null;
+    return (0, deviceParam_1.probeMacroSteps)(function (v) { return (0, utils_1.dequote)(String((0, deviceParam_1.valueString)(slot.valueApi, v))); }, slot.min, slot.max);
 }
-function detectButton(slot) {
-    if (!slot.maybeButton)
-        return false;
-    return ((0, utils_1.dequote)(String((0, deviceParam_1.valueString)(slot.valueApi, slot.min))) === 'Off' &&
-        (0, utils_1.dequote)(String((0, deviceParam_1.valueString)(slot.valueApi, slot.max))) === 'On');
+function emitSteps(idx, steps) {
+    if (steps)
+        emitQuant(idx, steps.items.length, steps.items);
+    else
+        emitQuant(idx, 0, []);
 }
 function emitQuant(idx, quantCount, quantItems) {
     (0, utils_1.osc)('/bquant' + idx, quantCount);
@@ -49,16 +46,25 @@ function emitSlotValue(idx) {
     }
     var v = parseFloat(slot.valueApi.get('value'));
     var str = (0, deviceParam_1.valueString)(slot.valueApi, v);
-    if (slot.maybeButton && isOnOff((0, utils_1.dequote)(String(str))) !== slot.isButton) {
-        // The text disagrees with what we reported: the macro's appearance was
-        // switched in Live. Re-check properly before telling the app.
-        var isButton = detectButton(slot);
-        if (isButton !== slot.isButton) {
-            slot.isButton = isButton;
-            if (isButton)
-                emitQuant(idx, 2, BUTTON_ITEMS);
-            else
-                emitQuant(idx, 0, []);
+    if (slot.maybeSteps) {
+        var text = (0, utils_1.dequote)(String(str));
+        var k = slot.steps ? slot.steps.items.indexOf(text) : -1;
+        // A dial whose text turned non-numeric, or a step that isn't one of ours:
+        // the macro was remapped or switched in Live. Re-probe before telling.
+        if (slot.steps ? k < 0 : !(0, deviceParam_1.isNumericLabel)(text)) {
+            slot.steps = probeSteps(slot);
+            emitSteps(idx, slot.steps);
+            // Still a dial. Keep watching only while its text is numeric: a
+            // non-numeric dial (note names) would otherwise re-probe on every
+            // value change. It is probed again at its next bind.
+            if (!slot.steps)
+                slot.maybeSteps = (0, deviceParam_1.isNumericLabel)(text);
+            k = slot.steps ? slot.steps.items.indexOf(text) : -1;
+        }
+        if (slot.steps) {
+            (0, utils_1.osc)('/bval' + idx, (0, deviceParam_1.stepToProp)(Math.max(0, k), slot.steps.items.length));
+            (0, utils_1.osc)('/bvalStr' + idx, str);
+            return;
         }
     }
     (0, utils_1.osc)('/bval' + idx, (0, deviceParam_1.valueToProp)(v, slot.min, slot.max));
@@ -152,8 +158,8 @@ function initSlots() {
             binding: false,
             allowOscOut: true,
             suppressTask: null,
-            maybeButton: false,
-            isButton: false,
+            maybeSteps: false,
+            steps: null,
         };
         // Reuse one suppression Task per slot (cancel() does not free, and val()
         // fires on every inbound OSC value). The LiveAPI observers are created
@@ -177,8 +183,8 @@ function setParamIdx(idx, paramIdx) {
     var slot = slots[idx - 1];
     slot.binding = true;
     var targetId = paramIdx > 0 ? deviceParamIds[paramIdx] || 0 : 0;
-    slot.maybeButton = false;
-    slot.isButton = false;
+    slot.maybeSteps = false;
+    slot.steps = null;
     if (!targetId) {
         slot.paramId = 0;
         if (slot.valueApi) {
@@ -207,10 +213,10 @@ function setParamIdx(idx, paramIdx) {
     var meta = (0, deviceParam_1.readParamMeta)(slot.valueApi);
     slot.min = meta.min;
     slot.max = meta.max;
-    slot.maybeButton = !meta.isQuantized && meta.min === 0 && meta.max === 127;
-    slot.isButton = detectButton(slot);
-    if (slot.isButton)
-        emitQuant(idx, 2, BUTTON_ITEMS);
+    slot.maybeSteps = !meta.isQuantized && meta.min === 0 && meta.max === 127;
+    slot.steps = probeSteps(slot);
+    if (slot.steps)
+        emitSteps(idx, slot.steps);
     else
         emitQuant(idx, meta.quantCount, meta.quantItems);
     (0, utils_1.osc)('/bval' + idx + 'color', slotColor);
@@ -230,7 +236,9 @@ function val(idx, value) {
     slot.allowOscOut = false;
     slot.suppressTask.cancel();
     slot.suppressTask.schedule(OSC_SUPPRESS_MS);
-    slot.valueApi.set('value', (0, deviceParam_1.propToValue)(value, slot.min, slot.max));
+    slot.valueApi.set('value', slot.steps
+        ? (0, deviceParam_1.stepValue)(slot.steps, (0, deviceParam_1.propToStep)(value, slot.steps.items.length))
+        : (0, deviceParam_1.propToValue)(value, slot.min, slot.max));
     // read the value back (not the value we wrote) because some params round and
     // would report the wrong string for the value we set
     (0, utils_1.osc)('/bvalStr' + idx, (0, deviceParam_1.valueString)(slot.valueApi, parseFloat(slot.valueApi.get('value'))));
