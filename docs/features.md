@@ -219,7 +219,7 @@ Tracks have a highlight on their left edge, devices are highlighted on the right
 
 Group tracks and racks are indicated with a list icon. Tap a Rack to show its chains. Tap a chain to see devices inside that chain.
 
-Sometimes track colors or names may get out of sync. Tap the Refresh button in the Toolbar to fix this.
+If anything on screen ever looks out of date, tap Refresh in the Toolbar.
 
 ![Navigation](images/ipad-toolbar-refresh.png)
 
@@ -343,11 +343,11 @@ Knobbler's toolbar echoes a lot of the items Ableton Live's toolbar, with some K
 
 Toggle the appearance of the channel strip on the left edge of the screen. You can also swipe sideways from the edge to show and hide it.
 
-#### Refresh Display
+#### Refresh
 
-![Channel Strip Mixer](images/ipad-toolbar-refresh.png)
+![Refresh](images/ipad-toolbar-refresh.png)
 
-Requests an update of all data from the computer.
+Reconnects to the Knobbler device in Live and reloads everything from it.
 
 #### Unmapping Mode
 
@@ -443,7 +443,7 @@ The Setup page has three sections: Connection, Settings, and Debug.
 
 ![Discovery](images/setup-discovery.png)
 
-Knobbler advertises itself on your local network. Under "Found These Knobblers", tap the entry for your computer and the Host, Device Port, and App Port fields will be filled in automatically. Tap `Refresh` to rescan the network.
+Knobbler advertises itself on your local network. Under "Available devices", tap the entry for your computer and the Host, Device Port, and App Port fields will be filled in automatically. The list updates on its own as computers come and go.
 
 You can also enter the Host or IP and port numbers manually if you prefer.
 
