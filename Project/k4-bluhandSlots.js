@@ -22,10 +22,11 @@ var INVALID_COLOR = '333333ff';
 // Probed at bind, and again when the value text emitSlotValue already reads
 // isn't the step it should be — a remap or a "Show As Button" switch in Live
 // shows on the macro's next value change, at no extra cost per value.
-function probeSteps(slot) {
+function probeSteps(slot, force) {
+    if (force === void 0) { force = false; }
     if (!slot.maybeSteps)
         return null;
-    return (0, deviceParam_1.probeMacroSteps)(function (v) { return (0, utils_1.dequote)(String((0, deviceParam_1.valueString)(slot.valueApi, v))); }, slot.min, slot.max);
+    return (0, deviceParam_1.macroSteps)(slot.paramId, function (v) { return (0, utils_1.dequote)(String((0, deviceParam_1.valueString)(slot.valueApi, v))); }, slot.min, slot.max, force);
 }
 function emitSteps(idx, steps) {
     if (steps)
@@ -52,7 +53,7 @@ function emitSlotValue(idx) {
         // A dial whose text turned non-numeric, or a step that isn't one of ours:
         // the macro was remapped or switched in Live. Re-probe before telling.
         if (slot.steps ? k < 0 : !(0, deviceParam_1.isNumericLabel)(text)) {
-            slot.steps = probeSteps(slot);
+            slot.steps = probeSteps(slot, true);
             emitSteps(idx, slot.steps);
             // Still a dial. Keep watching only while its text is numeric: a
             // non-numeric dial (note names) would otherwise re-probe on every

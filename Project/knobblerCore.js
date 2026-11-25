@@ -1426,10 +1426,11 @@ function bindParam(slot, paramPath) {
 // The min/max sub-range doesn't apply to it, as it doesn't to a button.
 // Probed at bind, and again when the text sendVal reads isn't the step it
 // should be: a remap in Live shows on the macro's next value change.
-function probeSteps(slot) {
+function probeSteps(slot, force) {
+    if (force === void 0) { force = false; }
     var p = param[slot];
     var steps = p.maybeSteps
-        ? (0, deviceParam_1.probeMacroSteps)(function (v) { return (0, utils_1.dequote)(String((0, deviceParam_1.valueString)(paramObj[slot], v))); }, p.min, p.max)
+        ? (0, deviceParam_1.macroSteps)(p.id, function (v) { return (0, utils_1.dequote)(String((0, deviceParam_1.valueString)(paramObj[slot], v))); }, p.min, p.max, force)
         : null;
     p.steps = steps;
     p.quantItems = steps ? steps.items : [];
@@ -1610,7 +1611,7 @@ function sendVal(slot) {
         var text = (0, utils_1.dequote)(String(str));
         var k = p.steps ? p.steps.items.indexOf(text) : -1;
         if (p.steps ? k < 0 : !(0, deviceParam_1.isNumericLabel)(text)) {
-            probeSteps(slot);
+            probeSteps(slot, true);
             sendQuant(slot);
             // Still a dial: keep watching only while its text is numeric, or a
             // non-numeric dial (note names) re-probes on every value change.

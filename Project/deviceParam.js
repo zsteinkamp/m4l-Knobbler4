@@ -16,7 +16,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.propToStep = exports.stepToProp = exports.stepValue = exports.probeMacroSteps = exports.isNumericLabel = exports.MAX_MACRO_STEPS = exports.valueString = exports.readParamMeta = exports.propToValue = exports.valueToProp = void 0;
+exports.propToStep = exports.stepToProp = exports.stepValue = exports.macroSteps = exports.clearMacroStepsCache = exports.probeMacroSteps = exports.isNumericLabel = exports.MAX_MACRO_STEPS = exports.valueString = exports.readParamMeta = exports.propToValue = exports.valueToProp = void 0;
 var utils_1 = require("./utils");
 // Map a raw parameter value in [min,max] to a 0..1 proportion, remapped through
 // the output sub-range [outMin,outMax]. Clamped to 0..1.
@@ -137,6 +137,30 @@ function probeMacroSteps(strAt, min, max) {
     return { items: items, starts: starts, ends: ends };
 }
 exports.probeMacroSteps = probeMacroSteps;
+var stepsCache = {};
+function clearMacroStepsCache() {
+    stepsCache = {};
+}
+exports.clearMacroStepsCache = clearMacroStepsCache;
+function macroSteps(id, strAt, min, max, force) {
+    if (force === void 0) { force = false; }
+    var read = {};
+    var at = function (v) {
+        if (!(v in read))
+            read[v] = strAt(v);
+        return read[v];
+    };
+    var lo = at(Math.ceil(min));
+    var hi = at(Math.floor(max));
+    var hit = id ? stepsCache[id] : undefined;
+    if (!force && hit && hit.lo === lo && hit.hi === hi)
+        return hit.steps;
+    var steps = probeMacroSteps(at, min, max);
+    if (id)
+        stepsCache[id] = { lo: lo, hi: hi, steps: steps };
+    return steps;
+}
+exports.macroSteps = macroSteps;
 // The macro value to write for step k: the macro's end for the first and last
 // steps (Off = 0, On = 127, as Live's own button writes), the middle of the
 // run for the others, safely away from either neighbour.

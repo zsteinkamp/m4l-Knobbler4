@@ -147,6 +147,41 @@ export function probeMacroSteps(
   return { items, starts, ends }
 }
 
+// Steps per parameter id, so a re-bind (every Bluhand bank or device switch)
+// costs two reads instead of a probe. A remap keeps the id and is invisible to
+// the LOM, so a hit is trusted only while the text at both ends of the range
+// is unchanged: narrowing a macro's mapping changes an end. What that misses —
+// a remap keeping both ends — is caught by the callers' per-value check, which
+// re-probes with `force` when a value's text isn't one of the steps. Ids don't
+// survive a set load, but neither does this: the device reloads with the set.
+type StepsEntry = { lo: string; hi: string; steps: MacroSteps | null }
+let stepsCache: Record<number, StepsEntry> = {}
+
+export function clearMacroStepsCache() {
+  stepsCache = {}
+}
+
+export function macroSteps(
+  id: number,
+  strAt: (v: number) => string,
+  min: number,
+  max: number,
+  force = false
+): MacroSteps | null {
+  const read: Record<number, string> = {}
+  const at = (v: number) => {
+    if (!(v in read)) read[v] = strAt(v)
+    return read[v]
+  }
+  const lo = at(Math.ceil(min))
+  const hi = at(Math.floor(max))
+  const hit = id ? stepsCache[id] : undefined
+  if (!force && hit && hit.lo === lo && hit.hi === hi) return hit.steps
+  const steps = probeMacroSteps(at, min, max)
+  if (id) stepsCache[id] = { lo, hi, steps }
+  return steps
+}
+
 // The macro value to write for step k: the macro's end for the first and last
 // steps (Off = 0, On = 127, as Live's own button writes), the middle of the
 // run for the others, safely away from either neighbour.

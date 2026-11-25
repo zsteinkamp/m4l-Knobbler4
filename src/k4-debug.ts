@@ -285,6 +285,15 @@ function debugInfo(arg: any) {
         min: String(infoApi.get('min')),
         max: String(infoApi.get('max')),
         value: String(infoApi.get('value')),
+        // Live 13 macros read their target's text; does display_value carry
+        // the target's value (a step index) too?
+        display: String(infoApi.get('display_value')),
+        str: String(
+          infoApi.call(
+            'str_for_value',
+            parseFloat(String(infoApi.get('value')))
+          )
+        ),
       }
       if (m.quantized === '1') {
         m.items = String(infoApi.get('value_items'))

@@ -9,7 +9,7 @@ import { apiId, ensureObs } from './liveApi'
 import {
   isNumericLabel,
   MacroSteps,
-  probeMacroSteps,
+  macroSteps,
   propToStep,
   propToValue,
   readParamMeta,
@@ -51,12 +51,14 @@ interface BluSlot {
 // isn't the step it should be — a remap or a "Show As Button" switch in Live
 // shows on the macro's next value change, at no extra cost per value.
 
-function probeSteps(slot: BluSlot): MacroSteps | null {
+function probeSteps(slot: BluSlot, force = false): MacroSteps | null {
   if (!slot.maybeSteps) return null
-  return probeMacroSteps(
+  return macroSteps(
+    slot.paramId,
     (v) => dequote(String(valueString(slot.valueApi, v))),
     slot.min,
-    slot.max
+    slot.max,
+    force
   )
 }
 
@@ -86,7 +88,7 @@ function emitSlotValue(idx: number) {
     // A dial whose text turned non-numeric, or a step that isn't one of ours:
     // the macro was remapped or switched in Live. Re-probe before telling.
     if (slot.steps ? k < 0 : !isNumericLabel(text)) {
-      slot.steps = probeSteps(slot)
+      slot.steps = probeSteps(slot, true)
       emitSteps(idx, slot.steps)
       // Still a dial. Keep watching only while its text is numeric: a
       // non-numeric dial (note names) would otherwise re-probe on every

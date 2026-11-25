@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect } from 'vitest'
 import {
+  clearMacroStepsCache,
   isNumericLabel,
+  macroSteps,
   MAX_MACRO_STEPS,
   probeMacroSteps,
   propToStep,
@@ -141,5 +143,58 @@ describe('isNumericLabel', () => {
       expect(isNumericLabel(s)).toBe(true)
     for (const s of ['Off', 'Low Pass', 'C3', '1/4', 'Mode A'])
       expect(isNumericLabel(s)).toBe(false)
+  })
+})
+
+describe('macroSteps cache', () => {
+  beforeEach(() => clearMacroStepsCache())
+  const types = ['Low Pass', 'High Pass', 'Band Pass', 'Notch', 'Morph']
+
+  it('re-binds the same id for two reads', () => {
+    const first = mapped(types)
+    expect(macroSteps(7, first.strAt, 0, 127)!.items).toEqual(types)
+    const again = mapped(types)
+    expect(macroSteps(7, again.strAt, 0, 127)!.items).toEqual(types)
+    expect(again.reads()).toBe(2)
+  })
+
+  it('caches a dial too', () => {
+    macroSteps(8, (v) => String(v), 0, 127)
+    let reads = 0
+    expect(macroSteps(8, (v) => (reads++, String(v)), 0, 127)).toBeNull()
+    expect(reads).toBe(2)
+  })
+
+  it('re-probes when an end changes (a narrowed mapping)', () => {
+    macroSteps(7, mapped(types).strAt, 0, 127)
+    const narrowed = types.slice(1, 4)
+    expect(macroSteps(7, mapped(narrowed).strAt, 0, 127)!.items).toEqual(
+      narrowed
+    )
+  })
+
+  it('re-probes on force, and remembers the result', () => {
+    macroSteps(7, mapped(types).strAt, 0, 127)
+    // same ends, different middle: only a forced probe can see it
+    const other = ['Low Pass', 'Comb', 'Morph']
+    expect(macroSteps(7, mapped(other).strAt, 0, 127)!.items).toEqual(types)
+    expect(macroSteps(7, mapped(other).strAt, 0, 127, true)!.items).toEqual(
+      other
+    )
+    const after = mapped(other)
+    expect(macroSteps(7, after.strAt, 0, 127)!.items).toEqual(other)
+    expect(after.reads()).toBe(2)
+  })
+
+  it('keeps ids apart, and never caches id 0', () => {
+    macroSteps(7, mapped(types).strAt, 0, 127)
+    expect(macroSteps(9, mapped(['Off', 'On']).strAt, 0, 127)!.items).toEqual([
+      'Off',
+      'On',
+    ])
+    macroSteps(0, mapped(types).strAt, 0, 127)
+    const zero = mapped(types)
+    macroSteps(0, zero.strAt, 0, 127)
+    expect(zero.reads()).toBeGreaterThan(2)
   })
 })

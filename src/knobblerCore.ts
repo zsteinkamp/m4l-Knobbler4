@@ -31,7 +31,7 @@ import {
 
 import {
   isNumericLabel,
-  probeMacroSteps,
+  macroSteps,
   propToStep,
   propToValue,
   stepToProp,
@@ -1569,13 +1569,15 @@ function bindParam(slot: number, paramPath: string): boolean {
 // The min/max sub-range doesn't apply to it, as it doesn't to a button.
 // Probed at bind, and again when the text sendVal reads isn't the step it
 // should be: a remap in Live shows on the macro's next value change.
-function probeSteps(slot: number) {
+function probeSteps(slot: number, force = false) {
   const p = param[slot]
   const steps = p.maybeSteps
-    ? probeMacroSteps(
+    ? macroSteps(
+        p.id,
         (v) => dequote(String(valueString(paramObj[slot], v))),
         p.min,
-        p.max
+        p.max,
+        force
       )
     : null
   p.steps = steps
@@ -1790,7 +1792,7 @@ function sendVal(slot: number) {
     const text = dequote(String(str))
     let k = p.steps ? p.steps.items.indexOf(text) : -1
     if (p.steps ? k < 0 : !isNumericLabel(text)) {
-      probeSteps(slot)
+      probeSteps(slot, true)
       sendQuant(slot)
       // Still a dial: keep watching only while its text is numeric, or a
       // non-numeric dial (note names) re-probes on every value change.

@@ -473,6 +473,20 @@ is in hand — e.g. telling the app to disable a control at handshake.
   from each step's run (Off/On is the 2-step case). Probed at bind and again
   when a value's text isn't the expected step, so a remap or a Show-As-Button
   switch made in Live shows on the macro's next value change.
+  Results are cached per parameter id (`macroSteps`), trusted only while the
+  text at both ends of the range is unchanged, so a re-bind costs 2 reads; the
+  per-value check re-probes past the cache. Ids don't survive a set load, but
+  the cache doesn't either: the device reloads with the set.
+  **There is no property for the steps — checked with `/debug/info` on a Live
+  13 rack (2026-11-25).** A macro's whole member list is `automation_state`,
+  `default_value`, `display_value`, `is_enabled`, `is_quantized`, `max`, `min`,
+  `name`, `original_name`, `state`, `value`, `str_for_value`: no `value_items`
+  member at all, and `is_quantized` 0 even when mapped to a filter type.
+  `display_value` is the TARGET's value in its own units (Meld's oscillator
+  type → `12`, "Squelch"; a filter type → `1`, "Highpass"; a decay → `493`,
+  "493 ms"), so for a quantized target it's the step index — but it gives
+  neither the count nor the names, and can't tell a step index from a
+  continuous value. An unmapped Live 13 macro reads "0.00 %", not "0".
 - **The probe port varies per set:** `[udpreceive]` can bind 2355 etc., not
   2346. Find it with `lsof -nP -iUDP | grep ^Live` and pass `--to <port>` to
   `tools/osc-probe.js`, or every probe silently goes nowhere.
