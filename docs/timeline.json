@@ -1,7 +1,44 @@
 {
-  "generated": "2026-11-24T06:26:18.309Z",
+  "generated": "2026-11-25T18:25:49.678Z",
   "repo": "zsteinkamp/m4l-Knobbler4",
   "appReleases": [
+    {
+      "side": "app",
+      "version": "2026.11.25",
+      "date": "2026-11-25",
+      "approx": false,
+      "title": "Rack macros as buttons",
+      "notes": [
+        {
+          "text": "In Live 13, a rack macro mapped to a parameter with named values, like a filter type or an oscillator shape, now shows as buttons on Knobbler and Bluhand pages, one per value, just like the parameter itself. Requires Knobbler4 device v79 or newer",
+          "tag": null
+        },
+        {
+          "text": "Playing clips now have a border in their own color, and playing and triggered clips flash in time instead of pulsing",
+          "tag": null
+        },
+        {
+          "text": "Refresh is now a full reconnect, and it has the same name everywhere: the toolbar button and the connection status in Setup do the same thing",
+          "tag": null
+        },
+        {
+          "text": "Pan Above Fader is now on by default. Turn it off in Settings → Mixer",
+          "tag": null
+        },
+        {
+          "text": "Fixed the sidebar mixer strip when soloing: the Solo button lights up whether you solo in Live or in Knobbler, and the strip no longer greys out. Requires Knobbler4 device v79 or newer",
+          "tag": null
+        },
+        {
+          "text": "Fixed a volume fader springing back to the wrong level",
+          "tag": null
+        },
+        {
+          "text": "Lighter and smoother overall, especially on large sets: less work for every update from Live, on every page",
+          "tag": null
+        }
+      ]
+    },
     {
       "side": "app",
       "version": "2026.11.22",
@@ -1065,6 +1102,21 @@
     }
   ],
   "deviceReleases": [
+    {
+      "side": "device",
+      "version": "v79",
+      "date": "2026-11-25",
+      "approx": false,
+      "title": "Rack Macros as Buttons",
+      "notes": [
+        "Rack macros with named values show as buttons!",
+        "- In Live 13, a rack macro reports its mapped parameter's values, so a macro mapped to a filter type reads \"Low Pass\", \"High Pass\" and so on. Knobbler now shows such a macro as buttons, one per value, on Knobbler and Bluhand pages, just like the parameter itself. A macro set to **Show Macro As Button** in Live is a two-value toggle. Remap the macro in Live and the buttons follow on its next value change. Works with any recent Knobbler app.",
+        "### Fixes",
+        "- The sidebar mixer strip's **Solo** button now lights up when you solo in Live. - Soloing from the app no longer greys out the whole sidebar strip. The full fix needs Knobbler app 2026.11.25 or newer."
+      ],
+      "images": [],
+      "videos": []
+    },
     {
       "side": "device",
       "version": "v78",

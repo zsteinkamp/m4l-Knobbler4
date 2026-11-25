@@ -6,6 +6,16 @@
 
 These are the release notes for the Knobbler **app** on your iPad, iPhone or Android device. For the Max for Live **device** changelog, see the [GitHub releases](https://github.com/zsteinkamp/m4l-Knobbler4/releases). Notes marked _(iOS only)_ or _(Android only)_ apply to just that platform.
 
+### 2026.11.25 — November 25, 2026
+
+- In Live 13, a rack macro mapped to a parameter with named values, like a filter type or an oscillator shape, now shows as buttons on Knobbler and Bluhand pages, one per value, just like the parameter itself. Requires Knobbler4 device v79 or newer
+- Playing clips now have a border in their own color, and playing and triggered clips flash in time instead of pulsing
+- Refresh is now a full reconnect, and it has the same name everywhere: the toolbar button and the connection status in Setup do the same thing
+- Pan Above Fader is now on by default. Turn it off in Settings → Mixer
+- Fixed the sidebar mixer strip when soloing: the Solo button lights up whether you solo in Live or in Knobbler, and the strip no longer greys out. Requires Knobbler4 device v79 or newer
+- Fixed a volume fader springing back to the wrong level
+- Lighter and smoother overall, especially on large sets: less work for every update from Live, on every page
+
 ### 2026.11.22 — November 22, 2026
 
 - Lock Bluhand to the device it shows with the new button to the right of its banks and variations. While it’s locked, you can select other tracks and devices, in Live or in Knobbler, and Bluhand stays put. Requires Knobbler4 device v78 or newer
