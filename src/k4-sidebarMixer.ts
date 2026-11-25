@@ -48,6 +48,11 @@ log('loaded k4-sidebarMixer')
 
 const state = {
   trackLookupObj: null as LiveAPI,
+  // Throwaway handle for walks over OTHER tracks (exclusive solo/arm, return
+  // colours). trackLookupObj must stay on the displayed track: the mute, meter
+  // and record reads all go through it, and these walks used to leave it on
+  // whichever track they visited last.
+  scratchObj: null as LiveAPI,
   returnTrackColors: [] as string[],
   returnsObj: null as LiveAPI,
   mixerObj: null as LiveAPI,
@@ -57,6 +62,7 @@ const state = {
   panObj: null as LiveAPI,
   muteObj: null as LiveAPI,
   mutedViaSoloObj: null as LiveAPI,
+  soloObj: null as LiveAPI,
   xfadeAssignObj: null as LiveAPI,
   colorObj: null as LiveAPI,
   crossfaderObj: null as LiveAPI,
@@ -261,7 +267,7 @@ function disableInput() {
 
 function enableRecord() {
   if (!apiValid(state.trackObj)) return
-  enableArm(state.trackObj, state.trackLookupObj)
+  enableArm(state.trackObj, state.scratchObj)
   sendRecordStatus(state.trackObj)
 }
 
@@ -293,6 +299,15 @@ function handleMuteChange(args: IArguments) {
   }
 }
 
+// Solo is observed like mute, so a solo changed in Live (or by another
+// surface) reaches the app. Before, /mixer/solo was only sent on a track change
+// and on the app's own toggle, so soloing in Live left the button dark.
+function handleSoloChange(args: IArguments) {
+  if (args[0] === 'solo') {
+    osc('/mixer/solo', parseInt(args[1] as any) || 0)
+  }
+}
+
 function emitXfadeAssign() {
   if (!apiValid(state.mixerObj)) return
   const [aOn, bOn] = xfadeAB(state.mixerObj)
@@ -318,7 +333,7 @@ function toggleSolo() {
   if (!apiValid(state.trackObj)) {
     return
   }
-  const newState = toggleSoloShared(state.trackObj, state.trackLookupObj)
+  const newState = toggleSoloShared(state.trackObj, state.scratchObj)
   osc('/mixer/solo', newState)
 }
 
@@ -516,6 +531,7 @@ function handleTrackChange(id: number) {
   if (!isTrack(state.trackLookupObj)) {
     state.muteObj.property = ''
     state.mutedViaSoloObj.property = ''
+    state.soloObj.property = ''
     state.xfadeAssignObj.property = ''
     state.colorObj.property = ''
     return
@@ -548,11 +564,15 @@ function handleTrackChange(id: number) {
     state.mutedViaSoloObj.property = ''
     state.mutedViaSoloObj.path = path
     state.mutedViaSoloObj.property = 'muted_via_solo'
+    state.soloObj.property = ''
+    state.soloObj.path = path
+    state.soloObj.property = 'solo'
     emitEffectiveMute()
     osc('/mixer/solo', parseInt(state.trackLookupObj.get('solo')))
   } else {
     state.muteObj.property = ''
     state.mutedViaSoloObj.property = ''
+    state.soloObj.property = ''
     osc('/mixer/mute', 0)
     osc('/mixer/solo', 0)
   }
@@ -614,8 +634,8 @@ const onReturnsChange = (args: IdObserverArg) => {
   for (let i = 0; i < MAX_SENDS; i++) {
     let color = DEFAULT_COLOR
     if (returnIds[i]) {
-      state.trackLookupObj.id = returnIds[i]
-      color = colorToString(state.trackLookupObj.get('color').toString())
+      state.scratchObj.id = returnIds[i]
+      color = colorToString(state.scratchObj.get('color').toString())
     }
     state.returnTrackColors[i] = '#' + color
   }
@@ -697,6 +717,9 @@ function init(): boolean {
   if (!state.trackLookupObj) {
     state.trackLookupObj = new LiveAPI(noFn, 'live_set')
   }
+  if (!state.scratchObj) {
+    state.scratchObj = new LiveAPI(noFn, 'live_set')
+  }
 
   // Return tracks watcher
   if (!state.returnsObj) {
@@ -731,6 +754,9 @@ function init(): boolean {
   }
   if (!state.mutedViaSoloObj) {
     state.mutedViaSoloObj = new LiveAPI(handleMuteChange, 'live_set')
+  }
+  if (!state.soloObj) {
+    state.soloObj = new LiveAPI(handleSoloChange, 'live_set')
   }
 
   // Crossfade assign observer — lives on the track's mixer_device, not the

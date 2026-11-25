@@ -12,6 +12,11 @@ var ctx = null;
 log('loaded k4-sidebarMixer');
 var state = {
     trackLookupObj: null,
+    // Throwaway handle for walks over OTHER tracks (exclusive solo/arm, return
+    // colours). trackLookupObj must stay on the displayed track: the mute, meter
+    // and record reads all go through it, and these walks used to leave it on
+    // whichever track they visited last.
+    scratchObj: null,
     returnTrackColors: [],
     returnsObj: null,
     mixerObj: null,
@@ -21,6 +26,7 @@ var state = {
     panObj: null,
     muteObj: null,
     mutedViaSoloObj: null,
+    soloObj: null,
     xfadeAssignObj: null,
     colorObj: null,
     crossfaderObj: null,
@@ -215,7 +221,7 @@ function disableInput() {
 function enableRecord() {
     if (!(0, liveApi_1.apiValid)(state.trackObj))
         return;
-    (0, mixerUtils_1.enableArm)(state.trackObj, state.trackLookupObj);
+    (0, mixerUtils_1.enableArm)(state.trackObj, state.scratchObj);
     sendRecordStatus(state.trackObj);
 }
 function disableRecord() {
@@ -244,6 +250,14 @@ function handleMuteChange(args) {
         emitEffectiveMute();
     }
 }
+// Solo is observed like mute, so a solo changed in Live (or by another
+// surface) reaches the app. Before, /mixer/solo was only sent on a track change
+// and on the app's own toggle, so soloing in Live left the button dark.
+function handleSoloChange(args) {
+    if (args[0] === 'solo') {
+        (0, utils_1.osc)('/mixer/solo', parseInt(args[1]) || 0);
+    }
+}
 function emitXfadeAssign() {
     if (!(0, liveApi_1.apiValid)(state.mixerObj))
         return;
@@ -268,7 +282,7 @@ function toggleSolo() {
     if (!(0, liveApi_1.apiValid)(state.trackObj)) {
         return;
     }
-    var newState = (0, mixerUtils_1.toggleSolo)(state.trackObj, state.trackLookupObj);
+    var newState = (0, mixerUtils_1.toggleSolo)(state.trackObj, state.scratchObj);
     (0, utils_1.osc)('/mixer/solo', newState);
 }
 function handleCrossfader(val) {
@@ -443,6 +457,7 @@ function handleTrackChange(id) {
     if (!(0, liveApi_1.isTrack)(state.trackLookupObj)) {
         state.muteObj.property = '';
         state.mutedViaSoloObj.property = '';
+        state.soloObj.property = '';
         state.xfadeAssignObj.property = '';
         state.colorObj.property = '';
         return;
@@ -474,12 +489,16 @@ function handleTrackChange(id) {
         state.mutedViaSoloObj.property = '';
         state.mutedViaSoloObj.path = path;
         state.mutedViaSoloObj.property = 'muted_via_solo';
+        state.soloObj.property = '';
+        state.soloObj.path = path;
+        state.soloObj.property = 'solo';
         emitEffectiveMute();
         (0, utils_1.osc)('/mixer/solo', parseInt(state.trackLookupObj.get('solo')));
     }
     else {
         state.muteObj.property = '';
         state.mutedViaSoloObj.property = '';
+        state.soloObj.property = '';
         (0, utils_1.osc)('/mixer/mute', 0);
         (0, utils_1.osc)('/mixer/solo', 0);
     }
@@ -536,8 +555,8 @@ var onReturnsChange = function (args) {
     for (var i = 0; i < consts_1.MAX_SENDS; i++) {
         var color = consts_1.DEFAULT_COLOR;
         if (returnIds[i]) {
-            state.trackLookupObj.id = returnIds[i];
-            color = (0, utils_1.colorToString)(state.trackLookupObj.get('color').toString());
+            state.scratchObj.id = returnIds[i];
+            color = (0, utils_1.colorToString)(state.scratchObj.get('color').toString());
         }
         state.returnTrackColors[i] = '#' + color;
     }
@@ -614,6 +633,9 @@ function init() {
     if (!state.trackLookupObj) {
         state.trackLookupObj = new LiveAPI(consts_1.noFn, 'live_set');
     }
+    if (!state.scratchObj) {
+        state.scratchObj = new LiveAPI(consts_1.noFn, 'live_set');
+    }
     // Return tracks watcher
     if (!state.returnsObj) {
         state.returnsObj = new LiveAPI(onReturnsChange, 'live_set');
@@ -641,6 +663,9 @@ function init() {
     }
     if (!state.mutedViaSoloObj) {
         state.mutedViaSoloObj = new LiveAPI(handleMuteChange, 'live_set');
+    }
+    if (!state.soloObj) {
+        state.soloObj = new LiveAPI(handleSoloChange, 'live_set');
     }
     // Crossfade assign observer — lives on the track's mixer_device, not the
     // track itself. Master's mixer_device lacks crossfade_assign, so same
